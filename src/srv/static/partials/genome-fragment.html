@@ -1,0 +1,45 @@
+<header>
+  <div class="container container-wide">
+    <ol class="breadcrumb">
+        <li> Edge </li>
+        <li> <a href="#/genomes">Genomes</a> </li>
+        <li> <a href="#/genomes/{{ genome.id }}">{{ genome.name }}</a> </li>
+        <li> {{ fragment.name }} </li>
+    </ol>
+  </div>
+</header>
+
+<div class="container container-wide">
+
+<h3>{{ fragment.name }}: {{ fragment.length | number }} bps</h3>
+
+<div class="lead space-top">
+    <p>Genome: <a href="#/genomes/{{ genome.id }}">{{ genome.name }}</a> </li>
+    <p>Changes:</p>
+    <ul><li ng-repeat='change in changes'>{{ change }}</li></ul>
+</div>
+
+<div ng-include="'partials/fragment-layout.html?v=8'"></div>
+
+<div class="panel panel-default space-top">
+    <div class="panel-body" ng-include="'partials/op-insert-bases.html'"></div>
+</div>
+
+<div class="panel panel-default space-top">
+    <div class="panel-body" ng-include="'partials/op-remove-bases.html'"></div>
+</div>
+
+<div class="panel panel-default space-top">
+    <div class="panel-body" ng-include="'partials/op-replace-bases.html'"></div>
+</div>
+
+<div class="panel panel-default space-top">
+    <div class="panel-body" ng-include="'partials/op-insert-fragment.html'"></div>
+</div>
+
+<div class="panel panel-default space-top">
+    <div class="panel-body" ng-include="'partials/op-replace-with-fragment.html'"></div>
+</div>
+
+</div> <!-- container -->
+

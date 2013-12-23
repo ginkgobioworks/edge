@@ -1,0 +1,57 @@
+<header>
+  <div class="container">
+    <ol class="breadcrumb">
+        <li> Edge </li>
+        <li> <a href="#/genomes">Genomes</a> </li>
+        <li> <a href="#/fragments">Fragments</a> </li>
+    </ol>
+  </div>
+</header>
+
+<div class="container">
+
+<p class="lead">Fragments</p>
+
+<p>
+    Define an insertion cassette as a fragment first, annotate the fragment,
+    then easily insert the fragment into a genome.
+</p>
+
+<div class="well">
+<div class="input-group">
+    <span class="input-group-addon"> Search: </span>
+    <input ng-model="query" class='form-control'>
+</div>
+</div>
+
+<table class="table table-striped table-condensed">
+<thead> <tr> <th>ID</th> <th>Name</th> <th>Length</th></tr> </thead>
+<tr ng-repeat="fragment in fragments | filter:query | orderBy:orderProp">
+    <td> <a href="#/fragments/{{fragment.id}}">{{ fragment.id }}</a> </td>
+    <td> <a href="#/fragments/{{fragment.id}}">{{ fragment.name }}</a> </td>
+    <td> {{ fragment.length }} </td>
+</tr>
+</table>
+
+<p class="lead space-top">
+Add new fragment
+</p>
+
+<div class="well" ng-show="add_fragment_error">
+    <span class="text-danger">Error: {{ add_fragment_error.message }}</span>
+</div>
+
+<form role="form">
+    <div class="form-group">
+        <label for="fragment_name">Name:</label>
+        <input id="fragment_name" type="text" ng-model="fragment.name" />
+    </div>
+    <div class="form-group">
+        <label for="fragment_sequence">Sequence:</label><br/>
+        <textarea id="fragment_sequence" class="sequence" ng-model="fragment.sequence"></textarea>
+    </div>
+    <button class="btn btn-primary" ng-click="addFragment(fragment)">Create Fragment</button>
+</form>
+
+</div> <!-- container -->
+

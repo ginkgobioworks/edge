@@ -1,0 +1,5 @@
+*.swp
+*.pyc
+Vagrantfile.local
+.vagrant
+production.log

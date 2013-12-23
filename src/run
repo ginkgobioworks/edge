@@ -1,0 +1,3 @@
+#!/bin/bash
+
+PYTHONPATH=. python srv/edge_srv.py 

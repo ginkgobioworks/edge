@@ -1,0 +1,7 @@
+#!/bin/bash
+
+nosetests
+
+pep8 --max-line-length=100 src/edge
+pep8 --max-line-length=100 src/srv
+

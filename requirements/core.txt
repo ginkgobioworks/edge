@@ -1,0 +1,9 @@
+SQLAlchemy == 0.8.0
+
+# biopython
+numpy
+biopython
+
+# gff parsing
+bcbio-gff == 0.3
+

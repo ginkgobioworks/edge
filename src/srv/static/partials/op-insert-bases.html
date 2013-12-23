@@ -1,0 +1,33 @@
+<div ng-controller="GenomeOpController">
+
+<p>
+<span class="lead">Insert Bases</span> (creates new genome)
+</p>
+
+<div class="well" ng-show="op_error">
+    <span class="text-danger">Error: {{ op_error.message }}</span>
+</div>
+
+<form role="form">
+    <div class="form-inline">
+        Insert prior to
+        <div class="form-group">
+            <input required class="form-control" type="text" ng-model="op.before_bp" size="5"
+             placeholder="bp" />
+        </div>
+        to create
+        <div class="form-group">
+            <input required class="form-control" type="text" ng-model="op.name" size="20"
+             placeholder="New genome name" />
+        </div>
+    </div>
+    Sequence
+    <br/>
+    <textarea class="form-control sequence" ng-model="op.sequence"></textarea>
+    <button class="btn btn-primary" ng-click="doOp('insert_bases', op)">Submit</button>
+</form>
+
+{{ op }}
+
+</div> <!-- GenomeOpController -->
+
