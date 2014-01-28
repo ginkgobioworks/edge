@@ -1,5 +1,4 @@
-from sqlalchemy.sql import select
-from edge.models import genome_table, fragment_table, genome_fragment_table
+from edge.models import _Genome, _Fragment, _Genome_Fragment
 from edge.genome import Genome
 
 
@@ -93,13 +92,11 @@ class Connector(object):
         from edge.fragment import Fragment_Operator
 
         # get all fragments
-        stmt = select([fragment_table.c.id])
-        cur = self.conn.execute(stmt)
-        fragment_ids = [row[0] for row in cur]
+        fragment_ids = [f.id for f in _Fragment.objects.all()]
+
         # get genomic fragments
-        stmt = select([genome_fragment_table.c.fragment_id])
-        cur = self.conn.execute(stmt)
-        genome_fragment_ids = [row[0] for row in cur]
+        genome_fragment_ids = [f.fragment_id for f in _Genome_Fragment.objects.all()]
+
         # subtract to get non-genomic fragments
         fragments = [Fragment_Operator(self, id)
                      for id in list(set(fragment_ids)-set(genome_fragment_ids))]
@@ -111,10 +108,8 @@ class Connector(object):
         """
 
         res = []
-        stmt = select([genome_table.c.id])
-        cur = self.conn.execute(stmt)
-        for row in cur:
-            res.append(Genome(self, row[0]))
+        for g in _Genome.objects.all():
+            res.append(Genome(self, g))
         return res
 
     def create_genome(self, name, notes=None):

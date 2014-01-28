@@ -1,115 +1,84 @@
-from sqlalchemy.sql import select, and_, func
-from edge.models import fragment_table, chunk_table, annotation_table, chunk_annotation_table
-from edge.models import fragment_chunk_location_table, edge_table
-from edge.models import Annotation, Edge
+from edge.models import *
 
 
-class Fragment_Chunk(object):
+class Annotation(object):
 
-    def __init__(self, chunk_id, fragment):
-        self.__id = chunk_id
-        self.__fragment = fragment
-        self.reload()
-
-    def reload(self):
-        stmt = \
-            select([chunk_table.c.sequence, chunk_table.c.initial_fragment_id])\
-            .where(chunk_table.c.id == self.id)
-        res = self.fragment.conn.execute(stmt)
-        r = res.fetchone()
-        res.close()
-        self.__sequence = r[0]
-        self.__initial_fragment_id = r[1]
-        self.__out_edges = None
-        self.__location = None
-        self.__prev_chunk = None
+    def __init__(self, first_bp, last_bp, annotation_id, name, type, strand,
+                 annotation_full_length, annotation_first_bp, annotation_last_bp):
+        self.first_bp = first_bp
+        self.last_bp = last_bp
+        self.annotation_id = annotation_id
+        self.name = name
+        self.type = type
+        self.strand = strand
+        self.annotation_full_length = annotation_full_length
+        self.annotation_first_bp = annotation_first_bp
+        self.annotation_last_bp = annotation_last_bp
 
     def __str__(self):
+        s = []
+        if self.annotation_first_bp != 1 or self.annotation_last_bp != self.annotation_full_length:
+            s.append('%s (%s-%s)' % (self.name, self.annotation_first_bp, self.annotation_last_bp))
+        else:
+            s.append(self.name)
+        s.append(self.type)
+        if self.strand == 1:
+            s.append('+')
+        else:
+            s.append('-')
+        return ', '.join(s)
+
+
+class Fragment_Chunk(_Fragment_Chunk):
+    class Meta:
+      proxy = True
+
+    def __unicode__(self):
         return '%s: %s-%s' % (self.fragment.name, self.location[0], self.location[1])
 
     @property
-    def id(self):
-        return self.__id
-
-    @property
-    def fragment(self):
-        return self.__fragment
-
-    @property
     def sequence(self):
-        return self.__sequence
+        return self.chunk.sequence
 
     @property
-    def initial_fragment_id(self):
-        return self.__initial_fragment_id
+    def initial_fragment(self):
+        return self.chunk.initial_fragment
 
     @property
     def out_edges(self):
-        if self.__out_edges:
-            return self.__out_edges
-
-        edges = []
-        stmt = \
-            select([edge_table.c.from_chunk_id,
-                    edge_table.c.fragment_id,
-                    edge_table.c.to_chunk_id])\
-            .where(edge_table.c.from_chunk_id == self.id)
-        res = self.fragment.conn.execute(stmt)
-        for r in res:
-            edges.append(Edge(**r))
-
-        self.__out_edges = edges
-        return edges
-
-    @property
-    def next_chunk_id(self):
-        # check inheritance hierarchy to figure out which edge to use.
-        if len(self.out_edges) == 0:
-            return None
-        else:
-            # sort edges by predecessor level if more than one edge
-            if len(self.out_edges) > 1:
-                pp = self.fragment.predecessor_priorities()
-
-                def sorter_f(e):
-                    return pp[e.fragment_id] if e.fragment_id in pp else len(pp)
-                out_edges = sorted(self.out_edges, key=sorter_f)
-            else:
-                out_edges = self.out_edges
-            return out_edges[0].to_chunk_id
+        return self.chunk.out_edges
 
     @property
     def next_chunk(self):
-        if self.next_chunk_id:
-            return Fragment_Chunk(self.next_chunk_id, self.fragment)
-        return None
+        # check inheritance hierarchy to figure out which edge to use.
+        if self.out_edges.count() == 0:
+            return none
+        else:
+            # sort edges by predecessor level if more than one edge
+            if self.out_edges.count() > 1:
+                pp = self.fragment.predecessor_priorities()
+                def sorter_f(e):
+                    return pp[e.fragment_id] if e.fragment_id in pp else len(pp)
+                out_edges = sorted(list(self.out_edges), key=sorter_f)
+
+            else:
+                out_edges = self.out_edges
+            return out_edges[0].to_chunk
 
     @property
     def location(self):
-        if self.__location is not None:
-            return self.__location
-
-        stmt = \
-            select([fragment_chunk_location_table.c.base_first,
-                    fragment_chunk_location_table.c.base_last])\
-            .where(and_(fragment_chunk_location_table.c.fragment_id == self.fragment.id,
-                        fragment_chunk_location_table.c.chunk_id == self.id))
-
-        res = self.fragment.conn.execute(stmt)
-        location = res.fetchone()
-        res.close()
-
-        self.__location = location
-        return location
+        return (self.base_first, self.base_last)
 
     @property
     def prev_chunk(self):
-        if self.__prev_chunk is not None:
+        if self.__prev_chunk is not none:
             return self.__prev_chunk
 
         loc = self.location
         if loc[0] == 1:
-            return None
+            return none
+
+        fc = _fragment_chunk_location.objects.filter(
 
         stmt = \
             select([fragment_chunk_location_table.c.chunk_id])\
@@ -120,7 +89,7 @@ class Fragment_Chunk(object):
         prev_chunk_id = res.fetchone()[0]
         res.close()
 
-        self.__prev_chunk = Fragment_Chunk(prev_chunk_id, self.fragment)
+        self.__prev_chunk = fragment_chunk(prev_chunk_id, self.fragment)
         return self.__prev_chunk
 
     def annotations(self):
@@ -138,7 +107,7 @@ class Fragment_Chunk(object):
         cur = self.fragment.conn.execute(stmt)
         annotations = []
         for f in cur:
-            annotations.append(Annotation(first_bp=None, last_bp=None, annotation_id=f[0],
+            annotations.append(annotation(first_bp=none, last_bp=none, annotation_id=f[0],
                                           name=f[1], type=f[2], strand=f[3],
                                           annotation_full_length=f[4],
                                           annotation_first_bp=f[5],

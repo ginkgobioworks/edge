@@ -1,255 +1,157 @@
-from sqlalchemy.sql import select, and_
-from edge.models import fragment_table, chunk_table, annotation_table, chunk_annotation_table
-from edge.models import fragment_chunk_location_table, edge_table, Edge
-from edge.fragment import Fragment, Fragment_Operator
+from django.db.models import F
+from edge.models import *
 
 
 class Fragment_Writer(Fragment):
-
-    def __init__(self, operator, *args, **kwargs):
-        super(Fragment_Writer, self).__init__(*args, **kwargs)
-        self.__parent_operator = operator
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        if type is None:  # only commit when there are no exceptions
-            f = self.commit()
-            if self.__parent_operator:
-                self.__parent_operator._add_updated(f)
+    class Meta:
+        proxy = True
 
     def can_use_location_index(self):
-        return False
+        return True
 
-    def commit(self):
-        stmt = \
-            fragment_table.update()\
-            .where(fragment_table.c.id == self._fragment_id)\
-            .values(start_chunk_id=self.start_chunk_id)
-        self.conn.execute(stmt)
-        self._connector.commit()
-        return Fragment_Operator(self._connector, self._fragment_id)
-
-    def _add_annotation(self, name, type, length, strand):
+    def _add_feature(self, name, type, length, strand):
         if strand not in (1, -1, None):
             raise Exception('Strand must be 1, -1, or None')
-        stmt = annotation_table.insert().values(name=name, type=type, length=length, strand=strand)
-        res = self.conn.execute(stmt)
-        return res.inserted_primary_key[0]
+        f = Feature(name=name, type=type, length=length, strand=strand)
+        f.save()
+        return f
 
-    def _annotate_chunk(self, chunk_id, annotation_id, annotation_base_first, annotation_base_last):
-        stmt = chunk_annotation_table.insert().values(
-            chunk_id=chunk_id,
-            annotation_id=annotation_id,
-            annotation_base_first=annotation_base_first,
-            annotation_base_last=annotation_base_last
-        )
-        res = self.conn.execute(stmt)
+    def _annotate_chunk(self, chunk, feature, feature_base_first, feature_base_last):
+        Chunk_Feature(chunk=chunk, feature=feature, feature_base_first, feature_base_last).save()
 
-    def _add_chunk(self, sequence, fragment_id):
-        stmt = chunk_table.insert().values(sequence=sequence, initial_fragment_id=fragment_id)
-        res = self.conn.execute(stmt)
-        return res.inserted_primary_key[0]
+    def _add_chunk(self, sequence, fragment):
+        c = Chunk(sequence=sequence, initial_fragment=fragment)
+        c.save()
+        return c
 
-    def _reset_chunk_sequence(self, chunk_id, sequence):
-        stmt = chunk_table.update().where(chunk_table.c.id == chunk_id).values(sequence=sequence)
-        res = self.conn.execute(stmt)
-        stmt = chunk_annotation_table.delete().where(chunk_annotation_table.c.chunk_id == chunk_id)
-        res = self.conn.execute(stmt)
+    def _reset_chunk_sequence(self, chunk, sequence):
+        chunk.sequence = sequence
+        chunk.save()
+        for cf in Chunk_Feature.objects.filter(chunk=chunk):
+          cf.delete()
 
-    def _assert_not_linked_to(self, chunk_id):
-        stmt = \
-            select([edge_table.c.from_chunk_id])\
-            .where(and_(edge_table.c.to_chunk_id == chunk_id,
-                        edge_table.c.fragment_id == self.id))
-        res = self.conn.execute(stmt)
-        res = [r for r in res]
-        if len(res) > 0:
-            raise Exception('Fragment %s already linked to chunk %s' % (self.id, chunk_id))
+    def _assert_not_linked_to(self, chunk):
+        if Edge.objects.filter(to_chunk=chunk, fragment=self).count() > 0:
+            raise Exception('Fragment %s already linked to chunk %s' % (self.id, chunk.id))
 
-    def _add_edges(self, chunk_id, *edges):
-        # fetch previous list of out edges
-        stmt = \
-            select([edge_table.c.from_chunk_id,
-                    edge_table.c.fragment_id,
-                    edge_table.c.to_chunk_id])\
-            .where(edge_table.c.from_chunk_id == chunk_id)
-        res = self.conn.execute(stmt)
-        existing_edges = [Edge(**r) for r in res]
-        res.close()
+    def _add_edges(self, chunk, *unsaved_edges):
+        existing_edges = list(Edge.objects.filter(from_chunk=chunk)
 
         # get list of fragment IDs in new edges
-        new_fragment_ids = [e.fragment_id for e in edges]
+        new_fragment_ids = [e.fragment_id for e in unsaved_edges]
 
         # remove old edges with same fragment ids as new edges
         for e in existing_edges:
             if e.fragment_id in new_fragment_ids:
-                stmt = \
-                    edge_table.delete()\
-                    .where(and_(edge_table.c.from_chunk_id == e.from_chunk_id,
-                                edge_table.c.fragment_id == e.fragment_id,
-                                edge_table.c.to_chunk_id == e.to_chunk_id))
-                self.conn.execute(stmt)
+                e.delete()
 
         # add new edges
-        stmt = edge_table.insert()
-        values = []
-        for edge in edges:
-            values.append(dict(from_chunk_id=edge.from_chunk_id,
-                               fragment_id=edge.fragment_id,
-                               to_chunk_id=edge.to_chunk_id))
-        self.conn.execute(stmt, values)
+        for edge in unsaved_edges:
+            edge.save()
 
     def _split_annotations(self, annotations, bps_to_split, split1, split2):
-        for annotation in annotations:
-            a1 = (annotation.annotation_id,
-                  annotation.annotation_first_bp,
-                  annotation.annotation_first_bp+bps_to_split-1)
-            a2 = (annotation.annotation_id,
-                  annotation.annotation_first_bp+bps_to_split,
-                  annotation.annotation_last_bp)
+        for a in annotations:
+            a1 = (a.feature, a.feature_base_first, a.feature_base_last+bps_to_split-1)
+            a2 = (a.feature, a.feature_base_first+bps_to_split, a.feature_base_last)
             self._annotate_chunk(split1, *a1)
             self._annotate_chunk(split2, *a2)
 
     def _split_chunk(self, chunk, s1, s2):
         # splitted chunk should be "created" by the fragment that created the
         # original chunk
-        split2 = self._add_chunk(s2, chunk.initial_fragment_id)
-        self._reset_chunk_sequence(chunk.id, s1)
+        split2 = self._add_chunk(s2, chunk.initial_fragment)
+        self._reset_chunk_sequence(chunk, s1)
 
         # move all edges from original chunk to second chunk
-        stmt = \
-            edge_table.update()\
-            .where(edge_table.c.from_chunk_id == chunk.id).values(from_chunk_id=split2)
-        res = self.conn.execute(stmt)
-        chunk.reload()
+        Edge.objects.filter(from_chunk=chunk).update(from_chunk=split2)
+        # verify chunk edges been updated
+        assert chunk.out_edges.count() == 0
 
         # add edge from chunk to split2
-        self._add_edges(chunk.id, Edge(chunk.id, chunk.initial_fragment_id, split2))
+        self._add_edges(chunk, Edge(from_chunk=chunk, fragment=chunk.initial_fragment, to_chunk=split2))
 
         # add location for new chunk
-        stmt = \
-            select([fragment_chunk_location_table.c.fragment_id,
-                    fragment_chunk_location_table.c.chunk_id,
-                    fragment_chunk_location_table.c.base_first,
-                    fragment_chunk_location_table.c.base_last])\
-            .where(fragment_chunk_location_table.c.chunk_id == chunk.id)
-
-        for r in self.conn.execute(stmt):
-            fragment_id = r[0]
-            chunk_id = r[1]
-            bp_first = r[2]
-            bp_last = r[3]
-
-            insert_stmt = \
-                fragment_chunk_location_table.insert()\
-                .values(fragment_id=fragment_id,
-                        chunk_id=split2,
-                        base_first=bp_first+len(s1),
-                        base_last=bp_last)
-            self.conn.execute(insert_stmt)
+        for fcl in chunk.fragment_chunk_location_set.all():
+            split2.fragment_chunk_location_set.create(
+                fragment=fcl.fragment,
+                base_first=fcl.base_first+len(s1),
+                base_last=fcl.base_last
+            )
 
         # adjust chunk location index for existing chunk
-        update_stmt = fragment_chunk_location_table.update()\
-            .where(fragment_chunk_location_table.c.chunk_id == chunk.id)\
-            .values(base_last=fragment_chunk_location_table.c.base_first+len(s1)-1)
-        self.conn.execute(update_stmt)
-
+        chunk.fragment_chunk_location_set.update(base_last=F('base_first')+len(s1)-1)
         return split2
 
     def _find_chunk_prev_next_by_walking(self, before_base1):
-        prev_chunk_id = None
-        next_chunk_id = None
+        prev_chunk = None
+        next_chunk = None
         chunk = None
         bases_visited = 0
 
-        chunk_id = self.start_chunk_id
-        while chunk_id is not None:
-            chunk = self.get_chunk(chunk_id)
-            sequence = chunk.sequence
-            next_chunk_id = chunk.next_chunk_id
-            bases_visited += len(chunk.sequence)
+        chunk = self.start_chunk
+        while chunk is not None:
+            fc = self.fragment_chunk(chunk)
+            sequence = fc.sequence
+            next_chunk = fc.next_chunk
+            bases_visited += len(sequence)
             if before_base1 is not None and bases_visited >= before_base1:
                 break
-            prev_chunk_id = chunk_id
-            chunk_id = next_chunk_id
-            next_chunk_id = None
-            chunk = None
+            prev_chunk = chunk
+            chunk = next_chunk
+            next_chunk = None
 
-        return prev_chunk_id, chunk, next_chunk_id, bases_visited
+        return prev_chunk, chunk, next_chunk, bases_visited
 
     def _find_chunk_prev_next_by_location_index(self, before_base1):
-        prev_chunk_id = None
-        next_chunk_id = None
+        prev_chunk = None
+        next_chunk = None
         chunk = None
         bases_visited = None
 
         if before_base1 is not None:
-            stmt = \
-                select([fragment_chunk_location_table.c.chunk_id,
-                        fragment_chunk_location_table.c.base_first,
-                        fragment_chunk_location_table.c.base_last])\
-                .where(and_(fragment_chunk_location_table.c.fragment_id == self.id,
-                            fragment_chunk_location_table.c.base_first <= before_base1,
-                            fragment_chunk_location_table.c.base_last >= before_base1))
-
-            res = self.conn.execute(stmt)
-            res = [r for r in res]
-            if len(res) > 0:
-                chunk_id = res[0][0]
-                chunk_base_first = res[0][1]
-                chunk_base_last = res[0][2]
-                chunk = self.get_chunk(chunk_id)
-                bases_visited = chunk_base_last
-                next_chunk_id = chunk.next_chunk_id
+            q = self.fragment_chunk_location_set.filter(base_first__le=before_base1,
+                                                        base_last__ge=before_base1)
+            q = list(q)
+            if len(q) > 0:
+                fc = q[0]
+                chunk = fc.chunk
+                bases_visited = fc.base_last
+                next_chunk = fc.next_chunk
 
                 # find prev chunk
-                if chunk_base_first == 1:
-                    prev_chunk_id = None
+                if fc.base_first == 1:
+                    prev_chunk = None
                 else:
-                    stmt = \
-                        select([fragment_chunk_location_table.c.chunk_id])\
-                        .where(and_(
-                            fragment_chunk_location_table.c.fragment_id == self.id,
-                            fragment_chunk_location_table.c.base_last == chunk_base_first-1
-                        ))
-                    res = self.conn.execute(stmt)
-                    prev_chunk_id = res.fetchone()[0]
+                    prev_chunk = fc.prev_fragment_chunk.chunk
 
         if chunk is None:  # after all sequence ended, need last chunk and total bases
             total_bases = self.length
-            stmt = \
-                select([fragment_chunk_location_table.c.chunk_id])\
-                .where(and_(fragment_chunk_location_table.c.fragment_id == self.id,
-                            fragment_chunk_location_table.c.base_last == total_bases))
-            res = self.conn.execute(stmt)
-            prev_chunk_id = res.fetchone()[0]
+            prev_chunk = self.fragment_chunk_location_set.get(base_last=total_bases)
             bases_visited = total_bases
 
-        return prev_chunk_id, chunk, next_chunk_id, bases_visited
+        return prev_chunk, chunk, next_chunk, bases_visited
 
     def _find_and_split_before(self, before_base1):
 
         if before_base1 is not None and before_base1 <= 0:
             raise Exception('chunk index should be 1-based')
 
-        chunk_id = None
         chunk = None
+        chunk_id = None
+        prev_chunk = None
+        next_chunk = None
         bases_visited = 0
-        prev_chunk_id = None
-        next_chunk_id = None
         sequence = None
 
         if self.can_use_location_index():
-            prev_chunk_id, chunk, next_chunk_id, bases_visited = \
+            prev_chunk, chunk, next_chunk, bases_visited = \
                 self._find_chunk_prev_next_by_location_index(before_base1)
             if chunk:
                 sequence = chunk.sequence
                 chunk_id = chunk.id
 
         else:
-            prev_chunk_id, chunk, next_chunk_id, bases_visited = \
+            prev_chunk, chunk, next_chunk, bases_visited = \
                 self._find_chunk_prev_next_by_walking(before_base1)
             if chunk:
                 sequence = chunk.sequence
@@ -261,7 +163,7 @@ class Fragment_Writer(Fragment):
             # can avoid splitting if first bp in this chunk is before_base1
             if bases_visited-len(sequence)+1 == before_base1:
                 #print 'no need to split before %s, which contains %s' % (before_base1, sequence)
-                return prev_chunk_id, chunk_id
+                return prev_chunk, chunk
 
             # otherwise, have to split the chunk
             first_bp_in_chunk = bases_visited-len(sequence)+1
@@ -276,18 +178,15 @@ class Fragment_Writer(Fragment):
             split2 = self._split_chunk(chunk, s1, s2)
             # split up annotations as well
             self._split_annotations(original_annotations, bps_to_split, chunk_id, split2)
-            return chunk_id, split2
+            return chunk, split2
 
         else:  # found end of the fragment
-            return prev_chunk_id, None
+            return prev_chunk, None
 
 
 class Fragment_Annotator(Fragment_Writer):
 
-    def can_use_location_index(self):
-        return True
-
-    def annotate(self, first_base1, last_base1, annotation_name, annotation_type, strand):
+    def annotate(self, first_base1, last_base1, name, type, strand):
 
         if self.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
@@ -297,26 +196,27 @@ class Fragment_Annotator(Fragment_Writer):
             if length <= 0:
                 raise Exception('Annotation must have length one or more')
 
-        prev_chunk_id, annotation_start = self._find_and_split_before(first_base1)
-        annotation_end, next_chunk_id = self._find_and_split_before(last_base1+1)
+        prev_chunk, annotation_start = self._find_and_split_before(first_base1)
+        annotation_end, next_chunk = self._find_and_split_before(last_base1+1)
+        new_feature = self._add_feature(name, type, length, strand)
 
-        new_annotation_id = self._add_annotation(annotation_name, annotation_type, length, strand)
-
-        # now, starting with chunk annotation_start, walk through chunks until we
-        # hit annotation_end, and add annotation for each chunk
-        chunk = self.get_chunk(annotation_start)
+        # now, starting with chunk annotation_start, walk through chunks until
+        # we hit annotation_end, and add annotation for each chunk
+        chunk = annotation_start
         a_i = 1
         while True:
-            self._annotate_chunk(chunk.id, new_annotation_id, a_i, a_i+len(chunk.sequence)-1)
+            fc = self.fragment_chunk(chunk)
+            self._annotate_chunk(chunk, new_feature, a_i, a_i+len(chunk.sequence)-1)
             a_i += len(chunk.sequence)
-            if chunk.id == annotation_end:
+            if chunk.id == annotation_end.id:
                 break
-            if chunk.next_chunk_id:
-                chunk = self.get_chunk(chunk.next_chunk_id)
+            if fc.next_chunk:
+                chunk = fc.next_chunk
             else:
-                chunk = self.get_chunk(self.start_chunk_id)
+                chunk = self.start_chunk
 
 
+# XXX
 class Fragment_Updater(Fragment_Writer):
 
     @staticmethod

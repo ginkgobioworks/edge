@@ -1,4 +1,7 @@
-SQLAlchemy == 0.8.0
+# django
+pytz >= 2013b
+Django == 1.6
+South == 0.7.6
 
 # biopython
 numpy
@@ -6,4 +9,3 @@ biopython
 
 # gff parsing
 bcbio-gff == 0.3
-

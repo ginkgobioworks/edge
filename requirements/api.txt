@@ -1,3 +1,0 @@
-six # argument parsing
-flask
-flask-restful

@@ -1,9 +1,7 @@
 -r core.txt
--r api.txt
 
 # testing
 nose
 
 # code checking
 pep8
-
