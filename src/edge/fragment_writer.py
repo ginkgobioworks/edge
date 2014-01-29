@@ -259,7 +259,7 @@ class Fragment_Updater(Fragment_Writer):
                                 Edge(from_chunk=prev_chunk, fragment=self, to_chunk=None))
 
         else:  # remove chunks at start of fragment
-            if next_chunk_id is None:
+            if next_chunk is None:
                 raise Exception('Cannot remove entire fragment')
             self.start_chunk = next_chunk
 
@@ -315,6 +315,7 @@ class Fragment_Updater(Fragment_Writer):
         # add location for new chunks in the new fragment
         values = []
         c = 0
+        original_length = self.length
         for chunk in fragment.chunks():
             if before_base1 is not None:
                 self.fragment_chunk_location_set.create(
@@ -322,7 +323,7 @@ class Fragment_Updater(Fragment_Writer):
                 )
             else:
                 self.fragment_chunk_location_set.create(
-                  chunk=chunk, base_first=self.length+1+c, base_last=self.length+1+c+len(chunk.sequence)-1
+                  chunk=chunk, base_first=original_length+1+c, base_last=original_length+1+c+len(chunk.sequence)-1
                 )
             c += len(chunk.sequence)
 

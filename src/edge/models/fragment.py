@@ -74,9 +74,10 @@ class Fragment(models.Model):
         while f is not None:
             pred.append(f)
             f = f.parent
+        return pred
 
     def predecessor_priorities(self):
-        return {f: i for i, f in enumerate(self.predecessors())}
+        return {f.id: i for i, f in enumerate(self.predecessors())}
 
     def fragment_chunk(self, chunk):
         return self.fragment_chunk_location_set.filter(chunk=chunk)[0]
@@ -121,13 +122,13 @@ class Fragment(models.Model):
         q = self.fragment_chunk_location_set.select_related('chunk')
         if bp_lo is not None:
             q = q.filter(base_last__gte=bp_lo)
-        if bp_li is not None:
+        if bp_hi is not None:
             q = q.filter(base_first__lte=bp_hi)
         q = q.order_by('base_first')
 
         chunk_features = []
         for fcl in q:
-            feature_bps = [(cf, fcl) for f in list(fcl.chunk.chunk_feature_set.all())]
+            feature_bps = [(f, fcl) for f in list(fcl.chunk.chunk_feature_set.all())]
             chunk_features.extend(feature_bps)
 
         return Annotation.from_chunk_feature_and_location_array(chunk_features)
@@ -222,7 +223,7 @@ class Chunk_Feature(models.Model):
     feature_base_first = models.IntegerField()
     feature_base_last = models.IntegerField()
 
-    def save(*args, **kwargs):
+    def save(self, *args, **kwargs):
         # mimic auto_increment
         if self.id is None:
             if Chunk_Feature.objects.count() > 0:
@@ -276,6 +277,7 @@ class Fragment_Chunk_Location(models.Model):
 
             else:
                 out_edges = self.out_edges.all()
+
             return out_edges[0].to_chunk
 
     @property

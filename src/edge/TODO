@@ -1,2 +1,4 @@
+is next chunk necessary? how do we walk w/o it? just use location index?
+  - only using it for inserting fragments
 cache next chunk
 genome#changes very slow?

@@ -113,10 +113,9 @@ class FragmentTests(TestCase):
         self.assertEquals(f1.sequence, self.root_sequence+'gataca')
         self.assertEquals(self.root.sequence, self.root_sequence)
 
-"""
     def test_does_not_allow_insert_same_fragment_twice_which_creates_loops(self):
         u = self.root.update('Bar')
-        new_f = u._connector.create_fragment_with_sequence('Test', 'gataca')
+        new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
         new_f = new_f.save()
@@ -125,7 +124,7 @@ class FragmentTests(TestCase):
 
     def test_insert_new_fragment_in_middle(self):
         u = self.root.update('Bar')
-        new_f = u._connector.create_fragment_with_sequence('Test', 'gataca')
+        new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
         new_f = new_f.save()
@@ -137,7 +136,7 @@ class FragmentTests(TestCase):
 
     def test_insert_new_fragment_at_start(self):
         u = self.root.update('Bar')
-        new_f = u._connector.create_fragment_with_sequence('Test', 'gataca')
+        new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
         new_f = new_f.save()
@@ -149,7 +148,7 @@ class FragmentTests(TestCase):
 
     def test_insert_new_fragment_at_end(self):
         u = self.root.update('Bar')
-        new_f = u._connector.create_fragment_with_sequence('Test', 'gataca')
+        new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
         new_f = new_f.save()
@@ -161,7 +160,7 @@ class FragmentTests(TestCase):
 
     def test_insert_new_fragment_at_end_then_insert_again(self):
         u = self.root.update('Bar')
-        new_f = u._connector.create_fragment_with_sequence('Test', 'gataca')
+        new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
         new_f = new_f.save()
@@ -175,7 +174,7 @@ class FragmentTests(TestCase):
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_insert_existing_fragment_in_middle(self):
-        existing_f = self.world.create_fragment_with_sequence('Test', 'gataca')
+        existing_f = Fragment.create_with_sequence('Test', 'gataca')
         u = self.root.update('Bar')
         u.insert_fragment(3, existing_f)
         f = u.save()
@@ -186,14 +185,14 @@ class FragmentTests(TestCase):
     def test_insert_fragment_inherits_annotations_from_new_fragment(self):
         u = self.root.update('Bar')
         self.assertEquals([a for a in u.annotations() if a.name == 'Uma'], [])
-        new_f = u._connector.create_fragment_with_sequence('Test', 'gataca')
+        new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.annotate()
         new_f.annotate(2, 4, 'Uma', 'feature', 1)
         new_f = new_f.save()
         u.insert_fragment(2, new_f)
         f = u.save()
-        self.assertEquals([a for a in f.annotations() if a.name == 'Uma'][0].first_bp, 3)
-        self.assertEquals([a for a in f.annotations() if a.name == 'Uma'][0].last_bp, 5)
+        self.assertEquals([a for a in f.annotations() if a.feature.name == 'Uma'][0].base_first, 3)
+        self.assertEquals([a for a in f.annotations() if a.feature.name == 'Uma'][0].base_last, 5)
 
     def test_remove_sequence_in_middle(self):
         u = self.root.update('Bar')
@@ -297,7 +296,7 @@ class FragmentTests(TestCase):
 
     def test_replace_fragment_in_middle(self):
         u = self.root.update('Bar')
-        new_f = u._connector.create_fragment_with_sequence('Test', 'gataca')
+        new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
         new_f = new_f.save()
@@ -310,7 +309,7 @@ class FragmentTests(TestCase):
 
     def test_replace_fragment_at_start(self):
         u = self.root.update('Bar')
-        new_f = u._connector.create_fragment_with_sequence('Test', 'gataca')
+        new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
         new_f = new_f.save()
@@ -323,7 +322,7 @@ class FragmentTests(TestCase):
 
     def test_replace_fragment_at_end(self):
         u = self.root.update('Bar')
-        new_f = u._connector.create_fragment_with_sequence('Test', 'gataca')
+        new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
         new_f = new_f.save()
@@ -336,7 +335,7 @@ class FragmentTests(TestCase):
 
     def test_replace_fragment_past_end(self):
         u = self.root.update('Bar')
-        new_f = u._connector.create_fragment_with_sequence('Test', 'gataca')
+        new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
         new_f = new_f.save()
@@ -349,7 +348,7 @@ class FragmentTests(TestCase):
 
     def test_replace_fragment_at_end_then_insert_again(self):
         u = self.root.update('Bar')
-        new_f = u._connector.create_fragment_with_sequence('Test', 'gataca')
+        new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
         new_f = new_f.save()
@@ -374,15 +373,6 @@ class FragmentTests(TestCase):
         self.assertEquals(f.sequence, s[3:-4]+'cccc'+'ggg')
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
-
-    def test_uncommit(self):
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'gataca')
-        self.assertRaises(FragmentNotFound, Fragment, self.world, u.id)
-        u.commit()
-        f = Fragment(self.world, u.id)
-        self.assertEquals(f.name, 'Bar')
-        self.assertEquals(f.sequence, self.root_sequence[0:2]+'gataca'+self.root_sequence[2:])
 
     def test_insert_on_chunk_size_of_one(self):
         u = self.root.update('Bar')
@@ -442,64 +432,33 @@ class FragmentTests(TestCase):
         self.assertEquals(f1.sequence, self.root_sequence+'gataca')
         self.assertEquals(self.root.sequence, self.root_sequence)
 
-    def test_updater_indexes_chunk_locations_on_commit(self):
-        from sqlalchemy.sql import select
-        from edge.models import fragment_chunk_location_table
-
-        # has one chunk before
-        stmt = select([fragment_chunk_location_table.c.fragment_id])
-        r = [x for x in self.world.conn.execute(stmt)]
-        self.assertEquals(len(r), 1)
-        self.assertEquals(r[0].fragment_id, self.root.id)
-
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'gataca')
-        f = u.commit()
-
-        # has three new chunks now
-        stmt = select([fragment_chunk_location_table.c.fragment_id,
-                       fragment_chunk_location_table.c.chunk_id,
-                       fragment_chunk_location_table.c.base_first,
-                       fragment_chunk_location_table.c.base_last])
-        r = [x for x in self.world.conn.execute(stmt)]
-
-        # each new chunk has an location index, additionally, the original chunk 1
-        # has been divided into two chunks, each with an index.
-
-        self.assertEquals(len(r), 5)
-        self.assertItemsEqual(r, [
-            (self.root.id, 1, 1, 2),
-            (self.root.id, 2, 3, len(self.root_sequence)),
-            (f.id, 1, 1, 2),
-            (f.id, 3, 3, 8),
-            (f.id, 2, 9, 6+len(self.root_sequence)),
-        ])
-
     def test_add_edges_replaces_existing_edge_with_same_fragment_id(self):
         u = self.root.update('Bar')
         prev, cur = u._find_and_split_before(4)
-        prev_chunk = u.get_chunk(prev)
-        self.assertEquals(len(prev_chunk.out_edges), 1)
-        self.assertEquals(prev_chunk.out_edges[0].to_chunk_id, cur)
-        self.assertEquals(prev_chunk.out_edges[0].fragment_id, self.root.id)
+        self.assertEquals(prev.out_edges.count(), 1)
+        self.assertEquals(prev.out_edges.all()[0].to_chunk_id, cur.id)
+        self.assertEquals(prev.out_edges.all()[0].fragment_id, self.root.id)
 
-        # add new edge, does not overwrite old edge since new edge has a new fragment id
-        u._add_edges(prev, Edge(prev, 101, 100))
-        prev_chunk = u.get_chunk(prev)
-        self.assertEquals(len(prev_chunk.out_edges), 2)
-        self.assertEquals(prev_chunk.out_edges[0].to_chunk_id, cur)
-        self.assertEquals(prev_chunk.out_edges[0].fragment_id, self.root.id)
-        self.assertEquals(prev_chunk.out_edges[1].to_chunk_id, 100)
-        self.assertEquals(prev_chunk.out_edges[1].fragment_id, 101)
+        # add new edge, does not overwrite old edge from parent fragment
+        fake_c = Chunk(id=100, initial_fragment=self.root)
+        fake_c.save()
+        u._add_edges(prev, Edge(from_chunk=prev, fragment_id=101, to_chunk=fake_c))
+        self.assertEquals(prev.out_edges.count(), 2)
+        self.assertEquals(prev.out_edges.all()[0].to_chunk_id, cur.id)
+        self.assertEquals(prev.out_edges.all()[0].fragment_id, self.root.id)
+        self.assertEquals(prev.out_edges.all()[1].to_chunk_id, 100)
+        self.assertEquals(prev.out_edges.all()[1].fragment_id, 101)
 
-        # add another edge with fragment id 101, does overwrite existing edge with same fragment id
-        u._add_edges(prev, Edge(prev, 101, 102))
-        prev_chunk = u.get_chunk(prev)
-        self.assertEquals(len(prev_chunk.out_edges), 2)
-        self.assertEquals(prev_chunk.out_edges[0].to_chunk_id, cur)
-        self.assertEquals(prev_chunk.out_edges[0].fragment_id, self.root.id)
-        self.assertEquals(prev_chunk.out_edges[1].to_chunk_id, 102)
-        self.assertEquals(prev_chunk.out_edges[1].fragment_id, 101)
+        # add another edge with fragment id 101, does overwrite edge added last
+        # time, with same fragment id
+        fake_c = Chunk(id=102, initial_fragment=self.root)
+        fake_c.save()
+        u._add_edges(prev, Edge(from_chunk=prev, fragment_id=101, to_chunk=fake_c))
+        self.assertEquals(prev.out_edges.count(), 2)
+        self.assertEquals(prev.out_edges.all()[0].to_chunk_id, cur.id)
+        self.assertEquals(prev.out_edges.all()[0].fragment_id, self.root.id)
+        self.assertEquals(prev.out_edges.all()[1].to_chunk_id, 102)
+        self.assertEquals(prev.out_edges.all()[1].fragment_id, 101)
 
     def test_find_chunk_by_location_index(self):
         u = self.root.update('Bar')
@@ -513,103 +472,52 @@ class FragmentTests(TestCase):
         chunk_ids = [c.id for c in f.chunks()]
 
         # get first bp
-        prev_chunk_id, chunk, next_chunk_id, bases_visited = \
+        prev_chunk, chunk, next_chunk, bases_visited = \
             f._find_chunk_prev_next_by_location_index(1)
-        self.assertEquals(prev_chunk_id, None)
+        self.assertEquals(prev_chunk, None)
         self.assertEquals(chunk.id, chunk_ids[0])
-        self.assertEquals(next_chunk_id, chunk_ids[1])
+        self.assertEquals(next_chunk.id, chunk_ids[1])
         self.assertEquals(bases_visited, 2)
 
         # get last bp in first chunk
-        prev_chunk_id, chunk, next_chunk_id, bases_visited = \
+        prev_chunk, chunk, next_chunk, bases_visited = \
             f._find_chunk_prev_next_by_location_index(2)
-        self.assertEquals(prev_chunk_id, None)
+        self.assertEquals(prev_chunk, None)
         self.assertEquals(chunk.id, chunk_ids[0])
-        self.assertEquals(next_chunk_id, chunk_ids[1])
+        self.assertEquals(next_chunk.id, chunk_ids[1])
         self.assertEquals(bases_visited, 2)
 
         # get first bp in second chunk
-        prev_chunk_id, chunk, next_chunk_id, bases_visited = \
+        prev_chunk, chunk, next_chunk, bases_visited = \
             f._find_chunk_prev_next_by_location_index(3)
-        self.assertEquals(prev_chunk_id, chunk_ids[0])
+        self.assertEquals(prev_chunk.id, chunk_ids[0])
         self.assertEquals(chunk.id, chunk_ids[1])
-        self.assertEquals(next_chunk_id, chunk_ids[2])
+        self.assertEquals(next_chunk.id, chunk_ids[2])
         self.assertEquals(bases_visited, 2+6)
 
         # get last bp in last chunk
-        prev_chunk_id, chunk, next_chunk_id, bases_visited = \
+        prev_chunk, chunk, next_chunk, bases_visited = \
             f._find_chunk_prev_next_by_location_index(6+len(self.root_sequence))
-        self.assertEquals(prev_chunk_id, chunk_ids[1])
+        self.assertEquals(prev_chunk.id, chunk_ids[1])
         self.assertEquals(chunk.id, chunk_ids[2])
-        self.assertEquals(next_chunk_id, None)
+        self.assertEquals(next_chunk, None)
         self.assertEquals(bases_visited, 6+len(self.root_sequence))
 
         # get bp past last chunk
-        prev_chunk_id, chunk, next_chunk_id, bases_visited = \
+        prev_chunk, chunk, next_chunk, bases_visited = \
             f._find_chunk_prev_next_by_location_index(100)
-        self.assertEquals(prev_chunk_id, chunk_ids[2])
+        self.assertEquals(prev_chunk.id, chunk_ids[2])
         self.assertEquals(chunk, None)
-        self.assertEquals(next_chunk_id, None)
+        self.assertEquals(next_chunk, None)
         self.assertEquals(bases_visited, 6+len(self.root_sequence))
 
-    def test_find_chunk_by_walking(self):
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'gataca')
-        f = u.save()
-        f = f.annotate()
-
-        # there should now be 3 chunks for f
-        self.assertEquals([c.sequence for c in f.chunks()],
-                          [self.root_sequence[0:2], 'gataca', self.root_sequence[2:]])
-        chunk_ids = [c.id for c in f.chunks()]
-
-        # get first bp
-        prev_chunk_id, chunk, next_chunk_id, bases_visited = \
-            f._find_chunk_prev_next_by_walking(1)
-        self.assertEquals(prev_chunk_id, None)
-        self.assertEquals(chunk.id, chunk_ids[0])
-        self.assertEquals(next_chunk_id, chunk_ids[1])
-        self.assertEquals(bases_visited, 2)
-
-        # get last bp in first chunk
-        prev_chunk_id, chunk, next_chunk_id, bases_visited = \
-            f._find_chunk_prev_next_by_walking(2)
-        self.assertEquals(prev_chunk_id, None)
-        self.assertEquals(chunk.id, chunk_ids[0])
-        self.assertEquals(next_chunk_id, chunk_ids[1])
-        self.assertEquals(bases_visited, 2)
-
-        # get first bp in second chunk
-        prev_chunk_id, chunk, next_chunk_id, bases_visited = \
-            f._find_chunk_prev_next_by_walking(3)
-        self.assertEquals(prev_chunk_id, chunk_ids[0])
-        self.assertEquals(chunk.id, chunk_ids[1])
-        self.assertEquals(next_chunk_id, chunk_ids[2])
-        self.assertEquals(bases_visited, 2+6)
-
-        # get last bp in last chunk
-        prev_chunk_id, chunk, next_chunk_id, bases_visited = \
-            f._find_chunk_prev_next_by_walking(6+len(self.root_sequence))
-        self.assertEquals(prev_chunk_id, chunk_ids[1])
-        self.assertEquals(chunk.id, chunk_ids[2])
-        self.assertEquals(next_chunk_id, None)
-        self.assertEquals(bases_visited, 6+len(self.root_sequence))
-
-        # get bp past last chunk
-        prev_chunk_id, chunk, next_chunk_id, bases_visited = \
-            f._find_chunk_prev_next_by_walking(100)
-        self.assertEquals(prev_chunk_id, chunk_ids[2])
-        self.assertEquals(chunk, None)
-        self.assertEquals(next_chunk_id, None)
-        self.assertEquals(bases_visited, 6+len(self.root_sequence))
-
-
+"""
 class FragmentContextTest(TestCase):
 
     def setUp(self):
         self.world = Connector.create_db('/tmp/world.db')
         self.root_sequence = 'agttcgaggctga'
-        self.root = self.world.create_fragment_with_sequence('Foo', self.root_sequence)
+        self.root = Fragment.create_with_sequence('Foo', self.root_sequence)
 
     def test_commits_after_with_block_and_can_access_child_fragment_via_last_updated(self):
         self.assertEquals(self.root.last_updated(), None)
@@ -649,7 +557,7 @@ class FragmentChunkTest(TestCase):
     def setUp(self):
         self.world = Connector.create_db('/tmp/world.db')
         self.root_sequence = 'agttcgaggctga'
-        self.root = self.world.create_fragment_with_sequence('Foo', self.root_sequence)
+        self.root = Fragment.create_with_sequence('Foo', self.root_sequence)
 
     def test_next_chunk_id(self):
         u = self.root.update('Bar')
