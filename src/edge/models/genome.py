@@ -3,6 +3,9 @@ from edge.models.fragment import *
 
 
 class Genome(models.Model):
+    class Meta:
+        app_label = "edge"
+
     name = models.CharField(max_length=256)
     parent = models.ForeignKey('self', null=True)
     notes = models.TextField(null=True)
@@ -75,6 +78,9 @@ class Genome(models.Model):
 
 
 class Genome_Fragment(models.Model):
+    class Meta:
+        app_label = "edge"
+
     genome = models.ForeignKey(Genome)
     fragment = models.ForeignKey(Fragment)
     inherited = models.BooleanField()

@@ -61,7 +61,12 @@ class Fragment(models.Model):
 
     @property
     def length(self):
-        return self.fragment_chunk_location_set.order_by('-base_last')[0].base_last
+        q = self.fragment_chunk_location_set.order_by('-base_last')[:1]
+        q = list(q)
+        if len(q) == 0:
+            return 0
+        else:
+            return q[0].base_last
 
     def predecessors(self):
         pred = [self]
@@ -74,7 +79,7 @@ class Fragment(models.Model):
         return {f: i for i, f in enumerate(self.predecessors())}
 
     def fragment_chunk(self, chunk):
-        return self.fragment_chunk_location_set.filter(chunk=chunk)
+        return self.fragment_chunk_location_set.filter(chunk=chunk)[0]
 
     def chunks(self):
         chunk = self.start_chunk
@@ -83,13 +88,12 @@ class Fragment(models.Model):
             fc = self.fragment_chunk(chunk)
             chunk = fc.next_chunk
 
-    @property
-    def sequence(self, bp_lo=None, bp_hi=None):
+    def get_sequence(self, bp_lo=None, bp_hi=None):
         q = self.fragment_chunk_location_set.select_related('chunk')
         if bp_lo is not None:
-            q = q.filter(base_last__ge=bp_lo)
-        if bp_li is not None:
-            q = q.filter(base_first__le=bp_hi)
+            q = q.filter(base_last__gte=bp_lo)
+        if bp_hi is not None:
+            q = q.filter(base_first__lte=bp_hi)
         q = q.order_by('base_first')
 
         sequence = []
@@ -109,12 +113,16 @@ class Fragment(models.Model):
 
         return ''.join(sequence)
 
+    @property
+    def sequence(self):
+        return self.get_sequence()
+
     def annotations(self, bp_lo=None, bp_hi=None):
         q = self.fragment_chunk_location_set.select_related('chunk')
         if bp_lo is not None:
-            q = q.filter(base_last__ge=bp_lo)
+            q = q.filter(base_last__gte=bp_lo)
         if bp_li is not None:
-            q = q.filter(base_first__le=bp_hi)
+            q = q.filter(base_first__lte=bp_hi)
         q = q.order_by('base_first')
 
         chunk_features = []
@@ -127,7 +135,7 @@ class Fragment(models.Model):
     def update(self, name):
         from edge.fragment_writer import Fragment_Updater
         new_fragment = Fragment_Updater(
-          name=name, circular=circular, parent=self, start_chunk=self.start_chunk
+          name=name, circular=self.circular, parent=self, start_chunk=self.start_chunk
         )
         new_fragment.save()
 
@@ -165,10 +173,10 @@ class Chunk(models.Model):
         app_label = "edge"
 
     id = models.BigIntegerField(primary_key=True)
-    initial_fragment = models.ForeignKey(_Fragment)
+    initial_fragment = models.ForeignKey(Fragment)
     sequence = models.TextField(null=True)
 
-    def save(*args, **kwargs):
+    def save(self, *args, **kwargs):
         # mimic auto_increment
         if self.id is None:
             if Chunk.objects.count() > 0:
@@ -226,6 +234,7 @@ class Chunk_Feature(models.Model):
 
 class Fragment_Chunk_Location(models.Model):
     class Meta:
+        app_label = "edge"
         unique_together = (('fragment', 'chunk', 'base_first'),
                            ('fragment', 'chunk', 'base_last'))
         index_together = (('fragment', 'base_last'),)
@@ -263,10 +272,10 @@ class Fragment_Chunk_Location(models.Model):
                 pp = self.fragment.predecessor_priorities()
                 def sorter_f(e):
                     return pp[e.fragment_id] if e.fragment_id in pp else len(pp)
-                out_edges = sorted(list(self.out_edges), key=sorter_f)
+                out_edges = sorted(list(self.out_edges.all()), key=sorter_f)
 
             else:
-                out_edges = self.out_edges
+                out_edges = self.out_edges.all()
             return out_edges[0].to_chunk
 
     @property

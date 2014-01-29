@@ -4,6 +4,7 @@ from edge.models import *
 
 class Fragment_Writer(Fragment):
     class Meta:
+        app_label = "edge"
         proxy = True
 
     def _add_feature(self, name, type, length, strand):
@@ -14,7 +15,9 @@ class Fragment_Writer(Fragment):
         return f
 
     def _annotate_chunk(self, chunk, feature, feature_base_first, feature_base_last):
-        Chunk_Feature(chunk=chunk, feature=feature, feature_base_first, feature_base_last).save()
+        Chunk_Feature(chunk=chunk, feature=feature,
+                      feature_base_first=feature_base_first,
+                      feature_base_last=feature_base_last).save()
 
     def _add_chunk(self, sequence, fragment):
         c = Chunk(sequence=sequence, initial_fragment=fragment)
@@ -25,13 +28,16 @@ class Fragment_Writer(Fragment):
         chunk.sequence = sequence
         chunk.save()
         Chunk_Feature.objects.filter(chunk=chunk).delete()
+        # if chunk is the start chunk, update the object reference
+        if self.start_chunk.id == chunk.id:
+            self.start_chunk = chunk
 
     def _assert_not_linked_to(self, chunk):
         if Edge.objects.filter(to_chunk=chunk, fragment=self).count() > 0:
             raise Exception('Fragment %s already linked to chunk %s' % (self.id, chunk.id))
 
     def _add_edges(self, chunk, *unsaved_edges):
-        existing_edges = list(Edge.objects.filter(from_chunk=chunk)
+        existing_edges = list(Edge.objects.filter(from_chunk=chunk))
 
         # get list of fragment IDs in new edges
         new_fragment_ids = [e.fragment_id for e in unsaved_edges]
@@ -85,8 +91,8 @@ class Fragment_Writer(Fragment):
         bases_visited = None
 
         if before_base1 is not None:
-            q = self.fragment_chunk_location_set.filter(base_first__le=before_base1,
-                                                        base_last__ge=before_base1)
+            q = self.fragment_chunk_location_set.filter(base_first__lte=before_base1,
+                                                        base_last__gte=before_base1)
             q = list(q)
             if len(q) > 0:
                 fc = q[0]
@@ -102,7 +108,8 @@ class Fragment_Writer(Fragment):
 
         if chunk is None:  # after all sequence ended, need last chunk and total bases
             total_bases = self.length
-            prev_chunk = self.fragment_chunk_location_set.get(base_last=total_bases)
+            if total_bases > 0:
+                prev_chunk = self.fragment_chunk_location_set.get(base_last=total_bases).chunk
             bases_visited = total_bases
 
         return prev_chunk, chunk, next_chunk, bases_visited
@@ -141,7 +148,7 @@ class Fragment_Writer(Fragment):
 
             # save original annotations, which will be trashed in _split_chunk (which
             # calls _reset_chunk_sequence)
-            original_annotations = chunk.annotations()
+            original_annotations = self.fragment_chunk(chunk).annotations()
             # split chunk
             split2 = self._split_chunk(chunk, s1, s2)
             # split up annotations as well
@@ -151,8 +158,15 @@ class Fragment_Writer(Fragment):
         else:  # found end of the fragment
             return prev_chunk, None
 
+    def save(self, *args, **kwargs):
+        super(Fragment_Writer, self).save(*args, **kwargs)
+        return Fragment.objects.get(pk=self.pk)
+
 
 class Fragment_Annotator(Fragment_Writer):
+    class Meta:
+        app_label = "edge"
+        proxy = True
 
     def annotate(self, first_base1, last_base1, name, type, strand):
 
@@ -185,6 +199,9 @@ class Fragment_Annotator(Fragment_Writer):
 
 
 class Fragment_Updater(Fragment_Writer):
+    class Meta:
+        app_label = "edge"
+        proxy = True
 
     def insert_bases(self, before_base1, sequence):
         # find chunks before and containing the insertion point
@@ -194,7 +211,7 @@ class Fragment_Updater(Fragment_Writer):
         new_chunk = self._add_chunk(sequence, self)
 
         if prev_chunk is not None:  # add chunks after prev_chunk_id
-            self._add_edges(prev_chunk, Edge(from_chunk=prev_chunk_id, fragment=self, to_chunk=new_chunk))
+            self._add_edges(prev_chunk, Edge(from_chunk=prev_chunk, fragment=self, to_chunk=new_chunk))
 
         else:  # add chunks at start of fragment
             self.start_chunk = new_chunk
@@ -206,7 +223,7 @@ class Fragment_Updater(Fragment_Writer):
 
         # shift base_first and base_last for existing chunks
         if before_base1 is not None:
-            self.fragment_chunk_location_set.filter(base_first__ge=before_base1)
+            self.fragment_chunk_location_set.filter(base_first__gte=before_base1)\
                                             .update(base_first=F('base_first')+len(sequence),
                                                     base_last=F('base_last')+len(sequence))
 
@@ -247,7 +264,7 @@ class Fragment_Updater(Fragment_Writer):
             self.start_chunk = next_chunk
 
         # remove location for deleted chunks
-        self.fragment_chunk_location_set.filter(base_first__ge=before_base1,
+        self.fragment_chunk_location_set.filter(base_first__gte=before_base1,
                                                 base_first__lt=before_base1+length).delete()
 
         # shift base_first and base_last for existing chunks
@@ -291,7 +308,7 @@ class Fragment_Updater(Fragment_Writer):
 
         # shift base_first and base_last for existing chunks
         if before_base1 is not None:
-            self.fragment_chunk_location_set.filter(base_first__ge=before_base1)\
+            self.fragment_chunk_location_set.filter(base_first__gte=before_base1)\
                                             .update(base_first=F('base_first')+fragment_length,
                                                     base_last=F('base_last')+fragment_length)
 

@@ -5,7 +5,12 @@ from edge.models import *
 
 class Genome_Updater(Genome):
     class Meta:
+        app_label = "edge"
         proxy = True
+
+    def save(self, *args, **kwargs):
+        super(Genome_Updater, self).save(*args, **kwargs)
+        return Genome.objects.get(pk=self.pk)
 
     @contextmanager
     def annotate_fragment_by_name(self, name):
