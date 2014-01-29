@@ -1,5 +1,5 @@
 from django.db import models
-from edge.models.fragment import Fragment
+from edge.models.fragment import *
 
 
 class Genome(models.Model):
@@ -8,110 +8,53 @@ class Genome(models.Model):
     notes = models.TextField(null=True)
     fragments = models.ManyToManyField(Fragment, through='Genome_Fragment')
 
-    def find_annotation(self, name):
-        from edge.fragment import Fragment
+    @staticmethod
+    def create(name, notes=None):
+        new_genome = Genome(name=name, notes=notes, parent=None)
+        new_genome.save()
+        return Genome_Updater.objects.get(pk=new_genome.pk)
 
-        stmt = \
-            select([annotation_table.c.id,
-                    annotation_table.c.name,
-                    annotation_table.c.type,
-                    annotation_table.c.strand,
-                    annotation_table.c.length,
-                    chunk_annotation_table.c.annotation_base_first,
-                    chunk_annotation_table.c.annotation_base_last,
-                    fragment_chunk_location_table.c.base_first,
-                    fragment_chunk_location_table.c.base_last,
-                    genome_fragment_table.c.fragment_id])\
-            .where(and_(
-                genome_fragment_table.c.genome_id == self.id,
-                genome_fragment_table.c.fragment_id == fragment_chunk_location_table.c.fragment_id,
-                chunk_annotation_table.c.chunk_id == fragment_chunk_location_table.c.chunk_id,
-                chunk_annotation_table.c.annotation_id == annotation_table.c.id,
-                annotation_table.c.name == name))\
-            .order_by(annotation_table.c.id,
-                      genome_fragment_table.c.fragment_id,
-                      fragment_chunk_location_table.c.base_first)
+    def edit(self):
+        from edge.genome_writer import Genome_Updater
+        return Genome_Updater.objects.get(pk=self.pk)
 
-        cur = self.conn.execute(stmt)
-        fragments = {}
-
-        for f in cur:
-            fragment_id = f[9]
-            if fragment_id not in fragments:
-                fragments[fragment_id] = []
-            annotations = fragments[fragment_id]
-
-            if len(annotations) > 0 and\
-               annotations[-1].annotation_id == f[0] and\
-               annotations[-1].annotation_last_bp == f[5]-1 and\
-               annotations[-1].last_bp == f[7]-1:
-                # merge annotation
-                annotations[-1].last_bp = f[8]
-                annotations[-1].annotation_last_bp = f[6]
-            else:
-                annotations.append(Annotation(first_bp=f[7], last_bp=f[8],
-                                              annotation_id=f[0],
-                                              name=f[1], type=f[2], strand=f[3],
-                                              annotation_full_length=f[4],
-                                              annotation_first_bp=f[5],
-                                              annotation_last_bp=f[6]))
-        return fragments
-
-    def _edit(self, name=None, notes=None):
-        from edge.genome_updater import Genome_Updater
-        new_connector = self._connector.new_connector(with_transaction=True)
-        u = Genome_Updater(None, new_connector, self.id)
-        if notes is not None:
-            u._genome['notes'] = notes
-        if name is not None:
-            u._genome['name'] = name
-        return u
-
-    def annotate(self, name=None, notes=None):
-        return self._edit(name, notes)
+    def annotate(self):
+        return self.edit()
 
     def update(self, name=None, notes=None):
-        from edge.genome_updater import Genome_Updater
-        new_connector = self._connector.new_connector(with_transaction=True)
-        new_genome_id = Genome_Updater.add_genome(new_connector.conn, self.name, self)
-        u = Genome_Updater(self, new_connector, new_genome_id)
-        if notes is not None:
-            u._genome['notes'] = notes
-        if name is not None:
-            u._genome['name'] = name
-        return u
+        new_genome = Genome(name=name, notes=notes, parent=self)
+        new_genome.save()
+        for f in self.fragments.all():
+          Genome_Fragment(genome=new_genome, fragment=f, inherited=True).save()
+        return Genome_Updater.objects.get(pk=new_genome.pk)
+
+    def find_annotation(self, name):
+        q = Chunk_Feature.objects.filter(chunk__fragment_chunk_location__fragment__genome=self,
+                                         feature__name=name)
+        chunk_features = []
+        for cf in q:
+          # get fragment chunk location
+          for fcl in Fragment_Chunk_Location.objects.filter(chunk=cf.chunk, fragment__genome=self):
+            chunk_features.append(cf, fcl)
+        return Annotation.from_chunk_feature_and_location_array(chunk_features)
 
     def changes(self):
         if self.parent is None:
             return []
 
-        from edge.fragment import Fragment, Fragment_Chunk
+        edges = Edge.objects.filter(
+          fragment__genome_fragment__genome=self,
+          fragment__genome_fragment__inherited=False
+        )
 
-        stmt = \
-            select([edge_table.c.from_chunk_id,
-                    edge_table.c.fragment_id,
-                    edge_table.c.to_chunk_id])\
-            .where(and_(
-                genome_fragment_table.c.genome_id == self.id,
-                edge_table.c.fragment_id == genome_fragment_table.c.fragment_id,
-                genome_fragment_table.c.inherited == 0,
-                fragment_chunk_location_table.c.fragment_id == edge_table.c.fragment_id,
-                fragment_chunk_location_table.c.chunk_id == edge_table.c.from_chunk_id,))\
-            .order_by(fragment_chunk_location_table.c.fragment_id,
-                      fragment_chunk_location_table.c.base_first)
-
-        cur = self.conn.execute(stmt)
-
+        # XXX isn't this incredibly slow?
+        # XXX remove duplicate chunks?
         chunks = []
-        chunk_ids = []
-        for r in cur:
-            f = Fragment(self._connector, int(r[1]))
-            if r[0] and r[0] not in chunk_ids:
-                chunks.append(f.get_chunk(int(r[0])))
-                chunk_ids.append(r[0])
-            if r[2] and r[2] not in chunk_ids:
-                chunks.append(f.get_chunk(int(r[2])))
-                chunk_ids.append(r[2])
+        for edge in edges:
+          if edge.from_chunk:
+            chunks.append(edge.fragment.fragment_chunk(edge.from_chunk))
+          if edge.to_chunk:
+            chunks.append(edge.fragment.fragment_chunk(edge.to_chunk))
 
         return chunks
 

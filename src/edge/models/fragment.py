@@ -26,6 +26,29 @@ class Annotation(object):
             s.append('-')
         return ', '.join(s)
 
+    @staticmethod
+    def from_chunk_feature_and_location_array(chunk_feature_locs):
+        """
+        chunk_feature_locs: an array of (Chunk_Feature, Fragment_Chunk_Location) tuples.
+        """
+
+        chunk_feature_locs = sorted(chunk_feature_locs, key=lambda t: (t[0].feature.id, t[1].base_first))
+
+        annotations = []
+        for cf, fcl in chunk_feature_locs:
+            if len(annotations) > 0 and\
+               annotations[-1][0].feature.id == cf.feature_id and\
+               annotations[-1][0].feature_base_last == cf.feature_base_first-1 and\
+               annotations[-1][1].base_last == fcl.base_first-1:
+                # merge annotation
+                annotations[-1].base_last = fcl.base_last
+                annotations[-1].annotation_base_last = cf.feature_base_last
+            else:
+                annotations.append(Annotation(base_first=fcl.base_first,
+                                              base_last=fcl.base_last,
+                                              chunk_feature=cf))
+        return annotations
+
 
 class Fragment(models.Model):
     class Meta:
@@ -98,22 +121,8 @@ class Fragment(models.Model):
         for fcl in q:
             feature_bps = [(cf, fcl) for f in list(fcl.chunk.chunk_feature_set.all())]
             chunk_features.extend(feature_bps)
-        chunk_features = sorted(chunk_features, key=lambda t: (t[0].feature.id, t[1].base_first))
 
-        annotations = []
-        for cf, fcl in chunk_features:
-            if len(annotations) > 0 and\
-               annotations[-1][0].feature.id == cf.feature_id and\
-               annotations[-1][0].feature_base_last == cf.feature_base_first-1 and\
-               annotations[-1][1].base_last == fcl.base_first-1:
-                # merge annotation
-                annotations[-1].base_last = fcl.base_last
-                annotations[-1].annotation_base_last = cf.feature_base_last
-            else:
-                annotations.append(Annotation(base_first=fcl.base_first,
-                                              base_last=fcl.base_last,
-                                              chunk_feature=cf))
-        return annotations
+        return Annotation.from_chunk_feature_and_location_array(chunk_features)
 
     def update(self, name):
         from edge.fragment_writer import Fragment_Updater
@@ -135,6 +144,20 @@ class Fragment(models.Model):
     def annotate(self):
         from edge.fragment_writer import Fragment_Annotator
         return Fragment_Annotator.objects.get(pk=self.pk)
+
+    @staticmethod
+    def non_genomic_fragments():
+        fragments = list(Fragment.objects.filter(genome_fragment__id__isnull=True))
+        return fragments
+
+    @staticmethod
+    def create_with_sequence(name, sequence, circular=False):
+        from edge.fragment_writer import Fragment_Updater
+        new_fragment = Fragment_Updater(name=name, circular=circular, parent=None, start_chunk=None)
+        new_fragment.save()
+        new_fragment.insert_bases(None, sequence)
+        new_fragment.save()
+        return Fragment.objects.get(pk=new_fragment.pk)
 
 
 class Chunk(models.Model):
