@@ -6,9 +6,6 @@ class Fragment_Writer(Fragment):
     class Meta:
         proxy = True
 
-    def can_use_location_index(self):
-        return True
-
     def _add_feature(self, name, type, length, strand):
         if strand not in (1, -1, None):
             raise Exception('Strand must be 1, -1, or None')
@@ -27,8 +24,7 @@ class Fragment_Writer(Fragment):
     def _reset_chunk_sequence(self, chunk, sequence):
         chunk.sequence = sequence
         chunk.save()
-        for cf in Chunk_Feature.objects.filter(chunk=chunk):
-          cf.delete()
+        Chunk_Feature.objects.filter(chunk=chunk).delete()
 
     def _assert_not_linked_to(self, chunk):
         if Edge.objects.filter(to_chunk=chunk, fragment=self).count() > 0:
@@ -82,26 +78,6 @@ class Fragment_Writer(Fragment):
         chunk.fragment_chunk_location_set.update(base_last=F('base_first')+len(s1)-1)
         return split2
 
-    def _find_chunk_prev_next_by_walking(self, before_base1):
-        prev_chunk = None
-        next_chunk = None
-        chunk = None
-        bases_visited = 0
-
-        chunk = self.start_chunk
-        while chunk is not None:
-            fc = self.fragment_chunk(chunk)
-            sequence = fc.sequence
-            next_chunk = fc.next_chunk
-            bases_visited += len(sequence)
-            if before_base1 is not None and bases_visited >= before_base1:
-                break
-            prev_chunk = chunk
-            chunk = next_chunk
-            next_chunk = None
-
-        return prev_chunk, chunk, next_chunk, bases_visited
-
     def _find_chunk_prev_next_by_location_index(self, before_base1):
         prev_chunk = None
         next_chunk = None
@@ -143,19 +119,11 @@ class Fragment_Writer(Fragment):
         bases_visited = 0
         sequence = None
 
-        if self.can_use_location_index():
-            prev_chunk, chunk, next_chunk, bases_visited = \
-                self._find_chunk_prev_next_by_location_index(before_base1)
-            if chunk:
-                sequence = chunk.sequence
-                chunk_id = chunk.id
-
-        else:
-            prev_chunk, chunk, next_chunk, bases_visited = \
-                self._find_chunk_prev_next_by_walking(before_base1)
-            if chunk:
-                sequence = chunk.sequence
-                chunk_id = chunk.id
+        prev_chunk, chunk, next_chunk, bases_visited = \
+            self._find_chunk_prev_next_by_location_index(before_base1)
+        if chunk:
+            sequence = chunk.sequence
+            chunk_id = chunk.id
 
         # found the bp we are looking for
         if before_base1 is not None and bases_visited >= before_base1:
@@ -216,94 +184,42 @@ class Fragment_Annotator(Fragment_Writer):
                 chunk = self.start_chunk
 
 
-# XXX
 class Fragment_Updater(Fragment_Writer):
-
-    @staticmethod
-    def add_fragment(conn, name, circular, parent_id=None, start_chunk_id=None):
-        stmt = fragment_table.insert().values(
-            name=name, circular=circular, parent_id=parent_id, start_chunk_id=start_chunk_id
-        )
-        res = conn.execute(stmt)
-        return res.inserted_primary_key[0]
-
-    def __init__(self, operator, use_location_index, *args, **kwargs):
-        super(Fragment_Updater, self).__init__(operator, *args, **kwargs)
-        self.__use_location_index = use_location_index
-
-    def can_use_location_index(self):
-        return self.__use_location_index
-
-    def _index_fragment_chunk_locations(self):
-        # remove old index
-        stmt = \
-            fragment_chunk_location_table.delete()\
-            .where(fragment_chunk_location_table.c.fragment_id == self.id)
-        self.conn.execute(stmt)
-
-        # go through each chunk and add new index
-        i = 1
-        for chunk in self.chunks():
-            if len(chunk.sequence) > 0:
-                stmt = fragment_chunk_location_table.insert().values(
-                    fragment_id=self.id, chunk_id=chunk.id,
-                    base_first=i, base_last=i+len(chunk.sequence)-1,
-                )
-                self.conn.execute(stmt)
-                i += len(chunk.sequence)
-
-    def commit(self):
-        # add fragment chunk location index if we have not been keeping it
-        if not self.can_use_location_index():
-            self._index_fragment_chunk_locations()
-        return super(Fragment_Updater, self).commit()
 
     def insert_bases(self, before_base1, sequence):
         # find chunks before and containing the insertion point
-        prev_chunk_id, chunk_id = self._find_and_split_before(before_base1)
+        prev_chunk, chunk = self._find_and_split_before(before_base1)
 
         # create new chunk
-        new_chunk = self._add_chunk(sequence, self._fragment_id)
+        new_chunk = self._add_chunk(sequence, self)
 
-        if prev_chunk_id is not None:  # add chunks after prev_chunk_id
-            self._add_edges(prev_chunk_id, Edge(prev_chunk_id, self._fragment_id, new_chunk))
+        if prev_chunk is not None:  # add chunks after prev_chunk_id
+            self._add_edges(prev_chunk, Edge(from_chunk=prev_chunk_id, fragment=self, to_chunk=new_chunk))
 
         else:  # add chunks at start of fragment
-            self._set_start_chunk_id(new_chunk)
+            self.start_chunk = new_chunk
 
-        # chunk_id may be None, but that's okay, we want to make sure this chunk is
-        # the END and not going to be superseded by child fragment appending more
-        # chunks!
-        self._add_edges(new_chunk, Edge(new_chunk, self._fragment_id, chunk_id))
+        # chunk may be None, but that's okay, we want to make sure this chunk
+        # is the END and not going to be superseded by child fragment appending
+        # more chunks!
+        self._add_edges(new_chunk, Edge(from_chunk=new_chunk, fragment=self, to_chunk=chunk))
 
-        # update location index
-        if self.can_use_location_index():
+        # shift base_first and base_last for existing chunks
+        if before_base1 is not None:
+            self.fragment_chunk_location_set.filter(base_first__ge=before_base1)
+                                            .update(base_first=F('base_first')+len(sequence),
+                                                    base_last=F('base_last')+len(sequence))
 
-            # shift base_first and base_last for existing chunks
-            if before_base1 is not None:
-                update_stmt = \
-                    fragment_chunk_location_table.update()\
-                    .where(and_(fragment_chunk_location_table.c.fragment_id == self._fragment_id,
-                                fragment_chunk_location_table.c.base_first >= before_base1))\
-                    .values(base_first=fragment_chunk_location_table.c.base_first+len(sequence),
-                            base_last=fragment_chunk_location_table.c.base_last+len(sequence))
-                self.conn.execute(update_stmt)
-
-            # insert location for new chunk
-            if before_base1 is not None:
-                insert_stmt = \
-                    fragment_chunk_location_table.insert()\
-                    .values(fragment_id=self._fragment_id, chunk_id=new_chunk,
-                            base_first=before_base1, base_last=before_base1+len(sequence)-1)
-                self.conn.execute(insert_stmt)
-            else:
-                fragment_length = self.length
-                insert_stmt = \
-                    fragment_chunk_location_table.insert()\
-                    .values(fragment_id=self._fragment_id, chunk_id=new_chunk,
-                            base_first=fragment_length+1,
-                            base_last=fragment_length+1+len(sequence)-1)
-                self.conn.execute(insert_stmt)
+        # insert location for new chunk
+        if before_base1 is not None:
+            self.fragment_chunk_location_set.create(
+              chunk=new_chunk, base_first=before_base1, base_last=before_base1+len(sequence)-1
+            )
+        else:
+            fragment_length = self.length
+            self.fragment_chunk_location_set.create(
+              chunk=new_chunk, base_first=fragment_length+1, base_last=fragment_length+1+len(sequence)-1
+            )
 
     def remove_bases(self, before_base1, length):
         if length <= 0:
@@ -311,44 +227,33 @@ class Fragment_Updater(Fragment_Writer):
         if before_base1 is None:
             raise Exception('Missing position to remove sequences')
 
-        prev_chunk_id, removal_start = self._find_and_split_before(before_base1)
-        removal_end, next_chunk_id = self._find_and_split_before(before_base1+length)
+        prev_chunk, removal_start = self._find_and_split_before(before_base1)
+        removal_end, next_chunk = self._find_and_split_before(before_base1+length)
 
-        if prev_chunk_id is not None:  # remove chunks after prev_chunk_id
-            if next_chunk_id:  # delete prior to end of fragment
-                self._add_edges(prev_chunk_id,
-                                Edge(prev_chunk_id, self._fragment_id, next_chunk_id))
+        if prev_chunk is not None:  # remove chunks after prev_chunk_id
+            if next_chunk:  # delete prior to end of fragment
+                self._add_edges(prev_chunk,
+                                Edge(from_chunk=prev_chunk, fragment=self, to_chunk=next_chunk))
             else:
                 # delete all remaining chunks in fragment by adding an edge with None
                 # as target, superseding any child that may have added chunks after
                 # prev_chunk_id
-                self._add_edges(prev_chunk_id,
-                                Edge(prev_chunk_id, self._fragment_id, None))
+                self._add_edges(prev_chunk,
+                                Edge(from_chunk=prev_chunk, fragment=self, to_chunk=None))
 
         else:  # remove chunks at start of fragment
             if next_chunk_id is None:
                 raise Exception('Cannot remove entire fragment')
-            self._set_start_chunk_id(next_chunk_id)
+            self.start_chunk = next_chunk
 
-        # update location index
-        if self.can_use_location_index():
+        # remove location for deleted chunks
+        self.fragment_chunk_location_set.filter(base_first__ge=before_base1,
+                                                base_first__lt=before_base1+length).delete()
 
-            # remove location for deleted chunks
-            remove_stmt = \
-                fragment_chunk_location_table.delete()\
-                .where(and_(fragment_chunk_location_table.c.fragment_id == self._fragment_id,
-                            fragment_chunk_location_table.c.base_first >= before_base1,
-                            fragment_chunk_location_table.c.base_first < before_base1+length))
-            self.conn.execute(remove_stmt)
-
-            # shift base_first and base_last for existing chunks
-            update_stmt = \
-                fragment_chunk_location_table.update()\
-                .where(and_(fragment_chunk_location_table.c.fragment_id == self._fragment_id,
-                            fragment_chunk_location_table.c.base_first > before_base1))\
-                .values(base_first=fragment_chunk_location_table.c.base_first-length,
-                        base_last=fragment_chunk_location_table.c.base_last-length)
-            self.conn.execute(update_stmt)
+        # shift base_first and base_last for existing chunks
+        self.fragment_chunk_location_set.filter(base_first__gt=before_base1)\
+                                        .update(base_first=F('base_first')-length,
+                                                base_last=F('base_last')-length)
 
     def replace_bases(self, before_base1, length_to_remove, sequence):
 
@@ -363,56 +268,46 @@ class Fragment_Updater(Fragment_Writer):
     def insert_fragment(self, before_base1, fragment):
 
         # find chunks before and containing the insertion point
-        prev_chunk_id, my_next_chunk_id = self._find_and_split_before(before_base1)
+        prev_chunk, my_next_chunk = self._find_and_split_before(before_base1)
 
         # for each chunk in inserted fragment, add an edge for current fragment
-        last_chunk_id = prev_chunk_id
+        last_chunk = prev_chunk
         fragment_length = 0
         for chunk in fragment.chunks():
             # also compute how long fragment is
             fragment_length += len(chunk.sequence)
-            if last_chunk_id is None:  # add new chunks at start of fragment
-                self._set_start_chunk_id(chunk.id)
+            if last_chunk is None:  # add new chunks at start of fragment
+                self.start_chunk = chunk
             else:
-                self._assert_not_linked_to(chunk.id)
-                self._add_edges(last_chunk_id, Edge(last_chunk_id, self._fragment_id, chunk.id))
-            last_chunk_id = chunk.id
+                self._assert_not_linked_to(chunk)
+                self._add_edges(last_chunk, Edge(from_chunk=last_chunk, fragment=self, to_chunk=chunk))
+            last_chunk = chunk
 
-        # my_next_chunk_id may be None, but that's okay, we want to make sure this
+        # my_next_chunk may be None, but that's okay, we want to make sure this
         # chunk is the END and not going to be superseded by child fragment
         # appending more chunks!
-        self._assert_not_linked_to(my_next_chunk_id)
-        self._add_edges(last_chunk_id, Edge(last_chunk_id, self._fragment_id, my_next_chunk_id))
+        self._assert_not_linked_to(my_next_chunk)
+        self._add_edges(last_chunk, Edge(from_chunk=last_chunk, fragment=self, to_chunk=my_next_chunk))
 
-        # update location index
-        if self.can_use_location_index():
+        # shift base_first and base_last for existing chunks
+        if before_base1 is not None:
+            self.fragment_chunk_location_set.filter(base_first__ge=before_base1)\
+                                            .update(base_first=F('base_first')+fragment_length,
+                                                    base_last=F('base_last')+fragment_length)
 
-            # shift base_first and base_last for existing chunks
+        # add location for new chunks in the new fragment
+        values = []
+        c = 0
+        for chunk in fragment.chunks():
             if before_base1 is not None:
-                update_stmt = fragment_chunk_location_table.update()\
-                    .where(and_(fragment_chunk_location_table.c.fragment_id == self._fragment_id,
-                                fragment_chunk_location_table.c.base_first >= before_base1))\
-                    .values(base_first=fragment_chunk_location_table.c.base_first+fragment_length,
-                            base_last=fragment_chunk_location_table.c.base_last+fragment_length)
-                self.conn.execute(update_stmt)
-
-            # add location for new chunks in the new fragment
-            values = []
-            c = 0
-            for chunk in fragment.chunks():
-                if before_base1 is not None:
-                    values.append(dict(fragment_id=self._fragment_id,
-                                       chunk_id=chunk.id,
-                                       base_first=before_base1+c,
-                                       base_last=before_base1+c+len(chunk.sequence)-1))
-                else:
-                    values.append(dict(fragment_id=self._fragment_id,
-                                       chunk_id=chunk.id,
-                                       base_first=self.length+1+c,
-                                       base_last=self.length+1+c+len(chunk.sequence)-1))
-                c += len(chunk.sequence)
-            insert_stmt = fragment_chunk_location_table.insert()
-            self.conn.execute(insert_stmt, values)
+                self.fragment_chunk_location_set.create(
+                  chunk=chunk, base_first=before_base1+c, base_last=before_base1+c+len(chunk.sequence)-1
+                )
+            else:
+                self.fragment_chunk_location_set.create(
+                  chunk=chunk, base_first=self.length+1+c, base_last=self.length+1+c+len(chunk.sequence)-1
+                )
+            c += len(chunk.sequence)
 
     def replace_with_fragment(self, before_base1, length_to_remove, fragment):
 

@@ -132,6 +132,10 @@ class Fragment(models.Model):
 
         return new_fragment
 
+    def annotate(self):
+        from edge.fragment_writer import Fragment_Annotator
+        return Fragment_Annotator.objects.get(pk=self.pk)
+
 
 class Chunk(models.Model):
     class Meta:
