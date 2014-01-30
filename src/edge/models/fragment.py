@@ -53,6 +53,24 @@ class Annotation(object):
         return annotations
 
 
+class BigIntPrimaryModel(models.Model):
+    class Meta:
+        app_label = "edge"
+        abstract = True
+
+    id = models.BigIntegerField(primary_key=True)
+
+    def save(self, *args, **kwargs):
+        # mimic auto_increment
+        if self.id is None:
+            klass = type(self)
+            if klass.objects.count() > 0:
+                self.id = klass.objects.order_by('-id')[0].id+1
+            else:
+                self.id = 1
+        return super(BigIntPrimaryModel, self).save(*args, **kwargs)
+
+
 class Fragment(models.Model):
     class Meta:
         app_label = "edge"
@@ -216,28 +234,18 @@ class Fragment(models.Model):
         return Fragment.objects.get(pk=new_fragment.pk)
 
 
-class Chunk(models.Model):
+class Chunk(BigIntPrimaryModel):
     class Meta:
         app_label = "edge"
 
-    id = models.BigIntegerField(primary_key=True)
     initial_fragment = models.ForeignKey(Fragment)
     sequence = models.TextField(null=True)
 
     def reload(self):
         return Chunk.objects.get(pk=self.pk)
 
-    def save(self, *args, **kwargs):
-        # mimic auto_increment
-        if self.id is None:
-            if Chunk.objects.count() > 0:
-                self.id = Chunk.objects.order_by('-id')[0].id+1
-            else:
-                self.id = 1
-        return super(Chunk, self).save(*args, **kwargs)
 
-
-class Edge(models.Model):
+class Edge(BigIntPrimaryModel):
     class Meta:
         app_label = "edge"
 
@@ -262,28 +270,18 @@ class Chunk_Feature_Manager(models.Manager):
         return super(Chunk_Feature_Manager, self).get_query_set().select_related('chunk', 'feature')
 
 
-class Chunk_Feature(models.Model):
+class Chunk_Feature(BigIntPrimaryModel):
     class Meta:
         app_label = "edge"
 
     objects = Chunk_Feature_Manager()
-    id = models.BigIntegerField(primary_key=True)
     chunk = models.ForeignKey(Chunk)
     feature = models.ForeignKey(Feature)
     feature_base_first = models.IntegerField()
     feature_base_last = models.IntegerField()
 
-    def save(self, *args, **kwargs):
-        # mimic auto_increment
-        if self.id is None:
-            if Chunk_Feature.objects.count() > 0:
-                self.id = Chunk_Feature.objects.order_by('-id')[0].id+1
-            else:
-                self.id = 1
-        return super(Chunk_Feature, self).save(*args, **kwargs)
 
-
-class Fragment_Chunk_Location(models.Model):
+class Fragment_Chunk_Location(BigIntPrimaryModel):
     class Meta:
         app_label = "edge"
         unique_together = (('fragment', 'chunk'),)

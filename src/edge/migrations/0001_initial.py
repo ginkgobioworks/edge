@@ -28,7 +28,7 @@ class Migration(SchemaMigration):
 
         # Adding model 'Edge'
         db.create_table(u'edge_edge', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('id', self.gf('django.db.models.fields.BigIntegerField')(primary_key=True)),
             ('from_chunk', self.gf('django.db.models.fields.related.ForeignKey')(related_name='out_edges', to=orm['edge.Chunk'])),
             ('fragment', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Fragment'])),
             ('to_chunk', self.gf('django.db.models.fields.related.ForeignKey')(related_name='in_edges', null=True, to=orm['edge.Chunk'])),
@@ -57,7 +57,7 @@ class Migration(SchemaMigration):
 
         # Adding model 'Fragment_Chunk_Location'
         db.create_table(u'edge_fragment_chunk_location', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('id', self.gf('django.db.models.fields.BigIntegerField')(primary_key=True)),
             ('fragment', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Fragment'])),
             ('chunk', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Chunk'])),
             ('base_first', self.gf('django.db.models.fields.IntegerField')()),
@@ -135,7 +135,7 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'Edge'},
             'fragment': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Fragment']"}),
             'from_chunk': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'out_edges'", 'to': "orm['edge.Chunk']"}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'id': ('django.db.models.fields.BigIntegerField', [], {'primary_key': 'True'}),
             'to_chunk': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'in_edges'", 'null': 'True', 'to': "orm['edge.Chunk']"})
         },
         'edge.feature': {
@@ -160,7 +160,7 @@ class Migration(SchemaMigration):
             'base_last': ('django.db.models.fields.IntegerField', [], {}),
             'chunk': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Chunk']"}),
             'fragment': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Fragment']"}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
+            'id': ('django.db.models.fields.BigIntegerField', [], {'primary_key': 'True'})
         },
         'edge.genome': {
             'Meta': {'object_name': 'Genome'},
