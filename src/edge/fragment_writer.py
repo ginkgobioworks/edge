@@ -28,9 +28,6 @@ class Fragment_Writer(Fragment):
         chunk.sequence = sequence
         chunk.save()
         Chunk_Feature.objects.filter(chunk=chunk).delete()
-        # if chunk is the start chunk, update the object reference
-        if self.start_chunk.id == chunk.id:
-            self.start_chunk = chunk
 
     def _add_edges(self, chunk, *unsaved_edges):
         existing_edges = list(Edge.objects.filter(from_chunk=chunk))
@@ -187,7 +184,7 @@ class Fragment_Annotator(Fragment_Writer):
             if fc.next_chunk:
                 chunk = fc.next_chunk
             else:
-                chunk = self.start_chunk
+                chunk = self.first_chunk
 
 
 class Fragment_Updater(Fragment_Writer):
@@ -201,9 +198,6 @@ class Fragment_Updater(Fragment_Writer):
 
         # create new chunk
         new_chunk = self._add_chunk(sequence, self)
-
-        if prev_chunk is None:  # add chunks at start of fragment
-            self.start_chunk = new_chunk
 
         # chunk may be None, but that's okay, we want to make sure this chunk
         # is the END and not going to be superseded by child fragment appending
@@ -238,7 +232,6 @@ class Fragment_Updater(Fragment_Writer):
         if prev_chunk is None:  # remove chunks at start of fragment
             if next_chunk is None:
                 raise Exception('Cannot remove entire fragment')
-            self.start_chunk = next_chunk
 
         # remove location for deleted chunks
         self.fragment_chunk_location_set.filter(base_first__gte=before_base1,
@@ -270,8 +263,6 @@ class Fragment_Updater(Fragment_Writer):
         for chunk in fragment.chunks():
             # also compute how long fragment is
             fragment_length += len(chunk.sequence)
-            if last_chunk is None:  # add new chunks at start of fragment
-                self.start_chunk = chunk
             last_chunk = chunk
 
         # my_next_chunk may be None, but that's okay, we want to make sure this

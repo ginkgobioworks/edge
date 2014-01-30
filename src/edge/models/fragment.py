@@ -57,7 +57,15 @@ class Fragment(models.Model):
     circular = models.BooleanField()
     name = models.CharField(max_length=256)
     parent = models.ForeignKey('self', null=True)
-    start_chunk = models.ForeignKey('Chunk', null=True)
+
+    @property
+    def first_chunk(self):
+        q = self.fragment_chunk_location_set.order_by('base_first')[:1]
+        q = list(q)
+        if len(q) == 0:
+            return None
+        else:
+            return q[0].chunk
 
     @property
     def length(self):
@@ -133,9 +141,7 @@ class Fragment(models.Model):
 
     def update(self, name):
         from edge.fragment_writer import Fragment_Updater
-        new_fragment = Fragment_Updater(
-          name=name, circular=self.circular, parent=self, start_chunk=self.start_chunk
-        )
+        new_fragment = Fragment_Updater(name=name, circular=self.circular, parent=self)
         new_fragment.save()
 
         # copy over location index
@@ -160,7 +166,7 @@ class Fragment(models.Model):
     @staticmethod
     def create_with_sequence(name, sequence, circular=False):
         from edge.fragment_writer import Fragment_Updater
-        new_fragment = Fragment_Updater(name=name, circular=circular, parent=None, start_chunk=None)
+        new_fragment = Fragment_Updater(name=name, circular=circular, parent=None)
         new_fragment.save()
         new_fragment.insert_bases(None, sequence)
         new_fragment.save()
