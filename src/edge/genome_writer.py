@@ -1,3 +1,4 @@
+from django.db import transaction
 from contextlib import contextmanager
 from BCBio import GFF
 from edge.models import *
@@ -72,6 +73,7 @@ class Genome_Updater(Genome):
         else:
             raise Exception('Fragment parent not part of the genome')
 
+    @transaction.atomic
     def import_gff(self, gff_fasta_fn):
         in_file = gff_fasta_fn
         in_handle = open(in_file)

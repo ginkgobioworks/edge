@@ -132,22 +132,22 @@ class Fragment_Writer(Fragment):
             self._find_chunk_prev_next_by_location_index(before_base1)
 
         if chunk:
-            sequence = chunk.sequence
             chunk_id = chunk.id
 
         # found the bp we are looking for
         if before_base1 is not None and bases_visited >= before_base1:
+            chunk_len = len(chunk.sequence)
 
             # can avoid splitting if first bp in this chunk is before_base1
-            if bases_visited-len(sequence)+1 == before_base1:
+            if bases_visited-chunk_len+1 == before_base1:
                 #print 'no need to split before %s, which contains %s' % (before_base1, sequence)
                 return prev_chunk, chunk
 
             # otherwise, have to split the chunk
-            first_bp_in_chunk = bases_visited-len(sequence)+1
+            first_bp_in_chunk = bases_visited-chunk_len+1
             bps_to_split = before_base1-first_bp_in_chunk
-            s1 = sequence[0:bps_to_split]
-            s2 = sequence[bps_to_split:]
+            s1 = chunk.sequence[0:bps_to_split]
+            s2 = chunk.sequence[bps_to_split:]
 
             # save original annotations, which will be trashed in _split_chunk (which
             # calls _reset_chunk_sequence)
@@ -174,7 +174,7 @@ class Fragment_Annotator(Fragment_Writer):
     # just delete the new fragment and try again. since annotation does not
     # create new fragment, it should be atomic so changes either all happen or
     # all abort.
-    @transaction.atomic()
+    #@transaction.atomic()
     def annotate(self, first_base1, last_base1, name, type, strand):
         if self.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
