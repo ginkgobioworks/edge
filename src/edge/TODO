@@ -1,4 +1,8 @@
 is next chunk necessary? how do we walk w/o it? just use location index?
   - only using it for inserting fragments
+we also don't need edges, if we are not walking
+
+if we keep edges, resurrect walking method and tests
+
 cache next chunk
 genome#changes very slow?

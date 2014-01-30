@@ -511,90 +511,30 @@ class FragmentTests(TestCase):
         self.assertEquals(next_chunk, None)
         self.assertEquals(bases_visited, 6+len(self.root_sequence))
 
-"""
-class FragmentContextTest(TestCase):
-
-    def setUp(self):
-        self.world = Connector.create_db('/tmp/world.db')
-        self.root_sequence = 'agttcgaggctga'
-        self.root = Fragment.create_with_sequence('Foo', self.root_sequence)
-
-    def test_commits_after_with_block_and_can_access_child_fragment_via_last_updated(self):
-        self.assertEquals(self.root.last_updated(), None)
-        with self.root.update('Bar') as u:
-            u.insert_bases(3, 'gataca')
-        f = self.root.last_updated()
-        self.assertEquals(f.name, 'Bar')
-        self.assertEquals(f.parent_id, self.root.id)
-        self.assertEquals(f.sequence, self.root_sequence[0:2]+'gataca'+self.root_sequence[2:])
-        self.assertEquals(self.root.sequence, self.root_sequence)
-
-    def test_does_not_commit_if_exception_in_block(self):
-        class MyTestException(Exception):
-            pass
-        self.assertEquals(self.root.last_updated(), None)
-        try:
-            with self.root.update('Bar') as u:
-                u.insert_bases(3, 'gataca')
-                raise MyTestException('error')
-        except MyTestException:
-            pass
-        self.assertEquals(self.root.last_updated(), None)
-        self.assertEquals(self.root.sequence, self.root_sequence)
-
-    def test_commits_but_does_not_create_updated_fragment_when_annotating(self):
-        self.assertEquals(self.root.last_updated(), None)
-        self.assertEquals(len(self.root.annotations()), 0)
-        with self.root.annotate() as u:
-            u.annotate(3, 4, 'A', 'gene', 1)
-        self.assertEquals(self.root.last_updated(), None)
-        self.assertEquals(self.root.sequence, self.root_sequence)
-        self.assertEquals(len(self.root.annotations()), 1)
-
 
 class FragmentChunkTest(TestCase):
 
     def setUp(self):
-        self.world = Connector.create_db('/tmp/world.db')
         self.root_sequence = 'agttcgaggctga'
         self.root = Fragment.create_with_sequence('Foo', self.root_sequence)
-
-    def test_next_chunk_id(self):
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'gataca')
-        f = u.save()
-        chunks = [chunk for chunk in f.chunks()]
-        self.assertEquals(chunks[0].next_chunk_id, chunks[1].id)
-        self.assertEquals(chunks[1].next_chunk_id, chunks[2].id)
-        self.assertEquals(chunks[2].next_chunk_id, None)
 
     def test_next_chunk(self):
         u = self.root.update('Bar')
         u.insert_bases(3, 'gataca')
         f = u.save()
         chunks = [chunk for chunk in f.chunks()]
-        self.assertEquals(chunks[0].next_chunk.id, chunks[1].id)
-        self.assertEquals(chunks[1].next_chunk.id, chunks[2].id)
-        self.assertEquals(chunks[2].next_chunk, None)
-
-    def test_prev_chunk(self):
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'gataca')
-        f = u.save()
-        chunks = [chunk for chunk in f.chunks()]
-        self.assertEquals(chunks[0].prev_chunk, None)
-        self.assertEquals(chunks[1].prev_chunk.id, chunks[0].id)
-        self.assertEquals(chunks[2].prev_chunk.id, chunks[1].id)
+        self.assertEquals(f.fragment_chunk(chunks[0]).next_chunk.id, chunks[1].id)
+        self.assertEquals(f.fragment_chunk(chunks[1]).next_chunk.id, chunks[2].id)
+        self.assertEquals(f.fragment_chunk(chunks[2]).next_chunk, None)
 
     def test_location(self):
         u = self.root.update('Bar')
         u.insert_bases(3, 'gataca')
         f = u.save()
         chunks = [chunk for chunk in f.chunks()]
-        self.assertEquals(chunks[0].location, (1, 2))
-        self.assertEquals(chunks[1].location, (3, 8))
-        print chunks[2].sequence
-        self.assertEquals(chunks[2].location, (9, 6+len(self.root_sequence)))
+        self.assertEquals(f.fragment_chunk(chunks[0]).location, (1, 2))
+        self.assertEquals(f.fragment_chunk(chunks[1]).location, (3, 8))
+        self.assertEquals(f.fragment_chunk(chunks[2]).location, (9, 6+len(self.root_sequence)))
 
     def test_annotations(self):
         u = self.root.update('Bar')
@@ -604,11 +544,10 @@ class FragmentChunkTest(TestCase):
         a = f.annotate()
         a.annotate(3, 8, 'A1', 'gene', 1)
         f = a.save()
-        annotations = chunks[1].annotations()
+        annotations = f.fragment_chunk(chunks[1]).annotations()
         self.assertEquals(len(annotations), 1)
-        self.assertEquals(annotations[0].first_bp, None)
-        self.assertEquals(annotations[0].last_bp, None)
-        self.assertEquals(annotations[0].name, 'A1')
-        self.assertEquals(annotations[0].annotation_first_bp, 1)
-        self.assertEquals(annotations[0].annotation_last_bp, 6)
-"""
+        self.assertEquals(annotations[0].base_first, 3)
+        self.assertEquals(annotations[0].base_last, 8)
+        self.assertEquals(annotations[0].feature.name, 'A1')
+        self.assertEquals(annotations[0].feature_base_first, 1)
+        self.assertEquals(annotations[0].feature_base_last, 6)
