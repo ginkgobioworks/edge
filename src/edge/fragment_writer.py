@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import F
 from edge.models import *
 
@@ -171,6 +172,11 @@ class Fragment_Annotator(Fragment_Writer):
         app_label = "edge"
         proxy = True
 
+    # most update operations don't need to be atomic; upon a failure you can
+    # just delete the new fragment and try again. since annotation does not
+    # create new fragment, it should be atomic so changes either all happen or
+    # all abort.
+    @transaction.atomic()
     def annotate(self, first_base1, last_base1, name, type, strand):
         if self.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk

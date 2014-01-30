@@ -1,4 +1,5 @@
 from django.db import models
+from django.db import transaction
 
 
 class Annotation(object):
@@ -114,6 +115,7 @@ class Fragment(models.Model):
                 yield chunk
                 chunk = self.next_chunk(chunk)
 
+    @transaction.atomic()
     def index_fragment_chunk_locations(self):
         # remove old index
         self.fragment_chunk_location_set.all().delete()
