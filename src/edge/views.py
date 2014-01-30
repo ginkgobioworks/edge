@@ -1,95 +1,102 @@
-from flask import Flask, g
-from flask.ext.restful import reqparse, abort, Api, Resource
-
-#
-# Setup App and API
-#
-
-app = Flask(__name__)
-api = Api(app)
-
-app.config.update(dict(
-    DATABASE='/tmp/world.db',
-    DEBUG=True,
-    USERNAME='',
-    PASSWORD='',
-))
+import json
+from django.core.urlresolvers import reverse
+from django.http import HttpResponse
+from django.views.generic.base import View
+from django.shortcuts import get_object_or_404
+from edge.models import *
 
 
-#
-# Handle DB connection
-#
+def get_genome_or_404(pk):
+    return get_object_or_404(Genome, pk=pk)
 
-def connect_db():
-    from edge.connector import Connector
-    connector = getattr(g, '_connector', None)
-    if connector is None:
-        connector = g._connector = Connector.open_db(app.config['DATABASE'])
-    return connector
+def get_fragment_or_404(pk):
+    return get_object_or_404(Fragment, pk=pk)
 
 
-@app.teardown_appcontext
-def close_connection(exception):
-    connector = getattr(g, '_connector', None)
-    if connector is not None:
-        connector.close()
+class ViewBase(View):
+    def get(self, request, *args, **kwargs):
+        res = self.on_get(request, *args, **kwargs)
+        return HttpResponse(json.dumps(res), content_type='application/json')
+
+    def put(self, request, *args, **kwargs):
+        res, status = self.on_put(request, *args, **kwargs)
+        return HttpResponse(json.dumps(res), status=status, content_type='application/json')
+
+    def post(self, request, *args, **kwargs):
+        res, status = self.on_post(request, *args, **kwargs)
+        return HttpResponse(json.dumps(res), status=status, content_type='application/json')
 
 
-def init_db():
-    from edge.connector import Connector
-    Connector.create_db(app.config['DATABASE'])
+class RequestParser(object):
+
+    def __init__(self):
+        self.__args = []
+
+    def add_argument(self, name, field_type, required=False, default=None, location='get'):
+        if type(field_type) not in (list, tuple):
+            if field_type == str:
+                field_type = [str, unicode]
+            else:
+                field_type = [field_type]
+        self.__args.append((name, field_type, required, default, location))
+
+    def parse_args(self, request):
+        json_payload = None
+        args = {}
+        for name, field_type, required, default, location in self.__args:
+            if location == 'get':
+                d = request.GET
+            elif location == 'post':
+                d = request.POST
+            else:
+                if json_payload is None:
+                    json_payload = json.loads(request.body)
+                    d = json_payload
+            if name not in d and required:
+                raise Exception('Missing required field "%s"' % (name,))
+            if name not in d:
+                args[name] = default
+            else:
+                v = d[name]
+                if type(v) not in field_type:
+                    if int in field_type:
+                        v = int(v)
+                    elif float in field_type:
+                        v = float(v)
+                    else:
+                        raise Exception('Field should be of type "%s", got "%s"' % (field_type, type(v)))
+                args[name] = v
+        return args
 
 
-#
-# Actual App/API code
-#
-
-def get_genome_or_404(genome_id):
-    from edge.genome import Genome, GenomeNotFound
-    connector = connect_db()
-    try:
-        return Genome(connector, genome_id)
-    except GenomeNotFound as e:
-        abort(404, message=str(e))
+fragment_parser = RequestParser()
+fragment_parser.add_argument('name', field_type=str, required=True, location='json')
+fragment_parser.add_argument('sequence', field_type=str, required=True, location='json')
+fragment_parser.add_argument('circular', field_type=bool, default=False, location='json')
 
 
-def get_fragment_or_404(fragment_id):
-    from edge.fragment import Fragment_Operator, FragmentNotFound
-    connector = connect_db()
-    try:
-        return Fragment_Operator(connector, fragment_id)
-    except FragmentNotFound as e:
-        abort(404, message=str(e))
-
-
-fragment_parser = reqparse.RequestParser()
-fragment_parser.add_argument('name', type=str, required=True, location='json')
-fragment_parser.add_argument('sequence', type=str, required=True, location='json')
-fragment_parser.add_argument('circular', type=bool, default=False, location='json')
-
-
-class FragmentResource(Resource):
+class FragmentView(ViewBase):
 
     @staticmethod
     def to_dict(fragment):
         return dict(id=fragment.id,
-                    uri=api.url_for(FragmentResource, fragment_id=fragment.id),
+                    uri=reverse('fragment', kwargs=dict(fragment_id=fragment.id)),
                     name=fragment.name,
                     circular=fragment.circular,
                     length=fragment.length)
 
-    def get(self, fragment_id):
+    def on_get(self, request, fragment_id):
         fragment = get_fragment_or_404(fragment_id)
-        return FragmentResource.to_dict(fragment)
+        return FragmentView.to_dict(fragment)
 
 
-class FragmentSequenceResource(Resource):
+class FragmentSequenceView(ViewBase):
 
-    def get(self, fragment_id):
-        q_parser = reqparse.RequestParser()
-        q_parser.add_argument('f', type=int, location='args')
-        q_parser.add_argument('l', type=int, location='args')
-        args = q_parser.parse_args()
+    def on_get(self, request, fragment_id):
+        q_parser = RequestParser()
+        q_parser.add_argument('f', field_type=int, location='get')
+        q_parser.add_argument('l', field_type=int, location='get')
+        args = q_parser.parse_args(request)
         f = args['f'] if 'f' in args and args['f'] is not None else None
         l = args['l'] if 'l' in args and args['l'] is not None else None
 
@@ -99,259 +106,232 @@ class FragmentSequenceResource(Resource):
             f = 1
         if l is None:
             l = f+len(s)-1
-        return {'sequence': s, 'first_bp': f, 'last_bp': l}
+        return {'sequence': s, 'base_first': f, 'base_last': l}
 
 
-class FragmentAnnotationsResource(Resource):
+class FragmentAnnotationsView(ViewBase):
 
     @staticmethod
     def to_dict(annotation):
-        return dict(first_bp=annotation.first_bp,
-                    last_bp=annotation.last_bp,
-                    name=annotation.name, type=annotation.type, strand=annotation.strand,
-                    annotation_full_length=annotation.annotation_full_length,
-                    annotation_first_bp=annotation.annotation_first_bp,
-                    annotation_last_bp=annotation.annotation_last_bp)
+        return dict(base_first=annotation.base_first, base_last=annotation.base_last,
+                    name=annotation.feature.name,
+                    type=annotation.feature.type,
+                    strand=annotation.feature.strand,
+                    feature_full_length=annotation.feature.length,
+                    feature_base_first=annotation.feature_base_first,
+                    feature_base_last=annotation.feature_base_last)
 
-    def get(self, fragment_id):
-        q_parser = reqparse.RequestParser()
-        q_parser.add_argument('f', type=int, location='args')
-        q_parser.add_argument('l', type=int, location='args')
-        args = q_parser.parse_args()
+    def on_get(self, request, fragment_id):
+        q_parser = RequestParser()
+        q_parser.add_argument('f', field_type=int, location='get')
+        q_parser.add_argument('l', field_type=int, location='get')
+        args = q_parser.parse_args(request)
         f = args['f'] if 'f' in args and args['f'] is not None else None
         l = args['l'] if 'l' in args and args['l'] is not None else None
 
         fragment = get_fragment_or_404(fragment_id)
-        return [FragmentAnnotationsResource.to_dict(annotation)
+        return [FragmentAnnotationsView.to_dict(annotation)
                 for annotation in fragment.annotations(bp_lo=f, bp_hi=l)]
 
-    def post(self, fragment_id):
-        annotation_parser = reqparse.RequestParser()
-        annotation_parser.add_argument('first_bp', type=int, required=True, location='json')
-        annotation_parser.add_argument('last_bp', type=int, required=True, location='json')
-        annotation_parser.add_argument('name', type=str, required=True, location='json')
-        annotation_parser.add_argument('type', type=str, required=True, location='json')
-        annotation_parser.add_argument('strand', type=int, required=True, location='json')
+    def on_post(self, request, fragment_id):
+        annotation_parser = RequestParser()
+        annotation_parser.add_argument('base_first', field_type=int, required=True, location='json')
+        annotation_parser.add_argument('base_last', field_type=int, required=True, location='json')
+        annotation_parser.add_argument('name', field_type=str, required=True, location='json')
+        annotation_parser.add_argument('type', field_type=str, required=True, location='json')
+        annotation_parser.add_argument('strand', field_type=int, required=True, location='json')
 
-        args = annotation_parser.parse_args()
+        args = annotation_parser.parse_args(request)
         fragment = get_fragment_or_404(fragment_id)
-        with fragment.annotate() as u:
-            u.annotate(first_base1=args['first_bp'],
-                       last_base1=args['last_bp'],
-                       annotation_name=args['name'],
-                       annotation_type=args['type'],
-                       strand=args['strand'])
+        u = fragment.annotate()
+        u.annotate(first_base1=args['base_first'],
+                   last_base1=args['base_last'],
+                   name=args['name'],
+                   type=args['type'],
+                   strand=args['strand'])
         return {}, 201
 
 
-class FragmentListResource(Resource):
+class FragmentListView(ViewBase):
 
-    def get(self):
-        connector = connect_db()
-        fragments = connector.non_genomic_fragments()
-        return [FragmentResource.to_dict(fragment) for fragment in fragments]
+    def on_get(self, request):
+        fragments = Fragment.non_genomic_fragments()
+        return [FragmentView.to_dict(fragment) for fragment in fragments]
 
-    def post(self):
-        args = fragment_parser.parse_args()
-        connector = connect_db()
-        fragment = connector.create_fragment_with_sequence(name=args['name'],
-                                                           sequence=args['sequence'],
-                                                           circular=args['circular'])
-        return FragmentResource.to_dict(fragment), 201
+    def on_post(self, request):
+        args = fragment_parser.parse_args(request)
+        fragment = Fragment.create_with_sequence(name=args['name'],
+                                                 sequence=args['sequence'],
+                                                 circular=args['circular'])
+        return FragmentView.to_dict(fragment), 201
 
 
-class GenomeResource(Resource):
+class GenomeView(ViewBase):
 
     @staticmethod
     def to_dict(genome):
         changes = genome.changed_locations_by_fragment()
         changes = {f.id: v for f, v in changes.iteritems()}
         fragments = []
-        for f in genome.fragments():
-            d = FragmentResource.to_dict(f)
+        for f in genome.fragments.all():
+            d = FragmentView.to_dict(f)
             if f.id in changes:
                 d['changes'] = changes[f.id]
             fragments.append(d)
 
         return dict(id=genome.id,
-                    uri=api.url_for(GenomeResource, genome_id=genome.id),
+                    uri=reverse('genome', kwargs=dict(genome_id=genome.id)),
                     name=genome.name,
                     notes=genome.notes,
                     parent_id=genome.parent_id,
                     fragments=fragments)
 
-    def get(self, genome_id):
+    def on_get(self, request, genome_id):
         genome = get_genome_or_404(genome_id)
-        return GenomeResource.to_dict(genome)
+        return GenomeView.to_dict(genome)
 
 
-class GenomeAnnotationsResource(Resource):
+class GenomeAnnotationsView(ViewBase):
 
-    def get(self, genome_id):
+    def on_get(self, request, genome_id):
         genome = get_genome_or_404(genome_id)
-        q_parser = reqparse.RequestParser()
-        q_parser.add_argument('q', type=str, required=True)
-        args = q_parser.parse_args()
+        q_parser = RequestParser()
+        q_parser.add_argument('q', field_type=str, required=True)
+        args = q_parser.parse_args(request)
 
         res = []
         fragment_annotations = genome.find_annotation(args['q'])
         for fragment_id in fragment_annotations:
             fragment = get_fragment_or_404(fragment_id)
             annotations = fragment_annotations[fragment_id]
-            d = FragmentResource.to_dict(fragment)
-            a = [FragmentAnnotationsResource.to_dict(x) for x in annotations]
+            d = FragmentView.to_dict(fragment)
+            a = [FragmentAnnotationsView.to_dict(x) for x in annotations]
             res.append((d, a))
 
         return res
 
 
-class GenomeFragmentListResource(Resource):
+class GenomeFragmentListView(ViewBase):
 
-    def post(self, genome_id):  # adding new fragment
-        args = fragment_parser.parse_args()
+    def on_post(self, request, genome_id):  # adding new fragment
+        args = fragment_parser.parse_args(request)
         genome = get_genome_or_404(genome_id)
         fragment = None
-        with genome._edit() as u:
-            fragment = \
-                u.add_fragment(name=args['name'], sequence=args['sequence'],
-                               circular=args['circular'], annotate=False)
-        return FragmentResource.to_dict(fragment), 201
+        u = genome.edit()
+        fragment = u.add_fragment(name=args['name'], sequence=args['sequence'],
+                                  circular=args['circular'])
+        return FragmentView.to_dict(fragment), 201
 
 
-class GenomeFragmentResource(Resource):
+class GenomeFragmentView(ViewBase):
 
-    def insert_bases(self, genome_id, fragment_id):
-        op_parser = reqparse.RequestParser()
-        op_parser.add_argument('name', type=str, required=True, location='json')
-        op_parser.add_argument('before_bp', type=int, required=True, location='json')
-        op_parser.add_argument('sequence', type=str, required=True, location='json')
-        args = op_parser.parse_args()
-
-        genome = get_genome_or_404(genome_id)
-        fragment = get_fragment_or_404(fragment_id)
-
-        with genome.update(name=args['name']) as u:
-            with u.update_fragment_by_fragment_id(fragment.id) as f:
-                f.insert_bases(args['before_bp'], args['sequence'])
-        g2 = genome.last_updated()
-        return GenomeResource.to_dict(g2), 201
-
-    def remove_bases(self, genome_id, fragment_id):
-        op_parser = reqparse.RequestParser()
-        op_parser.add_argument('name', type=str, required=True, location='json')
-        op_parser.add_argument('before_bp', type=int, required=True, location='json')
-        op_parser.add_argument('length', type=int, required=True, location='json')
-        args = op_parser.parse_args()
+    def insert_bases(self, request, genome_id, fragment_id):
+        op_parser = RequestParser()
+        op_parser.add_argument('name', field_type=str, required=True, location='json')
+        op_parser.add_argument('before_bp', field_type=int, required=True, location='json')
+        op_parser.add_argument('sequence', field_type=str, required=True, location='json')
+        args = op_parser.parse_args(request)
 
         genome = get_genome_or_404(genome_id)
         fragment = get_fragment_or_404(fragment_id)
 
-        with genome.update(name=args['name']) as u:
-            with u.update_fragment_by_fragment_id(fragment.id) as f:
-                f.remove_bases(args['before_bp'], args['length'])
-        g2 = genome.last_updated()
-        return GenomeResource.to_dict(g2), 201
+        u = genome.update(name=args['name'])
+        with u.update_fragment_by_fragment_id(fragment.id) as f:
+            f.insert_bases(args['before_bp'], args['sequence'])
+        return GenomeView.to_dict(u), 201
 
-    def replace_bases(self, genome_id, fragment_id):
-        op_parser = reqparse.RequestParser()
-        op_parser.add_argument('name', type=str, required=True, location='json')
-        op_parser.add_argument('before_bp', type=int, required=True, location='json')
-        op_parser.add_argument('length', type=int, required=True, location='json')
-        op_parser.add_argument('sequence', type=str, required=True, location='json')
-        args = op_parser.parse_args()
+    def remove_bases(self, request, genome_id, fragment_id):
+        op_parser = RequestParser()
+        op_parser.add_argument('name', field_type=str, required=True, location='json')
+        op_parser.add_argument('before_bp', field_type=int, required=True, location='json')
+        op_parser.add_argument('length', field_type=int, required=True, location='json')
+        args = op_parser.parse_args(request)
 
         genome = get_genome_or_404(genome_id)
         fragment = get_fragment_or_404(fragment_id)
 
-        with genome.update(name=args['name']) as u:
-            with u.update_fragment_by_fragment_id(fragment.id) as f:
-                f.replace_bases(args['before_bp'], args['length'], args['sequence'])
-        g2 = genome.last_updated()
-        return GenomeResource.to_dict(g2), 201
+        u = genome.update(name=args['name'])
+        with u.update_fragment_by_fragment_id(fragment.id) as f:
+            f.remove_bases(args['before_bp'], args['length'])
+        return GenomeView.to_dict(u), 201
 
-    def insert_fragment(self, genome_id, fragment_id):
-        op_parser = reqparse.RequestParser()
-        op_parser.add_argument('name', type=str, required=True, location='json')
-        op_parser.add_argument('before_bp', type=int, required=True, location='json')
-        op_parser.add_argument('fragment_id', type=int, required=True, location='json')
-        args = op_parser.parse_args()
+    def replace_bases(self, request, genome_id, fragment_id):
+        op_parser = RequestParser()
+        op_parser.add_argument('name', field_type=str, required=True, location='json')
+        op_parser.add_argument('before_bp', field_type=int, required=True, location='json')
+        op_parser.add_argument('length', field_type=int, required=True, location='json')
+        op_parser.add_argument('sequence', field_type=str, required=True, location='json')
+        args = op_parser.parse_args(request)
+
+        genome = get_genome_or_404(genome_id)
+        fragment = get_fragment_or_404(fragment_id)
+
+        u = genome.update(name=args['name'])
+        with u.update_fragment_by_fragment_id(fragment.id) as f:
+            f.replace_bases(args['before_bp'], args['length'], args['sequence'])
+        return GenomeView.to_dict(u), 201
+
+    def insert_fragment(self, request, genome_id, fragment_id):
+        op_parser = RequestParser()
+        op_parser.add_argument('name', field_type=str, required=True, location='json')
+        op_parser.add_argument('before_bp', field_type=int, required=True, location='json')
+        op_parser.add_argument('fragment_id', field_type=int, required=True, location='json')
+        args = op_parser.parse_args(request)
 
         genome = get_genome_or_404(genome_id)
         fragment = get_fragment_or_404(fragment_id)
         new_fragment = get_fragment_or_404(args['fragment_id'])
 
-        with genome.update(name=args['name']) as u:
-            with u.update_fragment_by_fragment_id(fragment.id) as f:
-                f.insert_fragment(args['before_bp'], new_fragment)
-        g2 = genome.last_updated()
-        return GenomeResource.to_dict(g2), 201
+        u = genome.update(name=args['name'])
+        with u.update_fragment_by_fragment_id(fragment.id) as f:
+            f.insert_fragment(args['before_bp'], new_fragment)
+        return GenomeView.to_dict(u), 201
 
-    def replace_with_fragment(self, genome_id, fragment_id):
-        op_parser = reqparse.RequestParser()
-        op_parser.add_argument('name', type=str, required=True, location='json')
-        op_parser.add_argument('before_bp', type=int, required=True, location='json')
-        op_parser.add_argument('length', type=int, required=True, location='json')
-        op_parser.add_argument('fragment_id', type=int, required=True, location='json')
-        args = op_parser.parse_args()
+    def replace_with_fragment(self, request, genome_id, fragment_id):
+        op_parser = RequestParser()
+        op_parser.add_argument('name', field_type=str, required=True, location='json')
+        op_parser.add_argument('before_bp', field_type=int, required=True, location='json')
+        op_parser.add_argument('length', field_type=int, required=True, location='json')
+        op_parser.add_argument('fragment_id', field_type=int, required=True, location='json')
+        args = op_parser.parse_args(request)
 
         genome = get_genome_or_404(genome_id)
         fragment = get_fragment_or_404(fragment_id)
         new_fragment = get_fragment_or_404(args['fragment_id'])
 
-        with genome.update(name=args['name']) as u:
-            with u.update_fragment_by_fragment_id(fragment.id) as f:
-                f.replace_with_fragment(args['before_bp'], args['length'], new_fragment)
-        g2 = genome.last_updated()
-        return GenomeResource.to_dict(g2), 201
+        u = genome.update(name=args['name'])
+        with u.update_fragment_by_fragment_id(fragment.id) as f:
+            f.replace_with_fragment(args['before_bp'], args['length'], new_fragment)
+        return GenomeView.to_dict(u), 201
 
-    def put(self, genome_id, fragment_id):  # updating genome and fragment
-        op_parser = reqparse.RequestParser()
-        op_parser.add_argument('op', type=str, required=True, location='json')
-        args = op_parser.parse_args()
+    def on_put(self, request, genome_id, fragment_id):  # updating genome and fragment
+        op_parser = RequestParser()
+        op_parser.add_argument('op', field_type=str, required=True, location='json')
+        args = op_parser.parse_args(request)
 
         if args['op'] == 'insert_bases':
-            return self.insert_bases(genome_id, fragment_id)
+            return self.insert_bases(request, genome_id, fragment_id)
         elif args['op'] == 'remove_bases':
-            return self.remove_bases(genome_id, fragment_id)
+            return self.remove_bases(request, genome_id, fragment_id)
         elif args['op'] == 'replace_bases':
-            return self.replace_bases(genome_id, fragment_id)
+            return self.replace_bases(request, genome_id, fragment_id)
         elif args['op'] == 'insert_fragment':
-            return self.insert_fragment(genome_id, fragment_id)
+            return self.insert_fragment(request, genome_id, fragment_id)
         elif args['op'] == 'replace_with_fragment':
-            return self.replace_with_fragment(genome_id, fragment_id)
+            return self.replace_with_fragment(request, genome_id, fragment_id)
 
 
-class GenomeListResource(Resource):
+class GenomeListView(ViewBase):
 
-    def get(self):
-        connector = connect_db()
-        genomes = connector.genomes()
-        return [GenomeResource.to_dict(genome) for genome in genomes]
+    def on_get(self, request):
+        genomes = Genome.objects.all()
+        return [GenomeView.to_dict(genome) for genome in genomes]
 
-    def post(self):
-        genome_parser = reqparse.RequestParser()
-        genome_parser.add_argument('name', type=str, required=True, location='json')
-        genome_parser.add_argument('notes', type=str, location='json')
+    def on_post(self, request):
+        genome_parser = RequestParser()
+        genome_parser.add_argument('name', field_type=str, required=True, location='json')
+        genome_parser.add_argument('notes', field_type=str, location='json')
 
-        args = genome_parser.parse_args()
-        connector = connect_db()
-        genome = connector.create_genome(name=args['name'], notes=args['notes'])
-        return GenomeResource.to_dict(genome), 201
-
-
-#
-# Setup routing
-#
-
-api.add_resource(FragmentListResource, '/fragments')
-api.add_resource(FragmentResource, '/fragments/<int:fragment_id>')
-api.add_resource(FragmentSequenceResource, '/fragments/<int:fragment_id>/sequence')
-api.add_resource(FragmentAnnotationsResource, '/fragments/<int:fragment_id>/annotations')
-api.add_resource(GenomeListResource, '/genomes')
-api.add_resource(GenomeResource, '/genomes/<int:genome_id>')
-api.add_resource(GenomeAnnotationsResource, '/genomes/<int:genome_id>/annotations')
-api.add_resource(GenomeFragmentListResource, '/genomes/<int:genome_id>/fragments')
-api.add_resource(GenomeFragmentResource, '/genomes/<int:genome_id>/fragments/<int:fragment_id>')
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+        args = genome_parser.parse_args(request)
+        genome = Genome.create(name=args['name'], notes=args['notes'])
+        return GenomeView.to_dict(genome), 201
