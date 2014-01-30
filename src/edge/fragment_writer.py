@@ -164,7 +164,6 @@ class Fragment_Writer(Fragment):
             return prev_chunk, None
 
 
-
 class Fragment_Annotator(Fragment_Writer):
     class Meta:
         app_label = "edge"
@@ -174,7 +173,8 @@ class Fragment_Annotator(Fragment_Writer):
     # just delete the new fragment and try again. since annotation does not
     # create new fragment, it should be atomic so changes either all happen or
     # all abort.
-    #@transaction.atomic()
+
+    @transaction.atomic()
     def annotate(self, first_base1, last_base1, name, type, strand):
         if self.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
@@ -186,6 +186,7 @@ class Fragment_Annotator(Fragment_Writer):
 
         prev_chunk, annotation_start = self._find_and_split_before(first_base1)
         annotation_end, next_chunk = self._find_and_split_before(last_base1+1)
+
         # did two splits, so must reload annotation_start in case that got splitted
         annotation_start = annotation_start.reload()
 

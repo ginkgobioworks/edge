@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db import connection
 from contextlib import contextmanager
 from BCBio import GFF
 from edge.models import *
@@ -77,6 +78,12 @@ class Genome_Updater(Genome):
     def import_gff(self, gff_fasta_fn):
         in_file = gff_fasta_fn
         in_handle = open(in_file)
+        
+        # In DEBUG=True mode, Django keeps list of queries and blows up memory
+        # usage when doing a big import. The following line disables this
+        # logging.
+        connection.use_debug_cursor = False
+
         for rec in GFF.parse(in_handle):
             print '%s: %s' % (rec.id, len(str(rec.seq)))
             f = self.add_fragment(rec.id, str(rec.seq))
@@ -96,4 +103,10 @@ class Genome_Updater(Genome):
                            name,
                            feature.type,
                            feature.strand)
+
+                # Just in case use_debug_cursor does not work
+                connection.queries = []
+
+        # Be nice and turn debug cursor back on
+        connection.use_debug_cursor = True
         in_handle.close()
