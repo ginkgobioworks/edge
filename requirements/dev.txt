@@ -3,6 +3,3 @@
 # testing
 nose
 django-nose
-
-# code checking
-pep8

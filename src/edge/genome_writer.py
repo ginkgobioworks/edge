@@ -76,9 +76,9 @@ class Genome_Updater(Genome):
         in_file = gff_fasta_fn
         in_handle = open(in_file)
         for rec in GFF.parse(in_handle):
+            print '%s: %s' % (rec.id, len(str(rec.seq)))
             f = self.add_fragment(rec.id, str(rec.seq))
             f = f.annotate()
-            #print '%s: %s' % (rec.id, len(str(rec.seq)))
             for feature in rec.features:
                 # skip features that cover the entire sequence
                 if feature.location.start == 0 and feature.location.end == len(str(rec.seq)):
@@ -88,12 +88,11 @@ class Genome_Updater(Genome):
                     name = feature.qualifiers['gene'][0]
                 elif 'Name' in feature.qualifiers:
                     name = feature.qualifiers['Name'][0]
-                # start in Genbank format is start after, so +1 here
-                f.annotate(feature.location.start+1,
+                print '  %s %s: %s %s' % (feature.type, name, feature.location, feature.strand)
+                f.annotate(feature.location.start+1,  # start in Genbank format is start after, so +1 here
                            feature.location.end,
                            name,
                            feature.type,
                            feature.strand)
-                #print '      %s %s: %s %s' % (feature.type, name, feature.location, feature.strand)
             f.save()
         in_handle.close()

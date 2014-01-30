@@ -130,6 +130,7 @@ class Fragment_Writer(Fragment):
 
         prev_chunk, chunk, next_chunk, bases_visited = \
             self._find_chunk_prev_next_by_location_index(before_base1)
+
         if chunk:
             sequence = chunk.sequence
             chunk_id = chunk.id
@@ -162,9 +163,6 @@ class Fragment_Writer(Fragment):
         else:  # found end of the fragment
             return prev_chunk, None
 
-    def save(self, *args, **kwargs):
-        super(Fragment_Writer, self).save(*args, **kwargs)
-        return Fragment.objects.get(pk=self.pk)
 
 
 class Fragment_Annotator(Fragment_Writer):
