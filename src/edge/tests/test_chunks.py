@@ -105,10 +105,10 @@ class FragmentTests(TestCase):
     def test_insert_sequence_at_end_then_insert_again(self):
         u = self.root.update('Bar')
         u.insert_bases(None, 'gataca')
-        f1 = u.save()
+        f1 = u
         u = f1.update('Bar')
         u.insert_bases(None, 'aaaa')
-        f2 = u.save()
+        f2 = u
         self.assertEquals(f2.sequence, self.root_sequence+'gatacaaaaa')
         self.assertEquals(f1.sequence, self.root_sequence+'gataca')
         self.assertEquals(self.root.sequence, self.root_sequence)
@@ -118,7 +118,6 @@ class FragmentTests(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        new_f = new_f.save()
         u.insert_fragment(3, new_f)
         self.assertRaises(Exception, u.insert_fragment, 3, new_f)
 
@@ -127,7 +126,6 @@ class FragmentTests(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        new_f = new_f.save()
         u.insert_fragment(3, new_f)
         f = u
         self.assertEquals(f.sequence, self.root_sequence[0:2]+'gcccataca'+self.root_sequence[2:])
@@ -139,7 +137,6 @@ class FragmentTests(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        new_f = new_f.save()
         u.insert_fragment(1, new_f)
         f = u
         self.assertEquals(f.sequence, 'gcccataca'+self.root_sequence)
@@ -151,7 +148,6 @@ class FragmentTests(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        new_f = new_f.save()
         u.insert_fragment(None, new_f)
         f = u
         self.assertEquals(f.sequence, self.root_sequence+'gcccataca')
@@ -163,12 +159,11 @@ class FragmentTests(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        new_f = new_f.save()
         u.insert_fragment(None, new_f)
-        f1 = u.save()
+        f1 = u
         u = f1.update('Bar')
         u.insert_bases(None, 'aaaa')
-        f2 = u.save()
+        f2 = u
         self.assertEquals(f2.sequence, self.root_sequence+'gcccatacaaaaa')
         self.assertEquals(f1.sequence, self.root_sequence+'gcccataca')
         self.assertEquals(self.root.sequence, self.root_sequence)
@@ -188,7 +183,6 @@ class FragmentTests(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.annotate()
         new_f.annotate(2, 4, 'Uma', 'feature', 1)
-        new_f = new_f.save()
         u.insert_fragment(2, new_f)
         f = u
         self.assertEquals([a for a in f.annotations() if a.feature.name == 'Uma'][0].base_first, 3)
@@ -236,10 +230,10 @@ class FragmentTests(TestCase):
         u = self.root.update('Bar')
         # removing before 4th to last bp, remove 4 bases
         u.remove_bases(len(self.root_sequence)-3, 4)
-        f1 = u.save()
+        f1 = u
         u = f1.update('Bar')
         u.insert_bases(None, 'aaaa')
-        f2 = u.save()
+        f2 = u
         self.assertEquals(f2.sequence, self.root_sequence[:-4]+'aaaa')
         self.assertEquals(f1.sequence, self.root_sequence[:-4])
         self.assertEquals(self.root.sequence, self.root_sequence)
@@ -286,10 +280,10 @@ class FragmentTests(TestCase):
         u = self.root.update('Bar')
         # removing before 6th to last bp, remove 6 bases
         u.replace_bases(len(self.root_sequence)-5, 6, 'cccc')
-        f1 = u.save()
+        f1 = u
         u = f1.update('Bar')
         u.insert_bases(None, 'aaaa')
-        f2 = u.save()
+        f2 = u
         self.assertEquals(f2.sequence, self.root_sequence[:-6]+'ccccaaaa')
         self.assertEquals(f1.sequence, self.root_sequence[:-6]+'cccc')
         self.assertEquals(self.root.sequence, self.root_sequence)
@@ -299,7 +293,6 @@ class FragmentTests(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        new_f = new_f.save()
         u.replace_with_fragment(3, 6, new_f)
         f = u
         self.assertEquals(f.name, 'Bar')
@@ -312,7 +305,6 @@ class FragmentTests(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        new_f = new_f.save()
         u.replace_with_fragment(1, 6, new_f)
         f = u
         self.assertEquals(f.name, 'Bar')
@@ -325,7 +317,6 @@ class FragmentTests(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        new_f = new_f.save()
         u.replace_with_fragment(len(self.root_sequence)-5, 6, new_f)
         f = u
         self.assertEquals(f.name, 'Bar')
@@ -338,7 +329,6 @@ class FragmentTests(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        new_f = new_f.save()
         u.replace_with_fragment(len(self.root_sequence)-3, 6, new_f)
         f = u
         self.assertEquals(f.name, 'Bar')
@@ -351,12 +341,11 @@ class FragmentTests(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        new_f = new_f.save()
         u.replace_with_fragment(len(self.root_sequence)-5, 6, new_f)
-        f1 = u.save()
+        f1 = u
         u = f1.update('Bar')
         u.insert_bases(None, 'aaaa')
-        f2 = u.save()
+        f2 = u
         self.assertEquals(f2.sequence, self.root_sequence[:-6]+'gcccatacaaaaa')
         self.assertEquals(f1.sequence, self.root_sequence[:-6]+'gcccataca')
         self.assertEquals(self.root.sequence, self.root_sequence)
@@ -409,10 +398,10 @@ class FragmentTests(TestCase):
     def test_insert_at_end_for_two_fragments(self):
         u = self.root.update('Bar')
         u.insert_bases(None, 'gataca')
-        f1 = u.save()
+        f1 = u
         u = f1.update('Baz')
         u.insert_bases(None, 'atatat')
-        f2 = u.save()
+        f2 = u
         self.assertEquals(f2.sequence, self.root_sequence+'gataca'+'atatat')
         self.assertEquals(f1.sequence, self.root_sequence+'gataca')
         self.assertEquals(self.root.sequence, self.root_sequence)
@@ -420,13 +409,13 @@ class FragmentTests(TestCase):
     def test_remove_then_insert(self):
         u = self.root.update('Bar')
         u.insert_bases(None, 'gataca')
-        f1 = u.save()
+        f1 = u
         u = f1.update('Baz')
         u.remove_bases(len(self.root_sequence)+1, 6)
-        f2 = u.save()
+        f2 = u
         u = f2.update('Far')
         u.insert_bases(None, 'atatat')
-        f3 = u.save()
+        f3 = u
         self.assertEquals(f3.sequence, self.root_sequence+'atatat')
         self.assertEquals(f2.sequence, self.root_sequence)
         self.assertEquals(f1.sequence, self.root_sequence+'gataca')
@@ -460,11 +449,35 @@ class FragmentTests(TestCase):
         self.assertEquals(prev.out_edges.all()[1].to_chunk_id, 102)
         self.assertEquals(prev.out_edges.all()[1].fragment_id, 101)
 
+    def test_find_chunk_by_edge_and_indexing_fragment_chunk_locations(self):
+        u = self.root.update('Bar')
+        u.insert_bases(3, 'gataca')
+        f = u
+        a = f.annotate()
+        a.annotate(3, 5, 'A1', 'gene', 1)
+
+        # there should now be 4 chunks for f
+        self.assertEquals([c.sequence for c in f.chunks()],
+                          [self.root_sequence[0:2], 'gat', 'aca', self.root_sequence[2:]])
+        self.assertEquals(f.has_location_index, True)
+
+        # now remove all fragment chunk indices
+        f.fragment_chunk_location_set.all().delete()
+        self.assertEquals(f.has_location_index, False)
+        # can still get chunks by walking edges
+        self.assertEquals([c.sequence for c in f.chunks(force_walk=True)],
+                          [self.root_sequence[0:2], 'gat', 'aca', self.root_sequence[2:]])
+
+        # re-index
+        f.index_fragment_chunk_locations()
+        self.assertEquals(f.has_location_index, True)
+        self.assertEquals([c.sequence for c in f.chunks()],
+                          [self.root_sequence[0:2], 'gat', 'aca', self.root_sequence[2:]])
+
     def test_find_chunk_by_location_index(self):
         u = self.root.update('Bar')
         u.insert_bases(3, 'gataca')
         f = u
-        f = f.annotate()
 
         # there should now be 3 chunks for f
         self.assertEquals([c.sequence for c in f.chunks()],
@@ -543,7 +556,6 @@ class FragmentChunkTest(TestCase):
         chunks = [chunk for chunk in f.chunks()]
         a = f.annotate()
         a.annotate(3, 8, 'A1', 'gene', 1)
-        f = a.save()
         annotations = f.fragment_chunk(chunks[1]).annotations()
         self.assertEquals(len(annotations), 1)
         self.assertEquals(annotations[0].base_first, 3)

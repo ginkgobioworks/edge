@@ -83,11 +83,28 @@ class Fragment(models.Model):
     def predecessor_priorities(self):
         return {f.id: i for i, f in enumerate(self.predecessors())}
 
+    def next_chunk(self, chunk):
+        # check inheritance hierarchy to figure out which edge to use.
+        if chunk.out_edges.count() == 0:
+            return none
+        else:
+            # sort edges by predecessor level if more than one edge
+            if chunk.out_edges.count() > 1:
+                pp = self.predecessor_priorities()
+                def sorter_f(e):
+                    return pp[e.fragment_id] if e.fragment_id in pp else len(pp)
+                out_edges = sorted(list(chunk.out_edges.all()), key=sorter_f)
+
+            else:
+                out_edges = chunk.out_edges.all()
+
+            return out_edges[0].to_chunk
+
     def fragment_chunk(self, chunk):
         return self.fragment_chunk_location_set.filter(chunk=chunk)[0]
 
-    def chunks(self):
-        if self.has_location_index:
+    def chunks(self, force_walk=False):
+        if force_walk is False and self.has_location_index:
             q = self.fragment_chunk_location_set.select_related('chunk').order_by('base_first')
             for fcl in q:
                 yield fcl.chunk
@@ -95,8 +112,20 @@ class Fragment(models.Model):
             chunk = self.start_chunk
             while chunk is not None:
                 yield chunk
-                fc = self.fragment_chunk(chunk)
-                chunk = fc.next_chunk
+                chunk = self.next_chunk(chunk)
+
+    def index_fragment_chunk_locations(self):
+        # remove old index
+        self.fragment_chunk_location_set.all().delete()
+
+        # go through each chunk and add new index
+        i = 1
+        for chunk in self.chunks(force_walk=True):
+            if len(chunk.sequence) > 0:
+                self.fragment_chunk_location_set.create(
+                  chunk=chunk, base_first=i, base_last=i+len(chunk.sequence)-1
+                )
+                i += len(chunk.sequence)
 
     def get_sequence(self, bp_lo=None, bp_hi=None):
         q = self.fragment_chunk_location_set.select_related('chunk')
@@ -149,17 +178,22 @@ class Fragment(models.Model):
         )
         new_fragment.save()
 
-        # copy over location index
-        for fc in self.fragment_chunk_location_set.all():
-           new_fragment.fragment_chunk_location_set.create(
-               chunk=fc.chunk,
-               base_first=fc.base_first,
-               base_last=fc.base_last
-           )
+        if self.has_location_index:
+          # copy over location index
+          for fc in self.fragment_chunk_location_set.all():
+             new_fragment.fragment_chunk_location_set.create(
+                 chunk=fc.chunk,
+                 base_first=fc.base_first,
+                 base_last=fc.base_last
+             )
+        else:
+          new_fragment.index_fragment_chunk_locations()
 
         return new_fragment
 
     def annotate(self):
+        if not self.has_location_index:
+          self.index_fragment_chunk_locations()
         from edge.fragment_writer import Fragment_Annotator
         return Fragment_Annotator.objects.get(pk=self.pk)
 
@@ -260,41 +294,12 @@ class Fragment_Chunk_Location(models.Model):
         return '%s: %s-%s' % (self.fragment.name, self.location[0], self.location[1])
 
     @property
-    def sequence(self):
-        return self.chunk.sequence
-
-    @property
-    def initial_fragment(self):
-        return self.chunk.initial_fragment
-
-    @property
-    def out_edges(self):
-        return self.chunk.out_edges
-
-    @property
     def next_chunk(self):
-        if self.fragment.has_location_index:
-            for fcl in self.fragment.fragment_chunk_location_set\
-                                    .select_related('chunk')\
-                                    .filter(base_first=self.base_last+1):
-                return fcl.chunk
-            return None
-
-        # check inheritance hierarchy to figure out which edge to use.
-        if self.out_edges.count() == 0:
-            return none
-        else:
-            # sort edges by predecessor level if more than one edge
-            if self.out_edges.count() > 1:
-                pp = self.fragment.predecessor_priorities()
-                def sorter_f(e):
-                    return pp[e.fragment_id] if e.fragment_id in pp else len(pp)
-                out_edges = sorted(list(self.out_edges.all()), key=sorter_f)
-
-            else:
-                out_edges = self.out_edges.all()
-
-            return out_edges[0].to_chunk
+        for fcl in self.fragment.fragment_chunk_location_set\
+                                .select_related('chunk')\
+                                .filter(base_first=self.base_last+1):
+            return fcl.chunk
+        return None
 
     @property
     def location(self):
