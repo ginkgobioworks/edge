@@ -432,34 +432,6 @@ class FragmentTests(TestCase):
         self.assertEquals(f1.sequence, self.root_sequence+'gataca')
         self.assertEquals(self.root.sequence, self.root_sequence)
 
-    def test_add_edges_replaces_existing_edge_with_same_fragment_id(self):
-        u = self.root.update('Bar')
-        prev, cur = u._find_and_split_before(4)
-        self.assertEquals(prev.out_edges.count(), 1)
-        self.assertEquals(prev.out_edges.all()[0].to_chunk_id, cur.id)
-        self.assertEquals(prev.out_edges.all()[0].fragment_id, self.root.id)
-
-        # add new edge, does not overwrite old edge from parent fragment
-        fake_c = Chunk(id=100, initial_fragment=self.root)
-        fake_c.save()
-        u._add_edges(prev, Edge(from_chunk=prev, fragment_id=101, to_chunk=fake_c))
-        self.assertEquals(prev.out_edges.count(), 2)
-        self.assertEquals(prev.out_edges.all()[0].to_chunk_id, cur.id)
-        self.assertEquals(prev.out_edges.all()[0].fragment_id, self.root.id)
-        self.assertEquals(prev.out_edges.all()[1].to_chunk_id, 100)
-        self.assertEquals(prev.out_edges.all()[1].fragment_id, 101)
-
-        # add another edge with fragment id 101, does overwrite edge added last
-        # time, with same fragment id
-        fake_c = Chunk(id=102, initial_fragment=self.root)
-        fake_c.save()
-        u._add_edges(prev, Edge(from_chunk=prev, fragment_id=101, to_chunk=fake_c))
-        self.assertEquals(prev.out_edges.count(), 2)
-        self.assertEquals(prev.out_edges.all()[0].to_chunk_id, cur.id)
-        self.assertEquals(prev.out_edges.all()[0].fragment_id, self.root.id)
-        self.assertEquals(prev.out_edges.all()[1].to_chunk_id, 102)
-        self.assertEquals(prev.out_edges.all()[1].fragment_id, 101)
-
     def test_find_chunk_by_location_index(self):
         u = self.root.update('Bar')
         u.insert_bases(3, 'gataca')

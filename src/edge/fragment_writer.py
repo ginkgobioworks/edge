@@ -32,10 +32,6 @@ class Fragment_Writer(Fragment):
         if self.start_chunk.id == chunk.id:
             self.start_chunk = chunk
 
-    def _assert_not_linked_to(self, chunk):
-        if Edge.objects.filter(to_chunk=chunk, fragment=self).count() > 0:
-            raise Exception('Fragment %s already linked to chunk %s' % (self.id, chunk.id))
-
     def _add_edges(self, chunk, *unsaved_edges):
         existing_edges = list(Edge.objects.filter(from_chunk=chunk))
 
@@ -63,14 +59,6 @@ class Fragment_Writer(Fragment):
         # original chunk
         split2 = self._add_chunk(s2, chunk.initial_fragment)
         self._reset_chunk_sequence(chunk, s1)
-
-        # move all edges from original chunk to second chunk
-        Edge.objects.filter(from_chunk=chunk).update(from_chunk=split2)
-        # verify chunk edges been updated
-        assert chunk.out_edges.count() == 0
-
-        # add edge from chunk to split2
-        self._add_edges(chunk, Edge(from_chunk=chunk, fragment=chunk.initial_fragment, to_chunk=split2))
 
         # add location for new chunk
         for fcl in chunk.fragment_chunk_location_set.all():
@@ -210,16 +198,12 @@ class Fragment_Updater(Fragment_Writer):
         # create new chunk
         new_chunk = self._add_chunk(sequence, self)
 
-        if prev_chunk is not None:  # add chunks after prev_chunk_id
-            self._add_edges(prev_chunk, Edge(from_chunk=prev_chunk, fragment=self, to_chunk=new_chunk))
-
-        else:  # add chunks at start of fragment
+        if prev_chunk is None:  # add chunks at start of fragment
             self.start_chunk = new_chunk
 
         # chunk may be None, but that's okay, we want to make sure this chunk
         # is the END and not going to be superseded by child fragment appending
         # more chunks!
-        self._add_edges(new_chunk, Edge(from_chunk=new_chunk, fragment=self, to_chunk=chunk))
 
         # shift base_first and base_last for existing chunks
         if before_base1 is not None:
@@ -247,18 +231,7 @@ class Fragment_Updater(Fragment_Writer):
         prev_chunk, removal_start = self._find_and_split_before(before_base1)
         removal_end, next_chunk = self._find_and_split_before(before_base1+length)
 
-        if prev_chunk is not None:  # remove chunks after prev_chunk_id
-            if next_chunk:  # delete prior to end of fragment
-                self._add_edges(prev_chunk,
-                                Edge(from_chunk=prev_chunk, fragment=self, to_chunk=next_chunk))
-            else:
-                # delete all remaining chunks in fragment by adding an edge with None
-                # as target, superseding any child that may have added chunks after
-                # prev_chunk_id
-                self._add_edges(prev_chunk,
-                                Edge(from_chunk=prev_chunk, fragment=self, to_chunk=None))
-
-        else:  # remove chunks at start of fragment
+        if prev_chunk is None:  # remove chunks at start of fragment
             if next_chunk is None:
                 raise Exception('Cannot remove entire fragment')
             self.start_chunk = next_chunk
@@ -295,16 +268,11 @@ class Fragment_Updater(Fragment_Writer):
             fragment_length += len(chunk.sequence)
             if last_chunk is None:  # add new chunks at start of fragment
                 self.start_chunk = chunk
-            else:
-                self._assert_not_linked_to(chunk)
-                self._add_edges(last_chunk, Edge(from_chunk=last_chunk, fragment=self, to_chunk=chunk))
             last_chunk = chunk
 
         # my_next_chunk may be None, but that's okay, we want to make sure this
         # chunk is the END and not going to be superseded by child fragment
         # appending more chunks!
-        self._assert_not_linked_to(my_next_chunk)
-        self._add_edges(last_chunk, Edge(from_chunk=last_chunk, fragment=self, to_chunk=my_next_chunk))
 
         # shift base_first and base_last for existing chunks
         if before_base1 is not None:
