@@ -7,12 +7,13 @@ class Annotation(object):
     Can contain multiple Chunk_Feature objects merged together.
     """
 
-    def __init__(self, base_first, base_last, chunk_feature):
+    def __init__(self, base_first, base_last, chunk_feature, fragment=None):
         self.base_first = base_first
         self.base_last = base_last
         self.feature = chunk_feature.feature
         self.feature_base_first = chunk_feature.feature_base_first
         self.feature_base_last = chunk_feature.feature_base_last
+        self.fragment = fragment
 
     def __unicode__(self):
         s = []
@@ -47,7 +48,8 @@ class Annotation(object):
             else:
                 annotations.append(Annotation(base_first=fcl.base_first,
                                               base_last=fcl.base_last,
-                                              chunk_feature=cf))
+                                              chunk_feature=cf,
+                                              fragment=fcl.fragment))
         return annotations
 
 

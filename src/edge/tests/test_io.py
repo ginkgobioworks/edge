@@ -1,5 +1,6 @@
-from unittest import TestCase
-from edge import Connector, IO
+from django.test import TestCase
+from edge.models import *
+from edge.io import IO
 import tempfile
 import os
 
@@ -7,9 +8,8 @@ import os
 class IOTest(TestCase):
 
     def setUp(self):
-        self.world = Connector.create_db('/tmp/world.db')
         self.root_sequence = 'agttcgaggctga'
-        self.root = self.world.create_fragment_with_sequence('Foo', self.root_sequence)
+        self.root = Fragment.create_with_sequence('Foo', self.root_sequence)
 
     def test_outputs_fasta(self):
         with tempfile.NamedTemporaryFile(mode='rw+', delete=False) as f:
@@ -17,7 +17,6 @@ class IOTest(TestCase):
             IO(self.root).to_fasta(f.name)
             h = open(f.name, 'r')
             fasta = h.read()
-            print h.read()
             h.close()
             os.unlink(f.name)
 
@@ -26,10 +25,9 @@ class IOTest(TestCase):
     def test_outputs_gff(self):
         a = self.root.annotate()
         a.annotate(2, 9, 'A1', 'gene', 1)
-        a.commit()
         u = self.root.update('Bar')
         u.insert_bases(3, 'gataca')
-        frag = u.commit()
+        frag = u
 
         with tempfile.NamedTemporaryFile(mode='rw+', delete=False) as f:
             f.close()

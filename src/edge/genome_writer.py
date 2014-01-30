@@ -14,7 +14,7 @@ class Genome_Updater(Genome):
 
     @contextmanager
     def annotate_fragment_by_name(self, name):
-        f = [x for x in self.fragments if x.name == name]
+        f = [x for x in self.fragments.all() if x.name == name]
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have name %s' % (name,))
         u = f[0].annotate()
@@ -23,7 +23,7 @@ class Genome_Updater(Genome):
 
     @contextmanager
     def annotate_fragment_by_fragment_id(self, fragment_id):
-        f = [x for x in self.fragments if x.id == fragment_id]
+        f = [x for x in self.fragments.all() if x.id == fragment_id]
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have ID %s' % (fragment_id,))
         u = f[0].annotate()
@@ -34,7 +34,7 @@ class Genome_Updater(Genome):
     def update_fragment_by_name(self, name):
         if self.parent is None:
             raise Exception('Cannot update fragment without a parent genome. Try editing instead.')
-        f = [x for x in self.fragments if x.name == name]
+        f = [x for x in self.fragments.all() if x.name == name]
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have name %s' % (name,))
         u = f[0].update(name)
@@ -46,7 +46,7 @@ class Genome_Updater(Genome):
     def update_fragment_by_fragment_id(self, fragment_id):
         if self.parent is None:
             raise Exception('Cannot update fragment without a parent genome. Try editing instead.')
-        f = [x for x in self.fragments if x.id == fragment_id]
+        f = [x for x in self.fragments.all() if x.id == fragment_id]
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have ID %s' % (fragment_id,))
         u = f[0].update(f[0].name)
@@ -63,7 +63,7 @@ class Genome_Updater(Genome):
         return new_fragment
 
     def _add_updated_fragment(self, fragment):
-        existing_fragment_ids = [f.id for f in self.fragments()]
+        existing_fragment_ids = [f.id for f in self.fragments.all()]
         if fragment.parent_id in existing_fragment_ids:
             gf = self.genome_fragment_set.get(fragment=fragment.parent)
             gf.fragment = fragment
