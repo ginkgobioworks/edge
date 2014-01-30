@@ -60,6 +60,10 @@ class Fragment(models.Model):
     start_chunk = models.ForeignKey('Chunk', null=True)
 
     @property
+    def has_location_index(self):
+        return self.fragment_chunk_location_set.count() > 0
+
+    @property
     def length(self):
         q = self.fragment_chunk_location_set.order_by('-base_last')[:1]
         q = list(q)
@@ -83,9 +87,16 @@ class Fragment(models.Model):
         return self.fragment_chunk_location_set.filter(chunk=chunk)[0]
 
     def chunks(self):
-        q = self.fragment_chunk_location_set.select_related('chunk').order_by('base_first')
-        for fcl in q:
-          yield fcl.chunk
+        if self.has_location_index:
+            q = self.fragment_chunk_location_set.select_related('chunk').order_by('base_first')
+            for fcl in q:
+                yield fcl.chunk
+        else:
+            chunk = self.start_chunk
+            while chunk is not None:
+                yield chunk
+                fc = self.fragment_chunk(chunk)
+                chunk = fc.next_chunk
 
     def get_sequence(self, bp_lo=None, bp_hi=None):
         q = self.fragment_chunk_location_set.select_related('chunk')
@@ -188,6 +199,16 @@ class Chunk(models.Model):
         return super(Chunk, self).save(*args, **kwargs)
 
 
+class Edge(models.Model):
+    class Meta:
+        app_label = "edge"
+
+    from_chunk = models.ForeignKey(Chunk, related_name='out_edges')
+    fragment = models.ForeignKey(Fragment)
+    # can be null, so we can supersede an edge from a child fragment
+    to_chunk = models.ForeignKey(Chunk, null=True, related_name='in_edges')
+
+
 class Feature(models.Model):
     class Meta:
         app_label = "edge"
@@ -247,12 +268,33 @@ class Fragment_Chunk_Location(models.Model):
         return self.chunk.initial_fragment
 
     @property
+    def out_edges(self):
+        return self.chunk.out_edges
+
+    @property
     def next_chunk(self):
-        for fcl in self.fragment.fragment_chunk_location_set\
-                                .select_related('chunk')\
-                                .filter(base_first=self.base_last+1):
-            return fcl.chunk
-        return None
+        if self.fragment.has_location_index:
+            for fcl in self.fragment.fragment_chunk_location_set\
+                                    .select_related('chunk')\
+                                    .filter(base_first=self.base_last+1):
+                return fcl.chunk
+            return None
+
+        # check inheritance hierarchy to figure out which edge to use.
+        if self.out_edges.count() == 0:
+            return none
+        else:
+            # sort edges by predecessor level if more than one edge
+            if self.out_edges.count() > 1:
+                pp = self.fragment.predecessor_priorities()
+                def sorter_f(e):
+                    return pp[e.fragment_id] if e.fragment_id in pp else len(pp)
+                out_edges = sorted(list(self.out_edges.all()), key=sorter_f)
+
+            else:
+                out_edges = self.out_edges.all()
+
+            return out_edges[0].to_chunk
 
     @property
     def location(self):
