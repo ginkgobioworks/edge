@@ -3,15 +3,15 @@
 function edgeAnnotationDisplayName(annotation) {
     var s = annotation['name']
     if (s === undefined || s == '') { s = annotation['type']; }
-    if (annotation['annotation_first_bp'] != 1 ||
-        annotation['annotation_last_bp'] != annotation['annotation_full_length']) {
+    if (annotation['feature_base_first'] != 1 ||
+        annotation['feature_base_last'] != annotation['feature_full_length']) {
         s += '[';
-        if (annotation['annotation_first_bp'] != 1) {
-            s += annotation['annotation_first_bp'];
+        if (annotation['feature_base_first'] != 1) {
+            s += annotation['feature_base_first'];
         }
         s += ':';
-        if (annotation['annotation_last_bp'] != annotation['annotation_full_length']) {
-            s += annotation['annotation_last_bp']+'/'+annotation['annotation_full_length'];
+        if (annotation['feature_base_last'] != annotation['feature_full_length']) {
+            s += annotation['feature_base_last']+'/'+annotation['feature_full_length'];
         }
         s += ']';
     }
@@ -45,7 +45,7 @@ function edgeAnnotationZoomCSS(annotation) {
 }
 
 function edgeFetchChanges($http, fragment_id, changed_loc, cb) {
-    var url = '/fragments/'+fragment_id+'/annotations?f='+changed_loc[0]+'&l='+changed_loc[1];
+    var url = '/edge/fragments/'+fragment_id+'/annotations?f='+changed_loc[0]+'&l='+changed_loc[1];
     $http.get(url).success(function(data) {
         var annotations = [];
         data.forEach(function(annotation) {
@@ -58,13 +58,13 @@ function edgeFetchChanges($http, fragment_id, changed_loc, cb) {
 
 function GenomeListController($scope, $http) {
     function fetchAndSaveParent(genome) {
-        var url = '/genomes/'+genome['parent_id'];
+        var url = '/edge/genomes/'+genome['parent_id'];
         $http.get(url).success(function(data) {
             genome['parent'] = data['name'];
         });
     }
 
-    $http.get('/genomes').success(function(data) {
+    $http.get('/edge/genomes').success(function(data) {
         $scope.genomes = data;
         data.forEach(function(genome) {
             if (genome['parent_id']) { fetchAndSaveParent(genome); }
@@ -75,7 +75,7 @@ function GenomeListController($scope, $http) {
 }
 
 function FragmentListController($scope, $http) {
-    $http.get('/fragments').success(function(data) {
+    $http.get('/edge/fragments').success(function(data) {
         $scope.fragments = data;
     });
 
@@ -84,7 +84,7 @@ function FragmentListController($scope, $http) {
 
     $scope.addFragment = function(fragment) {
         var data = JSON.stringify(fragment);
-        $http.post('/fragments', data).
+        $http.post('/edge/fragments', data).
             success(function(data) {
                 $scope.fragments.push(data);
                 $scope.add_fragment_error = undefined;
@@ -101,14 +101,14 @@ function GenomeDetailController($scope, $routeParams, $http) {
     $scope.parent = undefined;
 
     function fetchParent(parent_id) {
-        var url = '/genomes/'+parent_id;
+        var url = '/edge/genomes/'+parent_id;
         $http.get(url).success(function(data) {
             $scope.parent = '<a href="#/genomes/'+data['id']+'">Genome '+data['id']+': '+data['name']+'</a>';
         });
     }
 
     /* driver */
-    $http.get('/genomes/'+$scope.genomeId).success(function(data) {
+    $http.get('/edge/genomes/'+$scope.genomeId).success(function(data) {
         $scope.genome = data;
         if (data['parent_id']) { fetchParent(data['parent_id']); }
         data['fragments'].forEach(function(fragment) {
@@ -134,8 +134,8 @@ function FragmentController($scope, $routeParams, $http) {
     $scope.summary_annotations = [];
     $scope.zoom = {};
 
-    function layoutAnnotations(annotations, first_bp, last_bp) {
-        var full_length = last_bp-first_bp+1;
+    function layoutAnnotations(annotations, base_first, base_last) {
+        var full_length = base_last-base_first+1;
         var display = [];
         var layers = [];
 
@@ -144,9 +144,9 @@ function FragmentController($scope, $routeParams, $http) {
             d['annotation'] = a;
             d['css'] = edgeAnnotationZoomCSS(a);
 
-            var left = (a['first_bp']-first_bp)*100.0/full_length;
+            var left = (a['base_first']-base_first)*100.0/full_length;
             d['left'] = ''+left+'%';
-            var width = (a['last_bp']-a['first_bp']+1)*100.0/full_length;
+            var width = (a['base_last']-a['base_first']+1)*100.0/full_length;
             d['width'] = ''+width+'%';
 
             /* find a layer to put the feature */
@@ -156,7 +156,7 @@ function FragmentController($scope, $routeParams, $http) {
                 var overlap = false;
                 /* anything in this layer overlap? */
                 layer.forEach(function(layer_a) {
-                    if (layer_a['last_bp']+100 >= a['first_bp']) { overlap = true; } 
+                    if (layer_a['base_last']+100 >= a['base_first']) { overlap = true; } 
                 });
                 if (overlap == false) {
                     found_layer_i = i;
@@ -176,41 +176,41 @@ function FragmentController($scope, $routeParams, $http) {
 
     $scope.fetchSequence = function() {
         if ($scope.display_summary == false) {
-            var f = $scope.zoom['first_bp'];
-            var l = $scope.zoom['last_bp'];
-            $http.get('/fragments/'+$scope.fragmentId+'/sequence?f='+f+'&l='+l).success(function(data) {
+            var f = $scope.zoom['base_first'];
+            var l = $scope.zoom['base_last'];
+            $http.get('/edge/fragments/'+$scope.fragmentId+'/sequence?f='+f+'&l='+l).success(function(data) {
                 $scope.zoom['sequence'] = data;
                 $scope.zoom['has_sequence'] = true;
             });
         }
     }
 
-    $scope.zoomRefresh = function(first_bp, last_bp) {
+    $scope.zoomRefresh = function(base_first, base_last) {
         var zoom_annotations = [];
         var min_bp = undefined;
         var max_bp = undefined;
         $scope.annotations.forEach(function(a) {
-            if (a['last_bp'] > first_bp && a['first_bp'] < last_bp) {
+            if (a['base_last'] > base_first && a['base_first'] < base_last) {
                 zoom_annotations.push(a);
-                if (min_bp === undefined || a['first_bp'] < min_bp) {
-                    min_bp = a['first_bp'];
+                if (min_bp === undefined || a['base_first'] < min_bp) {
+                    min_bp = a['base_first'];
                 }
-                if (max_bp === undefined || a['last_bp'] > max_bp) {
-                    max_bp = a['last_bp'];
+                if (max_bp === undefined || a['base_last'] > max_bp) {
+                    max_bp = a['base_last'];
                 }
             }
         });
         if (zoom_annotations.length > 0) {
-            zoom_annotations.sort(function(a,b) { return a['first_bp']-b['first_bp']; });
-            $scope.zoom['first_bp'] = Math.min(min_bp, first_bp);
-            $scope.zoom['last_bp'] = Math.max(max_bp, last_bp);
+            zoom_annotations.sort(function(a,b) { return a['base_first']-b['base_first']; });
+            $scope.zoom['base_first'] = Math.min(min_bp, base_first);
+            $scope.zoom['base_last'] = Math.max(max_bp, base_last);
         }
         else {
-            $scope.zoom['first_bp'] = first_bp;
-            $scope.zoom['last_bp'] = last_bp;
+            $scope.zoom['base_first'] = base_first;
+            $scope.zoom['base_last'] = base_last;
         }
         $scope.zoom['annotations'] = zoom_annotations;
-        var display = layoutAnnotations(zoom_annotations, $scope.zoom['first_bp'], $scope.zoom['last_bp']);
+        var display = layoutAnnotations(zoom_annotations, $scope.zoom['base_first'], $scope.zoom['base_last']);
         $scope.zoom['display'] = display;
         $scope.zoom['has_sequence'] = false;
     }
@@ -220,55 +220,55 @@ function FragmentController($scope, $routeParams, $http) {
         $scope.zoom = {};
         $scope.display_summary = false;
         // get DEFAULT_ZOOM bps upstream and downstream from annotation
-        var first_bp = annotation['first_bp']-DEFAULT_ZOOM;
-        if (first_bp < 1) { first_bp = 1; }
-        var last_bp = annotation['last_bp']+DEFAULT_ZOOM;
-        if (last_bp > $scope.fragment['length']) { last_bp = $scope.fragment['length']; }
-        $scope.zoomRefresh(first_bp, last_bp);
+        var base_first = annotation['base_first']-DEFAULT_ZOOM;
+        if (base_first < 1) { base_first = 1; }
+        var base_last = annotation['base_last']+DEFAULT_ZOOM;
+        if (base_last > $scope.fragment['length']) { base_last = $scope.fragment['length']; }
+        $scope.zoomRefresh(base_first, base_last);
     }
 
     $scope.zoomMoveRight = function() {
-        var cur_zoom = $scope.zoom['last_bp']-$scope.zoom['first_bp']+1;
-        var first_bp = $scope.zoom['last_bp'];
-        var last_bp = first_bp+cur_zoom;
-        if (last_bp > $scope.fragment['length']) { last_bp = $scope.fragment['length']; }
-        if (first_bp < last_bp) {
-            $scope.zoomRefresh(first_bp, last_bp);
+        var cur_zoom = $scope.zoom['base_last']-$scope.zoom['base_first']+1;
+        var base_first = $scope.zoom['base_last'];
+        var base_last = base_first+cur_zoom;
+        if (base_last > $scope.fragment['length']) { base_last = $scope.fragment['length']; }
+        if (base_first < base_last) {
+            $scope.zoomRefresh(base_first, base_last);
         }
     }
 
     $scope.zoomMoveLeft = function() {
-        var cur_zoom = $scope.zoom['last_bp']-$scope.zoom['first_bp']+1;
-        if ($scope.zoom['first_bp'] > 1) {
-            var last_bp = $scope.zoom['first_bp'];
-            var first_bp = last_bp-cur_zoom;
-            if (first_bp < 1) { first_bp = 1; }
-            if (first_bp < last_bp) {
-                $scope.zoomRefresh(first_bp, last_bp);
+        var cur_zoom = $scope.zoom['base_last']-$scope.zoom['base_first']+1;
+        if ($scope.zoom['base_first'] > 1) {
+            var base_last = $scope.zoom['base_first'];
+            var base_first = base_last-cur_zoom;
+            if (base_first < 1) { base_first = 1; }
+            if (base_first < base_last) {
+                $scope.zoomRefresh(base_first, base_last);
             }
         }
     }
 
     $scope.zoomOut = function() {
-        var first_bp = $scope.zoom['first_bp']-DEFAULT_ZOOM;
-        var last_bp = $scope.zoom['last_bp']+DEFAULT_ZOOM;
-        if (first_bp < 1) { first_bp = 1; }
-        if (last_bp > $scope.fragment['length']) { last_bp = $scope.fragment['length']; }
-        $scope.zoomRefresh(first_bp, last_bp);
+        var base_first = $scope.zoom['base_first']-DEFAULT_ZOOM;
+        var base_last = $scope.zoom['base_last']+DEFAULT_ZOOM;
+        if (base_first < 1) { base_first = 1; }
+        if (base_last > $scope.fragment['length']) { base_last = $scope.fragment['length']; }
+        $scope.zoomRefresh(base_first, base_last);
     }
 
     $scope.zoomIn = function() {
-        if ($scope.zoom['last_bp']-$scope.zoom['first_bp'] > 2*DEFAULT_ZOOM) {
-            var first_bp = $scope.zoom['first_bp']+DEFAULT_ZOOM;
-            var last_bp = $scope.zoom['last_bp']-DEFAULT_ZOOM;
-            $scope.zoomRefresh(first_bp, last_bp);
+        if ($scope.zoom['base_last']-$scope.zoom['base_first'] > 2*DEFAULT_ZOOM) {
+            var base_first = $scope.zoom['base_first']+DEFAULT_ZOOM;
+            var base_last = $scope.zoom['base_last']-DEFAULT_ZOOM;
+            $scope.zoomRefresh(base_first, base_last);
         }
     }
 
     $scope.showSummary = function() {
         $scope.zoom = {
-            'first_bp': 1,
-            'last_bp': $scope.fragment['length'],
+            'base_first': 1,
+            'base_last': $scope.fragment['length'],
             'annotations': $scope.annotations
         };
         $scope.display_summary = true;
@@ -277,35 +277,35 @@ function FragmentController($scope, $routeParams, $http) {
     $scope.annotate_error = undefined;
     $scope.addAnnotation = function(annotation) {
         var data = JSON.stringify(annotation);
-        $http.post('/fragments/'+$scope.fragmentId+'/annotations', data).
+        $http.post('/edge/fragments/'+$scope.fragmentId+'/annotations', data).
             success(function(data) {
-                var len = annotation['last_bp']-annotation['first_bp']+1;
+                var len = annotation['base_last']-annotation['base_first']+1;
                 var new_a = {
-                    first_bp: annotation['first_bp'],
-                    last_bp: annotation['last_bp'],
+                    base_first: annotation['base_first'],
+                    base_last: annotation['base_last'],
                     name: annotation['name'],
                     type: annotation['type'],
                     strand: annotation['strand'],
-                    annotation_full_length: len,
-                    annotation_first_bp: 1,
-                    annotation_last_bp: len
+                    feature_full_length: len,
+                    feature_base_first: 1,
+                    feature_base_last: len
                 };
                 new_a['display_name'] = edgeAnnotationDisplayName(new_a);
                 new_a['display_css'] = edgeAnnotationSummaryCSS(new_a);
                 $scope.annotations.push(new_a);
                 $scope.annotate_error = undefined;
-                $scope.zoomRefresh($scope.zoom['first_bp'], $scope.zoom['last_bp']);
+                $scope.zoomRefresh($scope.zoom['base_first'], $scope.zoom['base_last']);
             }).
             error(function(data, status, headers, config) {
                 $scope.annotate_error = data;
             });
     }
 
-    $http.get('/fragments/'+$scope.fragmentId).success(function(fragment) {
+    $http.get('/edge/fragments/'+$scope.fragmentId).success(function(fragment) {
         $scope.fragment = fragment;
     });
 
-    $http.get('/fragments/'+$scope.fragmentId+'/annotations').success(function(annotations) {
+    $http.get('/edge/fragments/'+$scope.fragmentId+'/annotations').success(function(annotations) {
         $scope.annotations = annotations;
         annotations.forEach(function(annotation) {
             annotation['display_name'] = edgeAnnotationDisplayName(annotation);
@@ -319,7 +319,7 @@ function FragmentController($scope, $routeParams, $http) {
             if ($scope.summary_annotations.length > 0) {
                 last_annotation = $scope.summary_annotations[$scope.summary_annotations.length-1];
             }
-            if (last_annotation === undefined || last_annotation['last_bp']+gap < annotation['first_bp']) {
+            if (last_annotation === undefined || last_annotation['base_last']+gap < annotation['base_first']) {
                 $scope.summary_annotations.push(annotation);
             }
         });
@@ -327,7 +327,7 @@ function FragmentController($scope, $routeParams, $http) {
     });
 
     $scope.query = undefined;
-    $scope.annotationOrderProp = 'first_bp';
+    $scope.annotationOrderProp = 'base_first';
 }
 
 function GenomeFragmentController($scope, $routeParams, $injector, $http) {
@@ -336,7 +336,7 @@ function GenomeFragmentController($scope, $routeParams, $injector, $http) {
     $scope.genome = undefined;
     $scope.changes = [];
 
-    $http.get('/genomes/'+$scope.genomeId).success(function(genome) {
+    $http.get('/edge/genomes/'+$scope.genomeId).success(function(genome) {
         $scope.genome = genome;
         genome['fragments'].forEach(function(fragment) {
             if (fragment['id'] == $scope.fragmentId) {
@@ -358,11 +358,11 @@ function GenomeOpController($scope, $http, $location) {
     $scope.doOp = function(action, op) {
         op['op'] = action;
         var data = JSON.stringify(op);
-        $http.put('/genomes/'+$scope.genomeId+'/fragments/'+$scope.fragmentId, data).
+        $http.put('/edge/genomes/'+$scope.genomeId+'/fragments/'+$scope.fragmentId, data).
             success(function(genome) {
                 // got a new genome back
                 $scope.op_error = undefined;
-                var url = '/genomes/'+genome.id;
+                var url = '/edge/genomes/'+genome.id;
                 $location.path(url);
             }).
             error(function(data, status, headers, config) {
@@ -372,7 +372,7 @@ function GenomeOpController($scope, $http, $location) {
 }
 
 function GenomeOpWithFragmentController($scope, $http) {
-    $http.get('/fragments').success(function(data) {
+    $http.get('/edge/fragments').success(function(data) {
         $scope.fragments = data;
     });
 
