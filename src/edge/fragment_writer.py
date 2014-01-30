@@ -49,7 +49,7 @@ class Fragment_Writer(Fragment):
 
     def _split_annotations(self, annotations, bps_to_split, split1, split2):
         for a in annotations:
-            a1 = (a.feature, a.feature_base_first, a.feature_base_last+bps_to_split-1)
+            a1 = (a.feature, a.feature_base_first, a.feature_base_first+bps_to_split-1)
             a2 = (a.feature, a.feature_base_first+bps_to_split, a.feature_base_last)
             self._annotate_chunk(split1, *a1)
             self._annotate_chunk(split2, *a2)
@@ -139,8 +139,10 @@ class Fragment_Writer(Fragment):
             original_annotations = self.fragment_chunk(chunk).annotations()
             # split chunk
             split2 = self._split_chunk(chunk, s1, s2)
+            chunk = chunk.reload()
+
             # split up annotations as well
-            self._split_annotations(original_annotations, bps_to_split, chunk_id, split2)
+            self._split_annotations(original_annotations, bps_to_split, chunk, split2)
             return chunk, split2
 
         else:  # found end of the fragment
@@ -157,7 +159,6 @@ class Fragment_Annotator(Fragment_Writer):
         proxy = True
 
     def annotate(self, first_base1, last_base1, name, type, strand):
-
         if self.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
             length = self.length-first_base1+1+last_base1
@@ -168,6 +169,9 @@ class Fragment_Annotator(Fragment_Writer):
 
         prev_chunk, annotation_start = self._find_and_split_before(first_base1)
         annotation_end, next_chunk = self._find_and_split_before(last_base1+1)
+        # did two splits, so must reload annotation_start in case that got splitted
+        annotation_start = annotation_start.reload()
+
         new_feature = self._add_feature(name, type, length, strand)
 
         # now, starting with chunk annotation_start, walk through chunks until
@@ -228,7 +232,7 @@ class Fragment_Updater(Fragment_Writer):
         if before_base1 is None:
             raise Exception('Missing position to remove sequences')
 
-        prev_chunk, removal_start = self._find_and_split_before(before_base1)
+        prev_chunk, dont_use_stale_after_second_split = self._find_and_split_before(before_base1)
         removal_end, next_chunk = self._find_and_split_before(before_base1+length)
 
         if prev_chunk is None:  # remove chunks at start of fragment

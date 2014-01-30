@@ -37,12 +37,12 @@ class Annotation(object):
         annotations = []
         for cf, fcl in chunk_feature_locs:
             if len(annotations) > 0 and\
-               annotations[-1][0].feature.id == cf.feature_id and\
-               annotations[-1][0].feature_base_last == cf.feature_base_first-1 and\
-               annotations[-1][1].base_last == fcl.base_first-1:
+               annotations[-1].feature.id == cf.feature_id and\
+               annotations[-1].feature_base_last == cf.feature_base_first-1 and\
+               annotations[-1].base_last == fcl.base_first-1:
                 # merge annotation
                 annotations[-1].base_last = fcl.base_last
-                annotations[-1].annotation_base_last = cf.feature_base_last
+                annotations[-1].feature_base_last = cf.feature_base_last
             else:
                 annotations.append(Annotation(base_first=fcl.base_first,
                                               base_last=fcl.base_last,
@@ -174,6 +174,9 @@ class Chunk(models.Model):
     id = models.BigIntegerField(primary_key=True)
     initial_fragment = models.ForeignKey(Fragment)
     sequence = models.TextField(null=True)
+
+    def reload(self):
+        return Chunk.objects.get(pk=self.pk)
 
     def save(self, *args, **kwargs):
         # mimic auto_increment
