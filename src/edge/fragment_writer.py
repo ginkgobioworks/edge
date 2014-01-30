@@ -1,18 +1,3 @@
-"""
-Originally, we kept edges between chunks. Each edge is labeled with a fragment
-ID. A fragment F has two consecutive chunks A and B if there is an edge between
-A and B labeled with F, or if there is an edge between A and B labeled with one
-of F's ancestors and there is no edge between A and any other chunk labeled
-with a more immediate ancestor of F.
-
-Using these edges, you can walk through all the chunks of a fragment, w/o the
-need to keep location indices. The number of edges you need for a lineage of
-genomes is the number of annotations on base genome plus number of genomic
-changes and new annotations on children of the base genome, whereas the number
-of location indices you need would equal to total number of inherited and new
-annotations on all genomes.
-"""
-
 from django.db.models import F
 from edge.models import *
 
@@ -46,6 +31,7 @@ class Fragment_Writer(Fragment):
         # if chunk is the start chunk, update the object reference
         if self.start_chunk.id == chunk.id:
             self.start_chunk = chunk
+            self.save()
 
     def _add_edges(self, chunk, *unsaved_edges):
         existing_edges = list(Edge.objects.filter(from_chunk=chunk))
@@ -219,6 +205,7 @@ class Fragment_Updater(Fragment_Writer):
 
         if prev_chunk is None:  # add chunks at start of fragment
             self.start_chunk = new_chunk
+            self.save()
 
         # chunk may be None, but that's okay, we want to make sure this chunk
         # is the END and not going to be superseded by child fragment appending
@@ -254,6 +241,7 @@ class Fragment_Updater(Fragment_Writer):
             if next_chunk is None:
                 raise Exception('Cannot remove entire fragment')
             self.start_chunk = next_chunk
+            self.save()
 
         # remove location for deleted chunks
         self.fragment_chunk_location_set.filter(base_first__gte=before_base1,
@@ -287,6 +275,7 @@ class Fragment_Updater(Fragment_Writer):
             fragment_length += len(chunk.sequence)
             if last_chunk is None:  # add new chunks at start of fragment
                 self.start_chunk = chunk
+                self.save()
             last_chunk = chunk
 
         # my_next_chunk may be None, but that's okay, we want to make sure this
