@@ -1,7 +1,10 @@
 from django.conf.urls import *
+from django.views.generic.base import RedirectView
 from edge.views import *
 
 urlpatterns = patterns('',
+  url(r'^/?$', RedirectView.as_view(url='/static/edge/edge.html', permanent=True)),
+
   url('^fragments/$', FragmentListView.as_view(), name='fragment_list'),
   url('^fragments/(?P<fragment_id>\d+)/$',
       FragmentView.as_view(), name='fragment'),
