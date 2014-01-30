@@ -37,11 +37,10 @@ class AnnotationsTest(TestCase):
     def test_annotate_multiple_chunks(self):
         u = self.root.update('Bar')
         u.insert_bases(3, 'gataca')
-        f = u.save()
+        f = u
         # f now has three chunks
         a = f.annotate()
         a.annotate(2, 8, 'A1', 'gene', 1)
-        a.save()
         self.assertEquals(len(f.annotations()), 1)
         self.assertEquals(f.annotations()[0].base_first, 2)
         self.assertEquals(f.annotations()[0].base_last, 8)
@@ -52,10 +51,9 @@ class AnnotationsTest(TestCase):
     def test_annotation_adjusted_after_insert_outside_of_annotation(self):
         a = self.root.annotate()
         a.annotate(7, 9, 'A1', 'gene', 1)
-        a.save()
         u = self.root.update('Bar')
         u.insert_bases(3, 'gataca')
-        f = u.save()
+        f = u
         self.assertEquals(len(f.annotations()), 1)
         self.assertEquals(f.annotations()[0].base_first, 13)
         self.assertEquals(f.annotations()[0].base_last, 15)
@@ -66,10 +64,9 @@ class AnnotationsTest(TestCase):
     def test_annotation_adjusted_after_remove_outside_of_annotation(self):
         a = self.root.annotate()
         a.annotate(7, 9, 'A1', 'gene', 1)
-        a.save()
         u = self.root.update('Bar')
         u.remove_bases(3, 4)
-        f = u.save()
+        f = u
         self.assertEquals(len(f.annotations()), 1)
         self.assertEquals(f.annotations()[0].base_first, 3)
         self.assertEquals(f.annotations()[0].base_last, 5)
@@ -80,10 +77,9 @@ class AnnotationsTest(TestCase):
     def test_annotation_adjusted_after_replace_outside_of_annotation(self):
         a = self.root.annotate()
         a.annotate(7, 9, 'A1', 'gene', 1)
-        a.save()
         u = self.root.update('Bar')
         u.replace_bases(3, 4, 'cc')
-        f = u.save()
+        f = u
         self.assertEquals(len(f.annotations()), 1)
         self.assertEquals(f.annotations()[0].base_first, 5)
         self.assertEquals(f.annotations()[0].base_last, 7)
@@ -94,10 +90,9 @@ class AnnotationsTest(TestCase):
     def test_annotation_adjusted_after_insert_within_annotation(self):
         a = self.root.annotate()
         a.annotate(2, 9, 'A1', 'gene', 1)
-        a.save()
         u = self.root.update('Bar')
         u.insert_bases(3, 'gataca')
-        f = u.save()
+        f = u
         self.assertEquals(len(f.annotations()), 2)
         self.assertEquals(f.annotations()[0].base_first, 2)
         self.assertEquals(f.annotations()[0].base_last, 2)
@@ -113,10 +108,9 @@ class AnnotationsTest(TestCase):
     def test_annotation_adjusted_after_remove_within_annotation(self):
         a = self.root.annotate()
         a.annotate(2, 9, 'A1', 'gene', 1)
-        a.save()
         u = self.root.update('Bar')
         u.remove_bases(3, 4)
-        f = u.save()
+        f = u
         self.assertEquals(len(f.annotations()), 2)
         self.assertEquals(f.annotations()[0].base_first, 2)
         self.assertEquals(f.annotations()[0].base_last, 2)
@@ -132,10 +126,9 @@ class AnnotationsTest(TestCase):
     def test_annotation_adjusted_after_replace_within_annotation(self):
         a = self.root.annotate()
         a.annotate(2, 9, 'A1', 'gene', 1)
-        a.save()
         u = self.root.update('Bar')
         u.replace_bases(3, 4, 'cc')
-        f = u.save()
+        f = u
         self.assertEquals(len(f.annotations()), 2)
         self.assertEquals(f.annotations()[0].base_first, 2)
         self.assertEquals(f.annotations()[0].base_last, 2)
@@ -152,7 +145,7 @@ class AnnotationsTest(TestCase):
         f = Fragment.create_with_sequence('Foo', self.root_sequence, circular=True)
         a = f.annotate()
         a.annotate(9, 3, 'A1', 'gene', 1)
-        f = a.save()
+
         self.assertEquals(len(f.annotations()), 2)
 
         self.assertEquals(f.annotations()[0].base_first, 1)
@@ -173,7 +166,7 @@ class AnnotationsTest(TestCase):
         f = Fragment.create_with_sequence('Foo', self.root_sequence, circular=True)
         a = f.annotate()
         a.annotate(9, 1, 'A1', 'gene', 1)
-        f = a.save()
+
         self.assertEquals(len(f.annotations()), 2)
 
         self.assertEquals(f.annotations()[0].base_first, 1)
@@ -194,7 +187,7 @@ class AnnotationsTest(TestCase):
         f = Fragment.create_with_sequence('Foo', self.root_sequence, circular=True)
         a = f.annotate()
         a.annotate(9, len(self.root_sequence), 'A1', 'gene', 1)
-        f = a.save()
+
         self.assertEquals(len(f.annotations()), 1)
 
         self.assertEquals(f.annotations()[0].base_first, 9)
@@ -208,6 +201,7 @@ class AnnotationsTest(TestCase):
         a = self.root.annotate()
         a.annotate(1, 3, 'A1', 'gene', 1)
         a.annotate(7, 9, 'A2', 'gene', 1)
+
         self.assertEquals(len(a.annotations()), 2)
 
         self.assertEquals(len(a.annotations(bp_lo=1, bp_hi=3)), 1)
@@ -234,10 +228,10 @@ class AnnotationsTest(TestCase):
         a = self.root.annotate()
         a.annotate(1, len(self.root_sequence), 'A1', 'gene', 1)
         self.assertEquals(len(a.annotations()), 1)
-        a = a.save()
+
         u = self.root.update('Bar')
         u._find_and_split_before(4)
-        f = u.save()
+        f = u
         n = len(self.root_sequence)
         self.assertEquals(len(f.annotations(bp_lo=1, bp_hi=n)), 1)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].base_first, 1)
@@ -250,10 +244,10 @@ class AnnotationsTest(TestCase):
         a = self.root.annotate()
         a.annotate(1, len(self.root_sequence), 'A1', 'gene', 1)
         self.assertEquals(len(a.annotations()), 1)
-        a = a.save()
+
         u = self.root.update('Bar')
         u.remove_bases(4, 3)
-        f = u.save()
+        f = u
         n = len(self.root_sequence)-3
         self.assertEquals(len(f.annotations(bp_lo=1, bp_hi=n)), 2)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].base_first, 1)
@@ -271,10 +265,10 @@ class AnnotationsTest(TestCase):
         a = self.root.annotate()
         a.annotate(1, len(self.root_sequence), 'A1', 'gene', 1)
         self.assertEquals(len(a.annotations()), 1)
-        a = a.save()
+
         u = self.root.update('Bar')
         u.insert_bases(4, 'ccc')
-        f = u.save()
+        f = u
         n = len(self.root_sequence)+3
         self.assertEquals(len(f.annotations(bp_lo=1, bp_hi=n)), 2)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].base_first, 1)
@@ -291,11 +285,12 @@ class AnnotationsTest(TestCase):
     def test_child_inherits_annotation_from_parent_when_parent_annotates_preserved_region(self):
         u = self.root.update('Bar')
         u.insert_bases(3, 'gataca')
-        f = u.save()
+
+        f = u
         self.assertEquals(len(f.annotations()), 0)
         a = self.root.annotate()
         a.annotate(10, 12, 'A1', 'gene', 1)
-        a.save()
+
         self.assertEquals(len(f.annotations()), 1)
         self.assertEquals(f.annotations()[0].base_first, 16)
         self.assertEquals(f.annotations()[0].base_last, 18)
@@ -306,11 +301,12 @@ class AnnotationsTest(TestCase):
     def test_child_inherits_annotation_from_parent_when_parent_annotates_updated_region(self):
         u = self.root.update('Bar')
         u.insert_bases(3, 'gataca')
-        f = u.save()
+        f = u
+
         self.assertEquals(len(f.annotations()), 0)
         a = self.root.annotate()
         a.annotate(2, 9, 'A1', 'gene', 1)
-        a.save()
+
         self.assertEquals(len(f.annotations()), 2)
         self.assertEquals(f.annotations()[0].base_first, 2)
         self.assertEquals(f.annotations()[0].base_last, 2)
@@ -327,14 +323,13 @@ class AnnotationsTest(TestCase):
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         a = new_f.annotate()
         a.annotate(2, 4, 'X1', 'gene', 1)
-        new_f = a.save()
 
         self.assertEquals(len(new_f.annotations()), 1)
         self.assertEquals(len(self.root.annotations()), 0)
 
         u = self.root.update('Bar')
         u.insert_fragment(3, new_f)
-        f = u.save()
+        f = u
 
         self.assertEquals(len(new_f.annotations()), 1)
         self.assertEquals(len(self.root.annotations()), 0)
@@ -353,7 +348,7 @@ class AnnotationsTest(TestCase):
 
         u = self.root.update('Bar')
         u.insert_fragment(3, new_f)
-        f = u.save()
+        f = u
 
         self.assertEquals(len(new_f.annotations()), 0)
         self.assertEquals(len(self.root.annotations()), 0)
@@ -361,7 +356,6 @@ class AnnotationsTest(TestCase):
 
         a = new_f.annotate()
         a.annotate(2, 4, 'X1', 'gene', 1)
-        new_f = a.save()
 
         self.assertEquals(len(new_f.annotations()), 1)
         self.assertEquals(len(self.root.annotations()), 0)
