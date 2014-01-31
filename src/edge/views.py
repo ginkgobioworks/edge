@@ -9,6 +9,7 @@ from edge.models import *
 def get_genome_or_404(pk):
     return get_object_or_404(Genome, pk=pk)
 
+
 def get_fragment_or_404(pk):
     return get_object_or_404(Fragment, pk=pk)
 
@@ -64,7 +65,8 @@ class RequestParser(object):
                     elif float in field_type:
                         v = float(v)
                     else:
-                        raise Exception('Field should be of type "%s", got "%s"' % (field_type, type(v)))
+                        raise Exception('Field should be of type "%s", got "%s"' %
+                                        (field_type, type(v)))
                 args[name] = v
         return args
 

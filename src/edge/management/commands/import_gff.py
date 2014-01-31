@@ -2,6 +2,7 @@ from django.db import transaction
 from django.core.management.base import BaseCommand
 from edge.models import Genome
 
+
 class Command(BaseCommand):
 
     @transaction.atomic

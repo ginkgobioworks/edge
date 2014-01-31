@@ -31,7 +31,7 @@ class Genome(models.Model):
         new_genome = Genome(name=name, notes=notes, parent=self)
         new_genome.save()
         for f in self.fragments.all():
-          Genome_Fragment(genome=new_genome, fragment=f, inherited=True).save()
+            Genome_Fragment(genome=new_genome, fragment=f, inherited=True).save()
         return Genome_Updater.objects.get(pk=new_genome.pk)
 
     def find_annotation(self, name):
@@ -39,9 +39,10 @@ class Genome(models.Model):
                                          feature__name=name)
         chunk_features = []
         for cf in q:
-          # get fragment chunk location
-          for fcl in Fragment_Chunk_Location.objects.filter(chunk=cf.chunk, fragment__genome=self):
-            chunk_features.append((cf, fcl))
+            # get fragment chunk location
+            for fcl in Fragment_Chunk_Location.objects.filter(chunk=cf.chunk,
+                                                              fragment__genome=self):
+                chunk_features.append((cf, fcl))
         annotations = Annotation.from_chunk_feature_and_location_array(chunk_features)
         by_f = {}
         for annotation in annotations:
@@ -55,21 +56,21 @@ class Genome(models.Model):
             return []
 
         edges = Edge.objects.filter(
-          fragment__genome_fragment__genome=self,
-          fragment__genome_fragment__inherited=False
+            fragment__genome_fragment__genome=self,
+            fragment__genome_fragment__inherited=False
         )
 
         fcs = []
         added = []
         for edge in edges:
-          if edge.from_chunk:
-            if edge.from_chunk.id not in added:
-                fcs.append(edge.fragment.fragment_chunk(edge.from_chunk))
-                added.append(edge.from_chunk.id)
-          if edge.to_chunk:
-            if edge.to_chunk.id not in added:
-                fcs.append(edge.fragment.fragment_chunk(edge.to_chunk))
-                added.append(edge.to_chunk.id)
+            if edge.from_chunk:
+                if edge.from_chunk.id not in added:
+                    fcs.append(edge.fragment.fragment_chunk(edge.from_chunk))
+                    added.append(edge.from_chunk.id)
+            if edge.to_chunk:
+                if edge.to_chunk.id not in added:
+                    fcs.append(edge.fragment.fragment_chunk(edge.to_chunk))
+                    added.append(edge.to_chunk.id)
         return fcs
 
     def changed_locations_by_fragment(self):

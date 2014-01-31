@@ -72,7 +72,8 @@ class Fragment_Writer(Fragment):
         assert chunk.out_edges.count() == 0
 
         # add edge from chunk to split2
-        self._add_edges(chunk, Edge(from_chunk=chunk, fragment=chunk.initial_fragment, to_chunk=split2))
+        self._add_edges(chunk, Edge(from_chunk=chunk,
+                                    fragment=chunk.initial_fragment, to_chunk=split2))
 
         # add location for new chunk
         for fcl in chunk.fragment_chunk_location_set.all():
@@ -221,7 +222,8 @@ class Fragment_Updater(Fragment_Writer):
         new_chunk = self._add_chunk(sequence, self)
 
         if prev_chunk is not None:  # add chunks after prev_chunk_id
-            self._add_edges(prev_chunk, Edge(from_chunk=prev_chunk, fragment=self, to_chunk=new_chunk))
+            self._add_edges(prev_chunk, Edge(from_chunk=prev_chunk,
+                                             fragment=self, to_chunk=new_chunk))
 
         else:  # add chunks at start of fragment
             self.start_chunk = new_chunk
@@ -241,12 +243,16 @@ class Fragment_Updater(Fragment_Writer):
         # insert location for new chunk
         if before_base1 is not None:
             self.fragment_chunk_location_set.create(
-              chunk=new_chunk, base_first=before_base1, base_last=before_base1+len(sequence)-1
+                chunk=new_chunk,
+                base_first=before_base1,
+                base_last=before_base1+len(sequence)-1
             )
         else:
             fragment_length = self.length
             self.fragment_chunk_location_set.create(
-              chunk=new_chunk, base_first=fragment_length+1, base_last=fragment_length+1+len(sequence)-1
+                chunk=new_chunk,
+                base_first=fragment_length+1,
+                base_last=fragment_length+1+len(sequence)-1
             )
 
     def remove_bases(self, before_base1, length):
@@ -310,14 +316,16 @@ class Fragment_Updater(Fragment_Writer):
                 self.save()
             else:
                 self._assert_not_linked_to(chunk)
-                self._add_edges(last_chunk, Edge(from_chunk=last_chunk, fragment=self, to_chunk=chunk))
+                self._add_edges(last_chunk, Edge(from_chunk=last_chunk,
+                                                 fragment=self, to_chunk=chunk))
             last_chunk = chunk
 
         # my_next_chunk may be None, but that's okay, we want to make sure this
         # chunk is the END and not going to be superseded by child fragment
         # appending more chunks!
         self._assert_not_linked_to(my_next_chunk)
-        self._add_edges(last_chunk, Edge(from_chunk=last_chunk, fragment=self, to_chunk=my_next_chunk))
+        self._add_edges(last_chunk, Edge(from_chunk=last_chunk,
+                                         fragment=self, to_chunk=my_next_chunk))
 
         # shift base_first and base_last for existing chunks
         if before_base1 is not None:
@@ -332,11 +340,15 @@ class Fragment_Updater(Fragment_Writer):
         for chunk in fragment.chunks():
             if before_base1 is not None:
                 self.fragment_chunk_location_set.create(
-                  chunk=chunk, base_first=before_base1+c, base_last=before_base1+c+len(chunk.sequence)-1
+                    chunk=chunk,
+                    base_first=before_base1+c,
+                    base_last=before_base1+c+len(chunk.sequence)-1
                 )
             else:
                 self.fragment_chunk_location_set.create(
-                  chunk=chunk, base_first=original_length+1+c, base_last=original_length+1+c+len(chunk.sequence)-1
+                    chunk=chunk,
+                    base_first=original_length+1+c,
+                    base_last=original_length+1+c+len(chunk.sequence)-1
                 )
             c += len(chunk.sequence)
 

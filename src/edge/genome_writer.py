@@ -59,7 +59,9 @@ class Genome_Updater(Genome):
         if len(sequence) == 0:
             raise Exception('Cannot create a fragment of length zero')
 
-        new_fragment = Fragment.create_with_sequence(name=name, sequence=sequence, circular=circular)
+        new_fragment = Fragment.create_with_sequence(name=name,
+                                                     sequence=sequence,
+                                                     circular=circular)
         self.genome_fragment_set.create(fragment=new_fragment, inherited=False)
         return new_fragment
 
@@ -76,7 +78,7 @@ class Genome_Updater(Genome):
     def import_gff(self, gff_fasta_fn):
         in_file = gff_fasta_fn
         in_handle = open(in_file)
-        
+
         # In DEBUG=True mode, Django keeps list of queries and blows up memory
         # usage when doing a big import. The following line disables this
         # logging.
@@ -96,7 +98,8 @@ class Genome_Updater(Genome):
                 elif 'Name' in feature.qualifiers:
                     name = feature.qualifiers['Name'][0]
                 print '  %s %s: %s %s' % (feature.type, name, feature.location, feature.strand)
-                a.annotate(feature.location.start+1,  # start in Genbank format is start after, so +1 here
+                # start in Genbank format is start after, so +1 here
+                a.annotate(feature.location.start+1,
                            feature.location.end,
                            name,
                            feature.type,

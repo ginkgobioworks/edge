@@ -464,11 +464,13 @@ class GenomeFragmentTest(TestCase):
     def test_insert_fragment(self):
         sequence = 'GATACA'
         name = 'bar'
-        res = self.client.post('/edge/fragments/', data=json.dumps(dict(name=name, sequence=sequence)),
+        res = self.client.post('/edge/fragments/',
+                               data=json.dumps(dict(name=name, sequence=sequence)),
                                content_type='application/json')
         existing_fragment_id = json.loads(res.content)['id']
 
-        data = dict(name='chrI_m', op='insert_fragment', before_bp=3, fragment_id=existing_fragment_id)
+        data = dict(name='chrI_m', op='insert_fragment',
+                    before_bp=3, fragment_id=existing_fragment_id)
         res = self.client.put(self.uri, data=json.dumps(data),
                               content_type='application/json')
         self.assertEquals(res.status_code, 201)
@@ -504,7 +506,8 @@ class GenomeFragmentTest(TestCase):
     def test_replace_with_fragment(self):
         sequence = 'GATACA'
         name = 'bar'
-        res = self.client.post('/edge/fragments/', data=json.dumps(dict(name=name, sequence=sequence)),
+        res = self.client.post('/edge/fragments/',
+                               data=json.dumps(dict(name=name, sequence=sequence)),
                                content_type='application/json')
         existing_fragment_id = json.loads(res.content)['id']
 

@@ -18,7 +18,9 @@ class Annotation(object):
     def __unicode__(self):
         s = []
         if self.feature_base_first != 1 or self.feature_base_last != self.feature.length:
-            s.append('%s (%s-%s)' % (self.feature.name, self.feature_base_first, self.feature_base_last))
+            s.append('%s (%s-%s)' % (self.feature.name,
+                                     self.feature_base_first,
+                                     self.feature_base_last))
         else:
             s.append(self.feature.name)
         s.append(self.feature.type)
@@ -34,7 +36,8 @@ class Annotation(object):
         chunk_feature_locs: an array of (Chunk_Feature, Fragment_Chunk_Location) tuples.
         """
 
-        chunk_feature_locs = sorted(chunk_feature_locs, key=lambda t: (t[0].feature.id, t[1].base_first))
+        chunk_feature_locs = sorted(chunk_feature_locs,
+                                    key=lambda t: (t[0].feature.id, t[1].base_first))
 
         annotations = []
         for cf, fcl in chunk_feature_locs:
@@ -112,8 +115,10 @@ class Fragment(models.Model):
             # sort edges by predecessor level if more than one edge
             if chunk.out_edges.count() > 1:
                 pp = self.predecessor_priorities()
+
                 def sorter_f(e):
                     return pp[e.fragment_id] if e.fragment_id in pp else len(pp)
+
                 out_edges = sorted(list(chunk.out_edges.all()), key=sorter_f)
 
             else:
@@ -145,7 +150,7 @@ class Fragment(models.Model):
         for chunk in self.chunks(force_walk=True):
             if len(chunk.sequence) > 0:
                 self.fragment_chunk_location_set.create(
-                  chunk=chunk, base_first=i, base_last=i+len(chunk.sequence)-1
+                    chunk=chunk, base_first=i, base_last=i+len(chunk.sequence)-1
                 )
                 i += len(chunk.sequence)
 
@@ -196,26 +201,26 @@ class Fragment(models.Model):
     def update(self, name):
         from edge.fragment_writer import Fragment_Updater
         new_fragment = Fragment_Updater(
-          name=name, circular=self.circular, parent=self, start_chunk=self.start_chunk
+            name=name, circular=self.circular, parent=self, start_chunk=self.start_chunk
         )
         new_fragment.save()
 
         if self.has_location_index:
-          # copy over location index
-          for fc in self.fragment_chunk_location_set.all():
-             new_fragment.fragment_chunk_location_set.create(
-                 chunk=fc.chunk,
-                 base_first=fc.base_first,
-                 base_last=fc.base_last
-             )
+            # copy over location index
+            for fc in self.fragment_chunk_location_set.all():
+                new_fragment.fragment_chunk_location_set.create(
+                    chunk=fc.chunk,
+                    base_first=fc.base_first,
+                    base_last=fc.base_last
+                )
         else:
-          new_fragment.index_fragment_chunk_locations()
+            new_fragment.index_fragment_chunk_locations()
 
         return new_fragment
 
     def annotate(self):
         if not self.has_location_index:
-          self.index_fragment_chunk_locations()
+            self.index_fragment_chunk_locations()
         from edge.fragment_writer import Fragment_Annotator
         return Fragment_Annotator.objects.get(pk=self.pk)
 
@@ -225,12 +230,11 @@ class Fragment(models.Model):
         return fragments
 
     @staticmethod
-    def create_with_sequence(name, sequence, circular=False):
+    def create_with_sequence(name, sequence, circular=False, initial_chunk_size=10000):
         from edge.fragment_writer import Fragment_Updater
         new_fragment = Fragment_Updater(name=name, circular=circular, parent=None, start_chunk=None)
         new_fragment.save()
         new_fragment.insert_bases(None, sequence)
-        new_fragment.save()
         return Fragment.objects.get(pk=new_fragment.pk)
 
 
