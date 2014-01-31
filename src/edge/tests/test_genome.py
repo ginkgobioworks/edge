@@ -290,14 +290,16 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 
         # add initial sequence
         u = genome.edit()
-        u.add_fragment('chrI', s0+s1+s2)
-        u.add_fragment('chrII', s0+s1+s2)
+        f1 = u.add_fragment('chrI', s0+s1+s2)
+        f2 = u.add_fragment('chrII', s0+s1+s2)
+        
         # annotate it to break it up into chunks
         u = genome.annotate()
         with u.annotate_fragment_by_name('chrI') as f:
             f.annotate(1, len(s0), 'F1', 'feature', 1)
             f.annotate(len(s0)+1, len(s0)+len(s1), 'F2', 'feature', 1)
             f.annotate(len(s0)+len(s1)+1, len(s0)+len(s1)+len(s2), 'F3', 'feature', 1)
+        
         with u.annotate_fragment_by_name('chrII') as f:
             f.annotate(1, len(s0), 'F1', 'feature', 1)
             f.annotate(len(s0)+1, len(s0)+len(s1), 'F2', 'feature', 1)
@@ -307,16 +309,18 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         u = genome.update()
         with u.update_fragment_by_name('chrI') as f:
             f.insert_bases(3, 'gataca')
+            f1 = f
         with u.update_fragment_by_name('chrII') as f:
             f.insert_bases(3, 'gataca')
             f.insert_bases(6+len(s0)+len(s1)+2, 'gataca')
+            f2 = f
 
         g2 = Genome.objects.get(pk=u.pk)
         changes = g2.changed_locations_by_fragment()
         for f in changes:
-            if f.id == 3:
+            if f.id == f1.id:
                 self.assertEquals(changes[f], [[1, len(s0)+6]])
-            elif f.id == 4:
+            elif f.id == f2.id:
                 self.assertEquals(changes[f],
                                   [[1, len(s0)+6],
                                    [len(s0)+len(s1)+6+1, len(s0)+6+len(s1)+len(s2)+6]])

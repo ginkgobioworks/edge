@@ -20,7 +20,7 @@ class IOTest(TestCase):
             h.close()
             os.unlink(f.name)
 
-        self.assertEquals(fasta, '>fragment 1|Foo\nagttcgaggctga\n')
+        self.assertEquals(fasta, '>fragment %s|Foo\nagttcgaggctga\n' % (self.root.id,))
 
     def test_outputs_gff(self):
         a = self.root.annotate()
@@ -40,8 +40,8 @@ class IOTest(TestCase):
 
         # be aware of the tabs in the string below
         expected = """##gff-version 3
-##sequence-region fragment 2: Bar 1 19
-fragment 2: Bar\tfeature\tgene\t2\t2\t.\t+\t.\tname=A1
-fragment 2: Bar\tfeature\tgene\t9\t15\t.\t+\t.\tname=A1
-"""
+##sequence-region fragment %(fid)s: Bar 1 19
+fragment %(fid)s: Bar\tfeature\tgene\t2\t2\t.\t+\t.\tname=A1
+fragment %(fid)s: Bar\tfeature\tgene\t9\t15\t.\t+\t.\tname=A1
+""" % {'fid': u.id}
         self.assertEquals(expected, gff)
