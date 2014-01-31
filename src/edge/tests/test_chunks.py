@@ -2,6 +2,26 @@ from unittest import TestCase
 from edge.models import *
 
 
+class FragmentCreateTests(TestCase):
+
+    def test_can_create_fragment_with_no_chunk_size(self):
+        f = Fragment.create_with_sequence('Foo', 'gataccggtactag', initial_chunk_size=None)
+        self.assertEquals(f.sequence, 'gataccggtactag')
+
+    def test_can_create_fragment_with_different_chunk_sizes(self):
+        s = 'gataccggtactag'
+        f = Fragment.create_with_sequence('Foo', s, initial_chunk_size=len(s))
+        self.assertEquals(f.sequence, s)
+        f = Fragment.create_with_sequence('Foo', s, initial_chunk_size=0)
+        self.assertEquals(f.sequence, s)
+        f = Fragment.create_with_sequence('Foo', s, initial_chunk_size=1)
+        self.assertEquals(f.sequence, s)
+        f = Fragment.create_with_sequence('Foo', s, initial_chunk_size=3)
+        self.assertEquals(f.sequence, s)
+        f = Fragment.create_with_sequence('Foo', s, initial_chunk_size=len(s)*1000)
+        self.assertEquals(f.sequence, s)
+
+
 class FragmentTests(TestCase):
 
     def setUp(self):

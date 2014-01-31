@@ -203,9 +203,8 @@ class Fragment_Annotator(Fragment_Writer):
             a_i += len(chunk.sequence)
             if chunk.id == annotation_end.id:
                 break
-            if fc.next_chunk:
-                chunk = fc.next_chunk
-            else:
+            chunk = fc.next_chunk
+            if chunk is None:
                 chunk = self.start_chunk
 
 

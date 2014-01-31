@@ -63,12 +63,13 @@ class BigIntPrimaryModel(models.Model):
 
     id = models.BigIntegerField(primary_key=True)
 
+    @transaction.atomic()
     def save(self, *args, **kwargs):
         # mimic auto_increment
         if self.id is None:
             klass = type(self)
             if klass.objects.count() > 0:
-                self.id = klass.objects.order_by('-id')[0].id+1
+                self.id = klass.objects.select_for_update().order_by('-id').values('id')[0]['id']+1
             else:
                 self.id = 1
         return super(BigIntPrimaryModel, self).save(*args, **kwargs)
@@ -234,7 +235,11 @@ class Fragment(models.Model):
         from edge.fragment_writer import Fragment_Updater
         new_fragment = Fragment_Updater(name=name, circular=circular, parent=None, start_chunk=None)
         new_fragment.save()
-        new_fragment.insert_bases(None, sequence)
+        if initial_chunk_size is None or initial_chunk_size == 0:
+            new_fragment.insert_bases(None, sequence)
+        else:
+            for i in range(0, len(sequence), initial_chunk_size):
+                new_fragment.insert_bases(None, sequence[i:i+initial_chunk_size])
         return Fragment.objects.get(pk=new_fragment.pk)
 
 
