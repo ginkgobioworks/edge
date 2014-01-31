@@ -230,8 +230,12 @@ class Fragment(models.Model):
         fragments = list(Fragment.objects.filter(genome_fragment__id__isnull=True))
         return fragments
 
+    # After some trials, we found that on MySQL, initial chunk size set to 20K
+    # produced the best import time for the E. coli genome. Setting an initial
+    # chunk size significantly improves import time: when dividing up smaller
+    # chunks, you copy/slice less sequence data.
     @staticmethod
-    def create_with_sequence(name, sequence, circular=False, initial_chunk_size=10000):
+    def create_with_sequence(name, sequence, circular=False, initial_chunk_size=20000):
         from edge.fragment_writer import Fragment_Updater
         new_fragment = Fragment_Updater(name=name, circular=circular, parent=None, start_chunk=None)
         new_fragment.save()
