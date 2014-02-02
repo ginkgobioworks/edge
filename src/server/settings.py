@@ -81,7 +81,14 @@ DATABASES = {
         'ATOMIC_REQUESTS': True,
     }
 }
-DATABASES['default'] = DATABASES['sqlite']
+
+DEFAULT_DB = 'sqlite'
+
+DATABASES['default'] = DATABASES[DEFAULT_DB]
+if TESTING:
+    other_dbs = [db for db in DATABASES if db != 'default']
+    for db in other_dbs:
+        del DATABASES[db]
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
