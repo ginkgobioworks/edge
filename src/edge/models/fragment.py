@@ -68,9 +68,9 @@ class BigIntPrimaryModel(models.Model):
         # mimic auto_increment
         if self.id is None:
             klass = type(self)
-            if klass.objects.count() > 0:
+            try:
                 self.id = klass.objects.select_for_update().order_by('-id').values('id')[0]['id']+1
-            else:
+            except IndexError:
                 self.id = 1
         return super(BigIntPrimaryModel, self).save(*args, **kwargs)
 
