@@ -213,6 +213,24 @@ class Fragment_Updater(Fragment_Writer):
         app_label = "edge"
         proxy = True
 
+    def _append_to_fragment(self, prev_chunk, cur_fragment_length, sequence):
+        # only use this if you are appending chunk to fragment while importing
+        # a fragment
+        new_chunk = self._add_chunk(sequence, self)
+        if prev_chunk is not None:  # add chunks after prev_chunk_id
+            self._add_edges(prev_chunk,
+                            Edge(from_chunk=prev_chunk, fragment=self, to_chunk=new_chunk))
+        else:
+            self.start_chunk = new_chunk
+            self.save()
+        self._add_edges(new_chunk, Edge(from_chunk=new_chunk, fragment=self, to_chunk=None))
+        self.fragment_chunk_location_set.create(
+            chunk=new_chunk,
+            base_first=cur_fragment_length+1,
+            base_last=cur_fragment_length+1+len(sequence)-1
+        )
+        return new_chunk
+
     def insert_bases(self, before_base1, sequence):
         # find chunks before and containing the insertion point
         prev_chunk, chunk = self._find_and_split_before(before_base1)

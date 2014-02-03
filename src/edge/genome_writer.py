@@ -1,6 +1,4 @@
-from django.db import connection
 from contextlib import contextmanager
-from BCBio import GFF
 from edge.models import *
 
 
@@ -76,38 +74,5 @@ class Genome_Updater(Genome):
             raise Exception('Fragment parent not part of the genome')
 
     def import_gff(self, gff_fasta_fn):
-        in_file = gff_fasta_fn
-        in_handle = open(in_file)
-
-        # In DEBUG=True mode, Django keeps list of queries and blows up memory
-        # usage when doing a big import. The following line disables this
-        # logging.
-        connection.use_debug_cursor = False
-
-        for rec in GFF.parse(in_handle):
-            print '%s: %s' % (rec.id, len(str(rec.seq)))
-            f = self.add_fragment(rec.id, str(rec.seq))
-            a = f.annotate()
-            for feature in rec.features:
-                # skip features that cover the entire sequence
-                if feature.location.start == 0 and feature.location.end == len(str(rec.seq)):
-                    continue
-                name = feature.id
-                if 'gene' in feature.qualifiers:
-                    name = feature.qualifiers['gene'][0]
-                elif 'Name' in feature.qualifiers:
-                    name = feature.qualifiers['Name'][0]
-                print '  %s %s: %s %s' % (feature.type, name, feature.location, feature.strand)
-                # start in Genbank format is start after, so +1 here
-                a.annotate(feature.location.start+1,
-                           feature.location.end,
-                           name,
-                           feature.type,
-                           feature.strand)
-
-                # Just in case use_debug_cursor does not work
-                connection.queries = []
-
-        # Be nice and turn debug cursor back on
-        connection.use_debug_cursor = True
-        in_handle.close()
+        from edge.importer import GFFImporter
+        GFFImporter(self, gff_fasta_fn).do_import()
