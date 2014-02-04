@@ -14,7 +14,12 @@ setup(
     author='Ginkgo Bioworks',
     author_email='team@ginkgobioworks.com',
     long_description=open('README.md', 'r').read(),
-    packages=['edge'],
+    packages=["edge",
+              "edge.models",
+              "edge.management",
+              "edge.migrations"],
+    package_dir={"": "src"},
+    package_data = {"edge": ["static/edge/*", "templates/edge/*"]},
     zip_safe=False,
     requires=[],
     install_requires=[
