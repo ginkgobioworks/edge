@@ -62,6 +62,7 @@ class GFFFragmentImporter(object):
                 name = feature.qualifiers['gene'][0]
             elif 'Name' in feature.qualifiers:
                 name = feature.qualifiers['Name'][0]
+            name = name[0:100]
 
             # start in Genbank format is start after, so +1 here
             features.append((feature.location.start+1, feature.location.end,
