@@ -11,7 +11,9 @@ appropriately.
 Try it
 ------
 
-Construct your virtual env, then try
+Construct your virtual env and pip install dependencies (use requirements/{dev,core}.txt).
+
+To start a server,
 
 ```
 python src/manage.py syncdb --noinput
