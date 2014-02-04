@@ -2,118 +2,33 @@
 
 <!-- left -->
 <div class="col-md-7">
-
-    <div ng-show="display_summary">
-        <span ng-repeat="annotation in summary_annotations | orderBy:base_first"
-              class="pull-left {{ annotation.display_css }}">
-            <span ng-click="zoomAt(annotation)" title="bp {{ annotation.base_first | number }}"
-             >{{ annotation.display_name }}</span>
-        </span>
-        <div class="clearfix"></div>
-    </div>
-
-    <div ng-show="display_summary == false">
-
-        <div class="well">
-        <div class="input-group">
-            <div class="input-group-addon glyphicon glyphicon-zoom-out" ng-click="zoomOut()"></div>
-            <div class="input-group-addon glyphicon glyphicon-arrow-left" ng-click="zoomMoveLeft()"></div>
-            <div class="input-group-addon"
-                 style="top:1px; position:relative;"> {{ zoom.base_first }} bps - {{ zoom.base_last }} bps </div>
-            <div class="input-group-addon glyphicon glyphicon-arrow-right" ng-click="zoomMoveRight()"></div>
-            <div class="input-group-addon glyphicon glyphicon-zoom-in" ng-click="zoomIn()"></div>
-            <div class="input-group-addon glyphicon glyphicon-fullscreen" ng-click="showSummary()"></div>
-        </div>
-        </div>
-
-        <div class="zoom-container">
-            <span ng-repeat="display in zoom.display"
-                  class="{{ display.css }}"
-                  style="left:{{ display.left }}; top:{{ display.top }}; width:{{ display.width }};"
-                  title="{{ display.annotation.display_name }} ({{ display.annotation.type }})">
-                {{ display.annotation.display_name }}
-            </span>
-        </div>
-
-        <div class="clearfix"></div>
-
-        <div class="sequence-container">
-            <button class="btn btn-primary" ng-click="fetchSequence()">Get Sequence</button>
-            <div ng-show="zoom.has_sequence">
-                <textarea class="sequence" readonly>{{ zoom.sequence.sequence }}</textarea>
-            </div>
-        </div>
-
-    </div>
-
+    <div ng-include="'partials/fragment-left.html'"></div>
 </div>
 <!-- left -->
 
 <!-- right -->
 <div class="col-md-5">
 
-<div class="well" ng-show="annotate_error">
-    <span class="text-danger">Error: {{ annotate_error.message }}</span>
+<ul class="nav nav-tabs" id="fragment-tab">
+    <li><a href="#annotations" data-toggle="tab">Annotations</a></li>
+</ul>
+
+<script>
+$('#fragment-tab a').click(function (e) {
+    e.preventDefault()
+    $(this).tab('show')
+});
+$('#fragment-tab a:first').tab('show');
+</script>
+
+<div class="tab-content">
+
+<div class="tab-pane active" id="annotations">
+    <div ng-include="'partials/fragment-annotation-list.html'"></div>
 </div>
 
-<form class="form-inline" role="form">
-    From
-    <div class="form-group">
-        <input required class="form-control" type="text" ng-model="annotation.base_first" size="6"
-         placeholder="Bp" />
-    </div>
-    To
-    <div class="form-group">
-        <input required class="form-control" type="text" ng-model="annotation.base_last" size="6"
-         placeholder="Bp" />
-    </div>
-    <div class="form-group">
-        <input required class="form-control" type="text" ng-model="annotation.name" size="8"
-         placeholder="Name" />
-    </div>
-    <br/>
-    <div class="form-group space-top-small">
-        <select required class="form-control select-mini" ng-model="annotation.type"
-         ng-options="feature_type for feature_type in featureTypes">
-        </select>
-    </div>
-    <div class="form-group space-top-small">
-        <select required class="form-control select-mini" ng-model="annotation.strand">
-            <option value="1">Fwd</option>
-            <option value="-1">Rev</option>
-        </select>
-    </div>
-    <div class="form-group space-top-small">
-        <button class="btn btn-primary" ng-click="addAnnotation(annotation)">Annotate</button>
-    </div>
-</form>
+</div> <!-- tab-content -->
 
-<div class="well space-top">
-<div class="input-group">
-    <span class="input-group-addon"> Search: </span>
-    <input ng-model="query" class='form-control'>
-    <span class="input-group-addon"> Sort by: </span>
-    <select ng-model="annotationOrderProp" class='form-control'>
-        <option value="base_first">Position</option>
-        <option value="name">Alphabetical</option>
-    </select>
-</div>
-</div>
-
-<div ng-if="display_summary == false || (query && query.length >= 2)">
-<table class="table table-striped table-condensed">
-<thead><tr> <th>Start</th> <th>End</th> <th>Name</th> <th>Type</th> <th>Strand</th> </tr></thead>
-<tr ng-repeat="annotation in zoom.annotations | filter:query | orderBy:annotationOrderProp">
-    <td>{{ annotation.base_first }}</td>
-    <td>{{ annotation.base_last }}</td>
-    <td>{{ annotation.display_name }}</td>
-    <td>{{ annotation.type }}</td>
-    <td>{{ annotation.strand }}</td>
-</tr>
-</table>
-</div>
-
-</div>
-<!-- right -->
+</div> <!-- right -->
 
 </div> <!-- row -->

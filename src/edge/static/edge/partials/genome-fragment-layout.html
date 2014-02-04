@@ -1,0 +1,51 @@
+<div class="row">
+
+<!-- left -->
+<div class="col-md-7">
+    <div ng-include="'partials/fragment-left.html'"></div>
+</div>
+<!-- left -->
+
+<!-- right -->
+<div class="col-md-5">
+
+<ul class="nav nav-tabs" id="fragment-tab">
+    <li><a href="#annotations" data-toggle="tab">Annotations</a></li>
+    <li><a href="#insert-bases" data-toggle="tab">Insert</a></li>
+    <li><a href="#remove-bases" data-toggle="tab">Remove</a></li>
+    <li><a href="#replace-bases" data-toggle="tab">Replace</a></li>
+</ul>
+
+<script>
+$('#fragment-tab a').click(function (e) {
+    e.preventDefault()
+    $(this).tab('show')
+});
+$('#fragment-tab a:first').tab('show');
+</script>
+
+<div class="tab-content">
+
+<div class="tab-pane active" id="annotations">
+    <div ng-include="'partials/fragment-annotation-list.html'"></div>
+</div>
+
+<div class="tab-pane" id="insert-bases">
+    <div ng-include="'partials/op-insert-bases.html'"></div>
+    <div ng-include="'partials/op-insert-fragment.html'" class="space-top"></div>
+</div>
+
+<div class="tab-pane" id="remove-bases">
+    <div ng-include="'partials/op-remove-bases.html'"></div>
+</div>
+
+<div class="tab-pane" id="replace-bases">
+    <div ng-include="'partials/op-replace-bases.html'"></div>
+    <div ng-include="'partials/op-replace-with-fragment.html'" class="space-top"></div>
+</div>
+
+</div> <!-- tab-content -->
+
+</div> <!-- right -->
+
+</div> <!-- row -->

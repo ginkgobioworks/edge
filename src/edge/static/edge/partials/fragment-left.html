@@ -1,0 +1,42 @@
+<div ng-show="display_summary">
+    <span ng-repeat="annotation in summary_annotations | orderBy:base_first"
+          class="pull-left {{ annotation.display_css }}">
+        <span ng-click="zoomAt(annotation)" title="bp {{ annotation.base_first | number }}"
+         >{{ annotation.display_name }}</span>
+    </span>
+    <div class="clearfix"></div>
+</div>
+
+<div ng-show="display_summary == false">
+
+    <div class="well">
+    <div class="input-group">
+        <div class="input-group-addon glyphicon glyphicon-zoom-out" ng-click="zoomOut()"></div>
+        <div class="input-group-addon glyphicon glyphicon-arrow-left" ng-click="zoomMoveLeft()"></div>
+        <div class="input-group-addon"
+             style="top:1px; position:relative;"> {{ zoom.base_first }} bps - {{ zoom.base_last }} bps </div>
+        <div class="input-group-addon glyphicon glyphicon-arrow-right" ng-click="zoomMoveRight()"></div>
+        <div class="input-group-addon glyphicon glyphicon-zoom-in" ng-click="zoomIn()"></div>
+        <div class="input-group-addon glyphicon glyphicon-fullscreen" ng-click="showSummary()"></div>
+    </div>
+    </div>
+
+    <div class="zoom-container">
+        <span ng-repeat="display in zoom.display"
+              class="{{ display.css }}"
+              style="left:{{ display.left }}; top:{{ display.top }}; width:{{ display.width }};"
+              title="{{ display.annotation.display_name }} ({{ display.annotation.type }})">
+            {{ display.annotation.display_name }}
+        </span>
+    </div>
+
+    <div class="clearfix"></div>
+
+    <div class="sequence-container">
+        <button class="btn btn-primary" ng-click="fetchSequence()">Get Sequence</button>
+        <div ng-show="zoom.has_sequence">
+            <textarea class="sequence" readonly>{{ zoom.sequence.sequence }}</textarea>
+        </div>
+    </div>
+
+</div>
