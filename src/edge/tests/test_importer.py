@@ -7,6 +7,8 @@ import tempfile
 class ImporterTest(TestCase):
 
     def test_import_gff_procedure_creates_genome_and_annotations(self):
+        from edge import import_gff
+
         data = """##gff-version 3
 chrI\tTest\tchromosome\t1\t160\t.\t.\t.\tID=i1;Name=f1
 chrI\tTest\tcds\t30\t80\t.\t-\t.\tID=i2;Name=f2
@@ -28,11 +30,17 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             f.close()
 
             self.assertEquals(Genome.objects.filter(name='TestGenome').count(), 0)
-
-            from edge import import_gff
             import_gff('TestGenome', f.name)
-
             self.assertEquals(Genome.objects.filter(name='TestGenome').count(), 1)
+
+            # import again with same name does not work
+            self.assertRaises(Exception, import_gff, 'TestGenome', f.name)
+
+            # can import again with different name
+            self.assertEquals(Genome.objects.filter(name='TestGenome2').count(), 0)
+            import_gff('TestGenome2', f.name)
+            self.assertEquals(Genome.objects.filter(name='TestGenome2').count(), 1)
+
             genome = Genome.objects.get(name='TestGenome')
 
             os.unlink(f.name)

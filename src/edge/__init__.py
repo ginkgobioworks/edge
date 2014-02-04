@@ -7,6 +7,8 @@ def import_gff(name, fn):
     """
 
     from edge.models import Genome
+    if Genome.objects.filter(name=name).count() > 0:
+        raise Exception('There is already a genome named "%s"' % (name,))
     g = Genome.create(name)
     u = g.edit()
     u.import_gff(fn)
