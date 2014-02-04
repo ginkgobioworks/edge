@@ -18,8 +18,8 @@ To start a server,
 ```
 python src/manage.py syncdb --noinput
 python src/manage.py migrate
-(cd example; gunzip ecoli-mg1656.gff.gz; gunzip yeast.gff.gz)
-python src/manage.py import_gff 'E. coli MG1655' example/ecoli-mg1656.gff
+(cd example; gunzip ecoli-mg1655.gff.gz; gunzip yeast.gff.gz)
+python src/manage.py import_gff 'E. coli MG1655' example/ecoli-mg1655.gff
 python src/manage.py import_gff 'Saccharomyces cerevisiae' example/yeast.gff
 python src/manage.py runserver 0.0.0.0:8000
 ```
