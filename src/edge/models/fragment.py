@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.db import transaction
 
 
@@ -185,18 +186,34 @@ class Fragment(models.Model):
         return self.get_sequence()
 
     def annotations(self, bp_lo=None, bp_hi=None):
-        q = self.fragment_chunk_location_set.select_related('chunk')
+        # hand-crafted query to fetch both Chunk_Feature and
+        # Fragment_Chunk_Location instances
+
+        # because chunk__fragment_chunk_location is a M2M relationship, we have
+        # to specify all the filtering rules in one filter method call. if the
+        # rules are spread across multiple method calls, Django will construct
+        # a separate join to the fragment_chunk_location table for each filter
+        # call.
+        rules = [Q(chunk__fragment_chunk_location__fragment=self)]
         if bp_lo is not None:
-            q = q.filter(base_last__gte=bp_lo)
+            rules.append(Q(chunk__fragment_chunk_location__base_last__gte=bp_lo))
         if bp_hi is not None:
-            q = q.filter(base_first__lte=bp_hi)
-        q = q.order_by('base_first')
+            rules.append(Q(chunk__fragment_chunk_location__base_first__lte=bp_hi))
 
-        chunk_features = []
-        for fcl in q:
-            feature_bps = [(f, fcl) for f in list(fcl.chunk.chunk_feature_set.all())]
-            chunk_features.extend(feature_bps)
+        fcl_tb = Fragment_Chunk_Location._meta.db_table
+        bf = [f.column for f in Fragment_Chunk_Location._meta.fields if f.name == 'base_first'][0]
+        bl = [f.column for f in Fragment_Chunk_Location._meta.fields if f.name == 'base_last'][0]
+        q = Chunk_Feature.objects.filter(*rules)\
+                                 .extra(select=dict(fcl_base_first='%s.%s' % (fcl_tb, bf),
+                                                    fcl_base_last='%s.%s' % (fcl_tb, bl)))
 
+        # using fcl_base_first and fcl_base_last fields to create a fake,
+        # unsaved Fragment_Chunk_Location object
+        chunk_features = [(cf, Fragment_Chunk_Location(fragment=self, chunk=cf.chunk,
+                                                       base_first=cf.fcl_base_first,
+                                                       base_last=cf.fcl_base_last)) for cf in q]
+
+        chunk_features = sorted(chunk_features, key=lambda t: t[1].base_first)
         return Annotation.from_chunk_feature_and_location_array(chunk_features)
 
     def update(self, name):

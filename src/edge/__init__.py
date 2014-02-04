@@ -1,5 +1,6 @@
 from django.db.backends.signals import connection_created
 
+
 def setup_sqlite3(sender, connection, **kwargs):
     """Enable integrity constraint with sqlite."""
     if connection.vendor == 'sqlite':

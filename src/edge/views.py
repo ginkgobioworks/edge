@@ -1,4 +1,5 @@
 import json
+import random
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.views.generic.base import View
@@ -127,13 +128,23 @@ class FragmentAnnotationsView(ViewBase):
         q_parser = RequestParser()
         q_parser.add_argument('f', field_type=int, location='get')
         q_parser.add_argument('l', field_type=int, location='get')
+        q_parser.add_argument('m', field_type=int, location='get')
         args = q_parser.parse_args(request)
         f = args['f'] if 'f' in args and args['f'] is not None else None
         l = args['l'] if 'l' in args and args['l'] is not None else None
+        m = args['m'] if 'm' in args and args['m'] is not None else None
 
         fragment = get_fragment_or_404(fragment_id)
-        return [FragmentAnnotationsView.to_dict(annotation)
-                for annotation in fragment.annotations(bp_lo=f, bp_hi=l)]
+        annotations = fragment.annotations(bp_lo=f, bp_hi=l)
+        if m is not None and len(annotations) > m:
+            to_return = []
+            while len(to_return) < m:
+                i = random.randint(0, len(annotations)-1)
+                to_return.append(annotations[i])
+                new_a = annotations[0:i]+annotations[i+1:]
+                annotations = new_a
+            annotations = to_return
+        return [FragmentAnnotationsView.to_dict(annotation) for annotation in annotations]
 
     def on_post(self, request, fragment_id):
         annotation_parser = RequestParser()

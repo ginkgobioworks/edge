@@ -307,6 +307,38 @@ class FragmentTest(TestCase):
             "feature_base_last": 4,
         }])
 
+    def test_limit_max_annotations_to_fetch(self):
+        from edge.models import Fragment
+        import random
+
+        fragment = Fragment.objects.get(pk=self.fragment_id)
+        flen = fragment.length
+        a = fragment.annotate()
+        nannotations = 10
+
+        # create some annotations
+        for n in range(0, nannotations):
+            bf = random.randint(1, flen)
+            bl = random.randint(bf, flen)
+            a.annotate(bf, bl, 'Feature %s' % (n,), 'Feature', 1)
+
+        res = self.client.get(self.uri+'annotations/')
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(json.loads(res.content)), nannotations)
+
+        # limit number of annotations
+        res = self.client.get(self.uri+'annotations/?m=1')
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(json.loads(res.content)), 1)
+
+        res = self.client.get(self.uri+'annotations/?m=%s' % (nannotations,))
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(json.loads(res.content)), nannotations)
+
+        res = self.client.get(self.uri+'annotations/?m=0')
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(json.loads(res.content)), 0)
+
 
 class GenomeAnnotationsTest(TestCase):
 
