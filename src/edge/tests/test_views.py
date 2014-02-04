@@ -36,6 +36,54 @@ class GenomeListTest(TestCase):
         self.assertEquals(re2.status_code, 200)
         self.assertEquals(json.loads(res.content), json.loads(re2.content))
 
+    def test_finds_genomes_with_specified_fragment_ids(self):
+        from edge.models import Genome, Fragment, Genome_Fragment
+
+        g1 = Genome(name='Foo')
+        g1.save()
+        g2 = Genome(name='Bar')
+        g2.save()
+        f1 = Fragment(circular=True, name='FooF1')
+        f1.save()
+        f2 = Fragment(circular=True, name='FooF2')
+        f2.save()
+        f3 = Fragment(circular=True, name='FooF3', parent=f2)
+        f3.save()
+        Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
+        Genome_Fragment(genome=g1, fragment=f2, inherited=False).save()
+        Genome_Fragment(genome=g2, fragment=f1, inherited=True).save()
+        Genome_Fragment(genome=g2, fragment=f3, inherited=False).save()
+
+        # no filter, return both genomes
+        res = self.client.get('/edge/genomes/')
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertItemsEqual([g['id'] for g in d], [g1.id, g2.id])
+
+        # looking for f1 and f2
+        res = self.client.get('/edge/genomes/?f=%d&f=%d' % (f1.id, f2.id))
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertItemsEqual([g['id'] for g in d], [g1.id])
+
+        # looking for f1 and f3
+        res = self.client.get('/edge/genomes/?f=%d&f=%d' % (f1.id, f3.id))
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertItemsEqual([g['id'] for g in d], [g2.id])
+
+        # looking for f2 and f3
+        res = self.client.get('/edge/genomes/?f=%d&f=%d' % (f2.id, f3.id))
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertEquals(d, [])
+
+        # looking for f1
+        res = self.client.get('/edge/genomes/?f=%d' % (f1.id,))
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertEquals(d, [])
+
 
 class GenomeTest(TestCase):
 
