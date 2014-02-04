@@ -6,6 +6,46 @@ import tempfile
 
 class ImporterTest(TestCase):
 
+    def test_import_gff_procedure_creates_genome_and_annotations(self):
+        data = """##gff-version 3
+chrI\tTest\tchromosome\t1\t160\t.\t.\t.\tID=i1;Name=f1
+chrI\tTest\tcds\t30\t80\t.\t-\t.\tID=i2;Name=f2
+chrI\tTest\trbs\t20\t28\t.\t+\t.\tID=i3
+chrII\tTest\tgene\t40\t60\t.\t-\t.\tID=f4;gene=g4
+chrII\tTest\tgene\t20\t80\t.\t+\t.\tID=i5;Name=f5
+###
+##FASTA
+>chrI
+CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
+ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
+>chrII
+CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
+ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
+"""
+
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
+            f.write(data)
+            f.close()
+
+            self.assertEquals(Genome.objects.filter(name='TestGenome').count(), 0)
+
+            from edge import import_gff
+            import_gff('TestGenome', f.name)
+
+            self.assertEquals(Genome.objects.filter(name='TestGenome').count(), 1)
+            genome = Genome.objects.get(name='TestGenome')
+
+            os.unlink(f.name)
+
+        # created one fragment for each sequence in GFF file
+        self.assertItemsEqual([f.name for f in genome.fragments.all()], ['chrI', 'chrII'])
+        chrI = [f for f in genome.fragments.all() if f.name == 'chrI'][0]
+        self.assertEquals(len(chrI.sequence), 160)
+        self.assertEquals(len(chrI.annotations()), 2)
+        chrII = [f for f in genome.fragments.all() if f.name == 'chrII'][0]
+        self.assertEquals(len(chrII.sequence), 160)
+        self.assertEquals(len(chrII.annotations()), 2)
+
     def test_import_gff_creates_fragments_and_annotate_features(self):
 
         data = """##gff-version 3
