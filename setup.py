@@ -9,7 +9,7 @@ except ImportError:
 
 setup(
     name='edge',
-    version='0.1',
+    version='0.2',
     description='Genome Engineering Tool',
     author='Ginkgo Bioworks',
     author_email='team@ginkgobioworks.com',
