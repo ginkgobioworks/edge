@@ -91,28 +91,28 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         self.assertEquals(len(chrI.sequence), 160)
         # verify skips annotation on entire sequence
         self.assertEquals(len(chrI.annotations()), 2)
-        self.assertEquals(chrI.annotations()[1].base_first, 20)
-        self.assertEquals(chrI.annotations()[1].base_last, 28)
-        self.assertEquals(chrI.annotations()[1].feature.name, 'i3')  # no name, loaded ID
-        self.assertEquals(chrI.annotations()[1].feature.strand, 1)
-        self.assertEquals(chrI.annotations()[0].base_first, 30)
-        self.assertEquals(chrI.annotations()[0].base_last, 80)
-        self.assertEquals(chrI.annotations()[0].feature.name, 'f2')
-        self.assertEquals(chrI.annotations()[0].feature.strand, -1)
+        self.assertEquals(chrI.annotations()[0].base_first, 20)
+        self.assertEquals(chrI.annotations()[0].base_last, 28)
+        self.assertEquals(chrI.annotations()[0].feature.name, 'i3')  # no name, loaded ID
+        self.assertEquals(chrI.annotations()[0].feature.strand, 1)
+        self.assertEquals(chrI.annotations()[1].base_first, 30)
+        self.assertEquals(chrI.annotations()[1].base_last, 80)
+        self.assertEquals(chrI.annotations()[1].feature.name, 'f2')
+        self.assertEquals(chrI.annotations()[1].feature.strand, -1)
 
         # verify chrII fragment
         chrII = [f for f in genome.fragments.all() if f.name == 'chrII'][0]
         self.assertEquals(len(chrII.sequence), 160)
         # consecutive annotations merged even though they span multiple chunks
         self.assertEquals(len(chrII.annotations()), 2)
-        self.assertEquals(chrII.annotations()[0].base_first, 40)
-        self.assertEquals(chrII.annotations()[0].base_last, 60)
-        self.assertEquals(chrII.annotations()[0].feature.name, 'g4')  # has gene, use gene name
-        self.assertEquals(chrII.annotations()[0].feature.strand, -1)
-        self.assertEquals(chrII.annotations()[1].base_first, 20)
-        self.assertEquals(chrII.annotations()[1].base_last, 80)
-        self.assertEquals(chrII.annotations()[1].feature.name, 'f5')
-        self.assertEquals(chrII.annotations()[1].feature.strand, 1)
+        self.assertEquals(chrII.annotations()[0].base_first, 20)
+        self.assertEquals(chrII.annotations()[0].base_last, 80)
+        self.assertEquals(chrII.annotations()[0].feature.name, 'f5')
+        self.assertEquals(chrII.annotations()[0].feature.strand, 1)
+        self.assertEquals(chrII.annotations()[1].base_first, 40)
+        self.assertEquals(chrII.annotations()[1].base_last, 60)
+        self.assertEquals(chrII.annotations()[1].feature.name, 'g4')  # has gene, use gene name
+        self.assertEquals(chrII.annotations()[1].feature.strand, -1)
 
     def test_import_feature_starting_at_first_base(self):
 
@@ -141,14 +141,14 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         self.assertEquals(len(chrI.sequence), 160)
         # verify skips annotation on entire sequence
         self.assertEquals(len(chrI.annotations()), 2)
-        self.assertEquals(chrI.annotations()[1].base_first, 20)
-        self.assertEquals(chrI.annotations()[1].base_last, 28)
-        self.assertEquals(chrI.annotations()[1].feature.name, 'i3')  # no name, loaded ID
-        self.assertEquals(chrI.annotations()[1].feature.strand, 1)
         self.assertEquals(chrI.annotations()[0].base_first, 1)
         self.assertEquals(chrI.annotations()[0].base_last, 80)
         self.assertEquals(chrI.annotations()[0].feature.name, 'f2')
         self.assertEquals(chrI.annotations()[0].feature.strand, -1)
+        self.assertEquals(chrI.annotations()[1].base_first, 20)
+        self.assertEquals(chrI.annotations()[1].base_last, 28)
+        self.assertEquals(chrI.annotations()[1].feature.name, 'i3')  # no name, loaded ID
+        self.assertEquals(chrI.annotations()[1].feature.strand, 1)
 
     def test_import_partially_overlapping_features(self):
 

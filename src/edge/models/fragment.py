@@ -16,7 +16,7 @@ class Annotation(object):
         self.feature_base_last = chunk_feature.feature_base_last
         self.fragment = fragment
 
-    def __unicode__(self):
+    def __str__(self):
         s = []
         if self.feature_base_first != 1 or self.feature_base_last != self.feature.length:
             s.append('%s (%s-%s)' % (self.feature.name,
@@ -54,7 +54,7 @@ class Annotation(object):
                                               base_last=fcl.base_last,
                                               chunk_feature=cf,
                                               fragment=fcl.fragment))
-        return annotations
+        return sorted(annotations, key=lambda a: a.base_first)
 
 
 class BigIntPrimaryModel(models.Model):
@@ -210,8 +210,9 @@ class Fragment(models.Model):
         # using fcl_base_first and fcl_base_last fields to create a fake,
         # unsaved Fragment_Chunk_Location object
         chunk_features = [(cf, Fragment_Chunk_Location(fragment=self, chunk=cf.chunk,
-                                                       base_first=cf.fcl_base_first,
-                                                       base_last=cf.fcl_base_last)) for cf in q]
+                                                       base_first=int(cf.fcl_base_first),
+                                                       base_last=int(cf.fcl_base_last)))
+                          for cf in q]
 
         chunk_features = sorted(chunk_features, key=lambda t: t[1].base_first)
         return Annotation.from_chunk_feature_and_location_array(chunk_features)

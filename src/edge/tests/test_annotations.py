@@ -197,6 +197,24 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations()[0].feature_base_last, len(self.root_sequence)-9+1)
         self.assertEquals(f.annotations()[0].feature.length, len(self.root_sequence)-9+1)
 
+    def test_annotations_list_ordered_by_bp(self):
+        a = self.root.annotate()
+        # annotate bps 5-9 before bps 1-6, but ordered annotations should still
+        # return annotation of 1-6 before annotation of 5-9
+        a.annotate(5, 9, 'A2', 'gene', 1)
+        a.annotate(1, 6, 'A1', 'gene', 1)
+        self.assertEquals(len(a.annotations()), 2)
+        self.assertEquals(a.annotations()[0].base_first, 1)
+        self.assertEquals(a.annotations()[0].base_last, 6)
+        self.assertEquals(a.annotations()[0].feature.name, 'A1')
+        self.assertEquals(a.annotations()[0].feature_base_first, 1)
+        self.assertEquals(a.annotations()[0].feature_base_last, 6)
+        self.assertEquals(a.annotations()[1].base_first, 5)
+        self.assertEquals(a.annotations()[1].base_last, 9)
+        self.assertEquals(a.annotations()[1].feature.name, 'A2')
+        self.assertEquals(a.annotations()[1].feature_base_first, 1)
+        self.assertEquals(a.annotations()[1].feature_base_last, 5)
+
     def test_getting_annotations_by_bp(self):
         a = self.root.annotate()
         a.annotate(1, 3, 'A1', 'gene', 1)
