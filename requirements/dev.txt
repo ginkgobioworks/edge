@@ -7,3 +7,5 @@ django-nose
 # code checking
 pep8
 
+# when using mysql
+mysql-python
