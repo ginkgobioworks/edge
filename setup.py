@@ -25,7 +25,7 @@ setup(
     install_requires=[
       'numpy',
       'biopython',
-      'bcbio-gff==0.3',
+      'bcbio-gff==0.4',
     ],
     classifiers=[
         'Operating System :: OS Independent',

@@ -8,4 +8,4 @@ numpy
 biopython
 
 # gff parsing
-bcbio-gff == 0.3
+bcbio-gff == 0.4
