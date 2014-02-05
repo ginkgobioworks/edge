@@ -13,6 +13,7 @@ setup(name="edge",
       author_email="team@ginkgobioworks.com",
       description="Genome Engineering Tool",
       license="MIT",
+      namespace_packages=["src"],
       packages=find_packages(),
       zip_safe=False,
       install_requires=install_requires)
