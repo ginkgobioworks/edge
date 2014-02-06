@@ -84,6 +84,12 @@ class GenomeListTest(TestCase):
         d = json.loads(res.content)
         self.assertEquals(d, [])
 
+        # bad input, return []
+        res = self.client.get('/edge/genomes/?f=[1,2,3]')
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertEquals(d, [])
+
 
 class GenomeTest(TestCase):
 

@@ -339,7 +339,12 @@ class GenomeListView(ViewBase):
     def on_get(self, request):
         genomes = Genome.objects.all()
         if 'f' in request.GET:
-            fragment_ids = [int(f) for f in request.GET.getlist('f')]
+            fragment_ids = []
+            for f in request.GET.getlist('f'):
+                try:
+                    fragment_ids.append(int(f))
+                except ValueError:
+                    return []
             genomes = [g for g in genomes
                        if set(fragment_ids) == set([f.id for f in g.fragments.all()])]
         return [GenomeView.to_dict(genome) for genome in genomes]
