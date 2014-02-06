@@ -1,17 +1,29 @@
 
-Edge
-----
+## Edge
 
-Edge manages genomic changes and annotations. Edge allows a child genome to
-derive from a parent genome by making a change to the parent genome. Children
-genomes inherit annotations and changes from their parent genomes
-appropriately.
+Edge keeps track of proposed structural changes between a parent genome and its
+derived genomes. Users can create a derived genome by making changes to the
+sequence of the parent genome. Derived genomes inherit annotations from parents
+whenever appropriate.
 
 
-Try it
-------
+### Why?
 
-Construct your virtual env and pip install dependencies (use requirements/{dev,core}.txt).
+Edge efficiently keeps track of structural changes between genomes, and at the
+same time allows derived genomes to inherit annotations from parents, even
+annotations applied to a parent after the derived genome was created.
+
+The necessary storage cost to store a derived genome is O(D), where D is the
+number of differences between the derived genome and its parent. The current
+implementation additionally uses a cache of annotation to base pair number for
+each genome. While this cache is O(N), where N is the number of annotations, it
+is soft-data and can be discarded.
+
+
+### Try it
+
+Construct your virtual env and pip install dependencies (use
+requirements/{dev,core}.txt).
 
 To start a server,
 
