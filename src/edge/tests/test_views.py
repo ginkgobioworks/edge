@@ -131,7 +131,8 @@ class GenomeTest(TestCase):
             "id": fragment_id,
             "length": len(data['sequence']),
             "name": data['name'],
-            "uri": uri
+            "uri": uri,
+            "parent_id": None,
         })
 
     def test_add_circular_fragment(self):
@@ -147,7 +148,8 @@ class GenomeTest(TestCase):
             "id": fragment_id,
             "length": len(data['sequence']),
             "name": data['name'],
-            "uri": uri
+            "uri": uri,
+            "parent_id": None,
         })
 
     def test_get_genome_returns_fragments(self):
@@ -163,7 +165,8 @@ class GenomeTest(TestCase):
             "id": fragment_id,
             "length": len(data['sequence']),
             "name": data['name'],
-            "uri": uri
+            "uri": uri,
+            "parent_id": None,
         }])
 
     def test_can_use_uri_from_add_fragment_to_fetch_fragment(self):
@@ -197,6 +200,7 @@ class FragmentTest(TestCase):
             "length": len(self.sequence),
             "uri": self.uri,
             "circular": False,
+            "parent_id": None
         }])
 
     def test_get_fragment(self):
@@ -208,6 +212,7 @@ class FragmentTest(TestCase):
             "length": len(self.sequence),
             "uri": self.uri,
             "circular": False,
+            "parent_id": None
         })
 
     def test_get_fragment_sequence(self):
@@ -466,6 +471,7 @@ class GenomeFragmentTest(TestCase):
                 'length': len(self.sequence)+6,
                 'name': self.fragment_name,
                 'uri': fragment_uri,
+                "parent_id": self.fragment_id,
                 'changes': [[1, len(self.sequence)+6]],
             }],
             "id": genome_id,
@@ -499,6 +505,7 @@ class GenomeFragmentTest(TestCase):
                 'length': len(self.sequence)-4,
                 'name': self.fragment_name,
                 'uri': fragment_uri,
+                'parent_id': self.fragment_id,
                 'changes': [[1, len(self.sequence)-4]],
             }],
             "id": genome_id,
@@ -533,6 +540,7 @@ class GenomeFragmentTest(TestCase):
                 'length': len(self.sequence)+2,
                 'name': self.fragment_name,
                 'uri': fragment_uri,
+                'parent_id': self.fragment_id,
                 'changes': [[1, len(self.sequence)+2]],
             }],
             "id": genome_id,
@@ -575,6 +583,7 @@ class GenomeFragmentTest(TestCase):
                 'length': len(self.sequence)+6,
                 'name': self.fragment_name,
                 'uri': fragment_uri,
+                'parent_id': self.fragment_id,
                 'changes': [[1, len(self.sequence)+6]],
             }],
             "id": genome_id,
@@ -617,6 +626,7 @@ class GenomeFragmentTest(TestCase):
                 'length': len(self.sequence)+2,
                 'name': self.fragment_name,
                 'uri': fragment_uri,
+                'parent_id': self.fragment_id,
                 'changes': [[1, len(self.sequence)+2]],
             }],
             "id": genome_id,

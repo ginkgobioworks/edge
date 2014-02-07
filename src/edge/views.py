@@ -86,6 +86,7 @@ class FragmentView(ViewBase):
                     uri=reverse('fragment', kwargs=dict(fragment_id=fragment.id)),
                     name=fragment.name,
                     circular=fragment.circular,
+                    parent_id=fragment.parent.id if fragment.parent else None,
                     length=fragment.length)
 
     def on_get(self, request, fragment_id):
