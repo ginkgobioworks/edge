@@ -38,3 +38,7 @@ python src/manage.py runserver 0.0.0.0:8000
 
 Then set your browser to ```http://<your IP>:8000/edge/```
 
+You can edit genome and fragment metadata, such as name, notes, circular
+attributes, from Django admin. Create a Django admin superuser, then set your
+browser to ```http://<your IP>:8000/admin/```
+
