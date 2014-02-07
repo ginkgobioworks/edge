@@ -8,8 +8,12 @@ class Genome(models.Model):
 
     name = models.CharField(max_length=256)
     parent = models.ForeignKey('self', null=True)
-    notes = models.TextField(null=True)
+    notes = models.TextField(null=True, blank=True)
     fragments = models.ManyToManyField(Fragment, through='Genome_Fragment')
+    created_on = models.DateTimeField('Created', auto_now_add=True, null=True)
+
+    def __unicode__(self):
+        return self.name
 
     @staticmethod
     def create(name, notes=None):

@@ -84,6 +84,7 @@ class Fragment(models.Model):
     name = models.CharField(max_length=256)
     parent = models.ForeignKey('self', null=True)
     start_chunk = models.ForeignKey('Chunk', null=True)
+    created_on = models.DateTimeField('Created', auto_now_add=True, null=True)
 
     @property
     def has_location_index(self):
