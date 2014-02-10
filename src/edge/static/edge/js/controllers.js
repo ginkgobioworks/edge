@@ -142,11 +142,30 @@ function FragmentController($scope, $routeParams, $http) {
         annotations.forEach(function(a) {
             var d = {};
             d['annotation'] = a;
+            d['title'] = a.display_name+' ('+a.type+')';
             d['css'] = edgeAnnotationZoomCSS(a);
+            var sliced = false;
+            var slice = [1, a['base_last']-a['base_first']+1];
 
-            var left = (a['base_first']-base_first)*100.0/full_length;
+            var a_first = a['base_first'];
+            if (a_first < base_first) {
+                a_first = base_first;
+                sliced = true;
+                slice[0] = base_first-a['base_first']+1;
+            }
+            var a_last = a['base_last'];
+            if (a_last > base_last) {
+                a_last = base_last; 
+                sliced = true;
+                slice[1] = base_last-a['base_first']+1;
+            }
+            if (sliced) {
+                d['title'] += ' ('+slice[0]+'-'+slice[1]+')';
+            }
+
+            var left = (a_first-base_first)*100.0/full_length;
             d['left'] = ''+left+'%';
-            var width = (a['base_last']-a['base_first']+1)*100.0/full_length;
+            var width = (a_last-a_first+1)*100.0/full_length;
             d['width'] = ''+width+'%';
 
             /* find a layer to put the feature */
@@ -204,7 +223,7 @@ function FragmentController($scope, $routeParams, $http) {
                 }
             }
         });
-        if (zoom_annotations.length > 0) {
+        if (zoom_annotations.length > 0 && false) {
             zoom_annotations.sort(function(a,b) { return a['base_first']-b['base_first']; });
             $scope.zoom['base_first'] = Math.min(min_bp, base_first);
             $scope.zoom['base_last'] = Math.max(max_bp, base_last);
