@@ -251,6 +251,16 @@ function FragmentController($scope, $routeParams, $http) {
         $scope.zoomRefresh(base_first, base_last);
     }
 
+    $scope.zoomAtExact = function(annotation) {
+        // reset
+        $scope.zoom = {};
+        $scope.display_summary = false;
+        var base_first = annotation['base_first'];
+        var base_last = annotation['base_last'];
+        if (base_last > $scope.fragment['length']) { base_last = $scope.fragment['length']; }
+        $scope.zoomRefresh(base_first, base_last);
+    }
+
     $scope.zoomMoveRight = function() {
         var cur_zoom = $scope.zoom['base_last']-$scope.zoom['base_first']+1;
         var base_first = $scope.zoom['base_last'];

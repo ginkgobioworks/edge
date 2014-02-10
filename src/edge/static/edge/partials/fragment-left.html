@@ -1,8 +1,8 @@
 <div ng-show="display_summary">
     <span ng-repeat="annotation in summary_annotations | orderBy:base_first"
-          class="pull-left {{ annotation.display_css }}">
-        <span ng-click="zoomAt(annotation)" title="bp {{ annotation.base_first | number }}"
-         >{{ annotation.display_name }}</span>
+          class="pull-left {{ annotation.display_css }}"
+          ng-click="zoomAt(annotation)" title="bp {{ annotation.base_first | number }}">
+        {{ annotation.display_name }}
     </span>
     <div class="clearfix"></div>
 </div>
@@ -25,7 +25,7 @@
         <span ng-repeat="display in zoom.display"
               class="{{ display.css }}"
               style="left:{{ display.left }}; top:{{ display.top }}; width:{{ display.width }};"
-              title="{{ display.title }})">
+              ng-click="zoomAtExact(display.annotation)" title="{{ display.title }})">
             {{ display.title }}
         </span>
     </div>
