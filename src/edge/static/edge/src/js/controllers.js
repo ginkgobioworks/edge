@@ -335,8 +335,18 @@ function FragmentController($scope, $routeParams, $http) {
             });
     }
 
+    function tabify() {
+        jQuery('#fragment-tab a').click(function (e) {
+            e.preventDefault();
+            jQuery(this).tab('show');
+        });
+        jQuery('#fragment-tab a:first').tab('show');
+    }
+
     $http.get('/edge/fragments/'+$scope.fragmentId).success(function(fragment) {
         $scope.fragment = fragment;
+        // do this here, after templates have been rendered
+        tabify();
     });
 
     $http.get('/edge/fragments/'+$scope.fragmentId+'/annotations').success(function(annotations) {
@@ -362,6 +372,7 @@ function FragmentController($scope, $routeParams, $http) {
 
     $scope.query = undefined;
     $scope.annotationOrderProp = 'base_first';
+
 }
 
 function GenomeFragmentController($scope, $routeParams, $injector, $http) {

@@ -2,7 +2,7 @@
 
 <!-- left -->
 <div class="col-md-7">
-    <div ng-include="'partials/fragment-left.html?v=581'"></div>
+    <partial template="fragment-left"></partial>
 </div>
 <!-- left -->
 
@@ -13,18 +13,10 @@
     <li><a href="#annotations" data-toggle="tab">Annotations</a></li>
 </ul>
 
-<script>
-$('#fragment-tab a').click(function (e) {
-    e.preventDefault()
-    $(this).tab('show')
-});
-$('#fragment-tab a:first').tab('show');
-</script>
-
 <div class="tab-content">
 
-<div class="tab-pane active" id="annotations">
-    <div ng-include="'partials/fragment-annotation-list.html'"></div>
+<div class="tab-pane" id="annotations">
+    <partial template="fragment-annotation-list"></partial>
 </div>
 
 </div> <!-- tab-content -->

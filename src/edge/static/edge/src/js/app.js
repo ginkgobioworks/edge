@@ -1,20 +1,30 @@
-angular.module('edge', []).
+var app = angular.module('edge', []).
     config(['$routeProvider', function($routeProvider) {
         $routeProvider.
             when('/genomes',
-                 {templateUrl: 'partials/genome-list.html',
+                 {template: JST['genome-list'],
                   controller: GenomeListController}).
             when('/genomes/:genomeId',
-                 {templateUrl: 'partials/genome-detail.html',
+                 {template: JST['genome-detail'],
                   controller: GenomeDetailController}).
             when('/genomes/:genomeId/fragments/:fragmentId',
-                 {templateUrl: 'partials/genome-fragment.html',
+                 {template: JST['genome-fragment'],
                   controller: GenomeFragmentController}).
             when('/fragments',
-                 {templateUrl: 'partials/fragment-list.html',
+                 {template: JST['fragment-list'],
                   controller: FragmentListController}).
             when('/fragments/:fragmentId',
-                 {templateUrl: 'partials/fragment-detail.html',
+                 {template: JST['fragment-detail'],
                   controller: FragmentController}).
             otherwise({redirectTo: '/genomes'});
-    }])
+    }]);
+app.directive('partial', function($compile) {
+    var linker = function(scope, element, attrs) {
+        element.html(JST[attrs.template]());
+        $compile(element.contents())(scope);
+    };
+    return {
+        link: linker,
+        restrict: 'E'
+    }
+});
