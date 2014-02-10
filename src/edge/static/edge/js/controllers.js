@@ -124,7 +124,7 @@ function GenomeDetailController($scope, $routeParams, $http) {
 }
 
 function FragmentController($scope, $routeParams, $http) {
-    var DEFAULT_ZOOM = 5000;
+    var DEFAULT_ZOOM = 2000;
 
     $scope.featureTypes = edgeFeatureTypes;
     $scope.fragmentId = $routeParams.fragmentId;
@@ -181,6 +181,10 @@ function FragmentController($scope, $routeParams, $http) {
             $http.get('/edge/fragments/'+$scope.fragmentId+'/sequence?f='+f+'&l='+l).success(function(data) {
                 $scope.zoom['sequence'] = data;
                 $scope.zoom['has_sequence'] = true;
+                if ($scope.zoom['sequence_viewer'] === undefined) {
+                    $scope.zoom['sequence_viewer'] = SequenceViewer(jQuery, { dom_id : 'sequence-viewer' });
+                }
+                $scope.zoom['sequence_viewer'].setSequence(data.sequence, f);
             });
         }
     }
@@ -213,6 +217,7 @@ function FragmentController($scope, $routeParams, $http) {
         var display = layoutAnnotations(zoom_annotations, $scope.zoom['base_first'], $scope.zoom['base_last']);
         $scope.zoom['display'] = display;
         $scope.zoom['has_sequence'] = false;
+        if ($scope.zoom['sequence_viewer'] !== undefined) { $scope.zoom['sequence_viewer'].clear(); }
     }
 
     $scope.zoomAt = function(annotation) {
