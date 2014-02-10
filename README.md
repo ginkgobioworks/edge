@@ -11,13 +11,24 @@ whenever appropriate.
 
 Edge efficiently keeps track of structural changes between genomes, and at the
 same time allows derived genomes to inherit annotations from parents, even
-annotations applied to a parent after the derived genome was created.
+annotations applied to a parent after the derived genome was created. You can
+consider Edge as the "git" tool for genome engineering.
 
 The necessary storage cost to store a derived genome is O(D), where D is the
 number of differences between the derived genome and its parent. The current
 implementation additionally uses a cache of annotation to base pair number for
 each genome. While this cache is O(N), where N is the number of annotations, it
 is soft-data and can be discarded.
+
+
+### What Edge is NOT
+
+Edge is not a genome sequence analyzer or viewer. There are much better tools
+for those purposes. Edge's main goal is to keep track of genomic changes across
+lineages in a structured fashion, so users can annotation, fix, and compare
+genome sequences and features. While Edge comes with a simple viewer UI to look
+at features and sequences, the UI is primitive. Edge does provide tools to
+export genome sequences and annotations as GFF files.
 
 
 ### Try it
