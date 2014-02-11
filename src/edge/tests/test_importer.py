@@ -257,3 +257,58 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         self.assertEquals(chrI.annotations()[0].base_last, 28)
         self.assertEquals(chrI.annotations()[0].feature.name, 'f2')
         self.assertEquals(chrI.annotations()[0].feature.strand, -1)
+
+
+class QualifierTest(TestCase):
+
+    def import_with_qualifiers(self, qualifiers):
+        data = """##gff-version 3
+chrI\tTest\tcds\t30\t80\t.\t-\t.\t%s
+###
+##FASTA
+>chrI
+CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
+ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
+""" % (qualifiers,)
+        self.genome = Genome.create('Foo')
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
+            f.write(data)
+            f.close()
+            u = self.genome.edit()
+            u.import_gff(f.name)
+            os.unlink(f.name)
+
+    def test_uses_gene_qualifier_over_name_qualifier(self):
+        qualifiers = "ID=i2;gene=g2;Name=f2"
+        self.import_with_qualifiers(qualifiers)
+        chrI = [f for f in self.genome.fragments.all() if f.name == 'chrI'][0]
+        self.assertEquals(len(chrI.annotations()), 1)
+        self.assertEquals(chrI.annotations()[0].feature.name, 'g2')
+
+    def test_uses_name_qualifier_over_locus_tag_qualifier(self):
+        qualifiers = "ID=i2;Name=f2;locus_tag=l2"
+        self.import_with_qualifiers(qualifiers)
+        chrI = [f for f in self.genome.fragments.all() if f.name == 'chrI'][0]
+        self.assertEquals(len(chrI.annotations()), 1)
+        self.assertEquals(chrI.annotations()[0].feature.name, 'f2')
+
+    def test_uses_locus_qualifier_over_id(self):
+        qualifiers = "ID=i2;locus_tag=l2"
+        self.import_with_qualifiers(qualifiers)
+        chrI = [f for f in self.genome.fragments.all() if f.name == 'chrI'][0]
+        self.assertEquals(len(chrI.annotations()), 1)
+        self.assertEquals(chrI.annotations()[0].feature.name, 'l2')
+
+    def test_uses_id_if_nothing_else_available(self):
+        qualifiers = "ID=i2"
+        self.import_with_qualifiers(qualifiers)
+        chrI = [f for f in self.genome.fragments.all() if f.name == 'chrI'][0]
+        self.assertEquals(len(chrI.annotations()), 1)
+        self.assertEquals(chrI.annotations()[0].feature.name, 'i2')
+
+    def test_uses_feature_type_if_no_id(self):
+        qualifiers = ""
+        self.import_with_qualifiers(qualifiers)
+        chrI = [f for f in self.genome.fragments.all() if f.name == 'chrI'][0]
+        self.assertEquals(len(chrI.annotations()), 1)
+        self.assertEquals(chrI.annotations()[0].feature.name, 'cds')

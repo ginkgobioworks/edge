@@ -48,6 +48,8 @@ class GFFFragmentImporter(object):
         return f
 
     def parse_gff(self):
+        name_fields = ('gene', 'name', 'Name', 'locus', 'locus_tag', 'product', 'protein_id')
+
         self.__sequence = str(self.__rec.seq)
         seqlen = len(self.__sequence)
         print '%s: %s' % (self.__rec.id, seqlen)
@@ -58,10 +60,14 @@ class GFFFragmentImporter(object):
             if feature.location.start == 0 and feature.location.end == seqlen:
                 continue
             name = feature.id
-            if 'gene' in feature.qualifiers:
-                name = feature.qualifiers['gene'][0]
-            elif 'Name' in feature.qualifiers:
-                name = feature.qualifiers['Name'][0]
+            if name == '':
+                name = feature.type
+            for field in name_fields:
+                if field in feature.qualifiers:
+                    v = feature.qualifiers[field]
+                    if len(v) > 0:
+                        name = v[0]
+                        break
             name = name[0:100]
 
             # start in Genbank format is start after, so +1 here
