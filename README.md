@@ -3,16 +3,16 @@
 
 Edge keeps track of proposed structural changes between a parent genome and its
 derived genomes. Users can create a derived genome by making changes to the
-sequence of the parent genome. Derived genomes inherit annotations from parents
-whenever appropriate.
+sequence of the parent genome. Derived genomes inherit annotations and fixes
+from parents whenever appropriate.
 
 
 ### Why?
 
 Edge efficiently keeps track of structural changes between genomes, and at the
-same time allows derived genomes to inherit annotations from parents, even
-annotations applied to a parent after the derived genome was created. You can
-consider Edge as the "git" tool for genome engineering.
+same time allows a derived genome to inherit annotations from its ancestors,
+even annotations and fixes applied to an ancestor after the derived genome was
+created. You can consider Edge as the "git" tool for genome engineering.
 
 The necessary storage cost to store a derived genome is O(D), where D is the
 number of differences between the derived genome and its parent. The current
