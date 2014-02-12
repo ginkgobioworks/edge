@@ -284,7 +284,8 @@ class Edge(BigIntPrimaryModel):
     from_chunk = models.ForeignKey(Chunk, related_name='out_edges', on_delete=models.PROTECT)
     fragment = models.ForeignKey(Fragment, on_delete=models.PROTECT)
     # can be null, so we can supersede an edge from a child fragment
-    to_chunk = models.ForeignKey(Chunk, null=True, related_name='in_edges', on_delete=models.PROTECT)
+    to_chunk = models.ForeignKey(Chunk, null=True, related_name='in_edges',
+                                 on_delete=models.PROTECT)
 
 
 class Feature(models.Model):
