@@ -52,7 +52,11 @@
 <tr ng-repeat="annotation in zoom.annotations | filter:query | orderBy:annotationOrderProp">
     <td>{{ annotation.base_first }}</td>
     <td>{{ annotation.base_last }}</td>
-    <td>{{ annotation.display_name }}</td>
+    <td>
+        <a href='javascript:void(0);'
+           ng-click="zoomAt(annotation)" title="bp {{ annotation.base_first | number }}"
+         >{{ annotation.display_name }}</a>
+    </td>
     <td>{{ annotation.type }}</td>
     <td>{{ annotation.strand }}</td>
 </tr>

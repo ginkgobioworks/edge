@@ -16,7 +16,10 @@
 <div class="lead space-top">
     <p>Genome: <a href="#/genomes/{{ genome.id }}">{{ genome.name }}</a> </li>
     <p>Changes:</p>
-    <ul><li ng-repeat='change in changes'>{{ change }}</li></ul>
+    <ul><li ng-repeat="tuple in changes_and_locs">
+            <a href="javascript:void(0);"
+               ng-click="zoomAt(tuple.annotation)">{{ tuple.desc }}</a>
+        </li></ul>
 </div>
 
 <partial template="genome-fragment-layout"></partial>

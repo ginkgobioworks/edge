@@ -48,11 +48,13 @@ function edgeFetchChanges($http, fragment_id, changed_loc, cb) {
     var url = '/edge/fragments/'+fragment_id+'/annotations?f='+changed_loc[0]+'&l='+changed_loc[1];
     $http.get(url).success(function(data) {
         var annotations = [];
+        var first_annotation = undefined;
         data.forEach(function(annotation) {
             var s = edgeAnnotationDisplayName(annotation);
+            if (first_annotation === undefined) { first_annotation = annotation; }
             annotations.push(s);
         });
-        cb(annotations.join(', '));
+        cb(annotations.join(', '), first_annotation);
     });
 }
 
@@ -114,7 +116,7 @@ function GenomeDetailController($scope, $routeParams, $http) {
         data['fragments'].forEach(function(fragment) {
             if (fragment['changes']) {
                 fragment['changes'].forEach(function(changed_loc) {
-                    edgeFetchChanges($http, fragment['id'], changed_loc, function(desc) {
+                    edgeFetchChanges($http, fragment['id'], changed_loc, function(desc, annotation) {
                         $scope.changes.push(fragment['name']+': '+desc);
                     });
                 });
@@ -379,7 +381,7 @@ function GenomeFragmentController($scope, $routeParams, $injector, $http) {
     $injector.invoke(FragmentController, this, { $scope: $scope });
     $scope.genomeId = $routeParams.genomeId;
     $scope.genome = undefined;
-    $scope.changes = [];
+    $scope.changes_and_locs = [];
 
     $http.get('/edge/genomes/'+$scope.genomeId).success(function(genome) {
         $scope.genome = genome;
@@ -387,8 +389,8 @@ function GenomeFragmentController($scope, $routeParams, $injector, $http) {
             if (fragment['id'] == $scope.fragmentId) {
                 if (fragment['changes']) {
                     fragment['changes'].forEach(function(changed_loc) {
-                        edgeFetchChanges($http, fragment['id'], changed_loc, function(desc) {
-                            $scope.changes.push(desc);
+                        edgeFetchChanges($http, fragment['id'], changed_loc, function(desc, annotation) {
+                            $scope.changes_and_locs.push({'desc': desc, 'annotation': annotation});
                         });
                     });
                 }
