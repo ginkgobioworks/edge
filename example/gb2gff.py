@@ -15,7 +15,7 @@ from BCBio import GFF
 def main(gb_file):
     out_file = "%s.gff" % os.path.splitext(gb_file)[0]
     with open(out_file, "w") as out_handle:
-        GFF.write(SeqIO.parse(gb_file, "genbank"), out_handle)
+        GFF.write(SeqIO.parse(gb_file, "genbank"), out_handle, include_fasta=True)
 
 if __name__ == "__main__":
     main(*sys.argv[1:])
