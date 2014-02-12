@@ -7,7 +7,7 @@ class Genome(models.Model):
         app_label = "edge"
 
     name = models.CharField(max_length=256)
-    parent = models.ForeignKey('self', null=True)
+    parent = models.ForeignKey('self', null=True, on_delete=models.PROTECT)
     notes = models.TextField(null=True, blank=True)
     fragments = models.ManyToManyField(Fragment, through='Genome_Fragment')
     created_on = models.DateTimeField('Created', auto_now_add=True, null=True)

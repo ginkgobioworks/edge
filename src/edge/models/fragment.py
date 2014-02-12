@@ -82,8 +82,8 @@ class Fragment(models.Model):
 
     circular = models.BooleanField()
     name = models.CharField(max_length=256)
-    parent = models.ForeignKey('self', null=True)
-    start_chunk = models.ForeignKey('Chunk', null=True)
+    parent = models.ForeignKey('self', null=True, on_delete=models.PROTECT)
+    start_chunk = models.ForeignKey('Chunk', null=True, on_delete=models.PROTECT)
     created_on = models.DateTimeField('Created', auto_now_add=True, null=True)
 
     @property
@@ -270,7 +270,7 @@ class Chunk(BigIntPrimaryModel):
     class Meta:
         app_label = "edge"
 
-    initial_fragment = models.ForeignKey(Fragment)
+    initial_fragment = models.ForeignKey(Fragment, on_delete=models.PROTECT)
     sequence = models.TextField(null=True)
 
     def reload(self):
@@ -281,10 +281,10 @@ class Edge(BigIntPrimaryModel):
     class Meta:
         app_label = "edge"
 
-    from_chunk = models.ForeignKey(Chunk, related_name='out_edges')
-    fragment = models.ForeignKey(Fragment)
+    from_chunk = models.ForeignKey(Chunk, related_name='out_edges', on_delete=models.PROTECT)
+    fragment = models.ForeignKey(Fragment, on_delete=models.PROTECT)
     # can be null, so we can supersede an edge from a child fragment
-    to_chunk = models.ForeignKey(Chunk, null=True, related_name='in_edges')
+    to_chunk = models.ForeignKey(Chunk, null=True, related_name='in_edges', on_delete=models.PROTECT)
 
 
 class Feature(models.Model):
@@ -307,8 +307,8 @@ class Chunk_Feature(BigIntPrimaryModel):
         app_label = "edge"
 
     objects = Chunk_Feature_Manager()
-    chunk = models.ForeignKey(Chunk)
-    feature = models.ForeignKey(Feature)
+    chunk = models.ForeignKey(Chunk, on_delete=models.PROTECT)
+    feature = models.ForeignKey(Feature, on_delete=models.PROTECT)
     feature_base_first = models.IntegerField()
     feature_base_last = models.IntegerField()
 
@@ -319,8 +319,8 @@ class Fragment_Chunk_Location(BigIntPrimaryModel):
         unique_together = (('fragment', 'chunk'),)
         index_together = (('fragment', 'base_last'), ('fragment', 'base_first'))
 
-    fragment = models.ForeignKey(Fragment)
-    chunk = models.ForeignKey(Chunk)
+    fragment = models.ForeignKey(Fragment, on_delete=models.PROTECT)
+    chunk = models.ForeignKey(Chunk, on_delete=models.PROTECT)
     base_first = models.IntegerField()
     base_last = models.IntegerField()
 
