@@ -95,6 +95,46 @@ class GenomeTest(TestCase):
         self.assertEquals(len(changes), 3)
         self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s)+6)])
 
+    def test_update_fragment_by_id(self):
+        genome = Genome.create('Foo')
+
+        g1 = genome.update()
+        s = 'atggcatattcgcagct'
+        f1 = g1.add_fragment('chrI', s)
+
+        g2 = g1.update()
+        with g2.update_fragment_by_fragment_id(f1.id) as f2:
+            f2.insert_bases(3, 'gataca')
+
+        self.assertEquals(g2.fragments.all()[0].sequence, s[0:2]+'gataca'+s[2:])
+        self.assertEquals(g1.fragments.all()[0].sequence, s)
+
+    def test_can_update_fragment_by_name_and_assign_new_name(self):
+        genome = Genome.create('Foo')
+        g = genome.edit()
+        g.add_fragment('chrI', 'atggcatattcgcagct')
+        self.assertItemsEqual([f.name for f in g.fragments.all()], ['chrI'])
+
+        # insert
+        g = g.update()
+        with g.update_fragment_by_name('chrI', 'foobar') as f:
+            f.insert_bases(3, 'gataca')
+
+        self.assertItemsEqual([f.name for f in g.fragments.all()], ['foobar'])
+
+    def test_can_update_fragment_by_id_and_assign_new_name(self):
+        genome = Genome.create('Foo')
+        g = genome.edit()
+        f0 = g.add_fragment('chrI', 'atggcatattcgcagct')
+        self.assertItemsEqual([f.name for f in g.fragments.all()], ['chrI'])
+
+        # insert
+        g = g.update()
+        with g.update_fragment_by_fragment_id(f0.id, 'foobar') as f:
+            f.insert_bases(3, 'gataca')
+
+        self.assertItemsEqual([f.name for f in g.fragments.all()], ['foobar'])
+
     def test_can_insert_then_insert_and_get_second_insert_only_as_changes(self):
         genome = Genome.create('Foo')
         self.assertEquals(len(genome.fragments.all()), 0)
@@ -266,19 +306,3 @@ class GenomeTest(TestCase):
                                    [len(s0)+len(s1)+6+1, len(s0)+6+len(s1)+len(s2)+6]])
             else:
                 raise Exception('Unexpected fragment')
-
-    def test_update_fragment_by_id(self):
-        genome = Genome.create('Foo')
-
-        u = genome.update()
-        s = 'atggcatattcgcagct'
-        f1 = u.add_fragment('chrI', s)
-        g1 = u
-
-        u = g1.update()
-        with u.update_fragment_by_fragment_id(f1.id) as f2:
-            f2.insert_bases(3, 'gataca')
-        g2 = u
-
-        self.assertEquals(g2.fragments.all()[0].sequence, s[0:2]+'gataca'+s[2:])
-        self.assertEquals(g1.fragments.all()[0].sequence, s)

@@ -30,25 +30,27 @@ class Genome_Updater(Genome):
         u.save()
 
     @contextmanager
-    def update_fragment_by_name(self, name):
+    def update_fragment_by_name(self, name, new_name=None):
         if self.parent is None:
             raise Exception('Cannot update fragment without a parent genome. Try editing instead.')
         f = [x for x in self.fragments.all() if x.name == name]
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have name %s' % (name,))
-        u = f[0].update(name)
+        new_name = name if new_name is None else new_name
+        u = f[0].update(new_name)
         yield u
         u.save()
         self._add_updated_fragment(u)
 
     @contextmanager
-    def update_fragment_by_fragment_id(self, fragment_id):
+    def update_fragment_by_fragment_id(self, fragment_id, new_name=None):
         if self.parent is None:
             raise Exception('Cannot update fragment without a parent genome. Try editing instead.')
         f = [x for x in self.fragments.all() if x.id == fragment_id]
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have ID %s' % (fragment_id,))
-        u = f[0].update(f[0].name)
+        new_name = f[0].name if new_name is None else new_name
+        u = f[0].update(new_name)
         yield u
         u.save()
         self._add_updated_fragment(u)
