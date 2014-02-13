@@ -227,16 +227,35 @@ class Fragment(models.Model):
 
         if self.has_location_index:
             # copy over location index
-            for fc in self.fragment_chunk_location_set.all():
-                new_fragment.fragment_chunk_location_set.create(
-                    chunk=fc.chunk,
-                    base_first=fc.base_first,
-                    base_last=fc.base_last
-                )
+            new_fragment.__copy_fragment_chunk_locations(self)
         else:
             new_fragment.index_fragment_chunk_locations()
 
         return new_fragment
+
+    @transaction.atomic()  # this method has to be in a transaction, see below
+    def __copy_fragment_chunk_locations(self, from_fragment):
+        # IMPORTANT: this entire method must be within a transaction, so we can
+        # compute and assign unique BigIntPrimary IDs
+
+        cur_id = 1
+        try:
+            cur_id = Fragment_Chunk_Location.objects\
+                                            .select_for_update()\
+                                            .order_by('-id')\
+                                            .values('id')[0]['id']+1
+        except IndexError:
+            pass
+
+        entries = []
+        for fc in from_fragment.fragment_chunk_location_set.all():
+            entries.append(Fragment_Chunk_Location(id=cur_id,
+                                                   fragment=self,
+                                                   chunk_id=fc.chunk_id,
+                                                   base_first=fc.base_first,
+                                                   base_last=fc.base_last))
+            cur_id += 1
+        Fragment_Chunk_Location.objects.bulk_create(entries)
 
     def annotate(self):
         if not self.has_location_index:
