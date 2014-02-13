@@ -90,6 +90,58 @@ class GenomeListTest(TestCase):
         d = json.loads(res.content)
         self.assertEquals(d, [])
 
+    def test_finds_genomes_with_name(self):
+        from edge.models import Genome
+
+        Genome(name='Foo').save()
+        Genome(name='Bar').save()
+
+        # no filter, return both genomes
+        res = self.client.get('/edge/genomes/')
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertItemsEqual([g['name'] for g in d], ['Foo', 'Bar'])
+
+        # finds one
+        res = self.client.get('/edge/genomes/?q=oo')
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertItemsEqual([g['name'] for g in d], ['Foo'])
+
+        # finds none
+        res = self.client.get('/edge/genomes/?q=ooo')
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertItemsEqual([g['name'] for g in d], [])
+
+    def test_genome_list_paginates(self):
+        from edge.models import Genome
+
+        Genome(name='Foo').save()
+        Genome(name='Bar').save()
+        Genome(name='Far').save()
+        Genome(name='Baz').save()
+
+        res = self.client.get('/edge/genomes/')
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertEqual(len(d), 4)
+
+        res = self.client.get('/edge/genomes/?s=1')
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertEqual(len(d), 3)
+
+        res = self.client.get('/edge/genomes/?s=1&p=2')
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertEqual(len(d), 2)
+
+        res = self.client.get('/edge/genomes/?p=2')
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertEqual(len(d), 2)
+
 
 class GenomeTest(TestCase):
 

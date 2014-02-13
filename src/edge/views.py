@@ -101,8 +101,8 @@ class FragmentSequenceView(ViewBase):
         q_parser.add_argument('f', field_type=int, location='get')
         q_parser.add_argument('l', field_type=int, location='get')
         args = q_parser.parse_args(request)
-        f = args['f'] if 'f' in args and args['f'] is not None else None
-        l = args['l'] if 'l' in args and args['l'] is not None else None
+        f = args['f']
+        l = args['l']
 
         fragment = get_fragment_or_404(fragment_id)
         s = fragment.get_sequence(bp_lo=f, bp_hi=l)
@@ -131,9 +131,9 @@ class FragmentAnnotationsView(ViewBase):
         q_parser.add_argument('l', field_type=int, location='get')
         q_parser.add_argument('m', field_type=int, location='get')
         args = q_parser.parse_args(request)
-        f = args['f'] if 'f' in args and args['f'] is not None else None
-        l = args['l'] if 'l' in args and args['l'] is not None else None
-        m = args['m'] if 'm' in args and args['m'] is not None else None
+        f = args['f']
+        l = args['l']
+        m = args['m']
 
         fragment = get_fragment_or_404(fragment_id)
         annotations = fragment.annotations(bp_lo=f, bp_hi=l)
@@ -338,7 +338,6 @@ class GenomeFragmentView(ViewBase):
 class GenomeListView(ViewBase):
 
     def on_get(self, request):
-        genomes = Genome.objects.all()
         if 'f' in request.GET:
             fragment_ids = []
             for f in request.GET.getlist('f'):
@@ -346,8 +345,25 @@ class GenomeListView(ViewBase):
                     fragment_ids.append(int(f))
                 except ValueError:
                     return []
+            if len(fragment_ids) == 0:
+                return []
+            genomes = Genome.objects.filter(genome_fragment__fragment_id=fragment_ids[0])
             genomes = [g for g in genomes
                        if set(fragment_ids) == set([f.id for f in g.fragments.all()])]
+        else:
+            q_parser = RequestParser()
+            q_parser.add_argument('q', field_type=str, location='get')
+            q_parser.add_argument('s', field_type=int, location='get', default=0)
+            q_parser.add_argument('p', field_type=int, location='get', default=100)
+            args = q_parser.parse_args(request)
+            s = args['s']
+            p = args['p']
+            q = args['q']
+            p = 200 if p > 200 else p
+            if q is not None:
+                genomes = Genome.objects.filter(name__icontains=q).order_by('-id')[s:s+p]
+            else:
+                genomes = Genome.objects.all().order_by('-id')[s:s+p]
         return [GenomeView.to_dict(genome) for genome in genomes]
 
     def on_post(self, request):
