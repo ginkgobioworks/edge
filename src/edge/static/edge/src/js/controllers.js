@@ -58,29 +58,35 @@ function edgeFetchChanges($http, fragment_id, changed_loc, cb) {
     });
 }
 
-function GenomeListController($scope, $http, $timeout) {
-    $scope.orderProp = 'id';
+function PaginateController($scope, $http, $timeout) {
     $scope.query = '';
     $scope.curPos = 0;
     $scope.pageSize = 20;
+    $scope.hasPrev = false;
+    $scope.hasMore = false;
     $scope.delayPromise = undefined;
 
-    function fetch() {
-        var url = '/edge/genomes/?q='+encodeURIComponent($scope.query)+'&s='+$scope.curPos+'&p='+$scope.pageSize;
+    $scope.fetch = function () {
+        var base = $scope.getBaseURL();
+        var ps = $scope.pageSize+1;
+        var url = base+'?q='+encodeURIComponent($scope.query)+'&s='+$scope.curPos+'&p='+ps;
         $http.get(url).success(function(data) {
-            $scope.genomes = data;
+            $scope.processData(data.slice(0, ps-1));
+            if (data.length < ps) { $scope.hasMore = false; }
+            else { $scope.hasMore = true; }
         });
     }
 
     $scope.nextPage = function () {
         $scope.curPos += $scope.pageSize;
-        fetch();
+        $scope.hasPrev = true;
+        $scope.fetch();
     };
 
     $scope.prevPage = function () {
         $scope.curPos -= $scope.pageSize;
-        if ($scope.curPos < 0) { $scope.curPos = 0; }
-        fetch();
+        if ($scope.curPos < 0) { $scope.curPos = 0; $scope.hasPrev = false; }
+        $scope.fetch();
     };
 
     $scope.delayFetch = function() {
@@ -89,25 +95,31 @@ function GenomeListController($scope, $http, $timeout) {
             $scope.delayPromise = undefined;
         }
         $scope.delayPromise = $timeout(function() {
-            fetch();
+            $scope.fetch();
             $scope.delayPromise = undefined;
         }, 300);
     };
 
-    fetch();
 }
 
-function FragmentListController($scope, $http) {
-    $http.get('/edge/fragments/').success(function(data) {
-        $scope.fragments = data;
-    });
 
-    $scope.orderProp = 'id';
+function GenomeListController($scope, $injector) {
+    $injector.invoke(PaginateController, this, { $scope: $scope });
+    $scope.getBaseURL = function() { return '/edge/genomes/'; }
+    $scope.processData = function(data) { $scope.genomes = data; }
+    $scope.fetch();
+}
+
+function FragmentListController($scope, $http, $injector) {
+    $injector.invoke(PaginateController, this, { $scope: $scope });
+    $scope.getBaseURL = function() { return '/edge/fragments/'; }
+    $scope.processData = function(data) { $scope.fragments = data; }
+    $scope.fetch();
+
     $scope.add_fragment_error = undefined;
-
     $scope.addFragment = function(fragment) {
         var data = JSON.stringify(fragment);
-        $http.post('/edge/fragments/', data).
+        $http.post('/edge/fragments', data).
             success(function(data) {
                 $scope.fragments.push(data);
                 $scope.add_fragment_error = undefined;
@@ -334,7 +346,7 @@ function FragmentController($scope, $routeParams, $http) {
     $scope.annotate_error = undefined;
     $scope.addAnnotation = function(annotation) {
         var data = JSON.stringify(annotation);
-        $http.post('/edge/fragments/'+$scope.fragmentId+'/annotations/', data).
+        $http.post('/edge/fragments/'+$scope.fragmentId+'/annotations', data).
             success(function(data) {
                 var len = annotation['base_last']-annotation['base_first']+1;
                 var new_a = {

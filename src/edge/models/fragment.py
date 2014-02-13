@@ -246,8 +246,16 @@ class Fragment(models.Model):
         return Fragment_Annotator.objects.get(pk=self.pk)
 
     @staticmethod
-    def non_genomic_fragments():
-        fragments = list(Fragment.objects.filter(genome_fragment__id__isnull=True))
+    def non_genomic_fragments(q=None, f=None, l=None):
+        qs = Fragment.objects.filter(genome_fragment__id__isnull=True)
+        if q is not None:
+            qs = qs.filter(q)
+        f = 0 if f is None else f
+        if l is None:
+            qs = qs[f:]
+        else:
+            qs = qs[f:l]
+        fragments = list(qs)
         return fragments
 
     # After some trials, we found that on MySQL, initial chunk size set to 20K

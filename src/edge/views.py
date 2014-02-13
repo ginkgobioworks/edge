@@ -4,6 +4,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.views.generic.base import View
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 from edge.models import *
 
 
@@ -169,7 +170,19 @@ class FragmentAnnotationsView(ViewBase):
 class FragmentListView(ViewBase):
 
     def on_get(self, request):
-        fragments = Fragment.non_genomic_fragments()
+        q_parser = RequestParser()
+        q_parser.add_argument('q', field_type=str, location='get')
+        q_parser.add_argument('s', field_type=int, location='get', default=0)
+        q_parser.add_argument('p', field_type=int, location='get', default=100)
+        args = q_parser.parse_args(request)
+        s = args['s']
+        p = args['p']
+        q = args['q']
+        p = 200 if p > 200 else p
+        if q is not None and q.strip() != '':
+            fragments = Fragment.non_genomic_fragments(Q(name__icontains=q), s, s+p)
+        else:
+            fragments = Fragment.non_genomic_fragments(None, s, s+p)
         return [FragmentView.to_dict(fragment) for fragment in fragments]
 
     def on_post(self, request):
@@ -361,7 +374,7 @@ class GenomeListView(ViewBase):
             p = args['p']
             q = args['q']
             p = 200 if p > 200 else p
-            if q is not None:
+            if q is not None and q.strip() != '':
                 genomes = Genome.objects.filter(name__icontains=q).order_by('-id')[s:s+p]
             else:
                 genomes = Genome.objects.all().order_by('-id')[s:s+p]
