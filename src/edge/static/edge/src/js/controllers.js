@@ -119,7 +119,7 @@ function FragmentListController($scope, $http, $injector) {
     $scope.add_fragment_error = undefined;
     $scope.addFragment = function(fragment) {
         var data = JSON.stringify(fragment);
-        $http.post('/edge/fragments', data).
+        $http.post('/edge/fragments/', data).
             success(function(data) {
                 $scope.fragments.push(data);
                 $scope.add_fragment_error = undefined;
@@ -346,7 +346,7 @@ function FragmentController($scope, $routeParams, $http) {
     $scope.annotate_error = undefined;
     $scope.addAnnotation = function(annotation) {
         var data = JSON.stringify(annotation);
-        $http.post('/edge/fragments/'+$scope.fragmentId+'/annotations', data).
+        $http.post('/edge/fragments/'+$scope.fragmentId+'/annotations/', data).
             success(function(data) {
                 var len = annotation['base_last']-annotation['base_first']+1;
                 var new_a = {
@@ -437,7 +437,7 @@ function GenomeOpController($scope, $http, $location) {
     $scope.doOp = function(action, op) {
         op['op'] = action;
         var data = JSON.stringify(op);
-        $http.put('/edge/genomes/'+$scope.genomeId+'/fragments/'+$scope.fragmentId, data).
+        $http.put('/edge/genomes/'+$scope.genomeId+'/fragments/'+$scope.fragmentId+'/', data).
             success(function(genome) {
                 // got a new genome back
                 $scope.op_error = undefined;
