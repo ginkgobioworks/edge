@@ -198,6 +198,7 @@ class GenomeView(ViewBase):
                     name=genome.name,
                     notes=genome.notes,
                     parent_id=genome.parent_id,
+                    parent_name=genome.parent.name if genome.parent is not None else '',
                     fragments=fragments)
 
     def on_get(self, request, genome_id):

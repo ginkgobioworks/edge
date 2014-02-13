@@ -26,6 +26,7 @@ class GenomeListTest(TestCase):
             "name": "foo",
             "notes": "bar",
             "parent_id": None,
+            "parent_name": '',
             "uri": uri
         })
 
@@ -163,6 +164,7 @@ class GenomeTest(TestCase):
             "name": "foo",
             "notes": "bar",
             "parent_id": None,
+            "parent_name": '',
             "uri": self.genome_uri
         })
 
@@ -492,6 +494,7 @@ class GenomeFragmentTest(TestCase):
         self.genome_uri = json.loads(res.content)['uri']
         m = re.match(r'^/edge/genomes/(\d+)/$', self.genome_uri)
         self.genome_id = int(m.group(1))
+        self.genome_name = 'foo'
 
         self.sequence = 'AGCTAGCTTCGATCGA'
         self.fragment_name = 'chrI'
@@ -530,6 +533,7 @@ class GenomeFragmentTest(TestCase):
             "name": "chrI_m",
             "notes": None,
             "parent_id": self.genome_id,
+            "parent_name": self.genome_name,
             "uri": genome_uri
         }
         self.assertEquals(json.loads(res.content), expected)
@@ -564,6 +568,7 @@ class GenomeFragmentTest(TestCase):
             "name": "chrI_m",
             "notes": None,
             "parent_id": self.genome_id,
+            "parent_name": self.genome_name,
             "uri": genome_uri
         }
 
@@ -599,6 +604,7 @@ class GenomeFragmentTest(TestCase):
             "name": "chrI_m",
             "notes": None,
             "parent_id": self.genome_id,
+            "parent_name": self.genome_name,
             "uri": genome_uri
         }
 
@@ -642,6 +648,7 @@ class GenomeFragmentTest(TestCase):
             "name": "chrI_m",
             "notes": None,
             "parent_id": self.genome_id,
+            "parent_name": self.genome_name,
             "uri": genome_uri
         }
 
@@ -685,6 +692,7 @@ class GenomeFragmentTest(TestCase):
             "name": "chrI_m",
             "notes": None,
             "parent_id": self.genome_id,
+            "parent_name": self.genome_name,
             "uri": genome_uri
         }
 

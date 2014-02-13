@@ -58,26 +58,47 @@ function edgeFetchChanges($http, fragment_id, changed_loc, cb) {
     });
 }
 
-function GenomeListController($scope, $http) {
-    function fetchAndSaveParent(genome) {
-        var url = '/edge/genomes/'+genome['parent_id'];
+function GenomeListController($scope, $http, $timeout) {
+    $scope.orderProp = 'id';
+    $scope.query = '';
+    $scope.curPos = 0;
+    $scope.pageSize = 20;
+    $scope.delayPromise = undefined;
+
+    function fetch() {
+        var url = '/edge/genomes/?q='+encodeURIComponent($scope.query)+'&s='+$scope.curPos+'&p='+$scope.pageSize;
         $http.get(url).success(function(data) {
-            genome['parent'] = data['name'];
+            $scope.genomes = data;
         });
     }
 
-    $http.get('/edge/genomes').success(function(data) {
-        $scope.genomes = data;
-        data.forEach(function(genome) {
-            if (genome['parent_id']) { fetchAndSaveParent(genome); }
-        });
-    });
+    $scope.nextPage = function () {
+        $scope.curPos += $scope.pageSize;
+        fetch();
+    };
 
-    $scope.orderProp = 'id';
+    $scope.prevPage = function () {
+        $scope.curPos -= $scope.pageSize;
+        if ($scope.curPos < 0) { $scope.curPos = 0; }
+        fetch();
+    };
+
+    $scope.delayFetch = function() {
+        if ($scope.delayPromise !== undefined) {
+            $timeout.cancel($scope.delayPromise);
+            $scope.delayPromise = undefined;
+        }
+        $scope.delayPromise = $timeout(function() {
+            fetch();
+            $scope.delayPromise = undefined;
+        }, 300);
+    };
+
+    fetch();
 }
 
 function FragmentListController($scope, $http) {
-    $http.get('/edge/fragments').success(function(data) {
+    $http.get('/edge/fragments/').success(function(data) {
         $scope.fragments = data;
     });
 
@@ -86,7 +107,7 @@ function FragmentListController($scope, $http) {
 
     $scope.addFragment = function(fragment) {
         var data = JSON.stringify(fragment);
-        $http.post('/edge/fragments', data).
+        $http.post('/edge/fragments/', data).
             success(function(data) {
                 $scope.fragments.push(data);
                 $scope.add_fragment_error = undefined;
@@ -103,14 +124,14 @@ function GenomeDetailController($scope, $routeParams, $http) {
     $scope.parent = undefined;
 
     function fetchParent(parent_id) {
-        var url = '/edge/genomes/'+parent_id;
+        var url = '/edge/genomes/'+parent_id+'/';
         $http.get(url).success(function(data) {
             $scope.parent = '<a href="#/genomes/'+data['id']+'">Genome '+data['id']+': '+data['name']+'</a>';
         });
     }
 
     /* driver */
-    $http.get('/edge/genomes/'+$scope.genomeId).success(function(data) {
+    $http.get('/edge/genomes/'+$scope.genomeId+'/').success(function(data) {
         $scope.genome = data;
         if (data['parent_id']) { fetchParent(data['parent_id']); }
         data['fragments'].forEach(function(fragment) {
@@ -199,7 +220,7 @@ function FragmentController($scope, $routeParams, $http) {
         if ($scope.display_summary == false) {
             var f = $scope.zoom['base_first'];
             var l = $scope.zoom['base_last'];
-            $http.get('/edge/fragments/'+$scope.fragmentId+'/sequence?f='+f+'&l='+l).success(function(data) {
+            $http.get('/edge/fragments/'+$scope.fragmentId+'/sequence/?f='+f+'&l='+l).success(function(data) {
                 $scope.zoom['sequence'] = data;
                 $scope.zoom['has_sequence'] = true;
                 if ($scope.zoom['sequence_viewer'] === undefined) {
@@ -313,7 +334,7 @@ function FragmentController($scope, $routeParams, $http) {
     $scope.annotate_error = undefined;
     $scope.addAnnotation = function(annotation) {
         var data = JSON.stringify(annotation);
-        $http.post('/edge/fragments/'+$scope.fragmentId+'/annotations', data).
+        $http.post('/edge/fragments/'+$scope.fragmentId+'/annotations/', data).
             success(function(data) {
                 var len = annotation['base_last']-annotation['base_first']+1;
                 var new_a = {
@@ -345,13 +366,13 @@ function FragmentController($scope, $routeParams, $http) {
         jQuery('#fragment-tab a:first').tab('show');
     }
 
-    $http.get('/edge/fragments/'+$scope.fragmentId).success(function(fragment) {
+    $http.get('/edge/fragments/'+$scope.fragmentId+'/').success(function(fragment) {
         $scope.fragment = fragment;
         // do this here, after templates have been rendered
         tabify();
     });
 
-    $http.get('/edge/fragments/'+$scope.fragmentId+'/annotations').success(function(annotations) {
+    $http.get('/edge/fragments/'+$scope.fragmentId+'/annotations/').success(function(annotations) {
         $scope.annotations = annotations;
         annotations.forEach(function(annotation) {
             annotation['display_name'] = edgeAnnotationDisplayName(annotation);
@@ -374,7 +395,6 @@ function FragmentController($scope, $routeParams, $http) {
 
     $scope.query = undefined;
     $scope.annotationOrderProp = 'base_first';
-
 }
 
 function GenomeFragmentController($scope, $routeParams, $injector, $http) {
@@ -383,7 +403,7 @@ function GenomeFragmentController($scope, $routeParams, $injector, $http) {
     $scope.genome = undefined;
     $scope.changes_and_locs = [];
 
-    $http.get('/edge/genomes/'+$scope.genomeId).success(function(genome) {
+    $http.get('/edge/genomes/'+$scope.genomeId+'/').success(function(genome) {
         $scope.genome = genome;
         genome['fragments'].forEach(function(fragment) {
             if (fragment['id'] == $scope.fragmentId) {
@@ -409,7 +429,7 @@ function GenomeOpController($scope, $http, $location) {
             success(function(genome) {
                 // got a new genome back
                 $scope.op_error = undefined;
-                var url = '/edge/genomes/'+genome.id;
+                var url = '/edge/genomes/'+genome.id+'/';
                 $location.path(url);
             }).
             error(function(data, status, headers, config) {
@@ -419,7 +439,7 @@ function GenomeOpController($scope, $http, $location) {
 }
 
 function GenomeOpWithFragmentController($scope, $http) {
-    $http.get('/edge/fragments').success(function(data) {
+    $http.get('/edge/fragments+'/'').success(function(data) {
         $scope.fragments = data;
     });
 
