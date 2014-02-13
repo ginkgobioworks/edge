@@ -75,13 +75,17 @@ class Fragment_Writer(Fragment):
         self._add_edges(chunk, Edge(from_chunk=chunk,
                                     fragment=chunk.initial_fragment, to_chunk=split2))
 
-        # add location for new chunk
+        # add location for new chunk - note that the following code has to
+        # update the location index for each of the fragment that uses the
+        # chunk. there may be a lot of fragments, potentially a big scalability
+        # problem.
+        entries = []
         for fcl in chunk.fragment_chunk_location_set.all():
-            split2.fragment_chunk_location_set.create(
-                fragment=fcl.fragment,
-                base_first=fcl.base_first+len(s1),
-                base_last=fcl.base_last
-            )
+            entries.append(Fragment_Chunk_Location(fragment_id=fcl.fragment_id,
+                                                   chunk_id=split2.id,
+                                                   base_first=fcl.base_first+len(s1),
+                                                   base_last=fcl.base_last))
+        Fragment_Chunk_Location.bulk_create(entries)
 
         # adjust chunk location index for existing chunk
         chunk.fragment_chunk_location_set.update(base_last=F('base_first')+len(s1)-1)
@@ -127,7 +131,6 @@ class Fragment_Writer(Fragment):
         prev_chunk = None
         next_chunk = None
         bases_visited = 0
-        sequence = None
 
         prev_chunk, chunk, next_chunk, bases_visited = \
             self._find_chunk_prev_next_by_location_index(before_base1)
@@ -141,7 +144,7 @@ class Fragment_Writer(Fragment):
 
             # can avoid splitting if first bp in this chunk is before_base1
             if bases_visited-chunk_len+1 == before_base1:
-                #print 'no need to split before %s, which contains %s' % (before_base1, sequence)
+                #print 'no need to split before %s' % (before_base1,)
                 return prev_chunk, chunk
 
             # otherwise, have to split the chunk
@@ -169,11 +172,6 @@ class Fragment_Annotator(Fragment_Writer):
     class Meta:
         app_label = "edge"
         proxy = True
-
-    # most update operations don't need to be atomic; upon a failure you can
-    # just delete the new fragment and try again. since annotation does not
-    # create new fragment, it should be atomic so changes either all happen or
-    # all abort.
 
     @transaction.atomic()
     def annotate(self, first_base1, last_base1, name, type, strand):
@@ -231,6 +229,7 @@ class Fragment_Updater(Fragment_Writer):
         )
         return new_chunk
 
+    @transaction.atomic()
     def insert_bases(self, before_base1, sequence):
         # find chunks before and containing the insertion point
         prev_chunk, chunk = self._find_and_split_before(before_base1)
@@ -272,6 +271,7 @@ class Fragment_Updater(Fragment_Writer):
                 base_last=fragment_length+1+len(sequence)-1
             )
 
+    @transaction.atomic()
     def remove_bases(self, before_base1, length):
         if length <= 0:
             raise Exception('Cannot remove less than one base pair')
@@ -307,6 +307,7 @@ class Fragment_Updater(Fragment_Writer):
                                         .update(base_first=F('base_first')-length,
                                                 base_last=F('base_last')-length)
 
+    @transaction.atomic()
     def replace_bases(self, before_base1, length_to_remove, sequence):
 
         if length_to_remove <= 0:
@@ -317,6 +318,7 @@ class Fragment_Updater(Fragment_Writer):
         self.remove_bases(before_base1, length_to_remove)
         self.insert_bases(before_base1, sequence)
 
+    @transaction.atomic()
     def insert_fragment(self, before_base1, fragment):
 
         # find chunks before and containing the insertion point
@@ -369,6 +371,7 @@ class Fragment_Updater(Fragment_Writer):
                 )
             c += len(chunk.sequence)
 
+    @transaction.atomic()
     def replace_with_fragment(self, before_base1, length_to_remove, fragment):
 
         if length_to_remove <= 0:

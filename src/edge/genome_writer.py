@@ -46,7 +46,7 @@ class Genome_Updater(Genome):
     def update_fragment_by_fragment_id(self, fragment_id, new_name=None):
         if self.parent is None:
             raise Exception('Cannot update fragment without a parent genome. Try editing instead.')
-        f = [x for x in self.fragments.all() if x.id == fragment_id]
+        f = [x for x in self.fragments.filter(id=fragment_id)]
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have ID %s' % (fragment_id,))
         new_name = f[0].name if new_name is None else new_name
