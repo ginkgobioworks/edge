@@ -403,7 +403,19 @@ function FragmentController($scope, $routeParams, $http) {
             }
         });
         $scope.showSummary();
+
+        $scope.postIndexCallbacks.forEach(function(cb) { cb(); })
     });
+
+    $scope.postIndexCallbacks = [];
+
+    // fetch fragment again after indexing to get up to date length
+    function refreshFragment() {
+        $http.get('/edge/fragments/'+$scope.fragmentId+'/').success(function(fragment) {
+            $scope.fragment = fragment;
+        });
+    }
+    $scope.postIndexCallbacks.push(refreshFragment);
 
     $scope.query = undefined;
     $scope.annotationOrderProp = 'base_first';
@@ -415,20 +427,25 @@ function GenomeFragmentController($scope, $routeParams, $injector, $http) {
     $scope.genome = undefined;
     $scope.changes_and_locs = [];
 
-    $http.get('/edge/genomes/'+$scope.genomeId+'/').success(function(genome) {
-        $scope.genome = genome;
-        genome['fragments'].forEach(function(fragment) {
-            if (fragment['id'] == $scope.fragmentId) {
-                if (fragment['changes']) {
-                    fragment['changes'].forEach(function(changed_loc) {
-                        edgeFetchChanges($http, fragment['id'], changed_loc, function(desc, annotation) {
-                            $scope.changes_and_locs.push({'desc': desc, 'annotation': annotation});
+    function fetchGenome() {
+        $http.get('/edge/genomes/'+$scope.genomeId+'/').success(function(genome) {
+            $scope.genome = genome;
+            genome['fragments'].forEach(function(fragment) {
+                if (fragment['id'] == $scope.fragmentId) {
+                    if (fragment['changes']) {
+                        fragment['changes'].forEach(function(changed_loc) {
+                            edgeFetchChanges($http, fragment['id'], changed_loc, function(desc, annotation) {
+                                $scope.changes_and_locs.push({'desc': desc, 'annotation': annotation});
+                            });
                         });
-                    });
+                    }
                 }
-            }
+            });
         });
-    });
+    }
+
+    fetchGenome();
+    $scope.postIndexCallbacks.push(fetchGenome);
 }
 
 function GenomeOpController($scope, $http, $location) {
