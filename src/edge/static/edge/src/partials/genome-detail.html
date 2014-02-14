@@ -25,8 +25,13 @@
 </tr></thead>
 <tr ng-repeat="fragment in genome.fragments | orderBy:id">
     <td> <a href="#/genomes/{{genome.id}}/fragments/{{fragment.id}}">{{ fragment.name }}</a> </td>
-    <td> {{fragment.length | number}} </td>
-    <td> <span ng-repeat='locs in fragment.changes'>{{ locs }}</span> </td>
+    <td>
+      <span ng-if='fragment.length'>{{fragment.length | number}}</span>
+      <span ng-if='!fragment.length'><em>Not indexed</em></span>
+    </td>
+    <td>
+      <span ng-repeat='locs in fragment.changes'>{{ locs }}</span>
+    </td>
 </tr>
 </table>
 
