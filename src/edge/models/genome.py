@@ -48,7 +48,7 @@ class Genome(models.Model, Genome_Updater):
     def indexed_genome(self):
         for f in self.fragments.all():
             f.indexed_fragment()
-        # XXX casting
+        # casting to Indexed_Genome
         return Indexed_Genome.objects.get(pk=self.pk)
 
 

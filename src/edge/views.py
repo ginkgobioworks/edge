@@ -161,12 +161,12 @@ class FragmentAnnotationsView(ViewBase):
 
         args = annotation_parser.parse_args(request)
         fragment = get_fragment_or_404(fragment_id)
-        u = fragment.indexed_fragment()
-        u.annotate(first_base1=args['base_first'],
-                   last_base1=args['base_last'],
-                   name=args['name'],
-                   type=args['type'],
-                   strand=args['strand'])
+        fragment = fragment.indexed_fragment()
+        fragment.annotate(first_base1=args['base_first'],
+                          last_base1=args['base_last'],
+                          name=args['name'],
+                          type=args['type'],
+                          strand=args['strand'])
         return {}, 201
 
 

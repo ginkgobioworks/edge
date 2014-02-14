@@ -45,8 +45,7 @@ class Fragment(models.Model):
         else:
             for i in range(0, len(sequence), initial_chunk_size):
                 new_fragment.insert_bases(None, sequence[i:i+initial_chunk_size])
-        # XXX casting
-        return Indexed_Fragment.objects.get(pk=new_fragment.pk)
+        return new_fragment
 
     def predecessors(self):
         pred = [self]
@@ -121,7 +120,7 @@ class Fragment(models.Model):
     def indexed_fragment(self):
         if not self.has_location_index:
             return self.index_fragment_chunk_locations()
-        # XXX casting
+        # casting to Indexed_Fragment
         return Indexed_Fragment.objects.get(pk=self.id)
 
 
@@ -229,5 +228,4 @@ class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_U
                                                    base_first=fc.base_first,
                                                    base_last=fc.base_last))
         Fragment_Chunk_Location.bulk_create(entries)
-        # XXX casting
         return new_fragment.indexed_fragment()
