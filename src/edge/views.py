@@ -161,7 +161,7 @@ class FragmentAnnotationsView(ViewBase):
 
         args = annotation_parser.parse_args(request)
         fragment = get_fragment_or_404(fragment_id)
-        u = fragment.indexed_fragment().annotate()
+        u = fragment.indexed_fragment()
         u.annotate(first_base1=args['base_first'],
                    last_base1=args['base_last'],
                    name=args['name'],
@@ -251,9 +251,8 @@ class GenomeFragmentListView(ViewBase):
         args = fragment_parser.parse_args(request)
         genome = get_genome_or_404(genome_id)
         fragment = None
-        u = genome.edit()
-        fragment = u.add_fragment(name=args['name'], sequence=args['sequence'],
-                                  circular=args['circular'])
+        fragment = genome.add_fragment(name=args['name'], sequence=args['sequence'],
+                                       circular=args['circular'])
         return FragmentView.to_dict(fragment), 201
 
 

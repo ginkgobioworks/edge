@@ -74,8 +74,6 @@ class GFFFragmentImporter(object):
         self.__features = features
 
     def build_fragment(self):
-        from edge.fragment_writer import Fragment_Updater
-
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
         break_points = list(set([f[0] for f in self.__features]+[f[1]+1 for f in self.__features]))
@@ -91,7 +89,7 @@ class GFFFragmentImporter(object):
 
         new_fragment = Fragment(name=self.__rec.id, circular=False, parent=None, start_chunk=None)
         new_fragment.save()
-        new_fragment = new_fragment.indexed_fragment().edit()
+        new_fragment = new_fragment.indexed_fragment()
 
         prev = None
         flen = 0
@@ -102,22 +100,21 @@ class GFFFragmentImporter(object):
         if flen < seqlen:
             f = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:seqlen])
 
-        return Indexed_Fragment.objects.get(pk=new_fragment.pk)
+        return new_fragment
 
     def annotate(self, fragment):
         self.__fclocs = {c.base_first: c
                          for c in Fragment_Chunk_Location.objects
                                                          .select_related('chunk')
                                                          .filter(fragment=fragment)}
-        a = fragment.annotate()
 
         for feature in self.__features:
             f_start, f_end, f_name, f_type, f_strand = feature
             #print '  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand)
-            self._annotate_feature(a, f_start, f_end, f_name, f_type, f_strand)
+            self._annotate_feature(fragment, f_start, f_end, f_name, f_type, f_strand)
 
-    def _annotate_feature(self, annotator, first_base1, last_base1, name, type, strand):
-        if annotator.circular and last_base1 < first_base1:
+    def _annotate_feature(self, fragment, first_base1, last_base1, name, type, strand):
+        if fragment.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
             length = len(self.__sequence)-first_base1+1+last_base1
         else:
@@ -135,13 +132,13 @@ class GFFFragmentImporter(object):
         else:
             annotation_end = self.__fclocs[1]
 
-        new_feature = annotator._add_feature(name, type, length, strand)
+        new_feature = fragment._add_feature(name, type, length, strand)
 
         fc = annotation_start
         a_i = 1
         while True:
             chunk = fc.chunk
-            annotator._annotate_chunk(chunk, new_feature, a_i, a_i+len(chunk.sequence)-1)
+            fragment._annotate_chunk(chunk, new_feature, a_i, a_i+len(chunk.sequence)-1)
             a_i += len(chunk.sequence)
             if fc.base_last+1 in self.__fclocs:
                 fc = self.__fclocs[fc.base_last+1]

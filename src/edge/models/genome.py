@@ -1,8 +1,10 @@
 from django.db import models
+from edge.models.chunk import *
 from edge.models.fragment import *
+from edge.models.genome_updater import Genome_Updater
 
 
-class Genome(models.Model):
+class Genome(models.Model, Genome_Updater):
     class Meta:
         app_label = "edge"
 
@@ -17,28 +19,24 @@ class Genome(models.Model):
 
     @staticmethod
     def create(name, notes=None):
-        from edge.genome_writer import Genome_Updater
         new_genome = Genome(name=name, notes=notes, parent=None)
         new_genome.save()
-        return Genome_Updater.objects.get(pk=new_genome.pk)
+        return new_genome
 
-    # XXX casting
-    def edit(self):
-        from edge.genome_writer import Genome_Updater
-        return Genome_Updater.objects.get(pk=self.pk)
-
-    # XXX casting
-    def annotate(self):
-        return self.edit()
+    @staticmethod
+    def import_gff(name, gff_fasta_fn):
+        genome = Genome.create(name)
+        from edge.importer import GFFImporter
+        GFFImporter(genome, gff_fasta_fn).do_import()
+        return genome
 
     def update(self, name=None, notes=None):
-        from edge.genome_writer import Genome_Updater
         name = self.name if name is None else name
         new_genome = Genome(name=name, notes=notes, parent=self)
         new_genome.save()
         for f in self.fragments.all():
             Genome_Fragment(genome=new_genome, fragment=f, inherited=True).save()
-        return Genome_Updater.objects.get(pk=new_genome.pk)
+        return new_genome
 
     @property
     def has_location_index(self):

@@ -72,15 +72,10 @@ CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
 ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 """
 
-        genome = Genome.create('Foo')
-
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.write(data)
             f.close()
-
-            u = genome.edit()
-            u.import_gff(f.name)
-
+            genome = Genome.import_gff('Foo', f.name)
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
@@ -127,13 +122,10 @@ CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
 ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 """
 
-        genome = Genome.create('Foo')
-
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.write(data)
             f.close()
-            u = genome.edit()
-            u.import_gff(f.name)
+            genome = Genome.import_gff('Foo', f.name)
             os.unlink(f.name)
 
         # verify chrI fragment
@@ -163,13 +155,10 @@ CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
 ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 """
 
-        genome = Genome.create('Foo')
-
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.write(data)
             f.close()
-            u = genome.edit()
-            u.import_gff(f.name)
+            genome = Genome.import_gff('Foo', f.name)
             os.unlink(f.name)
 
         # verify chrI fragment
@@ -199,13 +188,10 @@ CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
 ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 """
 
-        genome = Genome.create('Foo')
-
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.write(data)
             f.close()
-            u = genome.edit()
-            u.import_gff(f.name)
+            genome = Genome.import_gff('Foo', f.name)
             os.unlink(f.name)
 
         # verify chrI fragment
@@ -235,13 +221,10 @@ CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
 ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 """
 
-        genome = Genome.create('Foo')
-
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.write(data)
             f.close()
-            u = genome.edit()
-            u.import_gff(f.name)
+            genome = Genome.import_gff('Foo', f.name)
             os.unlink(f.name)
 
         # verify chrI fragment
@@ -270,12 +253,10 @@ chrI\tTest\tcds\t30\t80\t.\t-\t.\t%s
 CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
 ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 """ % (qualifiers,)
-        self.genome = Genome.create('Foo')
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.write(data)
             f.close()
-            u = self.genome.edit()
-            u.import_gff(f.name)
+            self.genome = Genome.import_gff('Foo', f.name)
             os.unlink(f.name)
 
     def test_uses_gene_qualifier_over_name_qualifier(self):

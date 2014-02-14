@@ -15,9 +15,8 @@ class GenomeTest(TestCase):
 
     def test_non_genomic_fragments(self):
         genome = Genome.create('Foo')
-        u = genome.edit()
         s = 'atggcatattcgcagct'
-        f1 = u.add_fragment('chrI', s)
+        f1 = genome.add_fragment('chrI', s)
 
         f2 = Fragment.create_with_sequence('Bar', 'aacctaaaattataa')
         self.assertEquals(len(Fragment.non_genomic_fragments()), 1)
@@ -27,9 +26,8 @@ class GenomeTest(TestCase):
     def test_add_fragments_to_genome_in_place(self):
         genome = Genome.create('Foo')
         self.assertEquals(len(genome.fragments.all()), 0)
-        u = genome.edit()
         s = 'atggcatattcgcagct'
-        f = u.add_fragment('chrI', s)
+        f = genome.add_fragment('chrI', s)
         self.assertEquals(len(genome.fragments.all()), 1)
         self.assertEquals(genome.fragments.all()[0].name, 'chrI')
         self.assertEquals(genome.fragments.all()[0].indexed_fragment().sequence, s)
@@ -52,10 +50,8 @@ class GenomeTest(TestCase):
 
     def test_find_annotation(self):
         genome = Genome.create('Foo')
-        u = genome.edit()
         s = 'atggcatattcgcagct'
-        f = u.add_fragment('chrI', s)
-        f = f.annotate()
+        f = genome.add_fragment('chrI', s)
         f.annotate(3, 8, 'Foo gene', 'gene', 1)
         annotations = genome.indexed_genome().find_annotation('Foo gene')
 
@@ -69,24 +65,20 @@ class GenomeTest(TestCase):
     def test_changes_return_empty_array_if_no_parent(self):
         genome = Genome.create('Foo')
         self.assertEquals(len(genome.fragments.all()), 0)
-        u = genome.edit()
         s = 'atggcatattcgcagct'
-        f = u.add_fragment('chrI', s)
-        g = u
-        self.assertEquals(g.indexed_genome().changes(), [])
+        f = genome.add_fragment('chrI', s)
+        self.assertEquals(genome.indexed_genome().changes(), [])
 
     def test_can_insert_and_get_changes(self):
         genome = Genome.create('Foo')
         self.assertEquals(len(genome.fragments.all()), 0)
 
         # add initial sequence
-        g_u = genome.edit()
         s = 'atggcatattcgcagct'
-        g_u.add_fragment('chrI', s)
-        g = g_u
+        genome.add_fragment('chrI', s)
 
         # insert
-        g_u = g.update()
+        g_u = genome.update()
         with g_u.update_fragment_by_name('chrI') as f:
             f.insert_bases(3, 'gataca')
         g = g_u
@@ -97,26 +89,23 @@ class GenomeTest(TestCase):
 
     def test_update_fragment_by_id(self):
         genome = Genome.create('Foo')
-
-        g1 = genome.update()
         s = 'atggcatattcgcagct'
-        f1 = g1.add_fragment('chrI', s)
+        f1 = genome.add_fragment('chrI', s)
 
-        g2 = g1.update()
+        g2 = genome.update()
         with g2.update_fragment_by_fragment_id(f1.id) as f2:
             f2.insert_bases(3, 'gataca')
 
         self.assertEquals(g2.fragments.all()[0].indexed_fragment().sequence, s[0:2]+'gataca'+s[2:])
-        self.assertEquals(g1.fragments.all()[0].indexed_fragment().sequence, s)
+        self.assertEquals(genome.fragments.all()[0].indexed_fragment().sequence, s)
 
     def test_can_update_fragment_by_name_and_assign_new_name(self):
         genome = Genome.create('Foo')
-        g = genome.edit()
-        g.add_fragment('chrI', 'atggcatattcgcagct')
-        self.assertItemsEqual([f.name for f in g.fragments.all()], ['chrI'])
+        genome.add_fragment('chrI', 'atggcatattcgcagct')
+        self.assertItemsEqual([f.name for f in genome.fragments.all()], ['chrI'])
 
         # insert
-        g = g.update()
+        g = genome.update()
         with g.update_fragment_by_name('chrI', 'foobar') as f:
             f.insert_bases(3, 'gataca')
 
@@ -124,12 +113,11 @@ class GenomeTest(TestCase):
 
     def test_can_update_fragment_by_id_and_assign_new_name(self):
         genome = Genome.create('Foo')
-        g = genome.edit()
-        f0 = g.add_fragment('chrI', 'atggcatattcgcagct')
-        self.assertItemsEqual([f.name for f in g.fragments.all()], ['chrI'])
+        f0 = genome.add_fragment('chrI', 'atggcatattcgcagct')
+        self.assertItemsEqual([f.name for f in genome.fragments.all()], ['chrI'])
 
         # insert
-        g = g.update()
+        g = genome.update()
         with g.update_fragment_by_fragment_id(f0.id, 'foobar') as f:
             f.insert_bases(3, 'gataca')
 
@@ -140,10 +128,9 @@ class GenomeTest(TestCase):
         self.assertEquals(len(genome.fragments.all()), 0)
 
         # add initial sequence
-        g_u = genome.edit()
         s = 'atggcatattcgcagct'
-        g_u.add_fragment('chrI', s)
-        g1 = g_u
+        genome.add_fragment('chrI', s)
+        g1 = genome
 
         # insert
         g_u = g1.update()
@@ -170,11 +157,10 @@ class GenomeTest(TestCase):
         self.assertEquals(len(genome.fragments.all()), 0)
 
         # add initial sequence
-        g_u = genome.edit()
         s = 'atggcatattcgcagct'
-        g_u.add_fragment('chrI', s)
-        g_u.add_fragment('chrII', s)
-        g1 = g_u
+        genome.add_fragment('chrI', s)
+        genome.add_fragment('chrII', s)
+        g1 = genome
 
         # insert
         g_u = g1.update()
@@ -191,10 +177,9 @@ class GenomeTest(TestCase):
         self.assertEquals(len(genome.fragments.all()), 0)
 
         # add initial sequence
-        g_u = genome.edit()
         s = 'atggcatattcgcagct'
-        g_u.add_fragment('chrI', s)
-        g = g_u
+        genome.add_fragment('chrI', s)
+        g = genome
 
         # remove
         g_u = g.update()
@@ -211,10 +196,9 @@ class GenomeTest(TestCase):
         self.assertEquals(len(genome.fragments.all()), 0)
 
         # add initial sequence
-        g_u = genome.edit()
         s = 'atggcatattcgcagct'
-        g_u.add_fragment('chrI', s)
-        g = g_u
+        genome.add_fragment('chrI', s)
+        g = genome
 
         # insert and remove
         g_u = g.update()
@@ -233,9 +217,8 @@ class GenomeTest(TestCase):
         self.assertEquals(len(genome.fragments.all()), 0)
 
         # add initial sequence
-        u = genome.edit()
         s = 'atggcatattcgcagct'
-        u.add_fragment('chrI', s)
+        genome.add_fragment('chrI', s)
 
         # insert
         u = genome.update(notes=u'Bar bar')
@@ -249,9 +232,8 @@ class GenomeTest(TestCase):
         self.assertEquals(len(genome.fragments.all()), 0)
 
         # add initial sequence
-        u = genome.edit()
         s = 'atggcatattcgcagct'
-        u.add_fragment('chrI', s)
+        genome.add_fragment('chrI', s)
 
         # insert
         u = genome.update(name=u'Bar bar')
@@ -269,18 +251,16 @@ class GenomeTest(TestCase):
         s2 = 'acgatcgggattgagtcgattc'
 
         # add initial sequence
-        u = genome.edit()
-        f1 = u.add_fragment('chrI', s0+s1+s2)
-        f2 = u.add_fragment('chrII', s0+s1+s2)
+        f1 = genome.add_fragment('chrI', s0+s1+s2)
+        f2 = genome.add_fragment('chrII', s0+s1+s2)
 
         # annotate it to break it up into chunks
-        u = genome.annotate()
-        with u.annotate_fragment_by_name('chrI') as f:
+        with genome.annotate_fragment_by_name('chrI') as f:
             f.annotate(1, len(s0), 'F1', 'feature', 1)
             f.annotate(len(s0)+1, len(s0)+len(s1), 'F2', 'feature', 1)
             f.annotate(len(s0)+len(s1)+1, len(s0)+len(s1)+len(s2), 'F3', 'feature', 1)
 
-        with u.annotate_fragment_by_name('chrII') as f:
+        with genome.annotate_fragment_by_name('chrII') as f:
             f.annotate(1, len(s0), 'F1', 'feature', 1)
             f.annotate(len(s0)+1, len(s0)+len(s1), 'F2', 'feature', 1)
             f.annotate(len(s0)+len(s1)+1, len(s0)+len(s1)+len(s2), 'F3', 'feature', 1)

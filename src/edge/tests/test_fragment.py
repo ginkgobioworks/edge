@@ -88,35 +88,31 @@ class FragmentTests(TestCase):
                 self.assertEquals(self.root.get_sequence(i+1, j+1), self.root_sequence[i:j+1])
 
     def test_get_sequence_by_region_after_split(self):
-        u = self.root.update('Bar')
-        prev, cur = u._find_and_split_before(6)
-        f = u
+        f = self.root.update('Bar')
+        prev, cur = f._find_and_split_before(6)
         for i in range(0, len(self.root_sequence)):
             for j in range(i, len(self.root_sequence)):
                 self.assertEquals(f.get_sequence(i+1, j+1), self.root_sequence[i:j+1])
 
     def test_insert_sequence_in_middle(self):
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'gataca')
-        f = u
+        f = self.root.update('Bar')
+        f.insert_bases(3, 'gataca')
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[0:2]+'gataca'+self.root_sequence[2:])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_insert_sequence_at_start(self):
-        u = self.root.update('Bar')
-        u.insert_bases(1, 'gataca')
-        f = u
+        f = self.root.update('Bar')
+        f.insert_bases(1, 'gataca')
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, 'gataca'+self.root_sequence)
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_insert_sequence_at_end(self):
-        u = self.root.update('Bar')
-        u.insert_bases(None, 'gataca')
-        f = u
+        f = self.root.update('Bar')
+        f.insert_bases(None, 'gataca')
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence+'gataca')
         # does not affect root
@@ -142,34 +138,31 @@ class FragmentTests(TestCase):
         self.assertRaises(Exception, u.insert_fragment, 3, new_f)
 
     def test_insert_new_fragment_in_middle(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        u.insert_fragment(3, new_f)
-        f = u
+        f.insert_fragment(3, new_f)
         self.assertEquals(f.sequence, self.root_sequence[0:2]+'gcccataca'+self.root_sequence[2:])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_insert_new_fragment_at_start(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        u.insert_fragment(1, new_f)
-        f = u
+        f.insert_fragment(1, new_f)
         self.assertEquals(f.sequence, 'gcccataca'+self.root_sequence)
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_insert_new_fragment_at_end(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        u.insert_fragment(None, new_f)
-        f = u
+        f.insert_fragment(None, new_f)
         self.assertEquals(f.sequence, self.root_sequence+'gcccataca')
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
@@ -190,57 +183,50 @@ class FragmentTests(TestCase):
 
     def test_insert_existing_fragment_in_middle(self):
         existing_f = Fragment.create_with_sequence('Test', 'gataca')
-        u = self.root.update('Bar')
-        u.insert_fragment(3, existing_f)
-        f = u
+        f = self.root.update('Bar')
+        f.insert_fragment(3, existing_f)
         self.assertEquals(f.sequence, self.root_sequence[0:2]+'gataca'+self.root_sequence[2:])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_insert_fragment_inherits_annotations_from_new_fragment(self):
-        u = self.root.update('Bar')
-        self.assertEquals([a for a in u.annotations() if a.name == 'Uma'], [])
+        f = self.root.update('Bar')
+        self.assertEquals([a for a in f.annotations() if a.name == 'Uma'], [])
         new_f = Fragment.create_with_sequence('Test', 'gataca')
-        new_f = new_f.annotate()
         new_f.annotate(2, 4, 'Uma', 'feature', 1)
-        u.insert_fragment(2, new_f)
-        f = u
+        f.insert_fragment(2, new_f)
         self.assertEquals([a for a in f.annotations() if a.feature.name == 'Uma'][0].base_first, 3)
         self.assertEquals([a for a in f.annotations() if a.feature.name == 'Uma'][0].base_last, 5)
 
     def test_remove_sequence_in_middle(self):
-        u = self.root.update('Bar')
-        u.remove_bases(3, 4)
-        f = u
+        f = self.root.update('Bar')
+        f.remove_bases(3, 4)
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[0:2]+self.root_sequence[6:])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_remove_sequence_at_start(self):
-        u = self.root.update('Bar')
-        u.remove_bases(1, 4)
-        f = u
+        f = self.root.update('Bar')
+        f.remove_bases(1, 4)
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[4:])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_remove_sequence_at_end(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         # removing before 4th to last bp, remove 4 bases
-        u.remove_bases(len(self.root_sequence)-3, 4)
-        f = u
+        f.remove_bases(len(self.root_sequence)-3, 4)
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[:-4])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_remove_sequence_past_end(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         # removing before 2nd to last bp, remove 4 bases
-        u.remove_bases(len(self.root_sequence)-1, 4)
-        f = u
+        f.remove_bases(len(self.root_sequence)-1, 4)
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[:-2])
         # does not affect root
@@ -259,38 +245,34 @@ class FragmentTests(TestCase):
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_replace_sequence_in_middle(self):
-        u = self.root.update('Bar')
-        u.replace_bases(3, 6, 'cccc')
-        f = u
+        f = self.root.update('Bar')
+        f.replace_bases(3, 6, 'cccc')
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[0:2]+'cccc'+self.root_sequence[8:])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_replace_sequence_at_start(self):
-        u = self.root.update('Bar')
-        u.replace_bases(1, 6, 'cccc')
-        f = u
+        f = self.root.update('Bar')
+        f.replace_bases(1, 6, 'cccc')
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, 'cccc'+self.root_sequence[6:])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_replace_sequence_at_end(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         # removing before 6th to last bp, remove 6 bases
-        u.replace_bases(len(self.root_sequence)-5, 6, 'cccc')
-        f = u
+        f.replace_bases(len(self.root_sequence)-5, 6, 'cccc')
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[:-6]+'cccc')
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_replace_sequence_past_end(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         # removing before 4th to last bp, remove 6 bases
-        u.replace_bases(len(self.root_sequence)-3, 6, 'cccc')
-        f = u
+        f.replace_bases(len(self.root_sequence)-3, 6, 'cccc')
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[:-4]+'cccc')
         # does not affect root
@@ -309,48 +291,44 @@ class FragmentTests(TestCase):
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_replace_fragment_in_middle(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        u.replace_with_fragment(3, 6, new_f)
-        f = u
+        f.replace_with_fragment(3, 6, new_f)
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[0:2]+'gcccataca'+self.root_sequence[8:])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_replace_fragment_at_start(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        u.replace_with_fragment(1, 6, new_f)
-        f = u
+        f.replace_with_fragment(1, 6, new_f)
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, 'gcccataca'+self.root_sequence[6:])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_replace_fragment_at_end(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        u.replace_with_fragment(len(self.root_sequence)-5, 6, new_f)
-        f = u
+        f.replace_with_fragment(len(self.root_sequence)-5, 6, new_f)
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[:-6]+'gcccataca')
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_replace_fragment_past_end(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         new_f = Fragment.create_with_sequence('Test', 'gataca')
         new_f = new_f.update('Test')
         new_f.insert_bases(2, 'ccc')
-        u.replace_with_fragment(len(self.root_sequence)-3, 6, new_f)
-        f = u
+        f.replace_with_fragment(len(self.root_sequence)-3, 6, new_f)
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[:-4]+'gcccataca')
         # does not affect root
@@ -371,12 +349,11 @@ class FragmentTests(TestCase):
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_multiple_operations(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         # removing before 4th to last bp, remove 6 bases
-        u.replace_bases(len(self.root_sequence)-3, 6, 'cccc')
-        u.insert_bases(None, 'ggg')
-        u.remove_bases(1, 3)
-        f = u
+        f.replace_bases(len(self.root_sequence)-3, 6, 'cccc')
+        f.insert_bases(None, 'ggg')
+        f.remove_bases(1, 3)
         self.assertEquals(f.name, 'Bar')
         s = self.root_sequence
         self.assertEquals(f.sequence, s[3:-4]+'cccc'+'ggg')
@@ -384,32 +361,29 @@ class FragmentTests(TestCase):
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_insert_on_chunk_size_of_one(self):
-        u = self.root.update('Bar')
+        f = self.root.update('Bar')
         # this op creates a chunk with size of 1, then G, then the rest of the sequence
-        u.insert_bases(2, 'G')
+        f.insert_bases(2, 'G')
         # this op has to insert on the chunk with size of 1
-        u.insert_bases(1, 'C')
-        f = u
+        f.insert_bases(1, 'C')
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, 'C'+self.root_sequence[0:1]+'G'+self.root_sequence[1:])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_double_insert(self):
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'G')
-        u.insert_bases(3, 'C')
-        f = u
+        f = self.root.update('Bar')
+        f.insert_bases(3, 'G')
+        f.insert_bases(3, 'C')
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[0:2]+'CG'+self.root_sequence[2:])
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_double_remove(self):
-        u = self.root.update('Bar')
-        u.remove_bases(3, 4)
-        u.remove_bases(3, 4)
-        f = u
+        f = self.root.update('Bar')
+        f.remove_bases(3, 4)
+        f.remove_bases(3, 4)
         self.assertEquals(f.name, 'Bar')
         self.assertEquals(f.sequence, self.root_sequence[0:2]+self.root_sequence[10:])
         # does not affect root
@@ -470,11 +444,9 @@ class FragmentTests(TestCase):
         self.assertEquals(prev.out_edges.all()[1].fragment_id, u.id)
 
     def test_find_chunk_by_edge_and_indexing_fragment_chunk_locations(self):
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'gataca')
-        f = u
-        a = f.annotate()
-        a.annotate(3, 5, 'A1', 'gene', 1)
+        f = self.root.update('Bar')
+        f.insert_bases(3, 'gataca')
+        f.annotate(3, 5, 'A1', 'gene', 1)
 
         # there should now be 4 chunks for f
         self.assertEquals([c.sequence for c in f.chunks()],
@@ -503,9 +475,8 @@ class FragmentTests(TestCase):
         self.assertEquals(self.root.est_length, len(self.root_sequence))
 
     def test_find_chunk(self):
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'gataca')
-        f = u
+        f = self.root.update('Bar')
+        f.insert_bases(3, 'gataca')
 
         # there should now be 3 chunks for f
         self.assertEquals([c.sequence for c in f.chunks()],
@@ -556,30 +527,26 @@ class FragmentChunkTest(TestCase):
         self.root = Fragment.create_with_sequence('Foo', self.root_sequence)
 
     def test_next_chunk(self):
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'gataca')
-        f = u
+        f = self.root.update('Bar')
+        f.insert_bases(3, 'gataca')
         chunks = [chunk for chunk in f.chunks()]
         self.assertEquals(f.fragment_chunk(chunks[0]).next_chunk.id, chunks[1].id)
         self.assertEquals(f.fragment_chunk(chunks[1]).next_chunk.id, chunks[2].id)
         self.assertEquals(f.fragment_chunk(chunks[2]).next_chunk, None)
 
     def test_location(self):
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'gataca')
-        f = u
+        f = self.root.update('Bar')
+        f.insert_bases(3, 'gataca')
         chunks = [chunk for chunk in f.chunks()]
         self.assertEquals(f.fragment_chunk(chunks[0]).location, (1, 2))
         self.assertEquals(f.fragment_chunk(chunks[1]).location, (3, 8))
         self.assertEquals(f.fragment_chunk(chunks[2]).location, (9, 6+len(self.root_sequence)))
 
     def test_annotations(self):
-        u = self.root.update('Bar')
-        u.insert_bases(3, 'gataca')
-        f = u
+        f = self.root.update('Bar')
+        f.insert_bases(3, 'gataca')
         chunks = [chunk for chunk in f.chunks()]
-        a = f.annotate()
-        a.annotate(3, 8, 'A1', 'gene', 1)
+        f.annotate(3, 8, 'A1', 'gene', 1)
         annotations = f.fragment_chunk(chunks[1]).annotations()
         self.assertEquals(len(annotations), 1)
         self.assertEquals(annotations[0].base_first, 3)

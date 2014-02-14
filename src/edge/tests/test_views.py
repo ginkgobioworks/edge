@@ -427,14 +427,13 @@ class FragmentTest(TestCase):
         fragment = Fragment.objects.get(pk=self.fragment_id)
         fragment = fragment.indexed_fragment()
         flen = fragment.length
-        a = fragment.annotate()
         nannotations = 10
 
         # create some annotations
         for n in range(0, nannotations):
             bf = random.randint(1, flen)
             bl = random.randint(bf, flen)
-            a.annotate(bf, bl, 'Feature %s' % (n,), 'Feature', 1)
+            fragment.annotate(bf, bl, 'Feature %s' % (n,), 'Feature', 1)
 
         res = self.client.get(self.uri+'annotations/')
         self.assertEquals(res.status_code, 200)
