@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from django.db.models import Q
 from django.db import transaction
@@ -105,6 +106,15 @@ class Fragment(models.Model):
             self.est_length = indexed.length
             self.save()
             indexed.est_length = self.est_length
+
+        try:
+            index = self.fragment_index
+        except:
+            index = Fragment_Index(fragment=self)
+        index.fresh = True
+        index.updated_on = timezone.now()
+        index.save()
+
         return indexed
 
     def chunks_by_walking(self):
@@ -115,13 +125,28 @@ class Fragment(models.Model):
 
     @property
     def has_location_index(self):
-        return self.fragment_chunk_location_set.count() > 0
+        if self.fragment_chunk_location_set.count() > 0:
+            try:
+                index = self.fragment_index
+            except:
+                return False
+            return index.fresh
+        return False
 
     def indexed_fragment(self):
         if not self.has_location_index:
             return self.index_fragment_chunk_locations()
         # casting to Indexed_Fragment
         return Indexed_Fragment.objects.get(pk=self.id)
+
+
+class Fragment_Index(models.Model):
+    class Meta:
+        app_label = "edge"
+
+    fragment = models.OneToOneField(Fragment)
+    fresh = models.BooleanField()
+    updated_on = models.DateTimeField('Updated', null=True)
 
 
 class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_Updater):
@@ -228,4 +253,6 @@ class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_U
                                                    base_first=fc.base_first,
                                                    base_last=fc.base_last))
         Fragment_Chunk_Location.bulk_create(entries)
+        Fragment_Index(fragment=new_fragment, fresh=True,
+                       updated_on=self.fragment_index.updated_on).save()
         return new_fragment.indexed_fragment()

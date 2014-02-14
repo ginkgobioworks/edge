@@ -1,3 +1,5 @@
+from django.db import transaction
+from django.db import connection
 from django.db.models import F
 from edge.models.chunk import *
 
@@ -6,13 +8,6 @@ class Fragment_Writer:
     """
     Mixin that includes helpers for updating a fragment.
     """
-
-    def _add_feature(self, name, type, length, strand):
-        if strand not in (1, -1, None):
-            raise Exception('Strand must be 1, -1, or None')
-        f = Feature(name=name, type=type, length=length, strand=strand)
-        f.save()
-        return f
 
     def _annotate_chunk(self, chunk, feature, feature_base_first, feature_base_last):
         Chunk_Feature(chunk=chunk, feature=feature,
@@ -24,7 +19,7 @@ class Fragment_Writer:
         c.save()
         return c
 
-    def _reset_chunk_sequence(self, chunk, sequence):
+    def __reset_chunk_sequence(self, chunk, sequence):
         chunk.sequence = sequence
         chunk.save()
         Chunk_Feature.objects.filter(chunk=chunk).delete()
@@ -32,10 +27,6 @@ class Fragment_Writer:
         if self.start_chunk.id == chunk.id:
             self.start_chunk = chunk
             self.save()
-
-    def _assert_not_linked_to(self, chunk):
-        if Edge.objects.filter(to_chunk=chunk, fragment=self).count() > 0:
-            raise Exception('Fragment %s already linked to chunk %s' % (self.id, chunk.id))
 
     def _add_edges(self, chunk, *unsaved_edges):
         existing_edges = list(Edge.objects.filter(from_chunk=chunk))
@@ -59,11 +50,41 @@ class Fragment_Writer:
             self._annotate_chunk(split1, *a1)
             self._annotate_chunk(split2, *a2)
 
-    def _split_chunk(self, chunk, s1, s2):
+    def __invalidate_index_for(self, fragment_ids):
+        from edge.models.fragment import Fragment_Index
+        for f in fragment_ids:
+            index = Fragment_Index.objects.filter(fragment_id=f)
+            if index.count():
+                index = index[0]
+                index.fresh = False
+                index.save()
+
+    # really important this happens atomically, otherwise we may have corrupted
+    # chunk and index
+    @transaction.atomic()
+    def __split_chunk(self, chunk, bps_to_split):
+        s1 = chunk.sequence[0:bps_to_split]
+        s2 = chunk.sequence[bps_to_split:]
+
+        # invalidate chunk location index for all fragments using this chunk,
+        # except parent fragment and current fragment
+        index_to_invalidate = []
+        index_to_update = []
+        candidates = \
+            chunk.fragment_chunk_location_set.filter(fragment__fragment_index__fresh=True)\
+                                             .values_list('fragment_id').distinct()
+        for row in candidates:
+            fragment_id = row[0]
+            if fragment_id not in [self.id, self.parent_id]:
+                index_to_invalidate.append(fragment_id)
+            else:
+                index_to_update.append(fragment_id)
+        self.__invalidate_index_for(index_to_invalidate)
+
         # splitted chunk should be "created" by the fragment that created the
         # original chunk
         split2 = self._add_chunk(s2, chunk.initial_fragment)
-        self._reset_chunk_sequence(chunk, s1)
+        self.__reset_chunk_sequence(chunk, s1)
 
         # move all edges from original chunk to second chunk
         Edge.objects.filter(from_chunk=chunk).update(from_chunk=split2)
@@ -79,7 +100,7 @@ class Fragment_Writer:
         # chunk. there may be a lot of fragments, potentially a big scalability
         # problem.
         entries = []
-        for fcl in chunk.fragment_chunk_location_set.all():
+        for fcl in chunk.fragment_chunk_location_set.filter(fragment_id__in=index_to_update):
             entries.append(Fragment_Chunk_Location(fragment_id=fcl.fragment_id,
                                                    chunk_id=split2.id,
                                                    base_first=fcl.base_first+len(s1),
@@ -87,7 +108,8 @@ class Fragment_Writer:
         Fragment_Chunk_Location.bulk_create(entries)
 
         # adjust chunk location index for existing chunk
-        chunk.fragment_chunk_location_set.update(base_last=F('base_first')+len(s1)-1)
+        chunk.fragment_chunk_location_set.filter(fragment_id__in=index_to_update)\
+                                         .update(base_last=F('base_first')+len(s1)-1)
         return split2
 
     def _find_chunk_prev_next(self, before_base1):
@@ -148,14 +170,12 @@ class Fragment_Writer:
             # otherwise, have to split the chunk
             first_bp_in_chunk = bases_visited-chunk_len+1
             bps_to_split = before_base1-first_bp_in_chunk
-            s1 = chunk.sequence[0:bps_to_split]
-            s2 = chunk.sequence[bps_to_split:]
 
-            # save original annotations, which will be trashed in _split_chunk (which
-            # calls _reset_chunk_sequence)
+            # save original annotations, which will be trashed in __split_chunk
+            # (which calls __reset_chunk_sequence)
             original_annotations = self.fragment_chunk(chunk).annotations()
             # split chunk
-            split2 = self._split_chunk(chunk, s1, s2)
+            split2 = self.__split_chunk(chunk, bps_to_split)
             chunk = chunk.reload()
 
             # split up annotations as well

@@ -8,6 +8,10 @@ class Fragment_Updater:
     Mixin for sequence manipulation within fragment.
     """
 
+    def _assert_not_linked_to(self, chunk):
+        if Edge.objects.filter(to_chunk=chunk, fragment=self).count() > 0:
+            raise Exception('Fragment %s already linked to chunk %s' % (self.id, chunk.id))
+
     def _append_to_fragment(self, prev_chunk, cur_fragment_length, sequence):
         # only use this if you are appending chunk to fragment while importing
         # a fragment

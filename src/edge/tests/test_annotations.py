@@ -271,6 +271,7 @@ class AnnotationsTest(TestCase):
         self.assertEquals(len(f.annotations()), 0)
         self.root.annotate(10, 12, 'A1', 'gene', 1)
 
+        f = Fragment.objects.get(pk=f.pk).indexed_fragment()
         self.assertEquals(len(f.annotations()), 1)
         self.assertEquals(f.annotations()[0].base_first, 16)
         self.assertEquals(f.annotations()[0].base_last, 18)
@@ -285,6 +286,7 @@ class AnnotationsTest(TestCase):
         self.assertEquals(len(f.annotations()), 0)
         self.root.annotate(2, 9, 'A1', 'gene', 1)
 
+        f = Fragment.objects.get(pk=f.pk).indexed_fragment()
         self.assertEquals(len(f.annotations()), 2)
         self.assertEquals(f.annotations()[0].base_first, 2)
         self.assertEquals(f.annotations()[0].base_last, 2)
@@ -331,6 +333,8 @@ class AnnotationsTest(TestCase):
 
         new_f.annotate(2, 4, 'X1', 'gene', 1)
 
+        self.root = Fragment.objects.get(pk=self.root.pk).indexed_fragment()
+        f = Fragment.objects.get(pk=f.pk).indexed_fragment()
         self.assertEquals(len(new_f.annotations()), 1)
         self.assertEquals(len(self.root.annotations()), 0)
         self.assertEquals(len(f.annotations()), 1)

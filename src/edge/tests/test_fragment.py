@@ -39,6 +39,16 @@ class FragmentTests(TestCase):
         self.assertEquals([c.sequence for c in u.chunks()], ['agt', 'tcgaggctga'])
         self.assertEquals(u.sequence, self.root_sequence)
 
+    def test_can_reconstruct_index_after_split(self):
+        u = self.root.update('Bar')
+        u._find_and_split_before(4)
+        self.assertEquals(u.sequence, self.root_sequence)
+        self.assertEquals(u.length, len(self.root_sequence))
+        u.fragment_chunk_location_set.all().delete()
+        u.index_fragment_chunk_locations()
+        self.assertEquals(u.sequence, self.root_sequence)
+        self.assertEquals(u.length, len(self.root_sequence))
+
     def test_split_at_start(self):
         u = self.root.update('Bar')
         self.assertEquals(len([c for c in u.chunks()]), 1)
@@ -81,6 +91,48 @@ class FragmentTests(TestCase):
         prev, cur = u._find_and_split_before(3)
         self.assertEquals([c.sequence for c in u.chunks()], ['ag', 't', 'tcgaggctga'])
         self.assertEquals(u.sequence, self.root_sequence)
+
+    def test_split_chunk_invalidates_location_indices(self):
+        u1 = self.root.update('Bar')
+        u1._find_and_split_before(4)
+        u2 = self.root.update('Baz')
+
+        self.assertEquals(self.root.has_location_index, True)
+        self.assertEquals(u1.has_location_index, True)
+        self.assertEquals(u2.has_location_index, True)
+
+        # split, keeps parent (self.root) and current fragment (u2) index, but
+        # invalidate indices of fragments using the splitted chunk
+        u2._find_and_split_before(3)
+
+        self.root = Fragment.objects.get(pk=self.root.pk)
+        u1 = Fragment.objects.get(pk=u1.pk)
+        u2 = Fragment.objects.get(pk=u2.pk)
+
+        self.assertEquals(self.root.has_location_index, True)
+        self.assertEquals(u1.has_location_index, False)
+        self.assertEquals(u2.has_location_index, True)
+
+        # can re-index u1
+        u1 = u1.indexed_fragment()
+        self.assertEquals(u1.sequence, self.root_sequence)
+        self.assertEquals(u1.length, len(self.root_sequence))
+
+    def test_split_does_not_invalidate_location_indices_if_not_splitting_a_chunk(self):
+        u1 = self.root.update('Bar')
+        u1._find_and_split_before(4)
+        u2 = self.root.update('Baz')
+
+        self.assertEquals(self.root.has_location_index, True)
+        self.assertEquals(u1.has_location_index, True)
+        self.assertEquals(u2.has_location_index, True)
+
+        # not splitting a chunk, so location index of u1 not removed
+        u2._find_and_split_before(4)
+
+        self.assertEquals(self.root.has_location_index, True)
+        self.assertEquals(u1.has_location_index, True)
+        self.assertEquals(u2.has_location_index, True)
 
     def test_get_sequence_by_region(self):
         for i in range(0, len(self.root_sequence)):
