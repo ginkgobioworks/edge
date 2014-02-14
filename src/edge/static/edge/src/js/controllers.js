@@ -430,6 +430,7 @@ function GenomeFragmentController($scope, $routeParams, $injector, $http) {
     function fetchGenome() {
         $http.get('/edge/genomes/'+$scope.genomeId+'/').success(function(genome) {
             $scope.genome = genome;
+            $scope.changes_and_locs = [];
             genome['fragments'].forEach(function(fragment) {
                 if (fragment['id'] == $scope.fragmentId) {
                     if (fragment['changes']) {
