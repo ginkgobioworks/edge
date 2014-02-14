@@ -425,6 +425,7 @@ class FragmentTest(TestCase):
         import random
 
         fragment = Fragment.objects.get(pk=self.fragment_id)
+        fragment = fragment.indexed_fragment()
         flen = fragment.length
         a = fragment.annotate()
         nannotations = 10

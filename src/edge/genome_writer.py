@@ -16,7 +16,7 @@ class Genome_Updater(Genome):
         f = [x for x in self.fragments.all() if x.name == name]
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have name %s' % (name,))
-        u = f[0].annotate()
+        u = f[0].indexed_fragment().annotate()
         yield u
         u.save()
 
@@ -25,7 +25,7 @@ class Genome_Updater(Genome):
         f = [x for x in self.fragments.all() if x.id == fragment_id]
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have ID %s' % (fragment_id,))
-        u = f[0].annotate()
+        u = f[0].indexed_fragment().annotate()
         yield u
         u.save()
 
@@ -37,7 +37,7 @@ class Genome_Updater(Genome):
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have name %s' % (name,))
         new_name = name if new_name is None else new_name
-        u = f[0].update(new_name)
+        u = f[0].indexed_fragment().update(new_name)
         yield u
         u.save()
         self._add_updated_fragment(u)
@@ -50,7 +50,7 @@ class Genome_Updater(Genome):
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have ID %s' % (fragment_id,))
         new_name = f[0].name if new_name is None else new_name
-        u = f[0].update(new_name)
+        u = f[0].indexed_fragment().update(new_name)
         yield u
         u.save()
         self._add_updated_fragment(u)

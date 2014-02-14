@@ -84,20 +84,41 @@ class Fragment(models.Model):
     name = models.CharField(max_length=256)
     parent = models.ForeignKey('self', null=True, on_delete=models.PROTECT)
     start_chunk = models.ForeignKey('Chunk', null=True, on_delete=models.PROTECT)
+    est_length = models.IntegerField('Estimated length', null=True, blank=True)
     created_on = models.DateTimeField('Created', auto_now_add=True, null=True)
 
-    @property
-    def has_location_index(self):
-        return self.fragment_chunk_location_set.count() > 0
-
-    @property
-    def length(self):
-        q = self.fragment_chunk_location_set.order_by('-base_last')[:1]
-        q = list(q)
-        if len(q) == 0:
-            return 0
+    @staticmethod
+    def non_genomic_fragments(q=None, f=None, l=None):
+        qs = Fragment.objects.filter(genome_fragment__id__isnull=True)
+        if q is not None:
+            qs = qs.filter(q)
+        f = 0 if f is None else f
+        if l is None:
+            qs = qs[f:]
         else:
-            return q[0].base_last
+            qs = qs[f:l]
+        fragments = list(qs)
+        return fragments
+
+    # After some trials, we found that on MySQL, initial chunk size set to 20K
+    # produced the best import time for the E. coli genome. Setting an initial
+    # chunk size significantly improves import time: when dividing up smaller
+    # chunks, you copy/slice less sequence data.
+    @staticmethod
+    def create_with_sequence(name, sequence, circular=False, initial_chunk_size=20000):
+        from edge.fragment_writer import Fragment_Updater
+        new_fragment = Fragment(name=name, circular=circular, parent=None, start_chunk=None)
+        new_fragment.save()
+        new_fragment = new_fragment.indexed_fragment()
+        # XXX casting
+        editor = new_fragment.edit()
+        if initial_chunk_size is None or initial_chunk_size == 0:
+            editor.insert_bases(None, sequence)
+        else:
+            for i in range(0, len(sequence), initial_chunk_size):
+                editor.insert_bases(None, sequence[i:i+initial_chunk_size])
+        # XXX casting
+        return Indexed_Fragment.objects.get(pk=new_fragment.pk)
 
     def predecessors(self):
         pred = [self]
@@ -111,9 +132,14 @@ class Fragment(models.Model):
         return {f.id: i for i, f in enumerate(self.predecessors())}
 
     def next_chunk(self, chunk):
-        # check inheritance hierarchy to figure out which edge to use.
+        """
+        Finds successor of the specified chunk. Uses fragment inheritance
+        hierarchy to pick an edge from the outward edges of the specified
+        chunk.
+        """
+
         if chunk.out_edges.count() == 0:
-            return none
+            return None
         else:
             # sort edges by predecessor level if more than one edge
             if chunk.out_edges.count() > 1:
@@ -129,20 +155,6 @@ class Fragment(models.Model):
 
             return out_edges[0].to_chunk
 
-    def fragment_chunk(self, chunk):
-        return self.fragment_chunk_location_set.filter(chunk=chunk)[0]
-
-    def chunks(self, force_walk=False):
-        if force_walk is False and self.has_location_index:
-            q = self.fragment_chunk_location_set.select_related('chunk').order_by('base_first')
-            for fcl in q:
-                yield fcl.chunk
-        else:
-            chunk = self.start_chunk
-            while chunk is not None:
-                yield chunk
-                chunk = self.next_chunk(chunk)
-
     @transaction.atomic()
     def index_fragment_chunk_locations(self):
         # remove old index
@@ -150,12 +162,70 @@ class Fragment(models.Model):
 
         # go through each chunk and add new index
         i = 1
-        for chunk in self.chunks(force_walk=True):
+        entries = []
+        for chunk in self.chunks_by_walking():
             if len(chunk.sequence) > 0:
-                self.fragment_chunk_location_set.create(
-                    chunk=chunk, base_first=i, base_last=i+len(chunk.sequence)-1
-                )
+                entries.append(Fragment_Chunk_Location(fragment_id=self.id,
+                                                       chunk_id=chunk.id,
+                                                       base_first=i,
+                                                       base_last=i+len(chunk.sequence)-1))
+
                 i += len(chunk.sequence)
+        Fragment_Chunk_Location.bulk_create(entries)
+
+        indexed = Indexed_Fragment.objects.get(pk=self.id)
+        if indexed.length != self.est_length:
+            self.est_length = indexed.length
+            self.save()
+            indexed.est_length = self.est_length
+        return indexed
+
+    def chunks_by_walking(self):
+        chunk = self.start_chunk
+        while chunk is not None:
+            yield chunk
+            chunk = self.next_chunk(chunk)
+
+    @property
+    def has_location_index(self):
+        return self.fragment_chunk_location_set.count() > 0
+
+    def indexed_fragment(self):
+        if not self.has_location_index:
+            return self.index_fragment_chunk_locations()
+        # XXX casting
+        return Indexed_Fragment.objects.get(pk=self.id)
+
+
+class Indexed_Fragment(Fragment):
+    """
+    An Indexed_Fragment is a Fragment with chunk location index. You need chunk
+    location index to efficiently find annotations and bp positions.
+
+    Invariant: Fragment#prepare method always return an Indexed_Fragment with
+    location index.
+    """
+
+    class Meta:
+        app_label = "edge"
+        proxy = True
+
+    def chunks(self):
+        q = self.fragment_chunk_location_set.select_related('chunk').order_by('base_first')
+        for fcl in q:
+            yield fcl.chunk
+
+    @property
+    def length(self):
+        q = self.fragment_chunk_location_set.order_by('-base_last')[:1]
+        q = list(q)
+        if len(q) == 0:
+            return 0
+        else:
+            return q[0].base_last
+
+    def fragment_chunk(self, chunk):
+        return self.fragment_chunk_location_set.filter(chunk=chunk)[0]
 
     def get_sequence(self, bp_lo=None, bp_hi=None):
         q = self.fragment_chunk_location_set.select_related('chunk')
@@ -218,6 +288,12 @@ class Fragment(models.Model):
         chunk_features = sorted(chunk_features, key=lambda t: t[1].base_first)
         return Annotation.from_chunk_feature_and_location_array(chunk_features)
 
+    # XXX casting
+    def edit(self):
+        from edge.fragment_writer import Fragment_Updater
+        return Fragment_Updater.objects.get(pk=self.pk)
+
+    # XXX casting
     def update(self, name):
         from edge.fragment_writer import Fragment_Updater
         new_fragment = Fragment_Updater(
@@ -225,54 +301,21 @@ class Fragment(models.Model):
         )
         new_fragment.save()
 
-        if self.has_location_index:
-            # copy over location index
-            entries = []
-            for fc in self.fragment_chunk_location_set.all():
-                entries.append(Fragment_Chunk_Location(fragment_id=new_fragment.id,
-                                                       chunk_id=fc.chunk_id,
-                                                       base_first=fc.base_first,
-                                                       base_last=fc.base_last))
-            Fragment_Chunk_Location.bulk_create(entries)
-        else:
-            new_fragment.index_fragment_chunk_locations()
+        # copy over location index
+        entries = []
+        for fc in self.fragment_chunk_location_set.all():
+            entries.append(Fragment_Chunk_Location(fragment_id=new_fragment.id,
+                                                   chunk_id=fc.chunk_id,
+                                                   base_first=fc.base_first,
+                                                   base_last=fc.base_last))
+        Fragment_Chunk_Location.bulk_create(entries)
 
         return new_fragment
 
+    # XXX casting
     def annotate(self):
-        if not self.has_location_index:
-            self.index_fragment_chunk_locations()
         from edge.fragment_writer import Fragment_Annotator
         return Fragment_Annotator.objects.get(pk=self.pk)
-
-    @staticmethod
-    def non_genomic_fragments(q=None, f=None, l=None):
-        qs = Fragment.objects.filter(genome_fragment__id__isnull=True)
-        if q is not None:
-            qs = qs.filter(q)
-        f = 0 if f is None else f
-        if l is None:
-            qs = qs[f:]
-        else:
-            qs = qs[f:l]
-        fragments = list(qs)
-        return fragments
-
-    # After some trials, we found that on MySQL, initial chunk size set to 20K
-    # produced the best import time for the E. coli genome. Setting an initial
-    # chunk size significantly improves import time: when dividing up smaller
-    # chunks, you copy/slice less sequence data.
-    @staticmethod
-    def create_with_sequence(name, sequence, circular=False, initial_chunk_size=20000):
-        from edge.fragment_writer import Fragment_Updater
-        new_fragment = Fragment_Updater(name=name, circular=circular, parent=None, start_chunk=None)
-        new_fragment.save()
-        if initial_chunk_size is None or initial_chunk_size == 0:
-            new_fragment.insert_bases(None, sequence)
-        else:
-            for i in range(0, len(sequence), initial_chunk_size):
-                new_fragment.insert_bases(None, sequence[i:i+initial_chunk_size])
-        return Fragment.objects.get(pk=new_fragment.pk)
 
 
 class Chunk(BigIntPrimaryModel):

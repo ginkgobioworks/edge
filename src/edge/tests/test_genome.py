@@ -32,7 +32,7 @@ class GenomeTest(TestCase):
         f = u.add_fragment('chrI', s)
         self.assertEquals(len(genome.fragments.all()), 1)
         self.assertEquals(genome.fragments.all()[0].name, 'chrI')
-        self.assertEquals(genome.fragments.all()[0].sequence, s)
+        self.assertEquals(genome.fragments.all()[0].indexed_fragment().sequence, s)
 
     def test_add_fragments_to_genome_not_in_place_creates_and_updates_child(self):
         parent = Genome.create('Foo')
@@ -57,7 +57,7 @@ class GenomeTest(TestCase):
         f = u.add_fragment('chrI', s)
         f = f.annotate()
         f.annotate(3, 8, 'Foo gene', 'gene', 1)
-        annotations = genome.find_annotation('Foo gene')
+        annotations = genome.indexed_genome().find_annotation('Foo gene')
 
         self.assertEquals(len(annotations), 1)
         self.assertEquals(f.id in annotations, True)
@@ -73,7 +73,7 @@ class GenomeTest(TestCase):
         s = 'atggcatattcgcagct'
         f = u.add_fragment('chrI', s)
         g = u
-        self.assertEquals(g.changes(), [])
+        self.assertEquals(g.indexed_genome().changes(), [])
 
     def test_can_insert_and_get_changes(self):
         genome = Genome.create('Foo')
@@ -91,7 +91,7 @@ class GenomeTest(TestCase):
             f.insert_bases(3, 'gataca')
         g = g_u
 
-        changes = g.changes()
+        changes = g.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
         self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s)+6)])
 
@@ -106,8 +106,8 @@ class GenomeTest(TestCase):
         with g2.update_fragment_by_fragment_id(f1.id) as f2:
             f2.insert_bases(3, 'gataca')
 
-        self.assertEquals(g2.fragments.all()[0].sequence, s[0:2]+'gataca'+s[2:])
-        self.assertEquals(g1.fragments.all()[0].sequence, s)
+        self.assertEquals(g2.fragments.all()[0].indexed_fragment().sequence, s[0:2]+'gataca'+s[2:])
+        self.assertEquals(g1.fragments.all()[0].indexed_fragment().sequence, s)
 
     def test_can_update_fragment_by_name_and_assign_new_name(self):
         genome = Genome.create('Foo')
@@ -157,11 +157,11 @@ class GenomeTest(TestCase):
             f.insert_bases(9, 'gataca')
         g3 = g_u
 
-        changes = g2.changes()
+        changes = g2.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
         self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s)+6)])
 
-        changes = g3.changes()
+        changes = g3.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
         self.assertItemsEqual([c.location for c in changes], [(3, 8), (9, 14), (15, len(s)+6+6)])
 
@@ -182,7 +182,7 @@ class GenomeTest(TestCase):
             f.insert_bases(3, 'gataca')
         g2 = g_u
 
-        changes = g2.changes()
+        changes = g2.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
         self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s)+6)])
 
@@ -202,7 +202,7 @@ class GenomeTest(TestCase):
             f.remove_bases(3, 4)
         g = g_u
 
-        changes = g.changes()
+        changes = g.indexed_genome().changes()
         self.assertEquals(len(changes), 2)
         self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, len(s)-4)])
 
@@ -223,7 +223,7 @@ class GenomeTest(TestCase):
             f.remove_bases(10, 4)
         g = g_u
 
-        changes = g.changes()
+        changes = g.indexed_genome().changes()
         self.assertEquals(len(changes), 4)
         self.assertItemsEqual([c.location for c in changes],
                               [(1, 2), (3, 8), (9, 9), (10, len(s)+6-4)])
@@ -296,7 +296,7 @@ class GenomeTest(TestCase):
             f2 = f
 
         g2 = Genome.objects.get(pk=u.pk)
-        changes = g2.changed_locations_by_fragment()
+        changes = g2.indexed_genome().changed_locations_by_fragment()
         for f in changes:
             if f.id == f1.id:
                 self.assertEquals(changes[f], [[1, len(s0)+6]])

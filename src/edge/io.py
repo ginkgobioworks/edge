@@ -14,7 +14,7 @@ class IO(object):
         Constructor. fragment should be the fragment object to export.
         """
 
-        self.__fragment = fragment
+        self.__fragment = fragment.indexed_fragment()
 
     def to_fasta(self, filename):
         """

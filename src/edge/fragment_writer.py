@@ -3,7 +3,7 @@ from django.db.models import F
 from edge.models import *
 
 
-class Fragment_Writer(Fragment):
+class Fragment_Writer(Indexed_Fragment):
     class Meta:
         app_label = "edge"
         proxy = True
@@ -91,7 +91,7 @@ class Fragment_Writer(Fragment):
         chunk.fragment_chunk_location_set.update(base_last=F('base_first')+len(s1)-1)
         return split2
 
-    def _find_chunk_prev_next_by_location_index(self, before_base1):
+    def _find_chunk_prev_next(self, before_base1):
         prev_chunk = None
         next_chunk = None
         chunk = None
@@ -132,8 +132,7 @@ class Fragment_Writer(Fragment):
         next_chunk = None
         bases_visited = 0
 
-        prev_chunk, chunk, next_chunk, bases_visited = \
-            self._find_chunk_prev_next_by_location_index(before_base1)
+        prev_chunk, chunk, next_chunk, bases_visited = self._find_chunk_prev_next(before_base1)
 
         if chunk:
             chunk_id = chunk.id
@@ -320,6 +319,7 @@ class Fragment_Updater(Fragment_Writer):
 
     @transaction.atomic()
     def insert_fragment(self, before_base1, fragment):
+        fragment = fragment.indexed_fragment()
 
         # find chunks before and containing the insertion point
         prev_chunk, my_next_chunk = self._find_and_split_before(before_base1)

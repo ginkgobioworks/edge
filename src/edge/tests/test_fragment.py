@@ -484,8 +484,9 @@ class FragmentTests(TestCase):
         # now remove all fragment chunk indices
         f.fragment_chunk_location_set.all().delete()
         self.assertEquals(f.has_location_index, False)
+
         # can still get chunks by walking edges
-        self.assertEquals([c.sequence for c in f.chunks(force_walk=True)],
+        self.assertEquals([c.sequence for c in f.chunks_by_walking()],
                           [self.root_sequence[0:2], 'gat', 'aca', self.root_sequence[2:]])
 
         # re-index
@@ -494,7 +495,14 @@ class FragmentTests(TestCase):
         self.assertEquals([c.sequence for c in f.chunks()],
                           [self.root_sequence[0:2], 'gat', 'aca', self.root_sequence[2:]])
 
-    def test_find_chunk_by_location_index(self):
+    def test_indexing_sets_est_length(self):
+        self.root.est_length = None
+        self.root.save()
+        self.assertEquals(self.root.est_length, None)
+        self.root.index_fragment_chunk_locations()
+        self.assertEquals(self.root.est_length, len(self.root_sequence))
+
+    def test_find_chunk(self):
         u = self.root.update('Bar')
         u.insert_bases(3, 'gataca')
         f = u
@@ -505,24 +513,21 @@ class FragmentTests(TestCase):
         chunk_ids = [c.id for c in f.chunks()]
 
         # get first bp
-        prev_chunk, chunk, next_chunk, bases_visited = \
-            f._find_chunk_prev_next_by_location_index(1)
+        prev_chunk, chunk, next_chunk, bases_visited = f._find_chunk_prev_next(1)
         self.assertEquals(prev_chunk, None)
         self.assertEquals(chunk.id, chunk_ids[0])
         self.assertEquals(next_chunk.id, chunk_ids[1])
         self.assertEquals(bases_visited, 2)
 
         # get last bp in first chunk
-        prev_chunk, chunk, next_chunk, bases_visited = \
-            f._find_chunk_prev_next_by_location_index(2)
+        prev_chunk, chunk, next_chunk, bases_visited = f._find_chunk_prev_next(2)
         self.assertEquals(prev_chunk, None)
         self.assertEquals(chunk.id, chunk_ids[0])
         self.assertEquals(next_chunk.id, chunk_ids[1])
         self.assertEquals(bases_visited, 2)
 
         # get first bp in second chunk
-        prev_chunk, chunk, next_chunk, bases_visited = \
-            f._find_chunk_prev_next_by_location_index(3)
+        prev_chunk, chunk, next_chunk, bases_visited = f._find_chunk_prev_next(3)
         self.assertEquals(prev_chunk.id, chunk_ids[0])
         self.assertEquals(chunk.id, chunk_ids[1])
         self.assertEquals(next_chunk.id, chunk_ids[2])
@@ -530,15 +535,14 @@ class FragmentTests(TestCase):
 
         # get last bp in last chunk
         prev_chunk, chunk, next_chunk, bases_visited = \
-            f._find_chunk_prev_next_by_location_index(6+len(self.root_sequence))
+            f._find_chunk_prev_next(6+len(self.root_sequence))
         self.assertEquals(prev_chunk.id, chunk_ids[1])
         self.assertEquals(chunk.id, chunk_ids[2])
         self.assertEquals(next_chunk, None)
         self.assertEquals(bases_visited, 6+len(self.root_sequence))
 
         # get bp past last chunk
-        prev_chunk, chunk, next_chunk, bases_visited = \
-            f._find_chunk_prev_next_by_location_index(100)
+        prev_chunk, chunk, next_chunk, bases_visited = f._find_chunk_prev_next(100)
         self.assertEquals(prev_chunk.id, chunk_ids[2])
         self.assertEquals(chunk, None)
         self.assertEquals(next_chunk, None)

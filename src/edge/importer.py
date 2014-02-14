@@ -89,9 +89,9 @@ class GFFFragmentImporter(object):
                 chunk_sizes.append(break_points[i]-break_points[i-1])
         print '%d chunks' % (len(chunk_sizes),)
 
-        new_fragment = Fragment_Updater(name=self.__rec.id, circular=False,
-                                        parent=None, start_chunk=None)
+        new_fragment = Fragment(name=self.__rec.id, circular=False, parent=None, start_chunk=None)
         new_fragment.save()
+        new_fragment = new_fragment.indexed_fragment().edit()
 
         prev = None
         flen = 0
@@ -102,7 +102,7 @@ class GFFFragmentImporter(object):
         if flen < seqlen:
             f = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:seqlen])
 
-        return Fragment.objects.get(pk=new_fragment.pk)
+        return Indexed_Fragment.objects.get(pk=new_fragment.pk)
 
     def annotate(self, fragment):
         self.__fclocs = {c.base_first: c

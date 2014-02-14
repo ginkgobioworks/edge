@@ -83,12 +83,15 @@ class FragmentView(ViewBase):
 
     @staticmethod
     def to_dict(fragment):
+        length = fragment.est_length
+        if fragment.has_location_index:
+            length = fragment.indexed_fragment().length
         return dict(id=fragment.id,
                     uri=reverse('fragment', kwargs=dict(fragment_id=fragment.id)),
                     name=fragment.name,
                     circular=fragment.circular,
                     parent_id=fragment.parent.id if fragment.parent else None,
-                    length=fragment.length)
+                    length=length)
 
     def on_get(self, request, fragment_id):
         fragment = get_fragment_or_404(fragment_id)
@@ -106,7 +109,7 @@ class FragmentSequenceView(ViewBase):
         l = args['l']
 
         fragment = get_fragment_or_404(fragment_id)
-        s = fragment.get_sequence(bp_lo=f, bp_hi=l)
+        s = fragment.indexed_fragment().get_sequence(bp_lo=f, bp_hi=l)
         if f is None:
             f = 1
         if l is None:
@@ -137,7 +140,7 @@ class FragmentAnnotationsView(ViewBase):
         m = args['m']
 
         fragment = get_fragment_or_404(fragment_id)
-        annotations = fragment.annotations(bp_lo=f, bp_hi=l)
+        annotations = fragment.indexed_fragment().annotations(bp_lo=f, bp_hi=l)
         if m is not None and len(annotations) > m:
             to_return = []
             while len(to_return) < m:
@@ -158,7 +161,7 @@ class FragmentAnnotationsView(ViewBase):
 
         args = annotation_parser.parse_args(request)
         fragment = get_fragment_or_404(fragment_id)
-        u = fragment.annotate()
+        u = fragment.indexed_fragment().annotate()
         u.annotate(first_base1=args['base_first'],
                    last_base1=args['base_last'],
                    name=args['name'],
@@ -197,12 +200,15 @@ class GenomeView(ViewBase):
 
     @staticmethod
     def to_dict(genome):
-        changes = genome.changed_locations_by_fragment()
-        changes = {f.id: v for f, v in changes.iteritems()}
+        changes = None
+        if genome.has_location_index:
+            genome = genome.indexed_genome()
+            changes = genome.changed_locations_by_fragment()
+            changes = {f.id: v for f, v in changes.iteritems()}
         fragments = []
         for f in genome.fragments.all():
             d = FragmentView.to_dict(f)
-            if f.id in changes:
+            if changes is not None and f.id in changes:
                 d['changes'] = changes[f.id]
             fragments.append(d)
 
@@ -228,7 +234,7 @@ class GenomeAnnotationsView(ViewBase):
         args = q_parser.parse_args(request)
 
         res = []
-        fragment_annotations = genome.find_annotation(args['q'])
+        fragment_annotations = genome.indexed_genome().find_annotation(args['q'])
         for fragment_id in fragment_annotations:
             fragment = get_fragment_or_404(fragment_id)
             annotations = fragment_annotations[fragment_id]

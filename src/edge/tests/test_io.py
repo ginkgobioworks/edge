@@ -23,9 +23,9 @@ class IOTest(TestCase):
         self.assertEquals(fasta, '>fragment %s|Foo\nagttcgaggctga\n' % (self.root.id,))
 
     def test_outputs_gff(self):
-        a = self.root.annotate()
+        a = self.root.indexed_fragment().annotate()
         a.annotate(2, 9, 'A1', 'gene', 1)
-        u = self.root.update('Bar')
+        u = self.root.indexed_fragment().update('Bar')
         u.insert_bases(3, 'gataca')
         frag = u
 

@@ -47,7 +47,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
     def test_cannot_remove_fragment_if_it_has_derived_fragment(self):
         from django.db import IntegrityError
 
-        chrI = [f for f in self.genome.fragments.all() if f.name == 'chrI'][0]
+        chrI = [f.indexed_fragment() for f in self.genome.fragments.all() if f.name == 'chrI'][0]
 
         u = chrI.update('Bar')
         u.insert_bases(3, 'gataca')

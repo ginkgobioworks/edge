@@ -22,10 +22,12 @@ class Genome(models.Model):
         new_genome.save()
         return Genome_Updater.objects.get(pk=new_genome.pk)
 
+    # XXX casting
     def edit(self):
         from edge.genome_writer import Genome_Updater
         return Genome_Updater.objects.get(pk=self.pk)
 
+    # XXX casting
     def annotate(self):
         return self.edit()
 
@@ -37,6 +39,29 @@ class Genome(models.Model):
         for f in self.fragments.all():
             Genome_Fragment(genome=new_genome, fragment=f, inherited=True).save()
         return Genome_Updater.objects.get(pk=new_genome.pk)
+
+    @property
+    def has_location_index(self):
+        for f in self.fragments.all():
+            if not f.has_location_index:
+                return False
+        return True
+
+    def indexed_genome(self):
+        for f in self.fragments.all():
+            f.indexed_fragment()
+        # XXX casting
+        return Indexed_Genome.objects.get(pk=self.pk)
+
+
+class Indexed_Genome(Genome):
+    """
+    An Indexed_Genome is a Genome where each fragment has been indexed.
+    """
+
+    class Meta:
+        app_label = "edge"
+        proxy = True
 
     def find_annotation(self, name):
         q = Chunk_Feature.objects.filter(chunk__fragment_chunk_location__fragment__genome=self,
@@ -69,11 +94,11 @@ class Genome(models.Model):
         for edge in edges:
             if edge.from_chunk:
                 if edge.from_chunk.id not in added:
-                    fcs.append(edge.fragment.fragment_chunk(edge.from_chunk))
+                    fcs.append(edge.fragment.indexed_fragment().fragment_chunk(edge.from_chunk))
                     added.append(edge.from_chunk.id)
             if edge.to_chunk:
                 if edge.to_chunk.id not in added:
-                    fcs.append(edge.fragment.fragment_chunk(edge.to_chunk))
+                    fcs.append(edge.fragment.indexed_fragment().fragment_chunk(edge.to_chunk))
                     added.append(edge.to_chunk.id)
         return fcs
 
