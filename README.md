@@ -1,24 +1,24 @@
 
 ## Edge
 
-Edge keeps track of proposed structural changes between a parent genome and its
-derived genomes. Users can create a derived genome by making changes to the
-sequence of the parent genome. Derived genomes inherit annotations and fixes
-from parents whenever appropriate.
+Edge keeps structural changes between a parent genome and its derived genomes.
+Users create derived genomes by making sequence changes to the parent genome.
+Derived genomes inherit annotations and fixes from their ancestors
+automatically.
 
 
 ### Why?
 
-Edge efficiently keeps track of structural changes between genomes, and at the
-same time allows a derived genome to inherit annotations from its ancestors,
-even annotations and fixes applied to an ancestor after the derived genome was
-created. You can consider Edge as the "git" tool for genome engineering.
+Edge allows derived genomes to inherit annotations and changes to their
+ancestors, even annotations and changes applied to an ancestor after the
+creation of the derived genome. Edge does this efficiently: a change
+(annotation or sequence change) to a parent genome takes O(1), and is
+automatically propagated to genomes derived from the modified genome.
 
-The necessary storage cost to store a derived genome is O(D), where D is the
-number of differences between the derived genome and its parent. The current
-implementation additionally uses a cache of annotation to base pair number for
-each genome. While this cache is O(N), where N is the number of annotations, it
-is soft-data and can be discarded.
+Edge uses O(D) amount of storage for each derived genome, where D is the number
+of differences between the derived genome and its parent. The current
+implementation additionally keeps a cache of annotations to base pair numbers,
+but this cache is soft-data and is invalidated and re-built on demand.
 
 
 ### What Edge is NOT
