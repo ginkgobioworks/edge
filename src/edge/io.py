@@ -6,42 +6,48 @@ from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 class IO(object):
     """
-    Class for exporting fragment sequences and features.
+    Class for exporting genome sequences and features.
     """
 
-    def __init__(self, fragment):
-        """
-        Constructor. fragment should be the fragment object to export.
-        """
-
-        self.__fragment = fragment.indexed_fragment()
+    def __init__(self, genome):
+        self.__genome = genome.indexed_genome()
 
     def to_fasta(self, filename):
         """
         Export to FASTA format, saving to the specified filename.
         """
         outf = open(filename, 'w')
-        outf.write('>fragment %s|%s\n' % (self.__fragment.id, self.__fragment.name))
-        outf.write(self.__fragment.sequence)
-        outf.write('\n')
+        for fragment in self.__genome.fragments.all():
+            fragment = fragment.indexed_fragment()
+            outf.write('>%s\n' % (fragment.name,))
+            outf.write(fragment.sequence)
+            outf.write('\n')
         outf.close()
 
     def to_gff(self, filename):
         """
         Export to GFF format, saving to the specified filename.
         """
-        seq = Seq(self.__fragment.sequence)
-        rec = SeqRecord(seq, "fragment %s: %s" % (self.__fragment.id, self.__fragment.name))
-        features = []
+        records = []
 
-        for annotation in self.__fragment.annotations():
-            # FeatureLocation first bp is AfterPosition, so -1
-            loc = FeatureLocation(annotation.base_first-1, annotation.base_last)
-            qualifiers = {'name': annotation.feature.name}
-            feature = SeqFeature(loc, type=annotation.feature.type, strand=1, qualifiers=qualifiers)
-            features.append(feature)
+        for fragment in self.__genome.fragments.all():
+            fragment = fragment.indexed_fragment()
+            seq = Seq(fragment.sequence)
+            rec = SeqRecord(seq, "%s" % (fragment.name,))
+            features = []
 
-        rec.features = features
+            for annotation in fragment.annotations():
+                # FeatureLocation first bp is AfterPosition, so -1
+                loc = FeatureLocation(annotation.base_first-1, annotation.base_last)
+                qualifiers = {'name': annotation.feature.name}
+                feature = SeqFeature(loc,
+                                     type=annotation.feature.type,
+                                     strand=1,
+                                     qualifiers=qualifiers)
+                features.append(feature)
+
+            rec.features = features
+            records.append(rec)
 
         with open(filename, "w") as out_handle:
-            GFF.write([rec], out_handle)
+            GFF.write(records, out_handle, include_fasta=True)
