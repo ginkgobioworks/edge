@@ -164,6 +164,7 @@ function FragmentControllerBase($scope, $routeParams, $http) {
     $scope.featureTypes = edgeFeatureTypes;
     $scope.fragmentId = $routeParams.fragmentId;
     $scope.fragment = undefined;
+    $scope.fetchedAnnotations = false;
     $scope.annotations = []
     $scope.display_summary = true;
     $scope.summary_annotations = [];
@@ -386,6 +387,7 @@ function FragmentControllerBase($scope, $routeParams, $http) {
 
     $http.get('/edge/fragments/'+$scope.fragmentId+'/annotations/').success(function(annotations) {
         $scope.annotations = annotations;
+        $scope.fetchedAnnotations = true;
         annotations.forEach(function(annotation) {
             annotation['display_name'] = edgeAnnotationDisplayName(annotation);
             annotation['display_css'] = edgeAnnotationSummaryCSS(annotation);
