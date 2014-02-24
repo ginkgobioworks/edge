@@ -12,6 +12,14 @@
 
 <h3>{{ fragment.name }}: {{ fragment.length | number }} bps</h3>
 
+<p ng-if='genome' class="lead space-top">
+  Genome: <a href="#/genomes/{{ genome.id }}">{{ genome.name }}</a>
+  <span ng-if='genome.parent_id'>
+    <br/>
+    (Visit genome page to see genomic changes)
+  </span>
+</p>
+
 <partial template="fragment-layout"></partial>
 
 </div> <!-- container -->

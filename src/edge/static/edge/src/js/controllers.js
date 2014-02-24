@@ -158,7 +158,7 @@ function GenomeDetailController($scope, $routeParams, $http) {
     });
 }
 
-function FragmentController($scope, $routeParams, $http) {
+function FragmentControllerBase($scope, $routeParams, $http) {
     var DEFAULT_ZOOM = 2000;
 
     $scope.featureTypes = edgeFeatureTypes;
@@ -421,8 +421,22 @@ function FragmentController($scope, $routeParams, $http) {
     $scope.annotationOrderProp = 'base_first';
 }
 
+function FragmentController($scope, $routeParams, $injector, $http) {
+    $injector.invoke(FragmentControllerBase, this, { $scope: $scope });
+    $scope.genome = undefined;
+
+    function findGenome() {
+        $http.get('/edge/genomes/?f='+$scope.fragmentId).success(function(genomes) {
+            if (genomes.length) { $scope.genome = genomes[0]; console.log(genomes[0]); }
+        });
+    }
+
+    findGenome();
+    $scope.postIndexCallbacks.push(findGenome);
+}
+
 function GenomeFragmentController($scope, $routeParams, $injector, $http) {
-    $injector.invoke(FragmentController, this, { $scope: $scope });
+    $injector.invoke(FragmentControllerBase, this, { $scope: $scope });
     $scope.genomeId = $routeParams.genomeId;
     $scope.genome = undefined;
     $scope.changes_and_locs = [];
@@ -469,10 +483,9 @@ function GenomeOpController($scope, $http, $location) {
 }
 
 function GenomeOpWithFragmentController($scope, $http) {
-    $http.get('/edge/fragments+'/'').success(function(data) {
+    $http.get('/edge/fragments/').success(function(data) {
         $scope.fragments = data;
     });
 
     $scope.orderProp = 'name';
 }
-
