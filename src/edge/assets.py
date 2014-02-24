@@ -7,5 +7,5 @@ css = Bundle('edge/src/css/app.css',
              output='edge/static/edge/edge.bundle.css')
 register('edge_css', css)
 
-jst = Bundle('edge/src/partials/*.html', filters='jst', output='edge/static/edge/edge.jst')
+jst = Bundle('edge/src/partials/*.html', filters='jst', output='edge/static/edge/edge_jst.js')
 register('edge_jst', jst)
