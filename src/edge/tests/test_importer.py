@@ -259,12 +259,12 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             self.genome = Genome.import_gff('Foo', f.name)
             os.unlink(f.name)
 
-    def test_uses_gene_qualifier_over_name_qualifier(self):
+    def test_uses_name_qualifier_over_gene_qualifier(self):
         qualifiers = "ID=i2;gene=g2;Name=f2"
         self.import_with_qualifiers(qualifiers)
         chrI = [f.indexed_fragment() for f in self.genome.fragments.all() if f.name == 'chrI'][0]
         self.assertEquals(len(chrI.annotations()), 1)
-        self.assertEquals(chrI.annotations()[0].feature.name, 'g2')
+        self.assertEquals(chrI.annotations()[0].feature.name, 'f2')
 
     def test_uses_name_qualifier_over_locus_tag_qualifier(self):
         qualifiers = "ID=i2;Name=f2;locus_tag=l2"

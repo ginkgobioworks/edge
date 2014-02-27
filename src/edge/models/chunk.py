@@ -1,3 +1,4 @@
+import json
 from django.db import models
 from django.db import transaction
 
@@ -105,6 +106,14 @@ class Feature(models.Model):
     type = models.CharField(max_length=100)
     strand = models.IntegerField(null=True)
     length = models.IntegerField()
+    _qualifiers = models.TextField(null=True, db_column='qualifiers')
+
+    def set_qualifiers(self, qualifiers):
+        self._qualifiers = json.dumps(qualifiers)
+
+    @property
+    def qualifiers(self):
+        return json.loads(self._qualifiers)
 
 
 class Chunk_Feature_Manager(models.Manager):

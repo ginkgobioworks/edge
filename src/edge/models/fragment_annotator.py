@@ -7,10 +7,12 @@ class Fragment_Annotator:
     Mixin for annotating a fragment.
     """
 
-    def _add_feature(self, name, type, length, strand):
+    def _add_feature(self, name, type, length, strand, qualifiers=None):
         if strand not in (1, -1, None):
             raise Exception('Strand must be 1, -1, or None')
+        qualifiers = {} if qualifiers is None else qualifiers
         f = Feature(name=name, type=type, length=length, strand=strand)
+        f.set_qualifiers(qualifiers)
         f.save()
         return f
 

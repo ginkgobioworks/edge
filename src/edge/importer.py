@@ -46,7 +46,7 @@ class GFFFragmentImporter(object):
         return f
 
     def parse_gff(self):
-        name_fields = ('gene', 'name', 'Name', 'locus', 'locus_tag', 'product', 'protein_id')
+        name_fields = ('name', 'Name', 'gene', 'locus', 'locus_tag', 'product', 'protein_id')
 
         self.__sequence = str(self.__rec.seq)
         seqlen = len(self.__sequence)
@@ -57,6 +57,8 @@ class GFFFragmentImporter(object):
             # skip features that cover the entire sequence
             if feature.location.start == 0 and feature.location.end == seqlen:
                 continue
+
+            # get name
             name = feature.id
             if name == '':
                 name = feature.type
@@ -68,9 +70,16 @@ class GFFFragmentImporter(object):
                         break
             name = name[0:100]
 
+            # get qualifiers
+            qualifiers = {}
+            for field in feature.qualifiers:
+                v = feature.qualifiers[field]
+                if len(v) > 0:
+                    qualifiers[field] = v
+
             # start in Genbank format is start after, so +1 here
             features.append((feature.location.start+1, feature.location.end,
-                             name, feature.type, feature.strand))
+                             name, feature.type, feature.strand, qualifiers))
         self.__features = features
 
     def build_fragment(self):
@@ -109,11 +118,11 @@ class GFFFragmentImporter(object):
                                                          .filter(fragment=fragment)}
 
         for feature in self.__features:
-            f_start, f_end, f_name, f_type, f_strand = feature
+            f_start, f_end, f_name, f_type, f_strand, f_qualifiers = feature
             #print '  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand)
-            self._annotate_feature(fragment, f_start, f_end, f_name, f_type, f_strand)
+            self._annotate_feature(fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers)
 
-    def _annotate_feature(self, fragment, first_base1, last_base1, name, type, strand):
+    def _annotate_feature(self, fragment, first_base1, last_base1, name, type, strand, qualifiers):
         if fragment.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
             length = len(self.__sequence)-first_base1+1+last_base1
@@ -132,7 +141,7 @@ class GFFFragmentImporter(object):
         else:
             annotation_end = self.__fclocs[1]
 
-        new_feature = fragment._add_feature(name, type, length, strand)
+        new_feature = fragment._add_feature(name, type, length, strand, qualifiers)
 
         fc = annotation_start
         a_i = 1
