@@ -17,7 +17,7 @@ class Fragment_Annotator:
         return f
 
     @transaction.atomic()
-    def annotate(self, first_base1, last_base1, name, type, strand):
+    def annotate(self, first_base1, last_base1, name, type, strand, qualifiers=None):
         if self.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
             length = self.length-first_base1+1+last_base1
@@ -32,7 +32,7 @@ class Fragment_Annotator:
         # did two splits, so must reload annotation_start in case that got splitted
         annotation_start = annotation_start.reload()
 
-        new_feature = self._add_feature(name, type, length, strand)
+        new_feature = self._add_feature(name, type, length, strand, qualifiers)
 
         # now, starting with chunk annotation_start, walk through chunks until
         # we hit annotation_end, and add annotation for each chunk

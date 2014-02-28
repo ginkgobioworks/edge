@@ -48,19 +48,41 @@ class GenomeTest(TestCase):
         self.assertEquals(len(child.fragments.all()), 1)
         self.assertEquals(len(parent.fragments.all()), 0)
 
-    def test_find_annotation(self):
+    def test_find_annotation_by_name(self):
         genome = Genome.create('Foo')
         s = 'atggcatattcgcagct'
         f = genome.add_fragment('chrI', s)
         f.annotate(3, 8, 'Foo gene', 'gene', 1)
-        annotations = genome.indexed_genome().find_annotation('Foo gene')
 
+        annotations = genome.indexed_genome().find_annotation_by_name('Foo gene')
         self.assertEquals(len(annotations), 1)
         self.assertEquals(f.id in annotations, True)
         self.assertEquals(len(annotations[f.id]), 1)
         self.assertEquals(annotations[f.id][0].base_first, 3)
         self.assertEquals(annotations[f.id][0].base_last, 8)
         self.assertEquals(annotations[f.id][0].feature.name, 'Foo gene')
+
+        annotations = genome.indexed_genome().find_annotation_by_name('Foo bar')
+        self.assertEquals(len(annotations), 0)
+
+    def test_find_annotation_by_qualifier(self):
+        genome = Genome.create('Foo')
+        s = 'atggcatattcgcagct'
+        f = genome.add_fragment('chrI', s)
+        f.annotate(3, 8, 'Foo gene', 'gene', 1, qualifiers=dict(foo='bar,baz'))
+
+        # finds bar
+        annotations = genome.indexed_genome().find_annotation_by_qualifier('bar')
+        self.assertEquals(len(annotations), 1)
+        self.assertEquals(f.id in annotations, True)
+        self.assertEquals(len(annotations[f.id]), 1)
+        self.assertEquals(annotations[f.id][0].base_first, 3)
+        self.assertEquals(annotations[f.id][0].base_last, 8)
+        self.assertEquals(annotations[f.id][0].feature.name, 'Foo gene')
+
+        # does not find bar,b
+        annotations = genome.indexed_genome().find_annotation_by_qualifier('bar,b')
+        self.assertEquals(len(annotations), 0)
 
     def test_changes_return_empty_array_if_no_parent(self):
         genome = Genome.create('Foo')

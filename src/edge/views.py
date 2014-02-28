@@ -234,7 +234,7 @@ class GenomeAnnotationsView(ViewBase):
         args = q_parser.parse_args(request)
 
         res = []
-        fragment_annotations = genome.indexed_genome().find_annotation(args['q'])
+        fragment_annotations = genome.indexed_genome().find_annotation_by_name(args['q'])
         for fragment_id in fragment_annotations:
             fragment = get_fragment_or_404(fragment_id)
             annotations = fragment_annotations[fragment_id]

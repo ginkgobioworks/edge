@@ -61,22 +61,39 @@ class Indexed_Genome(Genome):
         app_label = "edge"
         proxy = True
 
-    def find_annotation(self, name):
-        q = Chunk_Feature.objects.filter(chunk__fragment_chunk_location__fragment__genome=self,
-                                         feature__name=name)
-        chunk_features = []
-        for cf in q:
+    def __annotations_from_chunk_features(self, chunk_features):
+        cf_fcl = []
+        for cf in chunk_features:
             # get fragment chunk location
             for fcl in Fragment_Chunk_Location.objects.filter(chunk=cf.chunk,
                                                               fragment__genome=self):
-                chunk_features.append((cf, fcl))
-        annotations = Annotation.from_chunk_feature_and_location_array(chunk_features)
+                cf_fcl.append((cf, fcl))
+        annotations = Annotation.from_chunk_feature_and_location_array(cf_fcl)
+
         by_f = {}
         for annotation in annotations:
             if annotation.fragment.id not in by_f:
                 by_f[annotation.fragment.id] = []
             by_f[annotation.fragment.id].append(annotation)
         return by_f
+
+    def find_annotation_by_name(self, name):
+        q = Chunk_Feature.objects.filter(chunk__fragment_chunk_location__fragment__genome=self,
+                                         feature__name=name)
+        return self.__annotations_from_chunk_features(list(q))
+
+    def find_annotation_by_qualifier(self, name):
+        q = Chunk_Feature.objects.filter(chunk__fragment_chunk_location__fragment__genome=self,
+                                         feature___qualifiers__icontains=name)
+        chunk_features = []
+        for cf in q:
+            qualifiers = cf.feature.qualifiers
+            for k, v in qualifiers.iteritems():
+                v = v.split(',')
+                if name in v:
+                    chunk_features.append(cf)
+
+        return self.__annotations_from_chunk_features(chunk_features)
 
     def changes(self):
         if self.parent is None:
