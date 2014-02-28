@@ -40,5 +40,5 @@ form .sequence { width:400px; height:200px; }
 
 #sequence-viewer { margin:10px 0px; }
 #sequence-viewer table { font-family: courier; font-size: 0.8em; }
-#sequence-viewer table .sequence-pos { color: #999; }
+#sequence-viewer table .sequence-pos { color: #999; white-space: nowrap; }
 #sequence-viewer table .sequence-data span { padding: 0px 2px; }

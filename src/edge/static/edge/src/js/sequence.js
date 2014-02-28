@@ -24,13 +24,13 @@ window.SequenceViewer = function ($, options) {
         var td_l = $('<td class="sequence-pos"></td>');
         for (var i=0; i<rows.length; i++) {
             var l = s+rows[i].length-1;
-            td_s.append(s+'<br/>');
+            td_s.append(s+'/'+(s-start_bp+1)+'<br/>');
             var columns = rows[i].match(csplit);
             for (var j=0; j<columns.length; j++) {
                 td_d.append('<span>'+columns[j]+'</span>');
             }
             td_d.append('<br/>');
-            td_l.append(l+'<br/>');
+            td_l.append(l+'/'+(l-start_bp+1)+'<br/>');
             s = l+1;
         }
         tr.append(td_s);

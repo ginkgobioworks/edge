@@ -3,18 +3,18 @@
     <ol class="breadcrumb">
         <li> Edge </li>
         <li> <a href="#/genomes">Genomes</a> </li>
-        <li> <a href="#/genomes/{{ genome.id }}">{{ genome.name }}</a> </li>
-        <li> {{ fragment.name }} </li>
+        <li> <a href="#/genomes/{{ genome.id }}" ng-bind-html-unsafe='genome.name'></a> </li>
+        <li ng-bind-html-unsafe='fragment.name'></li>
     </ol>
   </div>
 </header>
 
 <div class="container container-wide">
 
-<h3>{{ fragment.name }}: {{ fragment.length | number }} bps</h3>
+<h3><span ng-bind-html-unsafe='fragment.name'></span>: {{ fragment.length | number }} bps</h3>
 
 <div class="lead space-top">
-    <p>Genome: <a href="#/genomes/{{ genome.id }}">{{ genome.name }}</a> </li>
+    <p>Genome: <a href="#/genomes/{{ genome.id }}" ng-bind-html-unsafe='genome.name'></a> </p>
     <p>Changes:</p>
     <ul><li ng-repeat="tuple in changes_and_locs">
             <a href="javascript:void(0);"

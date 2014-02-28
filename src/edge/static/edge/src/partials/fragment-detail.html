@@ -3,17 +3,17 @@
     <ol class="breadcrumb">
         <li> Edge </li>
         <li> <a href="#/fragments">Fragments</a> </li>
-        <li> {{ fragment.name }} </li>
+        <li ng-bind-html-unsafe='fragment.name'></li>
     </ol>
   </div>
 </header>
 
 <div class="container container-wide">
 
-<h3>{{ fragment.name }}: {{ fragment.length | number }} bps</h3>
+<h3><span ng-bind-html-unsafe='fragment.name'></span>: {{ fragment.length | number }} bps</h3>
 
 <p ng-if='genome' class="lead space-top">
-  Genome: <a href="#/genomes/{{ genome.id }}">{{ genome.name }}</a>
+  Genome: <a href="#/genomes/{{ genome.id }}" ng-bind-html-unsafe='genome.name'></a>
   <span ng-if='genome.parent_id'>
     <br/>
     (Visit genome page to see genomic changes)

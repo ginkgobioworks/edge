@@ -384,7 +384,8 @@ class GenomeListView(ViewBase):
                 genomes = Genome.objects.filter(name__icontains=q).order_by('-id')[s:s+p]
             else:
                 genomes = Genome.objects.all().order_by('-id')[s:s+p]
-        return [GenomeView.to_dict(genome, include_changes=False, compute_length=False) for genome in genomes]
+        return [GenomeView.to_dict(genome, include_changes=False, compute_length=False)
+                for genome in genomes]
 
     def on_post(self, request):
         genome_parser = RequestParser()
