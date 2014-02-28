@@ -82,9 +82,9 @@ fragment_parser.add_argument('circular', field_type=bool, default=False, locatio
 class FragmentView(ViewBase):
 
     @staticmethod
-    def to_dict(fragment):
+    def to_dict(fragment, compute_length=True):
         length = fragment.est_length
-        if fragment.has_location_index:
+        if compute_length is True and fragment.has_location_index:
             length = fragment.indexed_fragment().length
         return dict(id=fragment.id,
                     uri=reverse('fragment', kwargs=dict(fragment_id=fragment.id)),
@@ -199,15 +199,16 @@ class FragmentListView(ViewBase):
 class GenomeView(ViewBase):
 
     @staticmethod
-    def to_dict(genome):
+    def to_dict(genome, include_changes=True, compute_length=True):
         changes = None
         if genome.has_location_index:
             genome = genome.indexed_genome()
-            changes = genome.changed_locations_by_fragment()
-            changes = {f.id: v for f, v in changes.iteritems()}
+            if include_changes is True:
+                changes = genome.changed_locations_by_fragment()
+                changes = {f.id: v for f, v in changes.iteritems()}
         fragments = []
         for f in genome.fragments.all():
-            d = FragmentView.to_dict(f)
+            d = FragmentView.to_dict(f, compute_length=compute_length)
             if changes is not None and f.id in changes:
                 d['changes'] = changes[f.id]
             fragments.append(d)
@@ -383,7 +384,7 @@ class GenomeListView(ViewBase):
                 genomes = Genome.objects.filter(name__icontains=q).order_by('-id')[s:s+p]
             else:
                 genomes = Genome.objects.all().order_by('-id')[s:s+p]
-        return [GenomeView.to_dict(genome) for genome in genomes]
+        return [GenomeView.to_dict(genome, include_changes=False, compute_length=False) for genome in genomes]
 
     def on_post(self, request):
         genome_parser = RequestParser()
