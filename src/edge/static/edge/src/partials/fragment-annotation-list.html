@@ -53,8 +53,7 @@
     <td>{{ annotation.base_first }}</td>
     <td>{{ annotation.base_last }}</td>
     <td>
-        <a href='javascript:void(0);'
-           ng-click="zoomAt(annotation)" title="bp {{ annotation.base_first | number }}"
+        <a href='javascript:void(0);' ng-click="zoomAt(annotation)" title="{{ annotation.formatted_qualifiers }}"
          >{{ annotation.display_name }}</a>
     </td>
     <td>{{ annotation.type }}</td>

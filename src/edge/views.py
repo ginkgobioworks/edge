@@ -125,6 +125,7 @@ class FragmentAnnotationsView(ViewBase):
                     name=annotation.feature.name,
                     type=annotation.feature.type,
                     strand=annotation.feature.strand,
+                    qualifiers=annotation.feature.qualifiers,
                     feature_full_length=annotation.feature.length,
                     feature_base_first=annotation.feature_base_first,
                     feature_base_last=annotation.feature_base_last)

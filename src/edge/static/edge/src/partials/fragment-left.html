@@ -25,7 +25,7 @@
         <span ng-repeat="display in zoom.display"
               class="{{ display.css }}"
               style="left:{{ display.left }}; top:{{ display.top }}; width:{{ display.width }};"
-              ng-click="zoomAtExact(display.annotation)" title="{{ display.title }})">
+              ng-click="zoomAtExact(display.annotation)" title="{{ display.formatted_qualifiers }}">
             {{ display.title }}
         </span>
     </div>

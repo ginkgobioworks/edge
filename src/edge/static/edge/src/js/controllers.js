@@ -179,6 +179,7 @@ function FragmentControllerBase($scope, $routeParams, $http) {
             var d = {};
             d['annotation'] = a;
             d['title'] = a.display_name+' ('+a.type+')';
+            d['formatted_qualifiers'] = a.formatted_qualifiers;
             d['css'] = edgeAnnotationZoomCSS(a);
             var sliced = false;
             var slice = [1, a['base_last']-a['base_first']+1];
@@ -362,6 +363,8 @@ function FragmentControllerBase($scope, $routeParams, $http) {
                 };
                 new_a['display_name'] = edgeAnnotationDisplayName(new_a);
                 new_a['display_css'] = edgeAnnotationSummaryCSS(new_a);
+                new_a['qualifiers'] = {};
+                new_a['formatted_qualifiers'] = "";
                 $scope.annotations.push(new_a);
                 $scope.annotate_error = undefined;
                 $scope.zoomRefresh($scope.zoom['base_first'], $scope.zoom['base_last']);
@@ -391,6 +394,13 @@ function FragmentControllerBase($scope, $routeParams, $http) {
         annotations.forEach(function(annotation) {
             annotation['display_name'] = edgeAnnotationDisplayName(annotation);
             annotation['display_css'] = edgeAnnotationSummaryCSS(annotation);
+            annotation['formatted_qualifiers'] = [];
+            for (var field in annotation.qualifiers) {
+                annotation['formatted_qualifiers'].push(''+field+': '+annotation.qualifiers[field]);
+            }
+            annotation['formatted_qualifiers'].sort();
+            annotation['formatted_qualifiers'] = annotation['formatted_qualifiers'].join('\n');
+
             var gap = 0;
             // scale up gap based on number of annotations, so we don't have
             // too many annotations to display in summary mode
