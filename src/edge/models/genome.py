@@ -82,17 +82,20 @@ class Indexed_Genome(Genome):
                                          feature__name=name)
         return self.__annotations_from_chunk_features(list(q))
 
-    def find_annotation_by_qualifier(self, name, qualifier=None):
+    def find_annotation_by_qualifier(self, name, fields=None):
+        fields = None if fields is None else [f.lower() for f in fields]
+
         q = Chunk_Feature.objects.filter(chunk__fragment_chunk_location__fragment__genome=self,
                                          feature___qualifiers__icontains=name)
         chunk_features = []
         for cf in q:
             qualifiers = cf.feature.qualifiers
             for k, v in qualifiers.iteritems():
-                if qualifier is None or k == qualifier:
+                if fields is None or k.lower() in fields:
                     if type(v) in (str, unicode):
                         v = v.split(',')
-                    if name in v:
+                    v = [s.lower() for s in v]
+                    if name.lower() in v:
                         chunk_features.append(cf)
 
         return self.__annotations_from_chunk_features(chunk_features)
