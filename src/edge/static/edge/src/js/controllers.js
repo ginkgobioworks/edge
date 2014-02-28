@@ -45,7 +45,7 @@ function edgeAnnotationZoomCSS(annotation) {
 }
 
 function edgeFetchChanges($http, fragment_id, changed_loc, cb) {
-    var url = '/edge/fragments/'+fragment_id+'/annotations?f='+changed_loc[0]+'&l='+changed_loc[1];
+    var url = '/edge/fragments/'+fragment_id+'/annotations/?f='+changed_loc[0]+'&l='+changed_loc[1];
     $http.get(url).success(function(data) {
         var annotations = [];
         var first_annotation = undefined;
@@ -446,18 +446,19 @@ function GenomeFragmentController($scope, $routeParams, $injector, $http) {
     function fetchGenome() {
         $http.get('/edge/genomes/'+$scope.genomeId+'/').success(function(genome) {
             $scope.genome = genome;
-            $scope.changes_and_locs = [];
+            var changes_and_locs = [];
             genome['fragments'].forEach(function(fragment) {
                 if (fragment['id'] == $scope.fragmentId) {
                     if (fragment['changes']) {
                         fragment['changes'].forEach(function(changed_loc) {
                             edgeFetchChanges($http, fragment['id'], changed_loc, function(desc, annotation) {
-                                $scope.changes_and_locs.push({'desc': desc, 'annotation': annotation});
+                                changes_and_locs.push({'desc': desc, 'annotation': annotation});
                             });
                         });
                     }
                 }
             });
+            $scope.changes_and_locs = changes_and_locs;
         });
     }
 
