@@ -200,19 +200,21 @@ class FragmentListView(ViewBase):
 class GenomeView(ViewBase):
 
     @staticmethod
-    def to_dict(genome, include_changes=True, compute_length=True):
+    def to_dict(genome, include_changes=True, compute_length=True, include_fragments=True):
         changes = None
         if genome.has_location_index:
             genome = genome.indexed_genome()
             if include_changes is True:
                 changes = genome.changed_locations_by_fragment()
                 changes = {f.id: v for f, v in changes.iteritems()}
-        fragments = []
-        for f in genome.fragments.all():
-            d = FragmentView.to_dict(f, compute_length=compute_length)
-            if changes is not None and f.id in changes:
-                d['changes'] = changes[f.id]
-            fragments.append(d)
+        fragments = None
+        if include_fragments:
+            fragments = []
+            for f in genome.fragments.all():
+                d = FragmentView.to_dict(f, compute_length=compute_length)
+                if changes is not None and f.id in changes:
+                    d['changes'] = changes[f.id]
+                fragments.append(d)
 
         return dict(id=genome.id,
                     uri=reverse('genome', kwargs=dict(genome_id=genome.id)),
@@ -385,7 +387,10 @@ class GenomeListView(ViewBase):
                 genomes = Genome.objects.filter(name__icontains=q).order_by('-id')[s:s+p]
             else:
                 genomes = Genome.objects.all().order_by('-id')[s:s+p]
-        return [GenomeView.to_dict(genome, include_changes=False, compute_length=False)
+        return [GenomeView.to_dict(genome,
+                                   include_changes=False,
+                                   compute_length=False,
+                                   include_fragments=False)
                 for genome in genomes]
 
     def on_post(self, request):
