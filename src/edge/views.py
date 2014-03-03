@@ -202,9 +202,9 @@ class GenomeView(ViewBase):
     @staticmethod
     def to_dict(genome, include_changes=True, compute_length=True, include_fragments=True):
         changes = None
-        if genome.has_location_index:
-            genome = genome.indexed_genome()
-            if include_changes is True:
+        if include_changes is True:
+            if genome.has_location_index:
+                genome = genome.indexed_genome()
                 changes = genome.changed_locations_by_fragment()
                 changes = {f.id: v for f, v in changes.iteritems()}
         fragments = None
