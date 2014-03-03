@@ -85,7 +85,7 @@ function PaginateController($scope, $http, $timeout) {
 
     $scope.prevPage = function () {
         $scope.curPos -= $scope.pageSize;
-        if ($scope.curPos < 0) { $scope.curPos = 0; $scope.hasPrev = false; }
+        if ($scope.curPos <= 0) { $scope.curPos = 0; $scope.hasPrev = false; }
         $scope.fetch();
     };
 
