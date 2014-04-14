@@ -7,7 +7,7 @@ version = "0.2"
 with open("requirements/core.txt", "r") as f:
     install_requires = [x.strip() for x in f.readlines() if not x.strip().startswith("#")]
 
-setup(name="edge",
+setup(name="edge-genome",
       version=version,
       author="Ginkgo Bioworks",
       author_email="team@ginkgobioworks.com",
