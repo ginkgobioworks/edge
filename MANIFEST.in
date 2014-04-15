@@ -1,0 +1,5 @@
+include LICENSE.txt
+include README.md
+recursive-include src/edge *
+recursive-exclude * *.pyc
+recursive-exclude * .*.swp

@@ -2,18 +2,17 @@
 
 from setuptools import setup, find_packages
 
-version = "0.2"
-
 with open("requirements/core.txt", "r") as f:
     install_requires = [x.strip() for x in f.readlines() if not x.strip().startswith("#")]
 
-setup(name="edge-genome",
-      version=version,
+setup(name="edge",
+      version="0.2",
       author="Ginkgo Bioworks",
       author_email="team@ginkgobioworks.com",
       description="Genome Engineering Tool",
       license="MIT",
-      packages=find_packages(),
+      packages=['edge'],
       package_dir={"": "src"},
-      zip_safe=False,
+      include_package_data=True,
+      zip_safe=True,
       install_requires=install_requires)
