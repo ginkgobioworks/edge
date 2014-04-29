@@ -376,9 +376,21 @@ class GenomeListView(ViewBase):
             for i in range(1, sql_joins):
                 if i < len(fragment_ids):
                     q = q.filter(genome_fragment__fragment_id=fragment_ids[i])
-            genomes = list(q)
-            genomes = [g for g in genomes
-                       if set(fragment_ids) == set([f.id for f in g.fragments.all()])]
+            candidates = list(q)
+            genomes = []
+            for g in candidates:
+                x = Genome.objects.raw("""
+                  SELECT edge_genome.id,
+                         GROUP_CONCAT(edge_genome_fragment.fragment_id) as fragment_id_list
+                    FROM edge_genome
+                    JOIN edge_genome_fragment ON edge_genome_fragment.genome_id = edge_genome.id
+                   WHERE edge_genome.id = %s
+                """, [g.id])
+                x = list(x)[0]
+                id_list = [int(n) for n in x.fragment_id_list.split(',')]
+                if set(id_list) == set(fragment_ids):
+                    genomes.append(g)
+
         else:
             q_parser = RequestParser()
             q_parser.add_argument('q', field_type=str, location='get')
