@@ -370,7 +370,13 @@ class GenomeListView(ViewBase):
                     return []
             if len(fragment_ids) == 0:
                 return []
-            genomes = Genome.objects.filter(genome_fragment__fragment_id=fragment_ids[0])
+
+            sql_joins = 5
+            q = Genome.objects.filter(genome_fragment__fragment_id=fragment_ids[0])
+            for i in range(1, sql_joins):
+                if i < len(fragment_ids):
+                    q = q.filter(genome_fragment__fragment_id=fragment_ids[i])
+            genomes = list(q)
             genomes = [g for g in genomes
                        if set(fragment_ids) == set([f.id for f in g.fragments.all()])]
         else:
