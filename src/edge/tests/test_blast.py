@@ -7,7 +7,7 @@ class GenomeBlastTest(TestCase):
 
     def test_blast_finds_sequence(self):
         from edge.models import Genome, Fragment, Genome_Fragment
-        from edge.management.commands.build_blastdb import build_fragment_db, fragment_fasta_fn
+        from edge.management.commands.build_edge_blastdb import build_fragment_db, fragment_fasta_fn
 
         s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
         s2 = 'agcgtcgatgcatgagtcgatcggcagtcgtgtagtcgtcgtatgcgtta'

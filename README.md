@@ -57,5 +57,5 @@ If you need BLAST support, run
 
 ```
 cd ncbi; ./install
-cd ../src; python manage.py build_blastdb
+cd ../src; python manage.py build_edge_blastdb
 ```
