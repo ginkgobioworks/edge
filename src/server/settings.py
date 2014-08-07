@@ -48,6 +48,7 @@ INSTALLED_APPS = (
 if TESTING:
     INSTALLED_APPS += ('django_nose',)
     TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+    SOUTH_TESTS_MIGRATE = False
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',

@@ -30,16 +30,18 @@ def blast(query, blast_program, evalue_threshold=0.001):
 
     infile = None
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
-        infile = f.name 
+        infile = f.name
         f.write(">Query\n%s\n" % query)
 
     outfile = "%s.out.xml" % infile
     if blast_program == 'tblastn':
         blast_cl = NcbitblastnCommandline(query=infile, db=BLAST_DB,
-                                          evalue=evalue_threshold, word_size=6, outfmt=5, out=outfile)
+                                          evalue=evalue_threshold,
+                                          word_size=6, outfmt=5, out=outfile)
     else:
         blast_cl = NcbiblastnCommandline(query=infile, db=BLAST_DB,
-                                         evalue=evalue_threshold, word_size=6, outfmt=5, out=outfile)
+                                         evalue=evalue_threshold,
+                                         word_size=6, outfmt=5, out=outfile)
 
     cl = str(blast_cl)
     cl = "%s/%s" % (settings.NCBI_BIN_DIR, cl)

@@ -10,6 +10,11 @@ from Bio.Alphabet import IUPAC
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+
+def fragment_fasta_fn(fragment):
+    return '%s/edge-fragment-%s-nucl.fa' % (settings.NCBI_DATA_DIR, fragment.id)
+
+
 def build_fragment_db():
 
     if Fragment.objects.count() == 0:
@@ -18,9 +23,9 @@ def build_fragment_db():
     fns = []
     new = 0
     for fragment in Fragment.objects.all():
-        fn = '%s/edge-fragment-%s-nucl.fa' % (settings.NCBI_DATA_DIR, fragment.id)
+        fn = fragment_fasta_fn(fragment)
         fns.append(fn)
-        if not os.path.isfile(fn): # have not built this fasta
+        if not os.path.isfile(fn):  # have not built this fasta
             print 'building %s' % fn
             # this may take awhile, so do this first, so user interrupt does
             # not create an empty file
@@ -28,7 +33,8 @@ def build_fragment_db():
             # be really lenient, convert any unknown bp to N
             sequence = re.sub(r'[^agctnAGCTN]', 'n', sequence)
             f = open(fn, 'w')
-            f.write(">gnl|edge|%s %s\n%s\n" % (Blast_Accession.make(fragment), fragment.name, sequence))
+            f.write(">gnl|edge|%s %s\n%s\n" %
+                    (Blast_Accession.make(fragment), fragment.name, sequence))
             f.close()
             new += 1
 
@@ -41,8 +47,8 @@ def build_fragment_db():
                     f.write(line)
 
     print 'building blastdb'
-    cmd = "%s/makeblastdb -in %s -out %s -title edge -dbtype nucl -parse_seqids -input_type fasta" % (
-          settings.NCBI_BIN_DIR, fafile, BLAST_DB)
+    cmd = "%s/makeblastdb -in %s -out %s " % (settings.NCBI_BIN_DIR, fafile, BLAST_DB)
+    cmd += "-title edge -dbtype nucl -parse_seqids -input_type fasta"
 
     r = subprocess.check_output(cmd.split(' '))
     if 'Adding sequences from FASTA' not in r:
@@ -53,4 +59,4 @@ def build_fragment_db():
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-         build_fragment_db()
+        build_fragment_db()
