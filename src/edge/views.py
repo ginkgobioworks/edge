@@ -6,6 +6,7 @@ from django.views.generic.base import View
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from edge.models import *
+from edge.blast import blast
 
 
 def get_genome_or_404(pk):
@@ -419,3 +420,19 @@ class GenomeListView(ViewBase):
         args = genome_parser.parse_args(request)
         genome = Genome.create(name=args['name'], notes=args['notes'])
         return GenomeView.to_dict(genome), 201
+
+
+class GenomeBlastView(ViewBase):
+
+    def on_post(self, request, genome_id):
+        genome = get_genome_or_404(genome_id)
+        genome_fragment_ids = [f.id for f in genome.fragments.all()]
+
+        genome_parser = RequestParser()
+        genome_parser.add_argument('query', field_type=str, required=True, location='json')
+        genome_parser.add_argument('program', field_type=str, required=True, location='json')
+
+        args = genome_parser.parse_args(request)
+        results = blast(args['query'], args['program'])
+        results = [r for r in results if r['fragment_id'] in genome_fragment_ids]
+        return results, 200

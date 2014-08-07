@@ -113,7 +113,10 @@ class Feature(models.Model):
 
     @property
     def qualifiers(self):
-        return json.loads(self._qualifiers)
+        if self._qualifiers is not None:
+            return json.loads(self._qualifiers)
+        else:
+            return None
 
 
 class Chunk_Feature_Manager(models.Manager):
