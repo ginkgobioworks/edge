@@ -53,3 +53,9 @@ You can edit genome and fragment metadata, such as name, notes, circular
 attributes, from Django admin. Create a Django admin superuser, then set your
 browser to ```http://<your IP>:8000/admin/```
 
+If you need BLAST support, run
+
+```
+cd ncbi; ./install
+cd ../src; python manage.py build_blastdb
+```

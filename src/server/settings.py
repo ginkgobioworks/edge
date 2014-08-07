@@ -128,3 +128,9 @@ LOGGING = {
         #'django.db.backends': { 'level': 'DEBUG', 'handlers': ['console'], },
     },
 }
+
+
+# NCBI blast
+NCBI_DIR = BASE_DIR+'/../ncbi'
+NCBI_BIN_DIR = NCBI_DIR+'/bin'
+NCBI_DATA_DIR = NCBI_DIR+'/blastdb'

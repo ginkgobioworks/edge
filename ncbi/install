@@ -1,0 +1,5 @@
+curl -O ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.2.27/ncbi-blast-2.2.27+-src.tar.gz
+tar -xzvf ncbi-blast-2.2.27+-src.tar.gz 
+(cd ncbi-blast-2.2.27+-src/c++; ./configure; make)
+ln -sf ncbi-blast-2.2.27+-src/c++/*/bin .
+mkdir -p blastdb
