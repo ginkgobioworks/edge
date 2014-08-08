@@ -76,8 +76,8 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     respectively, and non-overlapping in their sense strand binding positions
     """
 
-    primer_a_results = blast_genome(genome, primer_a_sequence, 'blastn')
-    primer_b_results = blast_genome(genome, primer_b_sequence, 'blastn')
+    primer_a_results = blast_genome(genome, 'blastn', primer_a_sequence)
+    primer_b_results = blast_genome(genome, 'blastn', primer_b_sequence)
 
     pcr_products = []
     for a_res in primer_a_results:

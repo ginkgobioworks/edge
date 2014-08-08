@@ -12,6 +12,10 @@ from Bio.Blast import NCBIXML
 BLAST_DB = "%s/edge-nucl" % settings.NCBI_DATA_DIR
 
 
+def genome_db_name(genome):
+    return "%s/edge-genome-%d-nucl" % (settings.NCBI_DATA_DIR, genome.id)
+
+
 class Blast_Accession(object):
 
     @staticmethod
@@ -60,7 +64,7 @@ class Blast_Result(object):
         return self.identities()*1.0/self.alignment_length()
 
 
-def blast(query, blast_program, evalue_threshold=0.001):
+def blast(dbname, blast_program, query, evalue_threshold=0.001):
 
     infile = None
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -69,11 +73,11 @@ def blast(query, blast_program, evalue_threshold=0.001):
 
     outfile = "%s.out.xml" % infile
     if blast_program == 'tblastn':
-        blast_cl = NcbitblastnCommandline(query=infile, db=BLAST_DB,
+        blast_cl = NcbitblastnCommandline(query=infile, db=dbname,
                                           evalue=evalue_threshold,
                                           word_size=6, outfmt=5, out=outfile)
     else:
-        blast_cl = NcbiblastnCommandline(query=infile, db=BLAST_DB,
+        blast_cl = NcbiblastnCommandline(query=infile, db=dbname,
                                          evalue=evalue_threshold,
                                          word_size=6, outfmt=5, out=outfile)
 
@@ -109,7 +113,8 @@ def blast(query, blast_program, evalue_threshold=0.001):
     return results
 
 
-def blast_genome(genome, query, blast_program, evalue_threshold=0.001):
-    results = blast(query, blast_program, evalue_threshold=evalue_threshold)
+def blast_genome(genome, blast_program, query, evalue_threshold=0.001):
+    results = blast(genome_db_name(genome), blast_program, query,
+                    evalue_threshold=evalue_threshold)
     genome_fragment_ids = [f.id for f in genome.fragments.all()]
     return [r for r in results if r.fragment_id in genome_fragment_ids]

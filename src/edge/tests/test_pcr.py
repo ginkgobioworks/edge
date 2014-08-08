@@ -5,7 +5,7 @@ from Bio.Seq import Seq
 from django.test import TestCase
 from edge.op import pcr_from_genome
 from edge.models import Genome, Fragment, Genome_Fragment
-from edge.management.commands.build_edge_blastdb import build_fragment_db, fragment_fasta_fn
+from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 
 
 class GenomePcrTest(TestCase):
@@ -20,7 +20,7 @@ class GenomePcrTest(TestCase):
                 os.unlink(fragment_fasta_fn(f))
             except:
                 pass
-        build_fragment_db()
+        build_all_genome_dbs(refresh=True)
         return g
 
     def test_pcr_produces_expected_product(self):

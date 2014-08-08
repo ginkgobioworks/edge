@@ -432,7 +432,7 @@ class GenomeBlastView(ViewBase):
         genome_parser.add_argument('program', field_type=str, required=True, location='json')
 
         args = genome_parser.parse_args(request)
-        results = blast_genome(genome, args['query'], args['program'])
+        results = blast_genome(genome, args['program'], args['query'])
         results = [r.to_dict() for r in results]
         return results, 200
 

@@ -3,7 +3,7 @@ import json
 from Bio.Seq import Seq
 from django.test import TestCase
 from edge.models import Genome, Fragment, Genome_Fragment
-from edge.management.commands.build_edge_blastdb import build_fragment_db, fragment_fasta_fn
+from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 
 
 class GenomeBlastTest(TestCase):
@@ -29,7 +29,7 @@ class GenomeBlastTest(TestCase):
             os.unlink(fragment_fasta_fn(f3))
         except:
             pass
-        build_fragment_db()
+        build_all_genome_dbs(refresh=True)
 
         query = s1[6:20]+'aaaaaaaaa'
 
@@ -67,7 +67,7 @@ class GenomeBlastTest(TestCase):
             os.unlink(fragment_fasta_fn(f1))
         except:
             pass
-        build_fragment_db()
+        build_all_genome_dbs(refresh=True)
 
         query = str(Seq(s1[6:20]).reverse_complement())+'tttttttttt'
 
