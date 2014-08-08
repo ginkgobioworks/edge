@@ -427,11 +427,11 @@ class GenomeBlastView(ViewBase):
         from edge.blast import blast_genome
         genome = get_genome_or_404(genome_id)
 
-        genome_parser = RequestParser()
-        genome_parser.add_argument('query', field_type=str, required=True, location='json')
-        genome_parser.add_argument('program', field_type=str, required=True, location='json')
+        parser = RequestParser()
+        parser.add_argument('query', field_type=str, required=True, location='json')
+        parser.add_argument('program', field_type=str, required=True, location='json')
 
-        args = genome_parser.parse_args(request)
+        args = parser.parse_args(request)
         results = blast_genome(genome, args['program'], args['query'])
         results = [r.to_dict() for r in results]
         return results, 200
@@ -440,13 +440,13 @@ class GenomeBlastView(ViewBase):
 class GenomePcrView(ViewBase):
 
     def on_post(self, request, genome_id):
-        from edge.op import pcr_from_genome
+        from edge.pcr import pcr_from_genome
         genome = get_genome_or_404(genome_id)
 
-        genome_parser = RequestParser()
-        genome_parser.add_argument('primers', field_type=list, required=True, location='json')
+        parser = RequestParser()
+        parser.add_argument('primers', field_type=list, required=True, location='json')
 
-        args = genome_parser.parse_args(request)
+        args = parser.parse_args(request)
         primers = args['primers']
         if len(primers) != 2:
             raise Exception('Expecting two primers, got %s' % (primers,))
@@ -454,3 +454,32 @@ class GenomePcrView(ViewBase):
         r = pcr_from_genome(genome, primers[0], primers[1])
         r = (r[0], [b.to_dict() for b in r[1]], [b.to_dict() for b in r[2]])
         return r, 200
+
+
+class GenomeRecombinationView(ViewBase):
+
+    def on_post(self, request, genome_id):
+        from edge.recombine import find_swap_region, recombine
+        genome = get_genome_or_404(genome_id)
+
+        parser = RequestParser()
+        parser.add_argument('cassette', field_type=str, required=True, location='json')
+        parser.add_argument('homology_arm_length', field_type=int, required=True, location='json')
+        parser.add_argument('create', field_type=bool, required=True, location='json')
+        parser.add_argument('name', field_type=str, required=False, default=None, location='json')
+
+        args = parser.parse_args(request)
+        cassette = args['cassette']
+        arm_length = args['homology_arm_length']
+        create = args['create']
+        name = args['name']
+
+        if create is False:
+            r = find_swap_region(genome, cassette, arm_length)
+            return [x.to_dict() for x in r], 200
+        else:
+            c = recombine(genome, cassette, arm_length, name)
+            if c is None:
+                return None, 400
+            else:
+                return GenomeView.to_dict(c), 201
