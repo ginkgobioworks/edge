@@ -2,14 +2,13 @@ import os
 import json
 from Bio.Seq import Seq
 from django.test import TestCase
+from edge.models import Genome, Fragment, Genome_Fragment
+from edge.management.commands.build_edge_blastdb import build_fragment_db, fragment_fasta_fn
 
 
 class GenomeBlastTest(TestCase):
 
     def test_blast_finds_sequence_on_specified_genome(self):
-        from edge.models import Genome, Fragment, Genome_Fragment
-        from edge.management.commands.build_edge_blastdb import build_fragment_db, fragment_fasta_fn
-
         s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
         s2 = 'agcgtcgatgcatgagtcgatcggcagtcgtgtagtcgtcgtatgcgtta'
         g1 = Genome(name='Foo')
@@ -58,9 +57,6 @@ class GenomeBlastTest(TestCase):
         self.assertEquals(d[0]['fragment_id'], f3.id)
 
     def test_blast_aligns_sequence_to_antisense_strand(self):
-        from edge.models import Genome, Fragment, Genome_Fragment
-        from edge.management.commands.build_edge_blastdb import build_fragment_db, fragment_fasta_fn
-
         s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
         g1 = Genome(name='Foo')
         g1.save()

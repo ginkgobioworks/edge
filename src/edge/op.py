@@ -29,7 +29,7 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
     # and elongates along the antisense strand and copies antisense strand
     # bases; it must align at the 3' end of the primer against the antisense
     # strand.
-    
+
     if primer_a_strand == 1:
         fwd_primer = primer_a_sequence
         fwd_primer_res = primer_a_blastres
@@ -82,8 +82,8 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     pcr_products = []
     for a_res in primer_a_results:
         for b_res in primer_b_results:
-            product = computer_pcr_product(primer_a_sequence, a_res,
-                                           primer_b_sequence, b_res)
+            product = compute_pcr_product(primer_a_sequence, a_res,
+                                          primer_b_sequence, b_res)
             if product is not None:
                 pcr_products.append(product)
 
