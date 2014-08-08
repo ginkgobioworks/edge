@@ -120,7 +120,7 @@ def recombine(genome, cassette, min_homology_arm_length, name=None):
             new_region = str(Seq(new_region).reverse_complement())
         f.replace_bases(regions[0].start, regions[0].end-regions[0].start+1, new_region)
 
-    if name is None:
+    if name is None or name.strip() == "":
         name = "%s recombined %d-%d with %d bps" % (genome.name,
                                                     regions[0].start,
                                                     regions[0].end,

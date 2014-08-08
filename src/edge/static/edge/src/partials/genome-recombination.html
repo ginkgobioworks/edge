@@ -1,0 +1,45 @@
+<header>
+  <div class="container">
+    <ol class="breadcrumb">
+        <li> Edge </li>
+        <li> <a href="#/genomes">Genomes</a> </li>
+        <li> <a href="#/genomes/{{ genome.id }}"><span ng-bind-html-unsafe='genome.name'></span></a> </li>
+    </ol>
+  </div>
+</header>
+
+<div class="container">
+
+<h3>Genome {{ genome.id }}: <span ng-bind-html-unsafe='genome.name'></span></h3>
+
+<form role="form">
+    <div class="form-inline">
+        Homology arm length
+        <div class="form-group">
+            <input required class="form-control" type="text" ng-model="homology_arm_length" size="5" />
+        </div>
+        New genome name
+        <div class="form-group">
+            <input required class="form-control" type="text" ng-model="new_genome_name" size="20" />
+        </div>
+    </div>
+    Cassette (including homology arms)
+    <br/>
+    <textarea class="form-control sequence" ng-model="cassette"></textarea>
+    <button class="btn btn-primary" ng-click="FindRegions()">Preview</button>
+</form>
+
+<div ng-if="regions !== undefined" class="results">
+    <p ng-if="regions.length === 0"><em>No matching region</em></p>
+    <ul ng-if="regions.length > 0">
+        <li ng-repeat="region in regions">
+            Found homology region on fragment {{ region.fragment_id }}
+            {{ region.start }}-{{ region.end }} bps
+        </li>
+    </ul>
+    <p ng-if="regions.length === 1">
+      <button class="btn btn-primary" ng-click="Recombine()">Create post-recombination genome</button>
+    </p>
+</div>
+
+</div>

@@ -7,6 +7,9 @@ var app = angular.module('edge', []).
             when('/genomes/:genomeId',
                  {template: JST['genome-detail'],
                   controller: GenomeDetailController}).
+            when('/genomes/:genomeId/recombination',
+                 {template: JST['genome-recombination'],
+                  controller: GenomeRecombinationController}).
             when('/genomes/:genomeId/fragments/:fragmentId',
                  {template: JST['genome-fragment'],
                   controller: GenomeFragmentController}).
