@@ -11,6 +11,10 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
     MIN_IDENTITIES = 0.90
     MIN_BINDING_LENGTH = 10
 
+    # primers must be on the same fragment
+    if primer_a_blastres.fragment_id != primer_b_blastres.fragment_id:
+        return None
+
     # primers must align to different senses
     primer_a_strand = primer_a_blastres.strand()
     primer_b_strand = primer_b_blastres.strand()
@@ -75,11 +79,15 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     primer_a_results = blast_genome(genome, primer_a_sequence, 'blastn')
     primer_b_results = blast_genome(genome, primer_b_sequence, 'blastn')
 
-    if len(primer_a_results) == 1 and len(primer_b_results) == 1 and\
-       primer_a_results[0].fragment_id == primer_b_results[0].fragment_id:
-        return (compute_pcr_product(primer_a_sequence, primer_a_results[0],
-                                    primer_b_sequence, primer_b_results[0]),
-                primer_a_results, primer_b_results)
+    pcr_products = []
+    for a_res in primer_a_results:
+        for b_res in primer_b_results:
+            product = computer_pcr_product(primer_a_sequence, a_res,
+                                           primer_b_sequence, b_res)
+            if product is not None:
+                pcr_products.append(product)
 
+    if len(pcr_products) == 1:
+        return (pcr_products[0], primer_a_results, primer_b_results)
     else:
         return (None, primer_a_results, primer_b_results)

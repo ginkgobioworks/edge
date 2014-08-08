@@ -6,7 +6,6 @@ from django.views.generic.base import View
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from edge.models import *
-from edge.blast import blast_genome
 
 
 def get_genome_or_404(pk):
@@ -425,6 +424,7 @@ class GenomeListView(ViewBase):
 class GenomeBlastView(ViewBase):
 
     def on_post(self, request, genome_id):
+        from edge.blast import blast_genome
         genome = get_genome_or_404(genome_id)
 
         genome_parser = RequestParser()
@@ -434,4 +434,24 @@ class GenomeBlastView(ViewBase):
         args = genome_parser.parse_args(request)
         results = blast_genome(genome, args['query'], args['program'])
         results = [r.to_dict() for r in results]
+        return results, 200
+
+
+class GenomePcrView(ViewBase):
+
+    def on_post(self, request, genome_id):
+        from edge.op import pcr_from_genome
+        genome = get_genome_or_404(genome_id)
+
+        genome_parser = RequestParser()
+        genome_parser.add_argument('primers', field_type=list, required=True, location='json')
+
+        args = genome_parser.parse_args(request)
+        primers = args['primers']
+        if len(primers) != 2:
+            raise Exception('Expecting two primers, got %s' % (primers,))
+
+        results = pcr_from_genome(genome, primers[0], primers[1])
+        results = [(r[0], [b.to_dict() for b in r[1]], [b.to_dict() for b in r[2]])
+                   for r in results]
         return results, 200

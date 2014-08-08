@@ -24,4 +24,6 @@ urlpatterns = patterns(
         GenomeView.as_view(), name='genome'),
     url('^genomes/(?P<genome_id>\d+)/blast/$',
         GenomeBlastView.as_view(), name='genome_blast'),
+    url('^genomes/(?P<genome_id>\d+)/pcr/$',
+        GenomePcrView.as_view(), name='genome_pcr'),
 )
