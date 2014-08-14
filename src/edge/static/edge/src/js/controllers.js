@@ -18,13 +18,17 @@ function edgeAnnotationDisplayName(annotation) {
     return s;
 }
 
+function edgeAnnotationColor(annotation) {
+    if (annotation['type'] == 'gene') { return 'danger'; }
+    else if (annotation['type'] == 'pseudogene') { return 'warning'; }
+    else if (annotation['type'] == 'promoter') { return 'primary'; }
+    else if (annotation['type'] == 'RBS') { return 'success'; }
+    return 'info';
+}
+
 function edgeAnnotationSummaryCSS(annotation) {
     var css = ['annotation-summary'];
-    if (annotation['type'] == 'gene') { css.push('btn-danger'); }
-    else if (annotation['type'] == 'pseudogene') { css.push('btn-warning'); }
-    else if (annotation['type'] == 'promoter') { css.push('btn-primary'); }
-    else if (annotation['type'] == 'RBS') { css.push('btn-success'); }
-    else { css.push('btn-info'); }
+    css.push('btn-'+edgeAnnotationColor(annotation));
     css.push('btn btn-xs');
     if (annotation['strand'] > 0) { css.push('annotation-strand-fwd'); }
     else { css.push('annotation-strand-rev'); }
@@ -33,11 +37,7 @@ function edgeAnnotationSummaryCSS(annotation) {
 
 function edgeAnnotationZoomCSS(annotation) {
     var css = ['annotation-zoom'];
-    if (annotation['type'] == 'gene') { css.push('btn-danger'); }
-    else if (annotation['type'] == 'pseudogene') { css.push('btn-warning'); }
-    else if (annotation['type'] == 'promoter') { css.push('btn-primary'); }
-    else if (annotation['type'] == 'RBS') { css.push('btn-success'); }
-    else { css.push('btn-info'); }
+    css.push('btn-'+edgeAnnotationColor(annotation));
     css.push('btn btn-xs');
     if (annotation['strand'] > 0) { css.push('annotation-strand-fwd'); }
     else { css.push('annotation-strand-rev'); }
@@ -240,7 +240,9 @@ function FragmentControllerBase($scope, $routeParams, $http) {
                 if ($scope.zoom['sequence_viewer'] === undefined) {
                     $scope.zoom['sequence_viewer'] = SequenceViewer(jQuery, { dom_id : 'sequence-viewer' });
                 }
-                $scope.zoom['sequence_viewer'].setSequence(data.sequence, f);
+                // $scope.zoom['sequence_viewer'].setSequence(data.sequence, f);
+                var annotations = $scope.zoom['annotations'];
+                $scope.zoom['sequence_viewer'].setSequenceWithAnnotations(data.sequence, annotations, f);
             });
         }
     }

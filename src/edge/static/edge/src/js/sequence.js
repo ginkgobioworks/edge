@@ -8,6 +8,54 @@ window.SequenceViewer = function ($, options) {
         $('table', selector).empty();
     }
 
+    function setSequenceWithAnnotations(sequence, annotations, start_bp, rowlen) {
+        rowlen = typeof rowlen !== 'undefined' ? rowlen : 80;
+        clear();
+        var rsplit = new RegExp('(.{1,'+rowlen+'})', 'g');
+        var rows = sequence.match(rsplit);
+
+        var row_start = start_bp;
+        _.map(rows, function(row) {
+            var row_end = row_start+row.length-1;
+            var row_annotations = _.select(annotations, function(a) {
+              return (row_start >= a.base_first && row_start <= a.base_last) ||
+                     (row_end >= a.base_first && row_end <= a.base_last) ||
+                     (a.base_first >= row_start && a.base_first <= row_end);
+            });
+
+            _.map(row_annotations, function(a) {
+              var tr = $('<tr></tr>');
+              var aspan = row.length;
+              if (a.base_first > row_start) {
+                var td = $('<td colspan="'+(a.base_first-row_start)+'"></td>');
+                tr.append(td);
+                aspan -= (a.base_first-row_start);
+              }
+              if (a.base_last < row_end) {
+                aspan -= (row_end-a.base_last);
+              }
+              var td = $('<td colspan="'+aspan+'" class="sequence-annotation"></td>');
+              td.append(a.display_name);
+              tr.append(td);
+              if (a.base_last < row_end) {
+                var td = $('<td colspan="'+(row_end-a.base_last)+'"></td>');
+                tr.append(td);
+              }
+              $('table', selector).append(tr);
+            });
+
+            var tr = $('<tr></tr>');
+            _.map(row.split(''), function(bp) {
+                var td = $('<td class="sequence-data"></td>');
+                td.append(bp);
+                tr.append(td);
+            });
+            $('table', selector).append(tr);
+
+            row_start += row.length;
+        });
+    }
+
     function setSequence(sequence, start_bp, rowlen, column) {
         rowlen = typeof rowlen !== 'undefined' ? rowlen : 80;
         column = typeof column !== 'undefined' ? column : 10;
@@ -41,6 +89,7 @@ window.SequenceViewer = function ($, options) {
 
     return {
         clear: clear,
-        setSequence: setSequence
+        setSequence: setSequence,
+        setSequenceWithAnnotations: setSequenceWithAnnotations
     }
 }
