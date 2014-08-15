@@ -18,39 +18,64 @@ window.SequenceViewer = function ($, options) {
         _.map(rows, function(row) {
             var row_end = row_start+row.length-1;
             var row_annotations = _.select(annotations, function(a) {
-              return (row_start >= a.base_first && row_start <= a.base_last) ||
-                     (row_end >= a.base_first && row_end <= a.base_last) ||
-                     (a.base_first >= row_start && a.base_first <= row_end);
+                return (row_start <= a.base_first && a.base_first <= row_end) ||
+                       (row_start <= a.base_last && a.base_last <= row_end);
             });
+
+            var start_annotations = [];
+            var end_annotations = [];
 
             _.map(row_annotations, function(a) {
-              var tr = $('<tr></tr>');
-              var aspan = row.length;
-              if (a.base_first > row_start) {
-                var td = $('<td colspan="'+(a.base_first-row_start)+'"></td>');
-                tr.append(td);
-                aspan -= (a.base_first-row_start);
-              }
-              if (a.base_last < row_end) {
-                aspan -= (row_end-a.base_last);
-              }
-              var td = $('<td colspan="'+aspan+'" class="sequence-annotation"></td>');
-              td.append(a.display_name);
-              tr.append(td);
-              if (a.base_last < row_end) {
-                var td = $('<td colspan="'+(row_end-a.base_last)+'"></td>');
-                tr.append(td);
-              }
-              $('table', selector).append(tr);
+                if (row_start <= a.base_first && a.base_first <= row_end) {
+                    var i = a.base_first-row_start;
+                    if (start_annotations[i] === undefined) { start_annotations[i] = []; }
+                    start_annotations[i].push(a);
+                }
+                if (row_start <= a.base_last && a.base_last <= row_end) {
+                    var i = a.base_last-row_start;
+                    if (end_annotations[i] === undefined) { end_annotations[i] = []; }
+                    end_annotations[i].push(a);
+                }
             });
 
-            var tr = $('<tr></tr>');
+            var tr_top = $('<tr class="sequence-annotation sequence-annotation-start"></tr>');
+            var tr_mid = $('<tr class="sequence-bp"></tr>');
+            var tr_bot = $('<tr class="sequence-annotation sequence-annotation-end"></tr>');
+
+            var i = 0;
             _.map(row.split(''), function(bp) {
-                var td = $('<td class="sequence-data"></td>');
+                var td = $('<td></td>');
                 td.append(bp);
-                tr.append(td);
+                tr_mid.append(td);
+
+                if (start_annotations.length > 0) {
+                  var td = $('<td></td>');
+                  if (start_annotations[i]) {
+                    _.map(start_annotations[i], function(a) {
+                      var a = $('<div></div>').append('['+a.display_name);
+                      td.append(a);
+                    });
+                  }
+                  tr_top.append(td);
+                }
+
+                if (end_annotations.length > 0) {
+                  var td = $('<td></td>');
+                  if (end_annotations[i]) {
+                    _.map(end_annotations[i], function(a) {
+                      var a = $('<div></div>').append(']'+a.display_name);
+                      td.append(a);
+                    });
+                  }
+                  tr_bot.append(td);
+                }
+
+                i += 1;
             });
-            $('table', selector).append(tr);
+
+            if (start_annotations.length > 0) { $('table', selector).append(tr_top); }
+            $('table', selector).append(tr_mid);
+            if (end_annotations.length > 0) { $('table', selector).append(tr_bot); }
 
             row_start += row.length;
         });

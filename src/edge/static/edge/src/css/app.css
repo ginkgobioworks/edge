@@ -38,10 +38,21 @@ form .sequence { width:400px; height:200px; }
 
 .tab-content { margin-top:20px; }
 
+.results { margin-top:20px; }
+
 #sequence-viewer { margin:10px 0px; }
 #sequence-viewer table { font-family: courier; font-size: 0.8em; }
 #sequence-viewer table .sequence-pos { color: #999; white-space: nowrap; }
-#sequence-viewer table .sequence-data span { padding: 0px 2px; }
-#sequence-viewer table .sequence-annotation { background-color:#ddd; border:1px solid #aaa; }
+#sequence-viewer table .sequence-data span { padding: 0px 1px; }
 
-.results { margin-top:20px; }
+#sequence-viewer table tr.sequence-annotation {}
+#sequence-viewer table tr.sequence-annotation-start { border-top:1px solid #ddd; }
+#sequence-viewer table tr.sequence-annotation-end { border-bottom:1px solid #ddd; }
+#sequence-viewer table tr.sequence-annotation td { height: 15px; }
+#sequence-viewer table tr.sequence-annotation td div {
+  position: absolute;
+  z-index: 10;
+  background-color: white;
+}
+#sequence-viewer table tr.sequence-annotation-start td div { text-align: left; margin-top: -6px; }
+#sequence-viewer table tr.sequence-annotation-end td div { text-align: right; margin-top: -8px; }
