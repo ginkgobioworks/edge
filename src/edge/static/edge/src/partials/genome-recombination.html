@@ -34,7 +34,7 @@
     <p ng-if="regions.length === 0"><em>No matching region</em></p>
     <ul ng-if="regions.length > 0">
         <li ng-repeat="region in regions">
-            Found homology region on fragment {{ region.fragment_id }}
+            Found homology region on fragment {{ region.fragment_name }}:
             {{ region.start }}-{{ region.end }} bps
         </li>
     </ul>

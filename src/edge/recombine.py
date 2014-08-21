@@ -5,8 +5,9 @@ from Bio.Seq import Seq
 
 class RecombinationRegion(object):
 
-    def __init__(self, fragment_id, start, end, sequence, cassette_reversed, front_arm, back_arm):
+    def __init__(self, fragment_id, fragment_name, start, end, sequence, cassette_reversed, front_arm, back_arm):
         self.fragment_id = fragment_id
+        self.fragment_name = fragment_name
         self.start = start
         self.end = end
         self.sequence = sequence
@@ -65,6 +66,7 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
     region = fragment.get_sequence(bp_lo=region_start, bp_hi=region_end)
 
     return RecombinationRegion(fragment.id,
+                               fragment.name,
                                region_start,
                                region_end,
                                region,
