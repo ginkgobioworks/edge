@@ -5,7 +5,8 @@ from Bio.Seq import Seq
 
 class RecombinationRegion(object):
 
-    def __init__(self, fragment_id, fragment_name, start, end, sequence, cassette_reversed, front_arm, back_arm):
+    def __init__(self, fragment_id, fragment_name,
+                 start, end, sequence, cassette_reversed, front_arm, back_arm):
         self.fragment_id = fragment_id
         self.fragment_name = fragment_name
         self.start = start
@@ -126,9 +127,10 @@ def recombine(genome, cassette, min_homology_arm_length, name=None):
             new_region = str(Seq(new_region).reverse_complement())
         f.replace_bases(regions[0].start, regions[0].end-regions[0].start+1, new_region)
         new_fragment_id = f.id
-        
+
     with new_genome.annotate_fragment_by_fragment_id(new_fragment_id) as f:
-        f.annotate(regions[0].start, regions[0].start+len(new_region)-1, 'Recombination cassette', 'feature', 1)
+        f.annotate(regions[0].start, regions[0].start+len(new_region)-1,
+                   'Recombination cassette', 'feature', 1)
 
     if name is None or name.strip() == "":
         name = "%s recombined %d-%d with %d bps" % (genome.name,
