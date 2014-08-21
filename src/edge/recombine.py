@@ -109,16 +109,24 @@ def find_swap_region(genome, cassette, min_homology_arm_length):
 
 @transaction.atomic()
 def recombine(genome, cassette, min_homology_arm_length, name=None):
+    cassette = str(Seq(cassette))  # clean the sequence
+
     regions = find_swap_region(genome, cassette, min_homology_arm_length)
     if regions is None or len(regions) != 1:
         return None
 
     new_genome = genome.update()
+
+    new_fragment_id = None
     with new_genome.update_fragment_by_fragment_id(regions[0].fragment_id) as f:
         new_region = cassette
         if regions[0].cassette_reversed:
             new_region = str(Seq(new_region).reverse_complement())
         f.replace_bases(regions[0].start, regions[0].end-regions[0].start+1, new_region)
+        new_fragment_id = f.id
+        
+    with new_genome.annotate_fragment_by_fragment_id(new_fragment_id) as f:
+        f.annotate(regions[0].start, regions[0].start+len(new_region)-1, 'Recombination cassette', 'feature', 1)
 
     if name is None or name.strip() == "":
         name = "%s recombined %d-%d with %d bps" % (genome.name,

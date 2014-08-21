@@ -14,7 +14,10 @@ function GenomeRecombinationController($scope, $routeParams, $http, $location) {
                                    homology_arm_length: $scope.homology_arm_length,
                                    create: false});
         $http.post('/edge/genomes/'+$scope.genomeId+'/recombination/', data)
-             .success(function(data) { $scope.regions = data; })
+             .success(function(data) {
+                          console.log(data);
+                          $scope.regions = data;
+                      })
              .error(function(data, status, headers, config) { $scope.errors = data; });
     };
 
