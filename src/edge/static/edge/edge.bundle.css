@@ -46,13 +46,16 @@ form .sequence { width:400px; height:200px; }
 #sequence-viewer table .sequence-data span { padding: 0px 1px; }
 
 #sequence-viewer table tr.sequence-annotation {}
-#sequence-viewer table tr.sequence-annotation-start { border-top:1px solid #ddd; }
-#sequence-viewer table tr.sequence-annotation-end { border-bottom:1px solid #ddd; }
 #sequence-viewer table tr.sequence-annotation td { height: 15px; }
 #sequence-viewer table tr.sequence-annotation td div {
   position: absolute;
-  z-index: 10;
-  background-color: white;
+  z-index: 100;
+  background-color: #d95f47;
+  color: white;
 }
 #sequence-viewer table tr.sequence-annotation-start td div { text-align: left; margin-top: -6px; }
 #sequence-viewer table tr.sequence-annotation-end td div { text-align: right; margin-top: -8px; }
+
+#sequence-viewer table tr.sequence-annotation-start-first { border-top:1px solid #ddd; }
+#sequence-viewer table tr.sequence-annotation-end-last { border-bottom:1px solid #ddd; }
+#sequence-viewer table tr td { padding: 0px; }

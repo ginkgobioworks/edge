@@ -10,16 +10,23 @@
 
 <div class="container">
 
-<h3>Genome {{ genome.id }}: <span ng-bind-html-unsafe='genome.name'></span></h3>
+<h3>
+  <div class="dropdown pull-right">
+    <a class="btn btn-default" href="javascript:void(0);" data-toggle="dropdown">Operations <span class='caret'></span></a>
+    <ul class="dropdown-menu">
+      <li> <a href="#/genomes/{{ genome.id }}/pcr">PCR</a> </li>
+      <li> <a href="#/genomes/{{ genome.id }}/recombination">Recombination</a> </li>
+    </ul>
+  </div>
+
+  Genome {{ genome.id }}: <span ng-bind-html-unsafe='genome.name'></span>
+</h3>
 
 <div class="lead space-top">
     <p>Parent: <span ng-bind-html-unsafe="parent"></span></p>
     <p>Notes: {{ genome.notes }} </p>
     <p>Changes:</p>
     <ul><li ng-repeat='change in changes' ng-bind-html-unsafe='change'></li></ul>
-    <p>Actions:
-      <a href="#/genomes/{{ genome.id }}/recombination">Recombination</a>
-    </p>
 </div>
 
 <table class="table table-striped table-condensed space-top">

@@ -36,7 +36,8 @@ export genome sequences and annotations as GFF files.
 Construct your virtual env and pip install dependencies (use
 requirements/{dev,core}.txt).
 
-To start a server,
+To start a server, first update src/server/settings.py to use either sqlite or
+MySQL. For MySQL, create the appropriate databse. Then,
 
 ```
 python src/manage.py syncdb --noinput

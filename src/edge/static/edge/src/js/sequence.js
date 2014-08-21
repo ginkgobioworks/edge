@@ -9,10 +9,32 @@ window.SequenceViewer = function ($, options) {
     }
 
     function setSequenceWithAnnotations(sequence, annotations, start_bp, rowlen) {
+        function annotationToggle(ev) {
+            var el = $(ev.target);
+            if (el.hasClass('sequence-annotation-selected')) {
+                $('tr.sequence-annotation td div').show();
+                $('tr.sequence-annotation').show();
+            }
+            else {
+                $('tr.sequence-annotation td div').hide();
+                $('tr.sequence-annotation').hide();
+
+                var id = el.data('sequence-annotation-id');
+                $('tr.sequence-annotation td div.sequence-annotation-'+id)
+                  .addClass('sequence-annotation-selected')
+                  .show()
+                  .parents('tr')
+                  .show();
+            }
+        }
+
         rowlen = typeof rowlen !== 'undefined' ? rowlen : 80;
         clear();
         var rsplit = new RegExp('(.{1,'+rowlen+'})', 'g');
         var rows = sequence.match(rsplit);
+
+        var ai = 0;
+        _.map(annotations, function(a) { a.__sequence_annotation_id = ai; ai++; });
 
         var row_start = start_bp;
         _.map(rows, function(row) {
@@ -38,9 +60,11 @@ window.SequenceViewer = function ($, options) {
                 }
             });
 
-            var tr_top = $('<tr class="sequence-annotation sequence-annotation-start"></tr>');
             var tr_mid = $('<tr class="sequence-bp"></tr>');
-            var tr_bot = $('<tr class="sequence-annotation sequence-annotation-end"></tr>');
+            var tr_top = [];
+            var tr_top_html = '<tr class="sequence-annotation sequence-annotation-start"></tr>';
+            var tr_bot = [];
+            var tr_bot_html = '<tr class="sequence-annotation sequence-annotation-end"></tr>';
 
             var i = 0;
             _.map(row.split(''), function(bp) {
@@ -49,33 +73,53 @@ window.SequenceViewer = function ($, options) {
                 tr_mid.append(td);
 
                 if (start_annotations.length > 0) {
-                  var td = $('<td></td>');
-                  if (start_annotations[i]) {
-                    _.map(start_annotations[i], function(a) {
-                      var a = $('<div></div>').append('['+a.display_name);
-                      td.append(a);
-                    });
-                  }
-                  tr_top.append(td);
+                    if (start_annotations[i]) {
+                        _.map(start_annotations[i], function(a) {
+                            var tr = $(tr_top_html);
+                            if (i > 0) { tr.append('<td colspan="'+i+'"></td>'); }
+                            var td = $('<td></td>');
+                            var c = '&gt;';
+                            if (a.strand < 0) { c = '&lt;'; }
+                            var a = $('<div></div>')
+                                      .addClass('sequence-annotation-'+a.__sequence_annotation_id)
+                                      .data('sequence-annotation-id', a.__sequence_annotation_id)
+                                      .append('['+c+a.display_name)
+                                      .click(annotationToggle);
+                            td.append(a);
+                            tr.append(td);
+                            if (i < row.length-1) { tr.append('<td colspan="'+(row.length-i-1)+'"></td>'); }
+                            tr_top.push(tr);
+                        });
+                    }
                 }
 
                 if (end_annotations.length > 0) {
-                  var td = $('<td></td>');
-                  if (end_annotations[i]) {
-                    _.map(end_annotations[i], function(a) {
-                      var a = $('<div></div>').append(']'+a.display_name);
-                      td.append(a);
-                    });
-                  }
-                  tr_bot.append(td);
+                    if (end_annotations[i]) {
+                        _.map(end_annotations[i], function(a) {
+                            var tr = $(tr_bot_html);
+                            if (i > 0) { tr.append('<td colspan="'+i+'"></td>'); }
+                            var td = $('<td></td>');
+                            var a = $('<div></div>')
+                                      .addClass('sequence-annotation-'+a.__sequence_annotation_id)
+                                      .data('sequence-annotation-id', a.__sequence_annotation_id)
+                                      .append(']'+a.display_name)
+                                      .click(annotationToggle);
+                            td.append(a);
+                            tr.append(td);
+                            if (i < row.length-1) { tr.append('<td colspan="'+(row.length-i-1)+'"></td>'); }
+                            tr_bot.push(tr);
+                        });
+                    }
                 }
 
                 i += 1;
             });
 
-            if (start_annotations.length > 0) { $('table', selector).append(tr_top); }
+            if (tr_top.length > 0) { tr_top[0].addClass('sequence-annotation-start-first'); }
+            _.map(tr_top, function(tr) { $('table', selector).append(tr); });
             $('table', selector).append(tr_mid);
-            if (end_annotations.length > 0) { $('table', selector).append(tr_bot); }
+            if (tr_bot.length > 0) { tr_bot[tr_bot.length-1].addClass('sequence-annotation-end-last'); }
+            _.map(tr_bot, function(tr) { $('table', selector).append(tr); });
 
             row_start += row.length;
         });
