@@ -33,7 +33,9 @@
 .annotation-layer-20 { top:40em; }
 
 .sequence-container { margin-top:400px; }
-.sequence { width: 90%; height: 300px; font-family: courier; font-size: 0.8em; margin:10px 0px; }
+.sequence { width: 90%; font-family: courier; font-size: 0.8em; margin:10px 0px; }
+.sequence-break { word-wrap: break-word; }
+textarea.sequence { height: 300px; }
 form .sequence { width:400px; height:200px; }
 
 .tab-content { margin-top:20px; }
@@ -48,6 +50,7 @@ form .sequence { width:400px; height:200px; }
 #sequence-viewer table tr.sequence-annotation {}
 #sequence-viewer table tr.sequence-annotation td { height: 15px; }
 #sequence-viewer table tr.sequence-annotation td div {
+  cursor: pointer;
   position: absolute;
   z-index: 100;
   background-color: #d95f47;
@@ -59,3 +62,7 @@ form .sequence { width:400px; height:200px; }
 #sequence-viewer table tr.sequence-annotation-start-first { border-top:1px solid #ddd; }
 #sequence-viewer table tr.sequence-annotation-end-last { border-bottom:1px solid #ddd; }
 #sequence-viewer table tr td { padding: 0px; }
+
+div.alignment { font-family: courier; font-size: 0.8em; }
+div.alignment div { white-space: nowrap; }
+

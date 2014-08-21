@@ -64,6 +64,10 @@ class Blast_Result(object):
         return self.identities()*1.0/self.alignment_length()
 
 
+def inverse_match(m):
+    return ''.join([' ' if x == '|' else 'X' for x in m])
+
+
 def blast(dbname, blast_program, query, evalue_threshold=0.001):
 
     infile = None
@@ -106,6 +110,7 @@ def blast(dbname, blast_program, query, evalue_threshold=0.001):
                                  evalue=hsp.expect,
                                  alignment=dict(query=hsp.query,
                                                 match=hsp.match,
+                                                matchi=inverse_match(hsp.match),
                                                 subject=hsp.sbjct))
                 results.append(f)
 

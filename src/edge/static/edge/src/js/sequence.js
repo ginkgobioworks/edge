@@ -14,6 +14,8 @@ window.SequenceViewer = function ($, options) {
             if (el.hasClass('sequence-annotation-selected')) {
                 $('tr.sequence-annotation td div').show();
                 $('tr.sequence-annotation').show();
+                $('tr.sequence-annotation td div.sequence-annotation-selected')
+                  .removeClass('sequence-annotation-selected');
             }
             else {
                 $('tr.sequence-annotation td div').hide();
@@ -83,8 +85,7 @@ window.SequenceViewer = function ($, options) {
                             var a = $('<div></div>')
                                       .addClass('sequence-annotation-'+a.__sequence_annotation_id)
                                       .data('sequence-annotation-id', a.__sequence_annotation_id)
-                                      .append('['+c+a.display_name)
-                                      .click(annotationToggle);
+                                      .append('['+c+a.display_name);
                             td.append(a);
                             tr.append(td);
                             if (i < row.length-1) { tr.append('<td colspan="'+(row.length-i-1)+'"></td>'); }
@@ -102,8 +103,7 @@ window.SequenceViewer = function ($, options) {
                             var a = $('<div></div>')
                                       .addClass('sequence-annotation-'+a.__sequence_annotation_id)
                                       .data('sequence-annotation-id', a.__sequence_annotation_id)
-                                      .append(']'+a.display_name)
-                                      .click(annotationToggle);
+                                      .append(']'+a.display_name);
                             td.append(a);
                             tr.append(td);
                             if (i < row.length-1) { tr.append('<td colspan="'+(row.length-i-1)+'"></td>'); }
@@ -123,6 +123,8 @@ window.SequenceViewer = function ($, options) {
 
             row_start += row.length;
         });
+
+        $('tr.sequence-annotation td div').on('click', annotationToggle);
     }
 
     function setSequence(sequence, start_bp, rowlen, column) {

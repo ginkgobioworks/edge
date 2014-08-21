@@ -13,34 +13,90 @@
 
 <h3>PCR on Genome {{ genome.id }}: <span ng-bind-html-unsafe='genome.name'></span></h3>
 
-<form role="form">
+<form role="form" class="space-top">
     <div class="form-inline">
-        Homology arm length
+        Primers
         <div class="form-group">
-            <input required class="form-control" type="text" ng-model="homology_arm_length" size="5" />
+            <input required class="form-control" type="text" ng-model="primer_a" size="40" />
         </div>
-        New genome name
+        and
         <div class="form-group">
-            <input required class="form-control" type="text" ng-model="new_genome_name" size="20" />
+            <input required class="form-control" type="text" ng-model="primer_b" size="40" />
         </div>
+        <button class="btn btn-primary" ng-click="Pcr(primer_a, primer_b)">PCR</button>
     </div>
-    Cassette (including homology arms)
-    <br/>
-    <textarea class="form-control sequence" ng-model="cassette"></textarea>
-    <button class="btn btn-primary" ng-click="FindRegions()">Preview</button>
 </form>
 
-<div ng-if="regions !== undefined" class="results">
-    <p ng-if="regions.length === 0"><em>No matching region</em></p>
-    <ul ng-if="regions.length > 0">
-        <li ng-repeat="region in regions">
-            Found homology region on fragment {{ region.fragment_id }}
-            {{ region.start }}-{{ region.end }} bps
-        </li>
-    </ul>
-    <p ng-if="regions.length === 1">
-      <button class="btn btn-primary" ng-click="Recombine()">Create post-recombination genome</button>
-    </p>
+<div ng-if="results" class="space-top">
+    <div ng-if="results[0]">
+        <p>
+            <span class="label label-success">PCR Product:</span>
+        </p>
+        <div class="sequence sequence-break">{{ results[0] }}</div>
+    </div>
+    
+    <div ng-if="!results[0]">
+        <p>
+            <span class="label label-danger">Cannot compute PCR product. Too many or too few binding sites.</span>
+        </p>
+    </div>
+
+    <table class="table table-condensed table-bordered">
+        <tr class="success">
+            <th>Primer</th>
+            <th>Fragment</th>
+            <th>Evalue</th>
+            <th>Alignment</th>
+        </tr>
+
+        <tr ng-repeat="hit in results[1]">
+            <td>
+                Primer1
+                <br/>
+                {{ hit.query_start }}-{{ hit.query_end }}
+            </td>
+            <td>
+                {{ hit.hit_def }}
+                <br/>
+                {{ hit.subject_start }}-{{ hit.subject_end }}
+            </td>
+            <td>
+                {{ hit.evalue }}
+            </td>
+            <td>
+                <div class="alignment">
+                    <div>{{ hit.alignment.subject }}</div>
+                    <div>{{ hit.alignment.matchi }}</div>
+                    <div>{{ hit.alignment.query }}</div>
+                </div>
+            </td>
+        </tr>
+
+        <tr ng-repeat="hit in results[2]">
+            <td>
+                Primer2
+                <br/>
+                {{ hit.query_start }}-{{ hit.query_end }}
+            </td>
+            <td>
+                {{ hit.hit_def }}
+                <br/>
+                {{ hit.subject_start }}-{{ hit.subject_end }}
+            </td>
+            <td>
+                {{ hit.evalue }}
+            </td>
+            <td>
+                <div class="alignment">
+                    <div>{{ hit.alignment.subject }}</div>
+                    <div>{{ hit.alignment.matchi }}</div>
+                    <div>{{ hit.alignment.query }}</div>
+                </div>
+            </td>
+        </tr>
+
+    </table>
+
 </div>
 
 </div>
