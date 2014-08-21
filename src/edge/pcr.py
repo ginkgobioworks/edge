@@ -58,10 +58,15 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
 
     # get sequence between primers
     fragment = primer_a_blastres.fragment.indexed_fragment()
-    product_mid = fragment.get_sequence(bp_lo=fwd_primer_res.subject_end+1,
-                                        bp_hi=rev_primer_res.subject_end-1)
+    bp_lo = fwd_primer_res.subject_end+1
+    bp_hi = rev_primer_res.subject_end-1
+    product_mid = fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
     product = '%s%s%s' % (fwd_primer, product_mid, str(Seq(rev_primer).reverse_complement()))
-    return product
+
+    bs_start = bp_lo-(fwd_primer_res.query_end-fwd_primer_res.query_start+1)
+    bs_end = bp_hi+(rev_primer_res.query_end-rev_primer_res.query_start+1)
+
+    return (product, dict(fragment=fragment, region=(bs_start, bs_end)))
 
 
 def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
@@ -88,6 +93,11 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
                 pcr_products.append(product)
 
     if len(pcr_products) == 1:
-        return (pcr_products[0], primer_a_results, primer_b_results)
+        product = pcr_products[0][0]
+        region = pcr_products[0][1]
+        return (product, primer_a_results, primer_b_results,
+                dict(region=region['region'],
+                     fragment_name=region['fragment'].name,
+                     fragment_id=region['fragment'].id))
     else:
-        return (None, primer_a_results, primer_b_results)
+        return (None, primer_a_results, primer_b_results, None)

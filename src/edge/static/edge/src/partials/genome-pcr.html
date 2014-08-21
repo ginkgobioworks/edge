@@ -33,6 +33,9 @@
             <span class="label label-success">PCR Product:</span>
         </p>
         <div class="sequence sequence-break">{{ results[0] }}</div>
+        <p>
+            Genomic region PCR-ed: {{ results[3].fragment_name }} {{ results[3].region[0] }}-{{ results[3].region[1] }}
+        </p>
     </div>
     
     <div ng-if="!results[0]">

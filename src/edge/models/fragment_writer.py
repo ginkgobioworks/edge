@@ -164,7 +164,7 @@ class Fragment_Writer:
 
             # can avoid splitting if first bp in this chunk is before_base1
             if bases_visited-chunk_len+1 == before_base1:
-                #print 'no need to split before %s' % (before_base1,)
+                # print 'no need to split before %s' % (before_base1,)
                 return prev_chunk, chunk
 
             # otherwise, have to split the chunk

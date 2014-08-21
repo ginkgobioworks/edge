@@ -38,6 +38,9 @@ class GenomePcrTest(TestCase):
         self.assertEquals(r[0], ''.join([p1, middle, str(Seq(p2).reverse_complement())]))
         self.assertEquals(len(r[1]), 1)  # one binding site for each primer
         self.assertEquals(len(r[2]), 1)  # one binding site for each primer
+        self.assertEquals(r[3]['fragment_name'], g.fragments.all()[0].name)
+        self.assertEquals(r[3]['fragment_id'], g.fragments.all()[0].id)
+        self.assertEquals(r[3]['region'], (len(upstream)+1, len(upstream+p1_bs+middle+p2_bs)))
 
     def test_pcr_produces_product_with_multiple_binding_sites_but_one_overlapping_region(self):
         p1_bs = "catagcgcacaggacgcggag"
@@ -54,6 +57,9 @@ class GenomePcrTest(TestCase):
         self.assertEquals(r[0], ''.join([p1, middle, str(Seq(p2).reverse_complement())]))
         self.assertEquals(len(r[1]), 2)  # two binding sites for each primer
         self.assertEquals(len(r[2]), 1)  # one binding site for this primer
+        self.assertEquals(r[3]['fragment_name'], g.fragments.all()[0].name)
+        self.assertEquals(r[3]['fragment_id'], g.fragments.all()[0].id)
+        self.assertEquals(r[3]['region'], (len(upstream)+1, len(upstream+p1_bs+middle+p2_bs)))
 
     def test_pcr_does_not_produce_product_with_multiple_overlapping_regions(self):
         p1_bs = "catagcgcacaggacgcggag"
@@ -179,7 +185,7 @@ class GenomePcrTest(TestCase):
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
 
-        self.assertEquals(len(d), 3)
+        self.assertEquals(len(d), 4)
         self.assertEquals(d[0], ''.join([p1, middle, str(Seq(p2).reverse_complement())]))
         self.assertEquals(len(d[1]), 1)
         self.assertEquals(d[1][0]['subject_start'], len(upstream)+1)

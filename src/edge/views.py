@@ -452,7 +452,7 @@ class GenomePcrView(ViewBase):
             raise Exception('Expecting two primers, got %s' % (primers,))
 
         r = pcr_from_genome(genome, primers[0], primers[1])
-        r = (r[0], [b.to_dict() for b in r[1]], [b.to_dict() for b in r[2]])
+        r = (r[0], [b.to_dict() for b in r[1]], [b.to_dict() for b in r[2]], r[3])
         return r, 200
 
 

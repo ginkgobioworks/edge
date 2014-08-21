@@ -119,7 +119,7 @@ class GFFFragmentImporter(object):
 
         for feature in self.__features:
             f_start, f_end, f_name, f_type, f_strand, f_qualifiers = feature
-            #print '  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand)
+            # print '  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand)
             self._annotate_feature(fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers)
 
     def _annotate_feature(self, fragment, first_base1, last_base1, name, type, strand, qualifiers):
