@@ -30,7 +30,7 @@
 <div ng-if="results" class="space-top">
     <div ng-if="results[0]">
         <p>
-            <span class="label label-success">PCR Product:</span>
+            <span class="label label-success">PCR Product: {{ results[0].length }} bps</span>
         </p>
         <div class="sequence sequence-break">{{ results[0] }}</div>
         <p>
