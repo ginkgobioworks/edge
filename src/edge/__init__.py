@@ -10,6 +10,7 @@ def import_gff(name, fn):
     if Genome.objects.filter(name=name).count() > 0:
         raise Exception('There is already a genome named "%s"' % (name,))
     g = Genome.import_gff(name, fn)
+    return g
 
 
 def _setup_sqlite3(sender, connection, **kwargs):
