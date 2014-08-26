@@ -3,6 +3,3 @@
 Vagrantfile.local
 .vagrant
 production.log
-build
-dist
-edge.egg-info
