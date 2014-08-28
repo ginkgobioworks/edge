@@ -18,7 +18,7 @@
     </ul>
   </div>
 
-  <span ng-bind-html-unsafe='fragment.name'></span>: {{ fragment.length | number }} bps
+  Fragment {{ fragment.id }}: <span ng-bind-html-unsafe='fragment.name'></span>, {{ fragment.length | number }} bps
 </h3>
 
 <p ng-if='genome' class="lead space-top">
