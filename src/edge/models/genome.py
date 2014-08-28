@@ -13,6 +13,7 @@ class Genome(models.Model, Genome_Updater):
     notes = models.TextField(null=True, blank=True)
     fragments = models.ManyToManyField(Fragment, through='Genome_Fragment')
     created_on = models.DateTimeField('Created', auto_now_add=True, null=True)
+    active = models.BooleanField(default=True)
 
     def __unicode__(self):
         return self.name

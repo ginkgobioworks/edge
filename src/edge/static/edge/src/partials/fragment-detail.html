@@ -10,7 +10,16 @@
 
 <div class="container container-wide">
 
-<h3><span ng-bind-html-unsafe='fragment.name'></span>: {{ fragment.length | number }} bps</h3>
+<h3>
+  <div class="dropdown pull-right" ng-if="!genome">
+    <a class="btn btn-default" href="javascript:void(0);" data-toggle="dropdown">Operations <span class='caret'></span></a>
+    <ul class="dropdown-menu">
+      <li> <a href="/admin/edge/fragment/{{ fragment.id }}/">Edit Name, Status</a> </li>
+    </ul>
+  </div>
+
+  <span ng-bind-html-unsafe='fragment.name'></span>: {{ fragment.length | number }} bps
+</h3>
 
 <p ng-if='genome' class="lead space-top">
   Genome: <a href="#/genomes/{{ genome.id }}" ng-bind-html-unsafe='genome.name'></a>

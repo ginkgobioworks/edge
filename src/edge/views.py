@@ -413,9 +413,10 @@ class GenomeListView(ViewBase):
             q = args['q']
             p = 200 if p > 200 else p
             if q is not None and q.strip() != '':
-                genomes = Genome.objects.filter(name__icontains=q).order_by('-id')[s:s+p]
+                genomes = Genome.objects.filter(active=True,
+                                                name__icontains=q).order_by('-id')[s:s+p]
             else:
-                genomes = Genome.objects.all().order_by('-id')[s:s+p]
+                genomes = Genome.objects.filter(active=True).order_by('-id')[s:s+p]
         return [GenomeView.to_dict(genome,
                                    include_changes=False,
                                    compute_length=False,

@@ -143,6 +143,23 @@ class GenomeListTest(TestCase):
         d = json.loads(res.content)
         self.assertEqual(len(d), 2)
 
+    def test_genome_list_does_not_return_inactive_genomes(self):
+        from edge.models import Genome
+
+        Genome(name='Foo', active=False).save()
+        Genome(name='Bar', active=False).save()
+        Genome(name='Far').save()
+        Genome(name='Baz').save()
+
+        res = self.client.get('/edge/genomes/')
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertEqual(len(d), 2)
+        self.assertEqual('Foo' in res.content, False)
+        self.assertEqual('Bar' in res.content, False)
+        self.assertEqual('Far' in res.content, True)
+        self.assertEqual('Baz' in res.content, True)
+
 
 class GenomeTest(TestCase):
 
@@ -256,6 +273,36 @@ class FragmentTest(TestCase):
             "circular": False,
             "parent_id": None
         }])
+
+    def test_does_not_return_genomic_fragments(self):
+        from edge.models import Genome, Genome_Fragment
+
+        res = self.client.get('/edge/fragments/')
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(json.loads(res.content)), 1)
+
+        g = Genome(name='Foo')
+        g.save()
+        Genome_Fragment(genome=g, fragment_id=self.fragment_id, inherited=False).save()
+
+        res = self.client.get('/edge/fragments/')
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(json.loads(res.content)), 0)
+
+    def test_does_not_return_inactive_fragments(self):
+        from edge.models import Fragment
+
+        res = self.client.get('/edge/fragments/')
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(json.loads(res.content)), 1)
+
+        fragment = Fragment.objects.get(pk=self.fragment_id)
+        fragment.active = False
+        fragment.save()
+
+        res = self.client.get('/edge/fragments/')
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(json.loads(res.content)), 0)
 
     def test_get_fragment(self):
         res = self.client.get(self.uri)

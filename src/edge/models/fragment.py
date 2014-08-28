@@ -18,10 +18,11 @@ class Fragment(models.Model):
     start_chunk = models.ForeignKey('Chunk', null=True, on_delete=models.PROTECT)
     est_length = models.IntegerField('Estimated length', null=True, blank=True)
     created_on = models.DateTimeField('Created', auto_now_add=True, null=True)
+    active = models.BooleanField(default=True)
 
     @staticmethod
     def non_genomic_fragments(q=None, f=None, l=None):
-        qs = Fragment.objects.filter(genome_fragment__id__isnull=True)
+        qs = Fragment.objects.filter(genome_fragment__id__isnull=True, active=True)
         if q is not None:
             qs = qs.filter(q)
         f = 0 if f is None else f
