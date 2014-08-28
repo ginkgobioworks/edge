@@ -11,7 +11,10 @@
 
 <div class="container container-wide">
 
-<h3><span ng-bind-html-unsafe='fragment.name'></span>: {{ fragment.length | number }} bps</h3>
+<h3>
+  Fragment {{ fragment.id }}:
+  <span ng-bind-html-unsafe='fragment.name'></span>, {{ fragment.length | number }} bps
+</h3>
 
 <div class="lead space-top">
     <p>Genome: <a href="#/genomes/{{ genome.id }}" ng-bind-html-unsafe='genome.name'></a> </p>
