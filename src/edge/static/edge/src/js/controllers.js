@@ -238,7 +238,7 @@ function FragmentControllerBase($scope, $routeParams, $http) {
                 $scope.zoom['sequence'] = data;
                 $scope.zoom['has_sequence'] = true;
                 if ($scope.zoom['sequence_viewer'] === undefined) {
-                    $scope.zoom['sequence_viewer'] = SequenceViewer(jQuery, { dom_id : 'sequence-viewer' });
+                    $scope.zoom['sequence_viewer'] = SvJs(jQuery, '#sequence-viewer');
                 }
                 // $scope.zoom['sequence_viewer'].setSequence(data.sequence, f);
                 var annotations = $scope.zoom['annotations'];

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Sequence Viewer</title>
+    <script src="lib/jquery/dist/jquery.min.js"></script>
+    <script src="lib/underscore/underscore.js"></script>
+    <script src="svjs.js"></script>
+    <link rel="stylesheet" href="svjs.css">
+</head>
+<body style="padding:0px 10px">
+
+<div id="sequence-viewer">
+</div>
+
+<script>
+SvJs(jQuery, '#sequence-viewer').setSequenceWithAnnotations(
+  "ctcttcgctactatgagtggttgctggataactttacgggcatgcataaggctcgtatgatatattcagggagaccacaacggtttccctctacaaataattttgtttaacttttcacacaggaaagtactagatgaccatgattacggattcactggccgtcgttttacaacgtcgtgactgggaaaaccctggcgttacccaacttaatcgccttgcagcacatccccctttcgcaagctggcgtaatagcgaggaggcccgcaccgatcgcccttcccaacagttgcgcagcctgaatggcgaatggcgcgcgggcggcagcgaaggcggcggcagcgaacatcatcatcatcatcatggcagcgaacgtaaaggagaagaacttttcactggagttgtcccaattcttgttgaattagatggtgatgttaatgggcacaaattttctgtcagtggagagggtgaaggtgatgcaacatacggaaaacttacccttaaatttatttgcactactggaaaactacctgttccatggccaacacttgtcactaccctgacctatggtgttcaatgctttgcgagatacccagatcatatgaaacagcatgactttttcaagagtgccatgcccgaaggttatgtacaggaaagaactatatttttcaaagatgacgggaactacaagacacgtgctgaagtcaagtttgaaggtgatacccttgttaatagaatcgagttaaaaggtattgattttaaagaagatggaaacattcttggacacaaattggaatacaactataactcacacaatgtatacatcatggcagacaaacaaaagaatggaatcaaagttaacttcaaaattagacacaacattgaagatggaagcgttcaactagcagaccattatcaacaaaatactccaattggcgatggccctgtccttttaccagacaaccattacctgtccacacaatctgccctttcgaaagatcccaacgaaaagagagaccacatggtccttcttgagtttgtaacagctgctgggattacacatggcatggatgaactatacaagtaagcccgaagagcacgtactgctaagctgactgcgggggagagcgcgtgtccgctgcagtccggcaaaaaagggcaaggtgtcaccaccctgcccttttt",
+  [
+    {base_first: 920, base_last: 1200, display_name: 'Foo'},
+    {base_first: 1080, base_last: 1280, display_name: 'Bar'},
+  ],
+  800
+);
+</script>
+
+</body>
