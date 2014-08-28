@@ -1,10 +1,22 @@
 from django.conf.urls import *
-from django.views.generic.base import RedirectView
+from django.views.generic.base import TemplateView
 from edge.views import *
 
 urlpatterns = patterns(
     '',
-    url(r'^/?$', RedirectView.as_view(url='/static/edge/edge.html', permanent=True)),
+
+    # UI: previously we set / to redirect to a static page, permanently. That
+    # was a bad idea. First, we really want to use a template to take advantage
+    # of the staticfile facility from Django for managing asset versions.
+    # Second, the permanent redirect is cached in browser permanently, so now
+    # we have to add a redirect from the static page to the /ui/ URL, for any
+    # browser that have the redirect memorized.
+
+    url(r'^/?$', TemplateView.as_view(template_name='edge/edge.html'), name='edge-ui'),
+    url(r'^ui/?$', TemplateView.as_view(template_name='edge/edge.html')),
+
+    # APIs
+
     url('^fragments/$', FragmentListView.as_view(), name='fragment_list'),
     url('^fragments/(?P<fragment_id>\d+)/$',
         FragmentView.as_view(), name='fragment'),

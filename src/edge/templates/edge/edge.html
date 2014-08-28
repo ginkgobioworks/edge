@@ -1,0 +1,29 @@
+{% load staticfiles %}
+<!doctype html>
+<html lang="en" ng-app="edge">
+<head>
+    <meta charset="utf-8">
+    <title>Edge</title>
+    <!-- jquery -->
+    <script src="{% static 'edge/lib/jquery/dist/jquery.min.js' %}"></script>
+    <!-- bootstrap -->
+    <link rel="stylesheet" href="{% static 'edge/lib/bootstrap/dist/css/bootstrap.min.css' %}">
+    <script src="{% static 'edge/lib/bootstrap/dist/js/bootstrap.min.js' %}"></script>
+    <!-- angular -->
+    <script src="{% static 'edge/lib/angular/angular.min.js' %}"></script>
+    <!-- underscore -->
+    <script src="{% static 'edge/lib/underscore/underscore.js' %}"></script>
+    <!-- svjs -->
+    <script src="{% static 'edge/lib/svjs/svjs.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'edge/lib/svjs/svjs.css' %}">
+    <!-- edge stuff -->
+    <script src="{% static 'edge/edge_jst.js' %}"></script>
+    <script src="{% static 'edge/edge.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'edge/edge.css' %}">
+</head>
+<body>
+
+<div ng-view></div>
+
+</body>
+</html>
