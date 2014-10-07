@@ -94,14 +94,21 @@ class GenomeListTest(TestCase):
     def test_finds_genomes_with_name(self):
         from edge.models import Genome
 
-        Genome(name='Foo').save()
-        Genome(name='Bar').save()
+        a = Genome(name='Foo')
+        a.save()
+        Genome(name='Bar %s' % a.id).save()
 
         # no filter, return both genomes
         res = self.client.get('/edge/genomes/')
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertItemsEqual([g['name'] for g in d], ['Foo', 'Bar'])
+        self.assertItemsEqual([g['name'] for g in d], ['Foo', 'Bar %s' % a.id])
+
+        # finds genome by ID and query
+        res = self.client.get('/edge/genomes/?q=%s' % a.id)
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertItemsEqual([g['name'] for g in d], ['Foo', 'Bar %s' % a.id])
 
         # finds one
         res = self.client.get('/edge/genomes/?q=oo')
