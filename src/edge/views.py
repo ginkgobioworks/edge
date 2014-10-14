@@ -6,7 +6,14 @@ from django.views.generic.base import View
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from edge.models import *
-from edge.tasks import build_genome_blastdb
+
+
+def schedule_building_blast_db(genome_id, countdown=None):
+    from edge.tasks import build_genome_blastdb
+    # scheduling building genome DB in the future, so our transaction has a
+    # chance to commit
+    countdown = 10 if countdown is None else countdown
+    build_genome_blastdb.apply_async((genome_id, ), countdown=countdown)
 
 
 def get_genome_or_404(pk):
@@ -277,7 +284,7 @@ class GenomeFragmentView(ViewBase):
         with u.update_fragment_by_fragment_id(fragment.id) as f:
             f.insert_bases(args['before_bp'], args['sequence'])
 
-        build_genome_blastdb.delay(u.id)
+        schedule_building_blast_db(u.id)
         return GenomeView.to_dict(u), 201
 
     def remove_bases(self, request, genome_id, fragment_id):
@@ -294,7 +301,7 @@ class GenomeFragmentView(ViewBase):
         with u.update_fragment_by_fragment_id(fragment.id) as f:
             f.remove_bases(args['before_bp'], args['length'])
 
-        build_genome_blastdb.delay(u.id)
+        schedule_building_blast_db(u.id)
         return GenomeView.to_dict(u), 201
 
     def replace_bases(self, request, genome_id, fragment_id):
@@ -312,7 +319,7 @@ class GenomeFragmentView(ViewBase):
         with u.update_fragment_by_fragment_id(fragment.id) as f:
             f.replace_bases(args['before_bp'], args['length'], args['sequence'])
 
-        build_genome_blastdb.delay(u.id)
+        schedule_building_blast_db(u.id)
         return GenomeView.to_dict(u), 201
 
     def insert_fragment(self, request, genome_id, fragment_id):
@@ -330,7 +337,7 @@ class GenomeFragmentView(ViewBase):
         with u.update_fragment_by_fragment_id(fragment.id) as f:
             f.insert_fragment(args['before_bp'], new_fragment)
 
-        build_genome_blastdb.delay(u.id)
+        schedule_building_blast_db(u.id)
         return GenomeView.to_dict(u), 201
 
     def replace_with_fragment(self, request, genome_id, fragment_id):
@@ -349,7 +356,7 @@ class GenomeFragmentView(ViewBase):
         with u.update_fragment_by_fragment_id(fragment.id) as f:
             f.replace_with_fragment(args['before_bp'], args['length'], new_fragment)
 
-        build_genome_blastdb.delay(u.id)
+        schedule_building_blast_db(u.id)
         return GenomeView.to_dict(u), 201
 
     def on_put(self, request, genome_id, fragment_id):  # updating genome and fragment
@@ -502,5 +509,5 @@ class GenomeRecombinationView(ViewBase):
             if c is None:
                 return None, 400
             else:
-                build_genome_blastdb.delay(c.id)
+                schedule_building_blast_db(c.id)
                 return GenomeView.to_dict(c), 201
