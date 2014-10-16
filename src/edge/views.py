@@ -270,6 +270,16 @@ class GenomeFragmentListView(ViewBase):
 
 class GenomeFragmentView(ViewBase):
 
+    @staticmethod
+    def _op(genome_id, fragment_id, name):
+        genome = get_genome_or_404(genome_id)
+        fragment = get_fragment_or_404(fragment_id)
+
+        u = genome.update(name=name)
+        with u.update_fragment_by_fragment_id(fragment.id) as f:
+            yield u, f
+
+
     def insert_bases(self, request, genome_id, fragment_id):
         op_parser = RequestParser()
         op_parser.add_argument('name', field_type=str, required=True, location='json')
@@ -277,15 +287,13 @@ class GenomeFragmentView(ViewBase):
         op_parser.add_argument('sequence', field_type=str, required=True, location='json')
         args = op_parser.parse_args(request)
 
-        genome = get_genome_or_404(genome_id)
-        fragment = get_fragment_or_404(fragment_id)
+        new_genome = None
+        with GenomeFragmentView._op(genome_id, fragment_id, args['name']) as (u, f):
+          new_genome = u
+          f.insert_bases(args['before_bp'], args['sequence'])
 
-        u = genome.update(name=args['name'])
-        with u.update_fragment_by_fragment_id(fragment.id) as f:
-            f.insert_bases(args['before_bp'], args['sequence'])
+        return new_genome
 
-        schedule_building_blast_db(u.id)
-        return GenomeView.to_dict(u), 201
 
     def remove_bases(self, request, genome_id, fragment_id):
         op_parser = RequestParser()
@@ -297,12 +305,13 @@ class GenomeFragmentView(ViewBase):
         genome = get_genome_or_404(genome_id)
         fragment = get_fragment_or_404(fragment_id)
 
-        u = genome.update(name=args['name'])
-        with u.update_fragment_by_fragment_id(fragment.id) as f:
-            f.remove_bases(args['before_bp'], args['length'])
+        new_genome = None
+        with GenomeFragmentView._op(genome_id, fragment_id, args['name']) as (u, f):
+          new_genome = u
+          f.remove_bases(args['before_bp'], args['length'])
 
-        schedule_building_blast_db(u.id)
-        return GenomeView.to_dict(u), 201
+        return new_genome
+
 
     def replace_bases(self, request, genome_id, fragment_id):
         op_parser = RequestParser()
@@ -312,15 +321,13 @@ class GenomeFragmentView(ViewBase):
         op_parser.add_argument('sequence', field_type=str, required=True, location='json')
         args = op_parser.parse_args(request)
 
-        genome = get_genome_or_404(genome_id)
-        fragment = get_fragment_or_404(fragment_id)
+        new_genome = None
+        with GenomeFragmentView._op(genome_id, fragment_id, args['name']) as (u, f):
+          new_genome = u
+          f.replace_bases(args['before_bp'], args['length'], args['sequence'])
 
-        u = genome.update(name=args['name'])
-        with u.update_fragment_by_fragment_id(fragment.id) as f:
-            f.replace_bases(args['before_bp'], args['length'], args['sequence'])
+        return new_genome
 
-        schedule_building_blast_db(u.id)
-        return GenomeView.to_dict(u), 201
 
     def insert_fragment(self, request, genome_id, fragment_id):
         op_parser = RequestParser()
@@ -329,16 +336,14 @@ class GenomeFragmentView(ViewBase):
         op_parser.add_argument('fragment_id', field_type=int, required=True, location='json')
         args = op_parser.parse_args(request)
 
-        genome = get_genome_or_404(genome_id)
-        fragment = get_fragment_or_404(fragment_id)
         new_fragment = get_fragment_or_404(args['fragment_id'])
+        new_genome = None
+        with GenomeFragmentView._op(genome_id, fragment_id, args['name']) as (u, f):
+          new_genome = u
+          f.insert_fragment(args['before_bp'], new_fragment)
 
-        u = genome.update(name=args['name'])
-        with u.update_fragment_by_fragment_id(fragment.id) as f:
-            f.insert_fragment(args['before_bp'], new_fragment)
+        return new_genome
 
-        schedule_building_blast_db(u.id)
-        return GenomeView.to_dict(u), 201
 
     def replace_with_fragment(self, request, genome_id, fragment_id):
         op_parser = RequestParser()
@@ -348,32 +353,44 @@ class GenomeFragmentView(ViewBase):
         op_parser.add_argument('fragment_id', field_type=int, required=True, location='json')
         args = op_parser.parse_args(request)
 
-        genome = get_genome_or_404(genome_id)
-        fragment = get_fragment_or_404(fragment_id)
         new_fragment = get_fragment_or_404(args['fragment_id'])
+        new_genome = None
+        with GenomeFragmentView._op(genome_id, fragment_id, args['name']) as (u, f):
+          new_genome = u
+          f.replace_with_fragment(args['before_bp'], args['length'], new_fragment)
 
-        u = genome.update(name=args['name'])
-        with u.update_fragment_by_fragment_id(fragment.id) as f:
-            f.replace_with_fragment(args['before_bp'], args['length'], new_fragment)
+        return new_genome
 
-        schedule_building_blast_db(u.id)
-        return GenomeView.to_dict(u), 201
 
     def on_put(self, request, genome_id, fragment_id):  # updating genome and fragment
         op_parser = RequestParser()
         op_parser.add_argument('op', field_type=str, required=True, location='json')
+        op_parser.add_argument('notes', field_type=str, required=False,
+                               default=None, location='json')
         args = op_parser.parse_args(request)
+        notes = args['notes']
 
+        new_genome = None
         if args['op'] == 'insert_bases':
-            return self.insert_bases(request, genome_id, fragment_id)
+            new_genome = self.insert_bases(request, genome_id, fragment_id, notes=notes)
         elif args['op'] == 'remove_bases':
-            return self.remove_bases(request, genome_id, fragment_id)
+            new_genome = self.remove_bases(request, genome_id, fragment_id, notes=notes)
         elif args['op'] == 'replace_bases':
-            return self.replace_bases(request, genome_id, fragment_id)
+            new_genome = self.replace_bases(request, genome_id, fragment_id, notes=notes)
         elif args['op'] == 'insert_fragment':
-            return self.insert_fragment(request, genome_id, fragment_id)
+            new_genome = self.insert_fragment(request, genome_id, fragment_id, notes=notes)
         elif args['op'] == 'replace_with_fragment':
-            return self.replace_with_fragment(request, genome_id, fragment_id)
+            new_genome = self.replace_with_fragment(request, genome_id, fragment_id, notes=notes)
+        else:
+            return {}, 400
+
+        if notes is not None:
+            new_genome.notes = notes
+            new_genome.save()
+
+        schedule_building_blast_db(new_genome.id)
+
+        return GenomeView.to_dict(new_genome), 201
 
 
 class GenomeListView(ViewBase):
@@ -493,19 +510,29 @@ class GenomeRecombinationView(ViewBase):
         parser.add_argument('cassette', field_type=str, required=True, location='json')
         parser.add_argument('homology_arm_length', field_type=int, required=True, location='json')
         parser.add_argument('create', field_type=bool, required=True, location='json')
-        parser.add_argument('name', field_type=str, required=False, default=None, location='json')
+        parser.add_argument('genome_name', field_type=str, required=False,
+                            default=None, location='json')
+        parser.add_argument('cassette_name', field_type=str, required=False,
+                            default=None, location='json')
+        parser.add_argument('notes', field_type=str, required=False,
+                            default=None, location='json')
 
         args = parser.parse_args(request)
         cassette = args['cassette']
         arm_length = args['homology_arm_length']
         create = args['create']
-        name = args['name']
+        genome_name = args['genome_name']
+        cassette_name = args['cassette_name']
+        notes = args['notes']
 
         if create is False:
             r = find_swap_region(genome, cassette, arm_length)
             return [x.to_dict() for x in r], 200
         else:
-            c = recombine(genome, cassette, arm_length, name)
+            c = recombine(genome, cassette, arm_length,
+                          genome_name=genome_name,
+                          cassette_name=cassette_name,
+                          notes=notes)
             if c is None:
                 return None, 400
             else:

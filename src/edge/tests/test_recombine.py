@@ -158,7 +158,7 @@ class GenomeRecombinationTest(TestCase):
                                data=json.dumps(dict(cassette=cassette,
                                                     homology_arm_length=arm_len,
                                                     create=True,
-                                                    name='FooBar')),
+                                                    genome_name='FooBar')),
                                content_type='application/json')
         self.assertEquals(res.status_code, 201)
         r = json.loads(res.content)
