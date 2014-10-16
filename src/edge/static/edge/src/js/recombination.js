@@ -25,7 +25,7 @@ function GenomeRecombinationController($scope, $routeParams, $http, $location) {
         $scope.cassette = $scope.cassette.replace(/\s+/g,'');
         var data = JSON.stringify({cassette: $scope.cassette,
                                    homology_arm_length: $scope.homology_arm_length,
-                                   name: $scope.new_genome_name,
+                                   genome_name: $scope.new_genome_name,
                                    create: true});
         $http.post('/edge/genomes/'+$scope.genomeId+'/recombination/', data)
              .success(function(genome) {
