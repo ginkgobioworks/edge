@@ -6,7 +6,6 @@ import subprocess
 from edge.models import Fragment, Genome
 from edge.blast import BLAST_DB, genome_db_name
 from edge.blast import Blast_Accession
-from Bio.Alphabet import IUPAC
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
