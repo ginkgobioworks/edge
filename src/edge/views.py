@@ -1,5 +1,6 @@
 import json
 import random
+from contextlib import contextmanager
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.views.generic.base import View
@@ -271,6 +272,7 @@ class GenomeFragmentListView(ViewBase):
 class GenomeFragmentView(ViewBase):
 
     @staticmethod
+    @contextmanager
     def _op(genome_id, fragment_id, name):
         genome = get_genome_or_404(genome_id)
         fragment = get_fragment_or_404(fragment_id)
@@ -278,7 +280,6 @@ class GenomeFragmentView(ViewBase):
         u = genome.update(name=name)
         with u.update_fragment_by_fragment_id(fragment.id) as f:
             yield u, f
-
 
     def insert_bases(self, request, genome_id, fragment_id):
         op_parser = RequestParser()
@@ -289,11 +290,10 @@ class GenomeFragmentView(ViewBase):
 
         new_genome = None
         with GenomeFragmentView._op(genome_id, fragment_id, args['name']) as (u, f):
-          new_genome = u
-          f.insert_bases(args['before_bp'], args['sequence'])
+            new_genome = u
+            f.insert_bases(args['before_bp'], args['sequence'])
 
         return new_genome
-
 
     def remove_bases(self, request, genome_id, fragment_id):
         op_parser = RequestParser()
@@ -307,11 +307,10 @@ class GenomeFragmentView(ViewBase):
 
         new_genome = None
         with GenomeFragmentView._op(genome_id, fragment_id, args['name']) as (u, f):
-          new_genome = u
-          f.remove_bases(args['before_bp'], args['length'])
+            new_genome = u
+            f.remove_bases(args['before_bp'], args['length'])
 
         return new_genome
-
 
     def replace_bases(self, request, genome_id, fragment_id):
         op_parser = RequestParser()
@@ -323,11 +322,10 @@ class GenomeFragmentView(ViewBase):
 
         new_genome = None
         with GenomeFragmentView._op(genome_id, fragment_id, args['name']) as (u, f):
-          new_genome = u
-          f.replace_bases(args['before_bp'], args['length'], args['sequence'])
+            new_genome = u
+            f.replace_bases(args['before_bp'], args['length'], args['sequence'])
 
         return new_genome
-
 
     def insert_fragment(self, request, genome_id, fragment_id):
         op_parser = RequestParser()
@@ -339,11 +337,10 @@ class GenomeFragmentView(ViewBase):
         new_fragment = get_fragment_or_404(args['fragment_id'])
         new_genome = None
         with GenomeFragmentView._op(genome_id, fragment_id, args['name']) as (u, f):
-          new_genome = u
-          f.insert_fragment(args['before_bp'], new_fragment)
+            new_genome = u
+            f.insert_fragment(args['before_bp'], new_fragment)
 
         return new_genome
-
 
     def replace_with_fragment(self, request, genome_id, fragment_id):
         op_parser = RequestParser()
@@ -356,11 +353,10 @@ class GenomeFragmentView(ViewBase):
         new_fragment = get_fragment_or_404(args['fragment_id'])
         new_genome = None
         with GenomeFragmentView._op(genome_id, fragment_id, args['name']) as (u, f):
-          new_genome = u
-          f.replace_with_fragment(args['before_bp'], args['length'], new_fragment)
+            new_genome = u
+            f.replace_with_fragment(args['before_bp'], args['length'], new_fragment)
 
         return new_genome
-
 
     def on_put(self, request, genome_id, fragment_id):  # updating genome and fragment
         op_parser = RequestParser()
@@ -372,15 +368,15 @@ class GenomeFragmentView(ViewBase):
 
         new_genome = None
         if args['op'] == 'insert_bases':
-            new_genome = self.insert_bases(request, genome_id, fragment_id, notes=notes)
+            new_genome = self.insert_bases(request, genome_id, fragment_id)
         elif args['op'] == 'remove_bases':
-            new_genome = self.remove_bases(request, genome_id, fragment_id, notes=notes)
+            new_genome = self.remove_bases(request, genome_id, fragment_id)
         elif args['op'] == 'replace_bases':
-            new_genome = self.replace_bases(request, genome_id, fragment_id, notes=notes)
+            new_genome = self.replace_bases(request, genome_id, fragment_id)
         elif args['op'] == 'insert_fragment':
-            new_genome = self.insert_fragment(request, genome_id, fragment_id, notes=notes)
+            new_genome = self.insert_fragment(request, genome_id, fragment_id)
         elif args['op'] == 'replace_with_fragment':
-            new_genome = self.replace_with_fragment(request, genome_id, fragment_id, notes=notes)
+            new_genome = self.replace_with_fragment(request, genome_id, fragment_id)
         else:
             return {}, 400
 
