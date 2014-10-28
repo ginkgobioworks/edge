@@ -437,11 +437,11 @@ function FragmentControllerBase($scope, $routeParams, $http) {
 
 function FragmentController($scope, $routeParams, $injector, $http) {
     $injector.invoke(FragmentControllerBase, this, { $scope: $scope });
-    $scope.genome = undefined;
+    $scope.genomes = undefined;
 
     function findGenome() {
         $http.get('/edge/genomes/?f='+$scope.fragmentId).success(function(genomes) {
-            if (genomes.length) { $scope.genome = genomes[0]; console.log(genomes[0]); }
+            if (genomes.length) { $scope.genomes = genomes; }
         });
     }
 
