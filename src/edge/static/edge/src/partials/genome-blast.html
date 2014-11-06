@@ -1,0 +1,28 @@
+<header>
+  <div class="container">
+    <ol class="breadcrumb">
+        <li> Edge </li>
+        <li> <a href="#/genomes">Genomes</a> </li>
+        <li> <a href="#/genomes/{{ genome.id }}"><span ng-bind-html-unsafe='genome.name'></span></a> </li>
+        <li> Blast </li>
+    </ol>
+  </div>
+</header>
+
+<div class="container">
+
+<h3>Blast Genome {{ genome.id }}: <span ng-bind-html-unsafe='genome.name'></span></h3>
+
+<form role="form" class="space-top">
+    <div class="form-inline">
+        Query
+        <div class="form-group">
+            <input required class="form-control" type="text" ng-model="query" size="40" />
+        </div>
+        Program
+        <div class="form-group">
+            <input required class="form-control" type="text" ng-model="program" size="40" />
+        </div>
+        <button class="btn btn-primary" ng-click="Blast(query, program)">Blast</button>
+    </div>
+</form>

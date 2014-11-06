@@ -13,6 +13,9 @@ var app = angular.module('edge', []).
             when('/genomes/:genomeId/pcr',
                  {template: JST['genome-pcr'],
                   controller: GenomePcrController}).
+            when('/genomes/:genomeId/blast',
+                 {template: JST['genome-blast'],
+                  controller: GenomeBlastController}).
             when('/genomes/:genomeId/fragments/:fragmentId',
                  {template: JST['genome-fragment'],
                   controller: GenomeFragmentController}).
