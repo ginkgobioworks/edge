@@ -13,6 +13,12 @@ class GenomeTest(TestCase):
         self.assertEquals(Genome.objects.all()[0].name, 'Foo')
         self.assertEquals(Genome.objects.all()[0].id, genome.id)
 
+    def test_create_child_genome(self):
+        genome = Genome.create('Foo')
+        self.assertEquals(len(Genome.objects.all()), 1)
+        cg = genome.create_child()
+        self.assertEquals(cg.parent, genome.id)
+
     def test_non_genomic_fragments(self):
         genome = Genome.create('Foo')
         s = 'atggcatattcgcagct'
