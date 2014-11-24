@@ -52,6 +52,12 @@ class Genome(models.Model, Genome_Updater):
         # casting to Indexed_Genome
         return Indexed_Genome.objects.get(pk=self.pk)
 
+    def create_child(self, notes=None):
+        child_genome = Genome(name=self.name, notes=notes, parent=self)
+        child_genome.save()
+        for f in self.fragments.all():
+            Genome_Fragment(genome=child_genome, fragment=f, inherited=True).save()
+        return child_genome
 
 class Indexed_Genome(Genome):
     """
