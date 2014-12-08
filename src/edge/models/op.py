@@ -7,12 +7,14 @@ class Operation(models.Model):
         app_label = "edge"
 
     RECOMBINATION = 'Recombination'
-    CRISPR = 'CRISPR'
+    CRISPR_CUT = 'CRISPR Cut'
+    CRISPR_NICK = 'CRISPR Nick'
     TRANSPOSON = 'Transposon integration'
 
     type = models.CharField(max_length=64,
                             choices=((RECOMBINATION, 'Recombination'),
-                                     (CRISPR, 'CRISPR'),
+                                     (CRISPR_CUT, 'CRISPR Cut'),
+                                     (CRISPR_NICK, 'CRISPR Nick'),
                                      (TRANSPOSON, 'Transposon integration')))
     notes = models.TextField(null=True, blank=True)
     fragment = models.ForeignKey(Fragment)
