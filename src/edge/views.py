@@ -530,8 +530,7 @@ class GenomeModifyView(ViewBase):
         fragment_args = fragment_parser.parse_args(request)
 
         operation = args['operation']
-        choices = [t[0] for t in Operation._meta.get_field_by_name('type')[0].choices]
-        if operation not in choices:
+        if operation is None or operation == '':
             return {}, 400
 
         fragment = Fragment.create_with_sequence(name=fragment_args['name'],

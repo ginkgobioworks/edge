@@ -82,7 +82,8 @@ class GenomeModifyTest(TestCase):
                                content_type='application/json')
         self.assertEquals(res.status_code, 201)
 
-        data = dict(genome_name='foo-bar', notes='blah', name='m1', circular=False, sequence='AGCT')
+        data = dict(genome_name='foo-bar', notes='blah',
+                    name='m1', circular=False, sequence='AGCT')
         res = self.client.post(self.genome_uri+'modify/', data=json.dumps(data),
                                content_type='application/json')
         self.assertEquals(res.status_code, 400)
