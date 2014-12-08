@@ -1,5 +1,6 @@
 from django.db import transaction
 from edge.blast import blast_genome
+from edge.models import Fragment, Operation
 from Bio.Seq import Seq
 
 
@@ -129,8 +130,8 @@ def recombine(genome, cassette, min_homology_arm_length,
         f.replace_bases(regions[0].start, regions[0].end-regions[0].start+1, new_region)
         new_fragment_id = f.id
 
+    cassette_name = 'Recombination cassette' if cassette_name is None else cassette_name
     with new_genome.annotate_fragment_by_fragment_id(new_fragment_id) as f:
-        cassette_name = 'Recombination cassette' if cassette_name is None else cassette_name
         f.annotate(regions[0].start, regions[0].start+len(new_region)-1,
                    cassette_name, 'feature', 1)
 
@@ -142,5 +143,12 @@ def recombine(genome, cassette, min_homology_arm_length,
     new_genome.name = genome_name
     new_genome.notes = notes
     new_genome.save()
+
+    fragment = Fragment.create_with_sequence(name=cassette_name,
+                                             circular=False,
+                                             sequence=cassette)
+    op = Operation(type=Operation.RECOMBINATION, fragment=fragment)
+    op.save()
+    new_genome.operations.add(op)
 
     return new_genome

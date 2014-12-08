@@ -4,7 +4,7 @@ import json
 from Bio.Seq import Seq
 from django.test import TestCase
 from edge.recombine import find_swap_region, recombine
-from edge.models import Genome, Fragment, Genome_Fragment
+from edge.models import Genome, Fragment, Genome_Fragment, Operation
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 
 
@@ -89,6 +89,25 @@ class GenomeRecombinationTest(TestCase):
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
                           ''.join([upstream, cassette, downstream]))
+
+    def test_creates_operation(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = ''.join([front_bs, replaced, back_bs])
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(template)
+        self.assertEquals(Operation.objects.count(), 0)
+        c = recombine(g, cassette, arm_len)
+        self.assertEquals(Operation.objects.count(), 1)
+        self.assertEquals(c.operations.all()[0].type, Operation.RECOMBINATION)
+        self.assertEquals(c.operations.all()[0].fragment.indexed_fragment().sequence, cassette)
 
     def test_recombines_with_reverse_complement_cassette_correctly(self):
         upstream = "gagattgtccgcgtttt"

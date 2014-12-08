@@ -269,7 +269,7 @@ class FragmentTest(TestCase):
         self.fragment_id = int(m.group(1))
         self.uri = uri
 
-    def test_get_all_non_genomic_fragments(self):
+    def test_get_all_user_defined_fragments(self):
         res = self.client.get('/edge/fragments/')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), [{

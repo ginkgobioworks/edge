@@ -3,9 +3,10 @@ import json
 import re
 import tempfile
 from django.test import TestCase
+from edge.models import Operation
 
 
-class GenomeCreateChildViewTest(TestCase):
+class GenomeModifyTest(TestCase):
 
     def setUp(self):
         res = self.client.post('/edge/genomes/', data=json.dumps(dict(name='foo', notes='bar')),
@@ -21,11 +22,14 @@ class GenomeCreateChildViewTest(TestCase):
         res = self.client.post(self.genome_uri+'fragments/', data=json.dumps(data),
                                content_type='application/json')
 
-    def test_create_child(self):
-        data = dict(name='foo-bar', notes='blah')
-        res = self.client.post(self.genome_uri+'create_child/', data=json.dumps(data),
+    def test_modify_creates_operation(self):
+        self.assertEquals(Operation.objects.count(), 0)
+        data = dict(genome_name='foo-bar', notes='blah', operation='CRISPR',
+                    name='m1', circular=False, sequence='AGCT')
+        res = self.client.post(self.genome_uri+'modify/', data=json.dumps(data),
                                content_type='application/json')
         self.assertEquals(res.status_code, 201)
+        self.assertEquals(Operation.objects.count(), 1)
 
         child_uri = json.loads(res.content)['uri']
         m = re.match(r'^/edge/genomes/(\d+)/$', child_uri)
@@ -35,6 +39,9 @@ class GenomeCreateChildViewTest(TestCase):
         fragment_uri = json.loads(res.content)['fragments'][0]['uri']
         m = re.match(r'^/edge/fragments/(\d+)/$', fragment_uri)
         fragment_id = int(m.group(1))
+
+        op_fragment_id = Operation.objects.all()[0].fragment_id
+        op_fragment_uri = json.loads(res.content)['operations'][0]['fragment']['uri']
 
         expected = {
             "fragments": [{
@@ -50,8 +57,32 @@ class GenomeCreateChildViewTest(TestCase):
             "notes": "blah",
             "parent_id": self.genome_id,
             "parent_name": self.genome_name,
-            "uri": child_uri
+            "uri": child_uri,
+            "operations": [{
+                "type": 'CRISPR',
+                "notes": None,
+                "fragment": {
+                    'id': op_fragment_id,
+                    'name': 'm1',
+                    'circular': False,
+                    'length': 4,
+                    'uri': op_fragment_uri,
+                    "parent_id": None
+                }
+            }]
         }
         self.assertEquals(json.loads(res.content), expected)
         res = self.client.get(fragment_uri+'sequence/')
         self.assertEquals(json.loads(res.content)['sequence'], self.sequence)
+
+    def test_modify_requires_operation(self):
+        data = dict(genome_name='foo-bar', notes='blah', operation='CRISPR',
+                    name='m1', circular=False, sequence='AGCT')
+        res = self.client.post(self.genome_uri+'modify/', data=json.dumps(data),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 201)
+
+        data = dict(genome_name='foo-bar', notes='blah', name='m1', circular=False, sequence='AGCT')
+        res = self.client.post(self.genome_uri+'modify/', data=json.dumps(data),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 400)

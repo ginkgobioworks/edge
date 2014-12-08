@@ -193,9 +193,9 @@ class FragmentListView(ViewBase):
         q = args['q']
         p = 200 if p > 200 else p
         if q is not None and q.strip() != '':
-            fragments = Fragment.non_genomic_fragments(Q(name__icontains=q), s, s+p)
+            fragments = Fragment.user_defined_fragments(Q(name__icontains=q), s, s+p)
         else:
-            fragments = Fragment.non_genomic_fragments(None, s, s+p)
+            fragments = Fragment.user_defined_fragments(None, s, s+p)
         return [FragmentView.to_dict(fragment) for fragment in fragments]
 
     def on_post(self, request):
@@ -209,7 +209,15 @@ class FragmentListView(ViewBase):
 class GenomeView(ViewBase):
 
     @staticmethod
-    def to_dict(genome, include_changes=True, compute_length=True, include_fragments=True):
+    def op_to_dict(op, include_fragments):
+        d = dict(type=op.type, notes=op.notes)
+        if include_fragments:
+            d['fragment'] = FragmentView.to_dict(op.fragment)
+        return d
+
+    @staticmethod
+    def to_dict(genome, include_changes=True, compute_length=True,
+                include_fragments=True, include_operations=True):
         changes = None
         if include_changes is True:
             if genome.has_location_index:
@@ -225,13 +233,24 @@ class GenomeView(ViewBase):
                     d['changes'] = changes[f.id]
                 fragments.append(d)
 
-        return dict(id=genome.id,
-                    uri=reverse('genome', kwargs=dict(genome_id=genome.id)),
-                    name=genome.name,
-                    notes=genome.notes,
-                    parent_id=genome.parent_id,
-                    parent_name=genome.parent.name if genome.parent is not None else '',
-                    fragments=fragments)
+        operations = []
+        if include_operations:
+            for op in genome.operations.all():
+                d = GenomeView.op_to_dict(op, include_fragments)
+                operations.append(d)
+
+        d = dict(id=genome.id,
+                 uri=reverse('genome', kwargs=dict(genome_id=genome.id)),
+                 name=genome.name,
+                 notes=genome.notes,
+                 parent_id=genome.parent_id,
+                 parent_name=genome.parent.name if genome.parent is not None else '',
+                 fragments=fragments)
+
+        if len(operations):
+            d['operations'] = operations
+
+        return d
 
     def on_get(self, request, genome_id):
         genome = get_genome_or_404(genome_id)
@@ -496,25 +515,42 @@ class GenomePcrView(ViewBase):
         return r, 200
 
 
-class GenomeCreateChildView(ViewBase):
+class GenomeModifyView(ViewBase):
     def on_post(self, request, genome_id):
         genome = get_genome_or_404(genome_id)
 
         parser = RequestParser()
-        parser.add_argument('name', field_type=str, required=False, default=None, location='json')
-        parser.add_argument('notes', field_type=str, required=False, default=None, location='json')
+        parser.add_argument('operation', field_type=str, required=False,
+                            default=None, location='json')
+        parser.add_argument('genome_name', field_type=str, required=False,
+                            default=None, location='json')
+        parser.add_argument('notes', field_type=str, required=False,
+                            default=None, location='json')
         args = parser.parse_args(request)
+        fragment_args = fragment_parser.parse_args(request)
 
-        name = args['name']
+        operation = args['operation']
+        choices = [t[0] for t in Operation._meta.get_field_by_name('type')[0].choices]
+        if operation not in choices:
+            return {}, 400
+
+        fragment = Fragment.create_with_sequence(name=fragment_args['name'],
+                                                 sequence=fragment_args['sequence'],
+                                                 circular=fragment_args['circular'])
+        genome_name = args['genome_name']
         notes = args['notes']
 
         # call #update to get a new genome, but perform no updating to any of
         # the fragments
-        c = genome.update(name=name, notes=notes)
+        c = genome.update(name=genome_name, notes=notes)
 
         if c is None:
             return None, 400
         else:
+            op = Operation(type=operation, fragment=fragment)
+            op.save()
+            c.operations.add(op)
+
             schedule_building_blast_db(c.id)
             return GenomeView.to_dict(c), 201
 

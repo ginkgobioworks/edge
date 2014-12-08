@@ -13,16 +13,6 @@ class GenomeTest(TestCase):
         self.assertEquals(Genome.objects.all()[0].name, 'Foo')
         self.assertEquals(Genome.objects.all()[0].id, genome.id)
 
-    def test_non_genomic_fragments(self):
-        genome = Genome.create('Foo')
-        s = 'atggcatattcgcagct'
-        f1 = genome.add_fragment('chrI', s)
-
-        f2 = Fragment.create_with_sequence('Bar', 'aacctaaaattataa')
-        self.assertEquals(len(Fragment.non_genomic_fragments()), 1)
-        self.assertEquals(Fragment.non_genomic_fragments()[0].name, 'Bar')
-        self.assertEquals(Fragment.non_genomic_fragments()[0].id, f2.id)
-
     def test_add_fragments_to_genome_in_place(self):
         genome = Genome.create('Foo')
         self.assertEquals(len(genome.fragments.all()), 0)

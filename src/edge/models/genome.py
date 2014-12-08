@@ -1,6 +1,7 @@
 from django.db import models
 from edge.models.chunk import *
 from edge.models.fragment import *
+from edge.models.op import Operation
 from edge.models.genome_updater import Genome_Updater
 
 
@@ -12,6 +13,7 @@ class Genome(models.Model, Genome_Updater):
     parent = models.ForeignKey('self', null=True, on_delete=models.PROTECT)
     notes = models.TextField(null=True, blank=True)
     fragments = models.ManyToManyField(Fragment, through='Genome_Fragment')
+    operations = models.ManyToManyField(Operation)
     created_on = models.DateTimeField('Created', auto_now_add=True, null=True)
     active = models.BooleanField(default=True)
 

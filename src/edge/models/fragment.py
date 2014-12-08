@@ -21,8 +21,9 @@ class Fragment(models.Model):
     active = models.BooleanField(default=True)
 
     @staticmethod
-    def non_genomic_fragments(q=None, f=None, l=None):
-        qs = Fragment.objects.filter(genome_fragment__id__isnull=True, active=True)
+    def user_defined_fragments(q=None, f=None, l=None):
+        qs = Fragment.objects.filter(genome_fragment__id__isnull=True, active=True)\
+                             .filter(operation__id__isnull=True)
         if q is not None:
             qs = qs.filter(q)
         f = 0 if f is None else f
