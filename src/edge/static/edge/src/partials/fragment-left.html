@@ -5,10 +5,13 @@
         {{ annotation.display_name }}
     </span>
     <div class="clearfix"></div>
+    <div ng-if="fragment.length < 10000">
+      <button class="btn btn-primary" ng-click="fetchAllSequence()">Show Sequence</button>
+      <textarea class="sequence" readonly ng-if="sequence">{{ sequence.sequence }}</textarea>
+    </div>
 </div>
 
 <div ng-show="display_summary == false">
-
     <div class="well">
     <div class="input-group">
         <div class="input-group-addon glyphicon glyphicon-zoom-out" ng-click="zoomOut()"></div>
