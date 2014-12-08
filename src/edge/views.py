@@ -496,6 +496,29 @@ class GenomePcrView(ViewBase):
         return r, 200
 
 
+class GenomeCreateChildView(ViewBase):
+    def on_post(self, request, genome_id):
+        genome = get_genome_or_404(genome_id)
+
+        parser = RequestParser()
+        parser.add_argument('name', field_type=str, required=False, default=None, location='json')
+        parser.add_argument('notes', field_type=str, required=False, default=None, location='json')
+        args = parser.parse_args(request)
+
+        name = args['name']
+        notes = args['notes']
+
+        # call #update to get a new genome, but perform no updating to any of
+        # the fragments
+        c = genome.update(name=name, notes=notes)
+
+        if c is None:
+            return None, 400
+        else:
+            schedule_building_blast_db(c.id)
+            return GenomeView.to_dict(c), 201
+
+
 class GenomeRecombinationView(ViewBase):
 
     def on_post(self, request, genome_id):
