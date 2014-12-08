@@ -2,7 +2,7 @@ import os
 import json
 from Bio.Seq import Seq
 from django.test import TestCase
-from edge.models import Genome, Fragment, Genome_Fragment
+from edge.models import Genome, Fragment, Genome_Fragment, Operation
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 
 
@@ -84,3 +84,42 @@ class GenomeBlastTest(TestCase):
         self.assertEquals(d[0]['query_end'], 14)
         self.assertEquals(d[0]['subject_start'], 20)
         self.assertEquals(d[0]['subject_end'], 7)
+
+    def test_blast_finds_sequence_on_operation_fragment(self):
+        s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
+        s2 = 'agcgtcgatgcatgagtcgatcggcagtcgtgtagtcgtcgtatgcgtta'
+        g1 = Genome(name='Foo')
+        g1.save()
+        f1 = Fragment.create_with_sequence('Bar', s1)
+        f2 = Fragment.create_with_sequence('Baz', s2)
+        f3 = Fragment.create_with_sequence('Baz', s2)
+        Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
+        op = Operation(type=Operation.RECOMBINATION, fragment=f2)
+        op.save()
+        g1.operations.add(op)
+        op = Operation(type=Operation.RECOMBINATION, fragment=f3)
+        op.save()
+
+        try:
+            os.unlink(fragment_fasta_fn(f1))
+            os.unlink(fragment_fasta_fn(f2))
+            os.unlink(fragment_fasta_fn(f3))
+        except:
+            pass
+        build_all_genome_dbs(refresh=True)
+
+        query = s2[6:20]+'aaaaaaaaa'
+
+        res = self.client.post('/edge/genomes/%s/blast/' % g1.id,
+                               data=json.dumps(dict(program='blastn', query=query)),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 200)
+        d = json.loads(res.content)
+
+        # only returns hit from genome op, but not the unassociated op
+        self.assertEquals(len(d), 1)
+        self.assertEquals(d[0]['fragment_id'], f2.id)
+        self.assertEquals(d[0]['query_start'], 1)
+        self.assertEquals(d[0]['query_end'], 14)
+        self.assertEquals(d[0]['subject_start'], 7)
+        self.assertEquals(d[0]['subject_end'], 20)

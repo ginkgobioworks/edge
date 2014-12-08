@@ -64,7 +64,9 @@ def build_db(fragments, dbname, refresh=True):
 
 
 def build_genome_db(genome, refresh=False):
-    build_db(genome.fragments.all(), genome_db_name(genome), refresh=refresh)
+    fragments = list(genome.fragments.all())
+    fragments.extend([op.fragment for op in genome.operations.all()])
+    build_db(fragments, genome_db_name(genome), refresh=refresh)
 
 
 def build_all_genome_dbs(refresh=False):
