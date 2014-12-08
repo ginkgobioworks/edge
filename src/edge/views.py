@@ -496,6 +496,26 @@ class GenomePcrView(ViewBase):
         return r, 200
 
 
+class GenomeCreateChildView(ViewBase):
+    def on_post(self, request, genome_id):
+        genome = get_genome_or_404(genome_id)
+
+        parser = RequestParser()
+        parser.add_argument('notes', field_type=str, required=False,
+                            default=None, location='json')
+        args = parser.parse_args(request)
+
+        notes = args['notes']
+
+        cg = genome.create_child(notes=notes)
+
+        if cg is None:
+            return None, 400
+        else:
+            schedule_building_blast_db(cg.id)
+            return GenomeView.to_dict(cg), 201
+
+
 class GenomeRecombinationView(ViewBase):
 
     def on_post(self, request, genome_id):

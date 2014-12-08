@@ -40,4 +40,6 @@ urlpatterns = patterns(
         GenomePcrView.as_view(), name='genome_pcr'),
     url('^genomes/(?P<genome_id>\d+)/recombination/$',
         GenomeRecombinationView.as_view(), name='genome_recombination'),
+    url('^genomes/(?P<genome_id>\d+)/create_child/$',
+        GenomeCreateChildView.as_view(), name='create_child'),
 )
