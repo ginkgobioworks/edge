@@ -147,7 +147,7 @@ def recombine(genome, cassette, min_homology_arm_length,
     fragment = Fragment.create_with_sequence(name=cassette_name,
                                              circular=False,
                                              sequence=cassette)
-    op = Operation(type=Operation.RECOMBINATION, fragment=fragment)
+    op = Operation(type=Operation.RECOMBINATION[0], fragment=fragment)
     op.save()
     new_genome.operations.add(op)
 

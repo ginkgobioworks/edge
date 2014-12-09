@@ -94,10 +94,10 @@ class GenomeBlastTest(TestCase):
         f2 = Fragment.create_with_sequence('Baz', s2)
         f3 = Fragment.create_with_sequence('Baz', s2)
         Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
-        op = Operation(type=Operation.RECOMBINATION, fragment=f2)
+        op = Operation(type=Operation.RECOMBINATION[0], fragment=f2)
         op.save()
         g1.operations.add(op)
-        op = Operation(type=Operation.RECOMBINATION, fragment=f3)
+        op = Operation(type=Operation.RECOMBINATION[0], fragment=f3)
         op.save()
 
         try:

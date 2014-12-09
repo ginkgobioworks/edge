@@ -24,7 +24,7 @@ class GenomeModifyTest(TestCase):
 
     def test_modify_creates_operation(self):
         self.assertEquals(Operation.objects.count(), 0)
-        data = dict(genome_name='foo-bar', notes='blah', operation='CRISPR',
+        data = dict(genome_name='foo-bar', notes='blah', operation='CRISPR Cut',
                     name='m1', circular=False, sequence='AGCT')
         res = self.client.post(self.genome_uri+'modify/', data=json.dumps(data),
                                content_type='application/json')
@@ -59,7 +59,7 @@ class GenomeModifyTest(TestCase):
             "parent_name": self.genome_name,
             "uri": child_uri,
             "operations": [{
-                "type": 'CRISPR',
+                "type": 'CRISPR Cut',
                 "notes": None,
                 "fragment": {
                     'id': op_fragment_id,
@@ -76,7 +76,7 @@ class GenomeModifyTest(TestCase):
         self.assertEquals(json.loads(res.content)['sequence'], self.sequence)
 
     def test_modify_requires_operation(self):
-        data = dict(genome_name='foo-bar', notes='blah', operation='CRISPR',
+        data = dict(genome_name='foo-bar', notes='blah', operation='CRISPR Cut',
                     name='m1', circular=False, sequence='AGCT')
         res = self.client.post(self.genome_uri+'modify/', data=json.dumps(data),
                                content_type='application/json')

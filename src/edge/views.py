@@ -210,7 +210,13 @@ class GenomeView(ViewBase):
 
     @staticmethod
     def op_to_dict(op, include_fragments):
-        d = dict(type=op.type, notes=op.notes)
+        choices = Operation._meta.get_field_by_name('type')[0].choices
+        type_str = [t[1] for t in choices if t[0] == op.type]
+        if len(type_str) > 0:
+            type_str = type_str[0]
+        else:
+            type_str = ''
+        d = dict(type=type_str, notes=op.notes)
         if include_fragments:
             d['fragment'] = FragmentView.to_dict(op.fragment)
         return d
@@ -530,12 +536,14 @@ class GenomeModifyView(ViewBase):
         fragment_args = fragment_parser.parse_args(request)
 
         operation = args['operation']
-        if operation is None or operation == '':
+        choices = Operation._meta.get_field_by_name('type')[0].choices
+        operation_value = None
+        for t in choices:
+            if t[1] == operation:
+                operation_value = t[0]
+        if operation_value is None:
             return {}, 400
 
-        fragment = Fragment.create_with_sequence(name=fragment_args['name'],
-                                                 sequence=fragment_args['sequence'],
-                                                 circular=fragment_args['circular'])
         genome_name = args['genome_name']
         notes = args['notes']
 
@@ -546,7 +554,10 @@ class GenomeModifyView(ViewBase):
         if c is None:
             return None, 400
         else:
-            op = Operation(type=operation, fragment=fragment)
+            fragment = Fragment.create_with_sequence(name=fragment_args['name'],
+                                                     sequence=fragment_args['sequence'],
+                                                     circular=fragment_args['circular'])
+            op = Operation(type=operation_value, fragment=fragment)
             op.save()
             c.operations.add(op)
 

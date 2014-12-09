@@ -106,7 +106,7 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(Operation.objects.count(), 0)
         c = recombine(g, cassette, arm_len)
         self.assertEquals(Operation.objects.count(), 1)
-        self.assertEquals(c.operations.all()[0].type, Operation.RECOMBINATION)
+        self.assertEquals(c.operations.all()[0].type, Operation.RECOMBINATION[0])
         self.assertEquals(c.operations.all()[0].fragment.indexed_fragment().sequence, cassette)
 
     def test_recombines_with_reverse_complement_cassette_correctly(self):

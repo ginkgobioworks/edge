@@ -26,6 +26,6 @@ class UserDefinedFragmentsTests(TestCase):
         f1 = Fragment.create_with_sequence('Bar', 'aacctaaaattataa')
         self.assertEquals(len(Fragment.user_defined_fragments()), 1)
         self.assertEquals(Fragment.user_defined_fragments()[0].id, f1.id)
-        op = Operation(type='Recombination', fragment=f1)
+        op = Operation(type=Operation.RECOMBINATION[0], fragment=f1)
         op.save()
         self.assertEquals(len(Fragment.user_defined_fragments()), 0)
