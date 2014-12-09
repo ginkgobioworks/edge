@@ -10,7 +10,8 @@ class Genome(models.Model, Genome_Updater):
         app_label = "edge"
 
     name = models.CharField(max_length=256)
-    parent = models.ForeignKey('self', null=True, on_delete=models.PROTECT)
+    parent = models.ForeignKey('self', null=True, on_delete=models.PROTECT,
+                               related_name='children')
     notes = models.TextField(null=True, blank=True)
     fragments = models.ManyToManyField(Fragment, through='Genome_Fragment')
     operations = models.ManyToManyField(Operation)

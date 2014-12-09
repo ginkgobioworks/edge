@@ -122,5 +122,4 @@ def blast_genome(genome, blast_program, query, evalue_threshold=0.001):
     results = blast(genome_db_name(genome), blast_program, query,
                     evalue_threshold=evalue_threshold)
     genome_fragment_ids = [f.id for f in genome.fragments.all()]
-    genome_fragment_ids.extend([op.fragment_id for op in genome.operations.all()])
     return [r for r in results if r.fragment_id in genome_fragment_ids]

@@ -9,10 +9,9 @@ class Operation(models.Model):
     # numerical values are stored in database, do not change unless you have a
     # plan for migrating data.
     RECOMBINATION = (1, 'Homologous Recombination')
-    PCR_SEQ_VERIFICATION = (2, 'PCR Product Sequence Verification')
-    CRISPR_CUT = (3, 'CRISPR Cut')
+    CRISPR_DSB = (2, 'CRISPR Double Stranded Break')
+    PCR_SEQ_VERIFICATION = (3, 'PCR Product Sequence Verification')
 
-    type = models.IntegerField(choices=(RECOMBINATION, PCR_SEQ_VERIFICATION, CRISPR_CUT))
+    type = models.IntegerField(choices=(RECOMBINATION, CRISPR_DSB, PCR_SEQ_VERIFICATION))
     notes = models.TextField(null=True, blank=True)
     params = models.TextField(null=True, blank=True)
-    fragment = models.ForeignKey(Fragment)

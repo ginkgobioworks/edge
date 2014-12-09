@@ -1,3 +1,4 @@
+import json
 from django.db import transaction
 from edge.blast import blast_genome
 from edge.models import Fragment, Operation
@@ -144,10 +145,8 @@ def recombine(genome, cassette, min_homology_arm_length,
     new_genome.notes = notes
     new_genome.save()
 
-    fragment = Fragment.create_with_sequence(name=cassette_name,
-                                             circular=False,
-                                             sequence=cassette)
-    op = Operation(type=Operation.RECOMBINATION[0], fragment=fragment)
+    params = dict(cassette=cassette, homology_arm_length=min_homology_arm_length)
+    op = Operation(type=Operation.RECOMBINATION[0], params=json.dumps(params))
     op.save()
     new_genome.operations.add(op)
 

@@ -216,9 +216,7 @@ class GenomeView(ViewBase):
             type_str = type_str[0]
         else:
             type_str = ''
-        d = dict(type=type_str, notes=op.notes)
-        if include_fragments:
-            d['fragment'] = FragmentView.to_dict(op.fragment)
+        d = dict(type=type_str, notes=op.notes, params=json.loads(op.params))
         return d
 
     @staticmethod
@@ -521,48 +519,40 @@ class GenomePcrView(ViewBase):
         return r, 200
 
 
-class GenomeModifyView(ViewBase):
+class GenomeCrisprDSBView(ViewBase):
     def on_post(self, request, genome_id):
+        from edge.crispr import find_crispr_target, crispr_dsb
+
         genome = get_genome_or_404(genome_id)
 
         parser = RequestParser()
-        parser.add_argument('operation', field_type=str, required=False,
+        parser.add_argument('guide', field_type=str, required=True,
                             default=None, location='json')
+        parser.add_argument('pam', field_type=str, required=True,
+                            default=None, location='json')
+        parser.add_argument('create', field_type=bool, required=True, location='json')
         parser.add_argument('genome_name', field_type=str, required=False,
                             default=None, location='json')
         parser.add_argument('notes', field_type=str, required=False,
                             default=None, location='json')
+
         args = parser.parse_args(request)
-        fragment_args = fragment_parser.parse_args(request)
-
-        operation = args['operation']
-        choices = Operation._meta.get_field_by_name('type')[0].choices
-        operation_value = None
-        for t in choices:
-            if t[1] == operation:
-                operation_value = t[0]
-        if operation_value is None:
-            return {}, 400
-
+        guide = args['guide']
+        pam = args['pam']
+        create = args['create']
         genome_name = args['genome_name']
         notes = args['notes']
 
-        # call #update to get a new genome, but perform no updating to any of
-        # the fragments
-        c = genome.update(name=genome_name, notes=notes)
-
-        if c is None:
-            return None, 400
+        if create is False:
+            r = find_crispr_target(genome, guide, pam)
+            return [x.to_dict() for x in r], 200
         else:
-            fragment = Fragment.create_with_sequence(name=fragment_args['name'],
-                                                     sequence=fragment_args['sequence'],
-                                                     circular=fragment_args['circular'])
-            op = Operation(type=operation_value, fragment=fragment)
-            op.save()
-            c.operations.add(op)
-
-            schedule_building_blast_db(c.id)
-            return GenomeView.to_dict(c), 201
+            c = crispr_dsb(genome, guide, pam, genome_name=genome_name, notes=notes)
+            if c is None:
+                return None, 400
+            else:
+                schedule_building_blast_db(c.id)
+                return GenomeView.to_dict(c), 201
 
 
 class GenomeRecombinationView(ViewBase):

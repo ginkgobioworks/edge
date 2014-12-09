@@ -21,11 +21,3 @@ class UserDefinedFragmentsTests(TestCase):
         f1.active = False
         f1.save()
         self.assertEquals(len(Fragment.user_defined_fragments()), 0)
-
-    def test_user_defined_fragments_does_not_include_fragment_from_operations(self):
-        f1 = Fragment.create_with_sequence('Bar', 'aacctaaaattataa')
-        self.assertEquals(len(Fragment.user_defined_fragments()), 1)
-        self.assertEquals(Fragment.user_defined_fragments()[0].id, f1.id)
-        op = Operation(type=Operation.RECOMBINATION[0], fragment=f1)
-        op.save()
-        self.assertEquals(len(Fragment.user_defined_fragments()), 0)

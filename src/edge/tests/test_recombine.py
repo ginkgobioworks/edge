@@ -1,4 +1,3 @@
-import re
 import os
 import json
 from Bio.Seq import Seq
@@ -107,7 +106,8 @@ class GenomeRecombinationTest(TestCase):
         c = recombine(g, cassette, arm_len)
         self.assertEquals(Operation.objects.count(), 1)
         self.assertEquals(c.operations.all()[0].type, Operation.RECOMBINATION[0])
-        self.assertEquals(c.operations.all()[0].fragment.indexed_fragment().sequence, cassette)
+        self.assertEquals(c.operations.all()[0].params,
+                          json.dumps(dict(cassette=cassette, homology_arm_length=arm_len)))
 
     def test_recombines_with_reverse_complement_cassette_correctly(self):
         upstream = "gagattgtccgcgtttt"
