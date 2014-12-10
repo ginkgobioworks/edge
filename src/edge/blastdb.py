@@ -23,6 +23,8 @@ def build_fragment_fasta(fragment):
         sequence = fragment.indexed_fragment().sequence
         # be really lenient, convert any unknown bp to N
         sequence = re.sub(r'[^agctnAGCTN]', 'n', sequence)
+        if fragment.circular is True:
+            sequence = sequence+sequence
         f = open(fn, 'w')
         f.write(">gnl|edge|%s %s\n%s\n" %
                 (Blast_Accession.make(fragment), fragment.name, sequence))

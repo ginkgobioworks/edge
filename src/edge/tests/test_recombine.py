@@ -46,6 +46,9 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(r[0].front_arm, front_bs[0:arm_len])
         self.assertEquals(r[0].back_arm, back_bs[-arm_len:])
 
+    def test_finding_swap_region_across_circular_boundary(self):
+        self.assertEquals(True, False)
+
     def test_finds_correct_region_for_swapping_with_reverse_complement_cassette(self):
         upstream = "gagattgtccgcgtttt"
         front_bs = "catagcgcacaggacgcggag"
@@ -108,6 +111,9 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(c.operations.all()[0].type, Operation.RECOMBINATION[0])
         self.assertEquals(c.operations.all()[0].params,
                           json.dumps(dict(cassette=cassette, homology_arm_length=arm_len)))
+
+    def test_recombine_across_circular_boundary(self):
+        self.assertEquals(True, False)
 
     def test_recombines_with_reverse_complement_cassette_correctly(self):
         upstream = "gagattgtccgcgtttt"

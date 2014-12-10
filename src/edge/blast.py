@@ -20,10 +20,15 @@ class Blast_Accession(object):
 
     @staticmethod
     def make(fragment):
-        return '%s' % fragment.id
+        return '%d/%d' % (fragment.id, fragment.indexed_fragment().length)
 
     def __init__(self, accession):
-        self.fragment_id = int(accession)
+        v = str(accession).split('/')
+        self.fragment_id = int(v[0])
+        if len(v) > 1:
+            self.fragment_length = int(v[1])
+        else:
+            self.fragment_length = None
 
     @property
     def fragment(self):
@@ -101,6 +106,15 @@ def blast(dbname, blast_program, query, evalue_threshold=0.001):
         for alignment in blast_record.alignments:
             accession = Blast_Accession(alignment.accession)
             for hsp in alignment.hsps:
+                if accession.fragment_length is not None:
+                    if hsp.sbjct_start > accession.fragment_length and \
+                       hsp.sbjct_end > accession.fragment_length:
+                        continue
+                    else:
+                        # XXX need to record strand
+                        hsp.sbjct_start = ((hsp.sbjct_start-1)%accession.fragment_length)+1
+                        hsp.sbjct_end = ((hsp.sbjct_end-1)%accession.fragment_length)+1
+
                 f = Blast_Result(fragment_id=accession.fragment_id,
                                  hit_def=alignment.hit_def,
                                  query_start=hsp.query_start,

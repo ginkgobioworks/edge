@@ -42,6 +42,9 @@ class GenomePcrTest(TestCase):
         self.assertEquals(r[3]['fragment_id'], g.fragments.all()[0].id)
         self.assertEquals(r[3]['region'], (len(upstream)+1, len(upstream+p1_bs+middle+p2_bs)))
 
+    def test_pcr_across_circular_boundary(self):
+        self.assertEquals(True, False)
+
     def test_pcr_produces_product_with_multiple_binding_sites_but_one_overlapping_region(self):
         p1_bs = "catagcgcacaggacgcggag"
         upstream = "gagattgtccgcgtttt"+str(Seq(p1_bs).reverse_complement())
