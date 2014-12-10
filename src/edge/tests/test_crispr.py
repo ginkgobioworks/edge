@@ -9,11 +9,11 @@ from Bio.Seq import Seq
 
 class GenomeCrisprDSBTest(TestCase):
 
-    def build_genome(self, *sequences):
+    def build_genome(self, circular, *sequences):
         g = Genome(name='Foo')
         g.save()
         for seq in sequences:
-            f = Fragment.create_with_sequence('Bar', seq, circular=True)
+            f = Fragment.create_with_sequence('Bar', seq, circular=circular)
             Genome_Fragment(genome=g, fragment=f, inherited=False).save()
             try:
                 os.unlink(fragment_fasta_fn(f))
@@ -26,7 +26,7 @@ class GenomeCrisprDSBTest(TestCase):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'
         s2 = 'gactaggtacgtagtcgtcaggtcagtca'
         pam = 'cgg'
-        g = self.build_genome(s1+pam+s2)
+        g = self.build_genome(False, s1+pam+s2)
         guide = s1[-20:]
         t = find_crispr_target(g, guide, 'ngg')
         self.assertEquals(len(t), 1)
@@ -36,11 +36,20 @@ class GenomeCrisprDSBTest(TestCase):
         self.assertEquals(t[0].target_end, len(s1))
         self.assertEquals(t[0].pam, 'ngg')
 
+    def test_find_crispr_target_only_finds_perfect_match_to_guide(self):
+        s1 = 'agaaggtctggtagcgatgtagtcgatct'
+        s2 = 'gactaggtacgtagtcgtcaggtcagtca'
+        pam = 'cgg'
+        g = self.build_genome(False, s1+pam+s2)
+        guide = 'aaaaa'+s1[-15:]
+        t = find_crispr_target(g, guide, 'ngg')
+        self.assertEquals(len(t), 0)
+
     def test_find_crispr_target_finds_target_on_reverse_strand(self):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'
         s2 = 'gactaggtacgtagtcgtcaggtcagtca'
         pam = 'cgg'
-        g = self.build_genome(str(Seq(s1+pam+s2).reverse_complement()))
+        g = self.build_genome(False, str(Seq(s1+pam+s2).reverse_complement()))
         guide = s1[-20:]
         t = find_crispr_target(g, guide, 'ngg')
         self.assertEquals(len(t), 1)
@@ -54,7 +63,7 @@ class GenomeCrisprDSBTest(TestCase):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'
         s2 = 'gactaggtacgtagtcgtcaggtcagtca'
         pam = 'cgg'
-        g = self.build_genome((s1+pam+s2)+str(Seq(s1+pam+s2).reverse_complement()))
+        g = self.build_genome(False, (s1+pam+s2)+str(Seq(s1+pam+s2).reverse_complement()))
         guide = s1[-20:]
         t = find_crispr_target(g, guide, 'ngg')
         self.assertEquals(len(t), 2)
@@ -73,7 +82,7 @@ class GenomeCrisprDSBTest(TestCase):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'
         s2 = 'gactaggtacgtagtcgtcaggtcagtca'
         pam = 'ccc'
-        g = self.build_genome(s1+pam+s2)
+        g = self.build_genome(False, s1+pam+s2)
         guide = s1[-20:]
         t = find_crispr_target(g, guide, 'ngg')
         self.assertEquals(len(t), 0)
@@ -82,7 +91,7 @@ class GenomeCrisprDSBTest(TestCase):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'
         s2 = 'gactaggtacgtagtcgtcaggtcagtca'
         pam = 'cgc'
-        g = self.build_genome(s1+pam+s2)
+        g = self.build_genome(False, s1+pam+s2)
         guide = s1[-20:]
         t = find_crispr_target(g, guide, 'ngg')
         self.assertEquals(len(t), 0)
@@ -91,17 +100,60 @@ class GenomeCrisprDSBTest(TestCase):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'
         s2 = 'gactaggtacgtagtcgtcaggtcagtca'
         pam = 'cgg'
-        s = s1[-10:]+pam+s2+s1[0:-10]
-        print s
-        print s1+pam+s2
-        g = self.build_genome(s)
+        s = s1[10:]+pam+s2+s1[0:10]
+        g = self.build_genome(True, s)
         guide = s1[-20:]
         t = find_crispr_target(g, guide, 'ngg')
         self.assertEquals(len(t), 1)
         self.assertEquals(t[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(t[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(t[0].target_start, s1.index(guide)+1)
-        self.assertEquals(t[0].target_end, len(s1))
+        self.assertEquals(t[0].target_start, (s1.index(guide)+1-10-1)%len(s)+1)
+        self.assertEquals(t[0].target_end, (len(s1)-10-1)%len(s)+1)
+        self.assertEquals(t[0].pam, 'ngg')
+
+    def test_find_crispr_target_finds_target_with_pam_across_circular_boundary(self):
+        s1 = 'agaaggtctggtagcgatgtagtcgatct'
+        s2 = 'gactaggtacgtagtcgtcaggtcagtca'
+        pam = 'cgg'
+        s = pam[1:]+s2+s1+pam[:1]
+        g = self.build_genome(True, s)
+        guide = s1[-20:]
+        t = find_crispr_target(g, guide, 'ngg')
+        self.assertEquals(len(t), 1)
+        self.assertEquals(t[0].fragment_id, g.fragments.all()[0].id)
+        self.assertEquals(t[0].fragment_name, g.fragments.all()[0].name)
+        self.assertEquals(t[0].target_start, len(pam[1:]+s2)+s1.index(guide)+1)
+        self.assertEquals(t[0].target_end, len(s)-1)
+        self.assertEquals(t[0].pam, 'ngg')
+
+    def test_find_crispr_target_finds_reverse_complement_across_circular_boundary(self):
+        s1 = 'agaaggtctggtagcgatgtagtcgatct'
+        s2 = 'gactaggtacgtagtcgtcaggtcagtca'
+        pam = 'cgg'
+        s = s1[10:]+pam+s2+s1[0:10]
+        g = self.build_genome(True, str(Seq(s).reverse_complement()))
+        guide = s1[-20:]
+        t = find_crispr_target(g, guide, 'ngg')
+        self.assertEquals(len(t), 1)
+        self.assertEquals(t[0].fragment_id, g.fragments.all()[0].id)
+        self.assertEquals(t[0].fragment_name, g.fragments.all()[0].name)
+        self.assertEquals(t[0].target_start, (len(s)-(s1.index(guide)+1-10))%len(s)+1)
+        self.assertEquals(t[0].target_end, (len(s)-(len(s1)-10))%len(s)+1)
+        self.assertEquals(t[0].pam, 'ngg')
+
+    def test_find_crispr_target_finds_reverse_complement_with_pam_across_circular_boundary(self):
+        s1 = 'agaaggtctggtagcgatgtagtcgatct'
+        s2 = 'gactaggtacgtagtcgtcaggtcagtca'
+        pam = 'cgg'
+        s = pam[1:]+s2+s1+pam[:1]
+        g = self.build_genome(True, str(Seq(s).reverse_complement()))
+        guide = s1[-20:]
+        t = find_crispr_target(g, guide, 'ngg')
+        self.assertEquals(len(t), 1)
+        self.assertEquals(t[0].fragment_id, g.fragments.all()[0].id)
+        self.assertEquals(t[0].fragment_name, g.fragments.all()[0].name)
+        self.assertEquals(t[0].target_end, 2)
+        self.assertEquals(t[0].target_start, 2+len(guide)-1)
         self.assertEquals(t[0].pam, 'ngg')
 
     def test_crispr_dsb_creates_operations(self):
