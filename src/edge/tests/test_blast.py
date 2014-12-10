@@ -41,6 +41,7 @@ class GenomeBlastTest(TestCase):
         self.assertEquals(r[0].query_end, 14)
         self.assertEquals(r[0].subject_start, 7)
         self.assertEquals(r[0].subject_end, 20)
+        self.assertEquals(r[0].strand(), 1)
 
     def test_aligns_sequence_to_antisense_strand(self):
         s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
@@ -63,6 +64,7 @@ class GenomeBlastTest(TestCase):
         self.assertEquals(r[0].query_end, 14)
         self.assertEquals(r[0].subject_start, 20)
         self.assertEquals(r[0].subject_end, 7)
+        self.assertEquals(r[0].strand(), -1)
 
     def test_aligns_sequence_across_boundry_for_circular_fragment(self):
         s1 = 'atcggtatctactatgcgtatgcgtcatgattatatatattagcggcatg'
@@ -93,7 +95,8 @@ class GenomeBlastTest(TestCase):
                 self.assertEquals(r.query_start, 1)
                 self.assertEquals(r.query_end, 20)
                 self.assertEquals(r.subject_start, len(s1)-10+1)
-                self.assertEquals(r.subject_end, 10)
+                self.assertEquals(r.subject_end, len(s1)+10)
+                self.assertEquals(r.fragment_length, len(s1))
                 self.assertEquals(r.strand(), 1)
                 found = True
                 break
@@ -130,20 +133,11 @@ class GenomeBlastTest(TestCase):
         build_all_genome_dbs(refresh=True)
 
         query = (s1[-10:]+s1[0:10])+'tttttttttt'
-        r = blast_genome(g1, 'blastn', query)
+        res = blast_genome(g1, 'blastn', query)
 
-        print [x.to_dict() for x in r]
-        self.assertEquals(len(r), 2)
-        self.assertEquals(r[0].fragment_id, f1.id)
-        self.assertEquals(r[0].query_start, 1)
-        self.assertEquals(r[0].query_end, 10)
-        self.assertEquals(r[0].subject_start, len(s1)-10)
-        self.assertEquals(r[0].subject_end, len(s1))
-        self.assertEquals(r[1].fragment_id, f1.id)
-        self.assertEquals(r[1].query_start, 11)
-        self.assertEquals(r[1].query_end, 20)
-        self.assertEquals(r[1].subject_start, 1)
-        self.assertEquals(r[1].subject_end, 10)
+        for r in res:
+            self.assertEquals(r.subject_start > 0 and r.subject_start < len(s1), True)
+            self.assertEquals(r.subject_end > 0 and r.subject_end < len(s1), True)
 
 
 class GenomeBlastAPITest(TestCase):

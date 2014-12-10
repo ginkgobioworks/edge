@@ -110,12 +110,16 @@ def blast(dbname, blast_program, query, evalue_threshold=0.001):
                     if hsp.sbjct_start > accession.fragment_length and \
                        hsp.sbjct_end > accession.fragment_length:
                         continue
-                    else:
-                        # XXX need to record strand
-                        hsp.sbjct_start = ((hsp.sbjct_start-1)%accession.fragment_length)+1
-                        hsp.sbjct_end = ((hsp.sbjct_end-1)%accession.fragment_length)+1
+                    # don't apply '% accession.fragment_length' to
+                    # sbjct_start/end. Blast_Result#strand compares sbjct_start
+                    # and sbjct_end to determine which strand the hit is on.
+                    # Caller should just handle when sbjct_start/end is greater
+                    # than fragment length. alternatively, we can store strand
+                    # explicit, but that also creates complexity when using
+                    # sbjct_start/end coordinates.
 
                 f = Blast_Result(fragment_id=accession.fragment_id,
+                                 fragment_length=accession.fragment_length,
                                  hit_def=alignment.hit_def,
                                  query_start=hsp.query_start,
                                  query_end=hsp.query_end,

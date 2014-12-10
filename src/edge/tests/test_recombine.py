@@ -9,11 +9,11 @@ from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 
 class GenomeRecombinationTest(TestCase):
 
-    def build_genome(self, *templates):
+    def build_genome(self, circular, *templates):
         g = Genome(name='Foo')
         g.save()
         for seq in templates:
-            f = Fragment.create_with_sequence('Bar', seq)
+            f = Fragment.create_with_sequence('Bar', seq, circular=circular)
             Genome_Fragment(genome=g, fragment=f, inherited=False).save()
             try:
                 os.unlink(fragment_fasta_fn(f))
@@ -34,7 +34,7 @@ class GenomeRecombinationTest(TestCase):
         cassette = ''.join([front_bs, replaced, back_bs])
 
         arm_len = min(len(front_bs), len(back_bs))
-        g = self.build_genome(template)
+        g = self.build_genome(False, template)
         r = find_swap_region(g, cassette, arm_len)
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
@@ -47,7 +47,79 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(r[0].back_arm, back_bs[-arm_len:])
 
     def test_finding_swap_region_across_circular_boundary(self):
-        self.assertEquals(True, False)
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        cassette = ''.join([front_bs, replaced, back_bs])
+        arm_len = min(len(front_bs), len(back_bs))
+
+        template = ''.join([middle[8:], back_bs, downstream, upstream, front_bs, middle[0:8]])
+        g = self.build_genome(True, template)
+
+        r = find_swap_region(g, cassette, arm_len)
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
+        self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
+        self.assertEquals(r[0].start, len(template)-8-len(front_bs)+1)
+        self.assertEquals(r[0].end, len(middle)-8+len(back_bs))
+        self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
+        self.assertEquals(r[0].cassette_reversed, False)
+        self.assertEquals(r[0].front_arm, front_bs[0:arm_len])
+        self.assertEquals(r[0].back_arm, back_bs[-arm_len:])
+
+    def test_finding_swap_region_when_front_arm_is_across_circular_boundary(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        cassette = ''.join([front_bs, replaced, back_bs])
+        arm_len = min(len(front_bs), len(back_bs))
+
+        template = ''.join([front_bs[8:], middle, back_bs, downstream, upstream, front_bs[0:8]])
+        g = self.build_genome(True, template)
+
+        r = find_swap_region(g, cassette, arm_len)
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
+        self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
+        self.assertEquals(r[0].start, len(template)-8+1)
+        self.assertEquals(r[0].end, len(front_bs+middle+back_bs)-8)
+        self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
+        self.assertEquals(r[0].cassette_reversed, False)
+        self.assertEquals(r[0].front_arm, front_bs[0:arm_len])
+        self.assertEquals(r[0].back_arm, back_bs[-arm_len:])
+
+    def test_finding_swap_region_when_back_arm_is_across_circular_boundary(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        cassette = ''.join([front_bs, replaced, back_bs])
+        arm_len = min(len(front_bs), len(back_bs))
+
+        template = ''.join([back_bs[8:], downstream, upstream, front_bs, middle, back_bs[0:8]])
+        g = self.build_genome(True, template)
+
+        r = find_swap_region(g, cassette, arm_len)
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
+        self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
+        self.assertEquals(r[0].start, len(back_bs)-8+len(downstream+upstream)+1)
+        self.assertEquals(r[0].end, len(back_bs)-8)
+        self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
+        self.assertEquals(r[0].cassette_reversed, False)
+        self.assertEquals(r[0].front_arm, front_bs[0:arm_len])
+        self.assertEquals(r[0].back_arm, back_bs[-arm_len:])
 
     def test_finds_correct_region_for_swapping_with_reverse_complement_cassette(self):
         upstream = "gagattgtccgcgtttt"
@@ -57,17 +129,93 @@ class GenomeRecombinationTest(TestCase):
         downstream = "gttaaggcgcgaacat"
         replaced = "aaaaaaaaaaaaaaaaaaa"
 
-        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
         cassette = str(Seq(''.join([front_bs, replaced, back_bs])).reverse_complement())
-
         arm_len = min(len(front_bs), len(back_bs))
-        g = self.build_genome(template)
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        g = self.build_genome(False, template)
+
         r = find_swap_region(g, cassette, arm_len)
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
         self.assertEquals(r[0].start, len(upstream)+1)
         self.assertEquals(r[0].end, len(template)-len(downstream))
+        self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
+        self.assertEquals(r[0].cassette_reversed, True)
+        self.assertEquals(r[0].front_arm, str(Seq(back_bs[-arm_len:]).reverse_complement()))
+        self.assertEquals(r[0].back_arm, str(Seq(front_bs[0:arm_len]).reverse_complement()))
+
+    def test_finding_reverse_complement_region_across_circular_boundary(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        cassette = str(Seq(''.join([front_bs, replaced, back_bs])).reverse_complement())
+        arm_len = min(len(front_bs), len(back_bs))
+
+        template = ''.join([middle[8:], back_bs, downstream, upstream, front_bs, middle[0:8]])
+        g = self.build_genome(True, template)
+
+        r = find_swap_region(g, cassette, arm_len)
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
+        self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
+        self.assertEquals(r[0].start, len(template)-8-len(front_bs)+1)
+        self.assertEquals(r[0].end, len(middle)-8+len(back_bs))
+        self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
+        self.assertEquals(r[0].cassette_reversed, True)
+        self.assertEquals(r[0].front_arm, str(Seq(back_bs[-arm_len:]).reverse_complement()))
+        self.assertEquals(r[0].back_arm, str(Seq(front_bs[0:arm_len]).reverse_complement()))
+
+    def test_finding_reverse_complement_region_when_front_arm_is_across_circular_boundary(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        cassette = str(Seq(''.join([front_bs, replaced, back_bs])).reverse_complement())
+        arm_len = min(len(front_bs), len(back_bs))
+
+        template = ''.join([front_bs[8:], middle, back_bs, downstream, upstream, front_bs[0:8]])
+        g = self.build_genome(True, template)
+
+        r = find_swap_region(g, cassette, arm_len)
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
+        self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
+        self.assertEquals(r[0].start, len(template)-8+1)
+        self.assertEquals(r[0].end, len(front_bs+middle+back_bs)-8)
+        self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
+        self.assertEquals(r[0].cassette_reversed, True)
+        self.assertEquals(r[0].front_arm, str(Seq(back_bs[-arm_len:]).reverse_complement()))
+        self.assertEquals(r[0].back_arm, str(Seq(front_bs[0:arm_len]).reverse_complement()))
+
+    def test_finding_reverse_complement_region_when_back_arm_is_across_circular_boundary(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        cassette = str(Seq(''.join([front_bs, replaced, back_bs])).reverse_complement())
+        arm_len = min(len(front_bs), len(back_bs))
+
+        template = ''.join([back_bs[8:], downstream, upstream, front_bs, middle, back_bs[0:8]])
+        g = self.build_genome(True, template)
+
+        r = find_swap_region(g, cassette, arm_len)
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
+        self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
+        self.assertEquals(r[0].start, len(back_bs)-8+len(downstream+upstream)+1)
+        self.assertEquals(r[0].end, len(back_bs)-8)
         self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
         self.assertEquals(r[0].cassette_reversed, True)
         self.assertEquals(r[0].front_arm, str(Seq(back_bs[-arm_len:]).reverse_complement()))
@@ -85,7 +233,7 @@ class GenomeRecombinationTest(TestCase):
         cassette = ''.join([front_bs, replaced, back_bs])
 
         arm_len = min(len(front_bs), len(back_bs))
-        g = self.build_genome(template)
+        g = self.build_genome(False, template)
         c = recombine(g, cassette, arm_len)
 
         self.assertNotEqual(g.id, c.id)
@@ -104,7 +252,7 @@ class GenomeRecombinationTest(TestCase):
         cassette = ''.join([front_bs, replaced, back_bs])
 
         arm_len = min(len(front_bs), len(back_bs))
-        g = self.build_genome(template)
+        g = self.build_genome(False, template)
         self.assertEquals(Operation.objects.count(), 0)
         c = recombine(g, cassette, arm_len)
         self.assertEquals(Operation.objects.count(), 1)
@@ -113,7 +261,61 @@ class GenomeRecombinationTest(TestCase):
                           json.dumps(dict(cassette=cassette, homology_arm_length=arm_len)))
 
     def test_recombine_across_circular_boundary(self):
-        self.assertEquals(True, False)
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        cassette = ''.join([front_bs, replaced, back_bs])
+        arm_len = min(len(front_bs), len(back_bs))
+
+        template = ''.join([middle[8:], back_bs, downstream, upstream, front_bs, middle[0:8]])
+        g = self.build_genome(True, template)
+        c = recombine(g, cassette, arm_len)
+
+        self.assertNotEqual(g.id, c.id)
+        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+                          ''.join([downstream, upstream, cassette]))
+
+    def test_recombine_when_front_arm_is_across_circular_boundary(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        cassette = ''.join([front_bs, replaced, back_bs])
+        arm_len = min(len(front_bs), len(back_bs))
+
+        template = ''.join([front_bs[8:], middle, back_bs, downstream, upstream, front_bs[0:8]])
+        g = self.build_genome(True, template)
+        c = recombine(g, cassette, arm_len)
+
+        self.assertNotEqual(g.id, c.id)
+        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+                          ''.join([downstream, upstream, cassette]))
+
+    def test_recombine_when_back_arm_is_across_circular_boundary(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        cassette = ''.join([front_bs, replaced, back_bs])
+        arm_len = min(len(front_bs), len(back_bs))
+
+        template = ''.join([back_bs[8:], downstream, upstream, front_bs, middle, back_bs[0:8]])
+        g = self.build_genome(True, template)
+        c = recombine(g, cassette, arm_len)
+
+        self.assertNotEqual(g.id, c.id)
+        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+                          ''.join([downstream, upstream, cassette]))
 
     def test_recombines_with_reverse_complement_cassette_correctly(self):
         upstream = "gagattgtccgcgtttt"
@@ -127,7 +329,7 @@ class GenomeRecombinationTest(TestCase):
         cassette = str(Seq(''.join([front_bs, replaced, back_bs])).reverse_complement())
 
         arm_len = min(len(front_bs), len(back_bs))
-        g = self.build_genome(template)
+        g = self.build_genome(False, template)
         c = recombine(g, cassette, arm_len)
 
         self.assertNotEqual(g.id, c.id)
@@ -146,7 +348,7 @@ class GenomeRecombinationTest(TestCase):
         cassette = ''.join([front_bs, replaced, back_bs])
 
         arm_len = min(len(front_bs), len(back_bs))
-        g = self.build_genome(template)
+        g = self.build_genome(False, template)
 
         res = self.client.post('/edge/genomes/%s/recombination/' % g.id,
                                data=json.dumps(dict(cassette=cassette,
@@ -177,7 +379,7 @@ class GenomeRecombinationTest(TestCase):
         cassette = ''.join([front_bs, replaced, back_bs])
 
         arm_len = min(len(front_bs), len(back_bs))
-        g = self.build_genome(template)
+        g = self.build_genome(False, template)
 
         res = self.client.post('/edge/genomes/%s/recombination/' % g.id,
                                data=json.dumps(dict(cassette=cassette,

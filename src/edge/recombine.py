@@ -48,25 +48,38 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
        back_arm_blastres.alignment_length() < len(back_arm_sequence)-MAX_MISSING_BP:
         return None
 
+    fragment = front_arm_blastres.fragment.indexed_fragment()
+
     # must align in the right orientation
-    if front_arm_blastres.subject_start > front_arm_blastres.subject_end:
+    if front_arm_blastres.strand() < 0:
         # aligns to antisense strand
-        if back_arm_blastres.subject_start > front_arm_blastres.subject_end:
+        if back_arm_blastres.subject_start > front_arm_blastres.subject_end and\
+           fragment.circular is False:
             return None
         region_start = back_arm_blastres.subject_end
         region_end = front_arm_blastres.subject_start
         is_reversed = True
     else:
         # aligns to sense strand
-        if back_arm_blastres.subject_start < front_arm_blastres.subject_end:
+        if back_arm_blastres.subject_start < front_arm_blastres.subject_end and\
+           fragment.circular is False:
             return None
         region_start = front_arm_blastres.subject_start
         region_end = back_arm_blastres.subject_end
         is_reversed = False
 
     # get sequence between arms, including arm
-    fragment = front_arm_blastres.fragment.indexed_fragment()
-    region = fragment.get_sequence(bp_lo=region_start, bp_hi=region_end)
+    region_start = ((region_start-1)%fragment.length)+1
+    region_end = ((region_end-1)%fragment.length)+1
+    
+    if region_end < region_start:
+        assert fragment.circular is True
+        region_p1 = fragment.get_sequence(bp_lo=region_start)
+        region_p2 = fragment.get_sequence(bp_hi=region_end)
+        region = region_p1+region_p2
+
+    else:
+        region = fragment.get_sequence(bp_lo=region_start, bp_hi=region_end)
 
     return RecombinationRegion(fragment.id,
                                fragment.name,
@@ -122,24 +135,34 @@ def recombine(genome, cassette, min_homology_arm_length,
         return None
 
     new_genome = genome.update()
+    region = regions[0]
+    region_start = region.start
+    region_end = region.end
 
     new_fragment_id = None
-    with new_genome.update_fragment_by_fragment_id(regions[0].fragment_id) as f:
+    with new_genome.update_fragment_by_fragment_id(region.fragment_id) as f:
         new_region = cassette
-        if regions[0].cassette_reversed:
+        if region.cassette_reversed:
             new_region = str(Seq(new_region).reverse_complement())
-        f.replace_bases(regions[0].start, regions[0].end-regions[0].start+1, new_region)
+
+        if region_start < region_end:
+            f.replace_bases(region_start, region_end-region_start+1, new_region)
+        else:
+            assert f.circular is True
+            f.replace_bases(region_start, f.length-region_start+1, new_region)
+            f.remove_bases(1, region_end)
+
         new_fragment_id = f.id
 
     cassette_name = 'Recombination cassette' if cassette_name is None else cassette_name
     with new_genome.annotate_fragment_by_fragment_id(new_fragment_id) as f:
-        f.annotate(regions[0].start, regions[0].start+len(new_region)-1,
+        f.annotate(region_start, region_start+len(new_region)-1,
                    cassette_name, 'feature', 1)
 
     if genome_name is None or genome_name.strip() == "":
         genome_name = "%s recombined %d-%d with %d bps" % (genome.name,
-                                                           regions[0].start,
-                                                           regions[0].end,
+                                                           region.start,
+                                                           region.end,
                                                            len(cassette))
     new_genome.name = genome_name
     new_genome.notes = notes

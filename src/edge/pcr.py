@@ -10,6 +10,8 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
 
     MIN_IDENTITIES = 0.90
     MIN_BINDING_LENGTH = 10
+    # probably an over-estimation, for misdirected primers on circular genome
+    MAX_PCR_SIZE = 50000
 
     # primers must be on the same fragment
     if primer_a_blastres.fragment_id != primer_b_blastres.fragment_id:
@@ -52,19 +54,39 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
        primer_b_blastres.alignment_length() < MIN_BINDING_LENGTH:
         return None
 
-    # cannot produce product if elongated regions do not overlap
-    if fwd_primer_res.subject_end >= rev_primer_res.subject_end:
+    fragment = primer_a_blastres.fragment.indexed_fragment()
+
+    # cannot produce product if elongated regions do not overlap. if we are on
+    # a circular fragment, there will always be overlaps.
+    if fwd_primer_res.subject_end >= rev_primer_res.subject_end and \
+       fragment.circular is False:
         return None
 
     # get sequence between primers
-    fragment = primer_a_blastres.fragment.indexed_fragment()
     bp_lo = fwd_primer_res.subject_end+1
     bp_hi = rev_primer_res.subject_end-1
-    product_mid = fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
+
+    bp_lo = ((bp_lo-1)%fragment.length)+1
+    bp_hi = ((bp_hi-1)%fragment.length)+1
+
+    if bp_hi < bp_lo:
+        assert fragment.circular is True
+        product_mid_p1 = fragment.get_sequence(bp_lo=bp_lo)
+        product_mid_p2 = fragment.get_sequence(bp_hi=bp_hi)
+        product_mid = product_mid_p1+product_mid_p2
+        if len(product_mid) > MAX_PCR_SIZE:
+            return None
+    else:
+        product_mid = fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
+
     product = '%s%s%s' % (fwd_primer, product_mid, str(Seq(rev_primer).reverse_complement()))
 
-    bs_start = bp_lo-(fwd_primer_res.query_end-fwd_primer_res.query_start+1)
-    bs_end = bp_hi+(rev_primer_res.query_end-rev_primer_res.query_start+1)
+    bs_start = fwd_primer_res.subject_end+1-\
+               (fwd_primer_res.query_end-fwd_primer_res.query_start+1)
+    bs_end = rev_primer_res.subject_end-1+\
+             (rev_primer_res.query_end-rev_primer_res.query_start+1)
+    bs_start = ((bs_start-1)%fragment.length)+1
+    bs_end = ((bs_end-1)%fragment.length)+1
 
     return (product, dict(fragment=fragment, region=(bs_start, bs_end)))
 
@@ -85,12 +107,16 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     primer_b_results = blast_genome(genome, 'blastn', primer_b_sequence)
 
     pcr_products = []
+    uniq_products = {}
     for a_res in primer_a_results:
         for b_res in primer_b_results:
             product = compute_pcr_product(primer_a_sequence, a_res,
                                           primer_b_sequence, b_res)
             if product is not None:
-                pcr_products.append(product)
+                k = (product[0], a_res.fragment_id)
+                if k not in uniq_products:
+                    pcr_products.append(product)
+                    uniq_products[k] = product
 
     if len(pcr_products) == 1:
         product = pcr_products[0][0]
