@@ -168,6 +168,9 @@ class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_U
         for fcl in q:
             yield fcl.chunk
 
+    def circ_bp(self, bp):
+        return ((bp-1)%self.length)+1
+
     @property
     def length(self):
         q = self.fragment_chunk_location_set.order_by('-base_last')[:1]

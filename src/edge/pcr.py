@@ -66,8 +66,8 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
     bp_lo = fwd_primer_res.subject_end+1
     bp_hi = rev_primer_res.subject_end-1
 
-    bp_lo = ((bp_lo-1)%fragment.length)+1
-    bp_hi = ((bp_hi-1)%fragment.length)+1
+    bp_lo = fragment.circ_bp(bp_lo)
+    bp_hi = fragment.circ_bp(bp_hi)
 
     if bp_hi < bp_lo:
         assert fragment.circular is True
@@ -85,8 +85,9 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
                (fwd_primer_res.query_end-fwd_primer_res.query_start+1)
     bs_end = rev_primer_res.subject_end-1+\
              (rev_primer_res.query_end-rev_primer_res.query_start+1)
-    bs_start = ((bs_start-1)%fragment.length)+1
-    bs_end = ((bs_end-1)%fragment.length)+1
+
+    bs_start = fragment.circ_bp(bs_start)
+    bs_end = fragment.circ_bp(bs_end)
 
     return (product, dict(fragment=fragment, region=(bs_start, bs_end)))
 

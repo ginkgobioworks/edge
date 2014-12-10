@@ -69,8 +69,8 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
         is_reversed = False
 
     # get sequence between arms, including arm
-    region_start = ((region_start-1)%fragment.length)+1
-    region_end = ((region_end-1)%fragment.length)+1
+    region_start = fragment.circ_bp(region_start)
+    region_end = fragment.circ_bp(region_end)
     
     if region_end < region_start:
         assert fragment.circular is True
