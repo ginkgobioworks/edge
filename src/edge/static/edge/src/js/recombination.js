@@ -15,7 +15,6 @@ function GenomeRecombinationController($scope, $routeParams, $http, $location) {
                                    create: false});
         $http.post('/edge/genomes/'+$scope.genomeId+'/recombination/', data)
              .success(function(data) {
-                          console.log(data);
                           $scope.regions = data;
                       })
              .error(function(data, status, headers, config) { $scope.errors = data; });
@@ -29,7 +28,6 @@ function GenomeRecombinationController($scope, $routeParams, $http, $location) {
                                    create: true});
         $http.post('/edge/genomes/'+$scope.genomeId+'/recombination/', data)
              .success(function(genome) {
-                 console.log(genome);
                  var url = '/genomes/'+genome.id+'/';
                  $location.path(url);
              })

@@ -636,7 +636,6 @@ function GenomePcrController($scope, $routeParams, $http) {
         var data = JSON.stringify({primers: [primer_a, primer_b]});
         $http.post('/edge/genomes/'+$scope.genomeId+'/pcr/', data)
              .success(function(results) {
-                 console.log(results);
                  $scope.results = results;
              })
              .error(function(data, status, headers, config) { $scope.errors = data; });
@@ -662,7 +661,6 @@ function GenomeRecombinationController($scope, $routeParams, $http, $location) {
                                    create: false});
         $http.post('/edge/genomes/'+$scope.genomeId+'/recombination/', data)
              .success(function(data) {
-                          console.log(data);
                           $scope.regions = data;
                       })
              .error(function(data, status, headers, config) { $scope.errors = data; });
@@ -676,7 +674,6 @@ function GenomeRecombinationController($scope, $routeParams, $http, $location) {
                                    create: true});
         $http.post('/edge/genomes/'+$scope.genomeId+'/recombination/', data)
              .success(function(genome) {
-                 console.log(genome);
                  var url = '/genomes/'+genome.id+'/';
                  $location.path(url);
              })

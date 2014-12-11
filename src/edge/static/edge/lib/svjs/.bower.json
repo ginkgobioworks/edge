@@ -13,11 +13,11 @@
     "underscore": "1.6.0"
   },
   "homepage": "https://github.com/benjiec/svjs",
-  "_release": "3766a61084",
+  "_release": "35333aa1cc",
   "_resolution": {
     "type": "branch",
     "branch": "master",
-    "commit": "3766a6108469233c766f79c50755c02e456e95e0"
+    "commit": "35333aa1cc937a401e63f70c2487e106a0af8d62"
   },
   "_source": "git://github.com/benjiec/svjs.git",
   "_target": "master",

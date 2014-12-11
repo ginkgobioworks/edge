@@ -1,5 +1,13 @@
 window.SvJs = function ($, selector) {
-    $('<table></table>').addClass('svjs').appendTo($(selector));
+    var container = $('<div></div>');
+    $(selector).append(container);
+
+    var show_hide_bps = $('<a>Toggle bps</a>').on('click', function() {
+        $('table td.sequence-pos', container).toggle();
+    });
+    container.append($('<p></p>').append(show_hide_bps));
+
+    $('<table></table>').addClass('svjs').appendTo(container);
 
     function clear() {
         $('table', selector).empty();
@@ -17,7 +25,7 @@ window.SvJs = function ($, selector) {
                     _.map(annotation_list[bpi], function(a) {
                         var tr = $(tr_html);
                         // empty td for bp number
-                        tr.append('<td></td>');
+                        tr.append('<td class="sequence-pos"></td>');
                         if (bpi > 0) { tr.append('<td colspan="'+bpi+'"></td>'); }
                         var td = $('<td></td>');
                         var c = '&gt;';
@@ -32,7 +40,7 @@ window.SvJs = function ($, selector) {
                             tr.append('<td colspan="'+(row.length-bpi-1)+'"></td>');
                         }
                         // empty td for bp number
-                        tr.append('<td></td>');
+                        tr.append('<td class="sequence-pos"></td>');
                         tr_list.push(tr);
                     });
                 }

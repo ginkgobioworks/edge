@@ -8,7 +8,6 @@ function GenomePcrController($scope, $routeParams, $http) {
         var data = JSON.stringify({primers: [primer_a, primer_b]});
         $http.post('/edge/genomes/'+$scope.genomeId+'/pcr/', data)
              .success(function(results) {
-                 console.log(results);
                  $scope.results = results;
              })
              .error(function(data, status, headers, config) { $scope.errors = data; });

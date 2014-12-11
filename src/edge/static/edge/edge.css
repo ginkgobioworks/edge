@@ -46,3 +46,4 @@ div.alignment { font-family: courier; font-size: 0.8em; }
 div.alignment div { white-space: nowrap; }
 
 #sequence-viewer { margin-top: 20px; }
+.op-params { word-break: break-all; font-family: courier; }
