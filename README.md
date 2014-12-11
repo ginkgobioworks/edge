@@ -1,35 +1,12 @@
-
 ## Edge
 
-Edge keeps structural changes between a parent genome and its derived genomes.
-Users create derived genomes by making sequence changes to the parent genome.
-Derived genomes inherit annotations and fixes from their ancestors
-automatically.
+Edge keeps structural changes between a genome and child genomes derived from it. A user creates a modified genome by applying a sequence based operation, such as homologous recombination, to a parent genome. Users can annotate or make corrections to sequences on a genome; Edge automatically applies the changes to the appropriate regions on the derived genomes. Edge does this efficiently: making a change on a parent genome takes O(1), and is automatically propagated to the modified genomes.
 
+Edge uses O(D) amount of storage for each modified genome, where D is the number of differences between a modified genome and its parent. The current implementation additionally keeps a cache of annotations to base pair numbers, but this cache is soft-data and is invalidated and re-built on demand.
 
-### Why?
+A modified genome can be re-created by re-applying operations to a new genome (think git rebase). Currently, however, annotating a genome is not an operation.
 
-Edge allows derived genomes to inherit annotations and changes to their
-ancestors, even annotations and changes applied to an ancestor after the
-creation of the derived genome. Edge does this efficiently: a change
-(annotation or sequence change) to a parent genome takes O(1), and is
-automatically propagated to genomes derived from the modified genome.
-
-Edge uses O(D) amount of storage for each derived genome, where D is the number
-of differences between the derived genome and its parent. The current
-implementation additionally keeps a cache of annotations to base pair numbers,
-but this cache is soft-data and is invalidated and re-built on demand.
-
-
-### What Edge is NOT
-
-Edge is not a genome sequence analyzer or viewer. There are much better tools
-for those purposes. Edge's main goal is to keep track of genomic changes across
-lineages in a structured fashion, so users can annotation, fix, and compare
-genome sequences and features. While Edge comes with a simple viewer UI to look
-at features and sequences, the UI is primitive. Edge does provide tools to
-export genome sequences and annotations as GFF files.
-
+Edge provides UIs to look at operations and changes, and APIs for making changes. Edge can export genome sequences and annotations as GFF files.  While Edge comes with a simple UI for browsing features and sequences, the UI is primitive compared to other specialized applications. 
 
 ### Try it
 
