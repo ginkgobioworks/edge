@@ -92,60 +92,37 @@ def find_crispr_target(genome, guide, pam):
 
 
 @transaction.atomic()
-def crispr_dsb(genome, guide, pam, cut_bps_before_pam, genome_name=None, notes=None):
+def crispr_dsb(genome, guide, pam, genome_name=None, notes=None):
 
     targets = find_crispr_target(genome, guide, pam)
 
     if len(targets) == 0:
         return None
 
-    # we update 2 bases around the CRISPR cut site to Ns, to denote the
-    # mutagenic nature of the repair
-    bases_to_update = 2
+    if genome_name is None or genome_name.strip() == "":
+        genome_name = "%s after CRISPR-Cas9 wt (double stranded break) using guide %s"\
+                      % (genome.name, guide)
 
     new_genome = genome.update()
-    for target in targets:
-        if target.strand > 0:
-            repair_bp1 = target.subject_end-cut_bps_before_pam
-            repair_bp2 = repair_bp1+bases_to_update-1
-        else:
-            repair_bp1 = target.subject_end+cut_bps_before_pam-1
-            repair_bp2 = repair_bp1+bases_to_update-1
-
-        fragment = genome.fragments.filter(id=target.fragment_id)[0].indexed_fragment()
-        repair_bp1 = fragment.circ_bp(repair_bp1)
-        repair_bp2 = fragment.circ_bp(repair_bp2)
-        new_fragment_id = None
-
-        with new_genome.update_fragment_by_fragment_id(target.fragment_id) as f:
-            if repair_bp1 < repair_bp2:
-                f.replace_bases(repair_bp1, bases_to_update, 'N'*bases_to_update)
-            else:
-                assert f.circular is True
-                n = f.length-repair_bp1+1
-                f.replace_bases(repair_bp1, n, 'N'*n)
-                f.replace_bases(1, repair_bp2, 'N'*repair_bp2)
-
-            new_fragment_id = f.id
-
-        with new_genome.annotate_fragment_by_fragment_id(new_fragment_id) as f:
-            if repair_bp1 < repair_bp2:
-                f.annotate(repair_bp1, repair_bp2, 'CRISPR DSB repair', 'feature', target.strand)
-            else:
-                n = f.length-repair_bp1+1
-                f.annotate(repair_bp1, n, 'CRISPR DSB repair', 'feature', target.strand)
-                f.annotate(1, repair_bp2, 'CRISPR DSB repair', 'feature', target.strand)
-
-    if genome_name is None or genome_name.strip() == "":
-        genome_name = "%s with CRISPR DSB repair, using guide %s" % (genome.name, guide)
-
     new_genome.name = genome_name
     new_genome.notes = notes
     new_genome.save()
 
     params = dict(guide=guide, pam=pam)
-    op = Operation(type=Operation.CRISPR_DSB[0], params=json.dumps(params))
+    op = Operation(genome=new_genome, type=Operation.CRISPR_DSB[0], params=json.dumps(params))
     op.save()
-    new_genome.operations.add(op)
+
+    for target in targets:
+        if target.strand > 0:
+            annotation_start = target.subject_start
+            annotation_end = target.subject_end
+        else:
+            annotation_start = target.subject_end
+            annotation_end = target.subject_start
+
+        with new_genome.annotate_fragment_by_fragment_id(target.fragment_id) as f:
+            feature = 'CRISPR-Cas9 (pam %s) target' % pam
+            f.annotate(annotation_start, annotation_end, feature,
+                       'event', target.strand, operation=op)
 
     return new_genome

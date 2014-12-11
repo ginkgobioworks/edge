@@ -106,6 +106,7 @@ class Feature(models.Model):
     type = models.CharField(max_length=100)
     strand = models.IntegerField(null=True)
     length = models.IntegerField()
+    operation = models.ForeignKey('Operation', null=True)
     _qualifiers = models.TextField(null=True, db_column='qualifiers')
 
     def set_qualifiers(self, qualifiers):

@@ -169,7 +169,7 @@ class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_U
             yield fcl.chunk
 
     def circ_bp(self, bp):
-        return ((bp-1)%self.length)+1
+        return ((bp-1) % self.length)+1
 
     @property
     def length(self):

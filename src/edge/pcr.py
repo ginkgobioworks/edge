@@ -81,9 +81,9 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
 
     product = '%s%s%s' % (fwd_primer, product_mid, str(Seq(rev_primer).reverse_complement()))
 
-    bs_start = fwd_primer_res.subject_end+1-\
+    bs_start = (fwd_primer_res.subject_end+1) -\
                (fwd_primer_res.query_end-fwd_primer_res.query_start+1)
-    bs_end = rev_primer_res.subject_end-1+\
+    bs_end = (rev_primer_res.subject_end-1) +\
              (rev_primer_res.query_end-rev_primer_res.query_start+1)
 
     bs_start = fragment.circ_bp(bs_start)

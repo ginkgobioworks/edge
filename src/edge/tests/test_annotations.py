@@ -5,6 +5,7 @@ from edge.models import *
 class AnnotationsTest(TestCase):
 
     def setUp(self):
+        self.genome = Genome.create('Test')
         self.root_sequence = 'agttcgaggctga'
         self.root = Fragment.create_with_sequence('Foo', self.root_sequence)
 
@@ -31,6 +32,13 @@ class AnnotationsTest(TestCase):
         self.assertEquals(self.root.annotations()[1].feature.name, 'A2')
         self.assertEquals(self.root.annotations()[1].feature_base_first, 1)
         self.assertEquals(self.root.annotations()[1].feature_base_last, 3)
+
+    def test_annotate_with_operation(self):
+        op = Operation(genome=self.genome, type=Operation.RECOMBINATION[0])
+        op.save()
+        self.root.annotate(1, 3, 'A1', 'gene', 1, operation=op)
+        self.assertEquals(len(self.root.annotations()), 1)
+        self.assertEquals(self.root.annotations()[0].feature.operation, op)
 
     def test_annotate_multiple_chunks(self):
         u = self.root.update('Bar')

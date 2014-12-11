@@ -256,11 +256,39 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(Operation.objects.count(), 0)
         c = recombine(g, cassette, arm_len)
         self.assertEquals(Operation.objects.count(), 1)
-        self.assertEquals(c.operations.all()[0].type, Operation.RECOMBINATION[0])
-        self.assertEquals(c.operations.all()[0].params,
+        self.assertEquals(c.operation_set.all()[0].type, Operation.RECOMBINATION[0])
+        self.assertEquals(c.operation_set.all()[0].params,
                           json.dumps(dict(cassette=cassette, homology_arm_length=arm_len)))
 
-    def test_recombine_across_circular_boundary(self):
+    def test_annotates_cassette(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = ''.join([front_bs, replaced, back_bs])
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+
+        a = g.fragments.all()[0].indexed_fragment().annotations()
+        self.assertEquals(len(a), 0)
+
+        c = recombine(g, cassette, arm_len)
+
+        a = c.fragments.all()[0].indexed_fragment().annotations()
+        self.assertEquals(len(a), 1)
+        self.assertEquals(a[0].base_first, len(upstream)+1)
+        self.assertEquals(a[0].base_last, len(upstream+cassette))
+        self.assertEquals(a[0].feature_base_first, 1)
+        self.assertEquals(a[0].feature_base_last, len(cassette))
+        self.assertEquals(a[0].feature.strand, 1)
+        self.assertEquals(a[0].feature.operation.type, Operation.RECOMBINATION[0])
+        self.assertEquals(a[0].feature.operation.genome, c)
+
+    def test_integrates_and_annotates_cassette_across_circular_boundary(self):
         upstream = "gagattgtccgcgtttt"
         front_bs = "catagcgcacaggacgcggag"
         middle = "cggcacctgtgagccg"
@@ -278,6 +306,16 @@ class GenomeRecombinationTest(TestCase):
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
                           ''.join([downstream, upstream, cassette]))
+
+        a = c.fragments.all()[0].indexed_fragment().annotations()
+        self.assertEquals(len(a), 1)
+        self.assertEquals(a[0].base_first, len(downstream+upstream)+1)
+        self.assertEquals(a[0].base_last, len(downstream+upstream+cassette))
+        self.assertEquals(a[0].feature_base_first, 1)
+        self.assertEquals(a[0].feature_base_last, len(cassette))
+        self.assertEquals(a[0].feature.strand, 1)
+        self.assertEquals(a[0].feature.operation.type, Operation.RECOMBINATION[0])
+        self.assertEquals(a[0].feature.operation.genome, c)
 
     def test_recombine_when_front_arm_is_across_circular_boundary(self):
         upstream = "gagattgtccgcgtttt"

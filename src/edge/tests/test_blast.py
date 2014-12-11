@@ -101,7 +101,7 @@ class GenomeBlastTest(TestCase):
                 found = True
                 break
         self.assertEquals(found, True)
- 
+
     def test_does_not_return_duplicate_hits_for_circular_fragments(self):
         s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
         g1 = Genome(name='Foo')

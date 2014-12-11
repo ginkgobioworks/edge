@@ -239,7 +239,7 @@ class GenomeView(ViewBase):
 
         operations = []
         if include_operations:
-            for op in genome.operations.all():
+            for op in genome.operation_set.all():
                 d = GenomeView.op_to_dict(op, include_fragments)
                 operations.append(d)
 

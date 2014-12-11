@@ -57,7 +57,8 @@ class GenomePcrTest(TestCase):
         self.assertEquals(r[0], ''.join([p1, middle, str(Seq(p2).reverse_complement())]))
         self.assertEquals(r[3]['fragment_name'], g.fragments.all()[0].name)
         self.assertEquals(r[3]['fragment_id'], g.fragments.all()[0].id)
-        self.assertEquals(r[3]['region'], (len(template)-10-len(p1_bs)+1, len(middle)-10+len(p2_bs)))
+        self.assertEquals(r[3]['region'],
+                          (len(template)-10-len(p1_bs)+1, len(middle)-10+len(p2_bs)))
 
     def test_finds_pcr_product_when_fwd_primer_is_across_circular_boundary(self):
         upstream = "gagattgtccgcgtttt"

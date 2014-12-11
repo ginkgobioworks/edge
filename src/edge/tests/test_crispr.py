@@ -107,8 +107,8 @@ class GenomeCrisprDSBTest(TestCase):
         self.assertEquals(len(t), 1)
         self.assertEquals(t[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(t[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(t[0].subject_start, (s1.index(guide)+1-10-1)%len(s)+1)
-        self.assertEquals(t[0].subject_end, (len(s1)-10-1)%len(s)+1)
+        self.assertEquals(t[0].subject_start, (s1.index(guide)+1-10-1) % len(s)+1)
+        self.assertEquals(t[0].subject_end, (len(s1)-10-1) % len(s)+1)
         self.assertEquals(t[0].pam, 'ngg')
 
     def test_find_crispr_target_finds_target_with_pam_across_circular_boundary(self):
@@ -137,8 +137,8 @@ class GenomeCrisprDSBTest(TestCase):
         self.assertEquals(len(t), 1)
         self.assertEquals(t[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(t[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(t[0].subject_start, (len(s)-(s1.index(guide)+1-10))%len(s)+1)
-        self.assertEquals(t[0].subject_end, (len(s)-(len(s1)-10))%len(s)+1)
+        self.assertEquals(t[0].subject_start, (len(s)-(s1.index(guide)+1-10)) % len(s)+1)
+        self.assertEquals(t[0].subject_end, (len(s)-(len(s1)-10)) % len(s)+1)
         self.assertEquals(t[0].pam, 'ngg')
 
     def test_find_crispr_target_finds_reverse_complement_with_pam_across_circular_boundary(self):
@@ -163,13 +163,12 @@ class GenomeCrisprDSBTest(TestCase):
         g = self.build_genome(False, s1+pam+s2)
         guide = s1[-20:]
 
-        c = crispr_dsb(g, guide, 'ngg', 3)
+        a = g.fragments.all()[0].indexed_fragment().annotations()
+        self.assertEquals(len(a), 0)
+
+        c = crispr_dsb(g, guide, 'ngg')
         self.assertNotEquals(c.id, g.id)
         self.assertEquals(c.parent.id, g.id)
-
-        a = g.fragments.all()[0].indexed_fragment().annotations()
-        # XXX
-        # self.assertEquals(len(a), 0)
 
         a = c.fragments.all()[0].indexed_fragment().annotations()
         self.assertEquals(len(a), 1)
@@ -178,7 +177,14 @@ class GenomeCrisprDSBTest(TestCase):
         self.assertEquals(a[0].feature_base_first, 1)
         self.assertEquals(a[0].feature_base_last, len(guide))
         self.assertEquals(a[0].feature.strand, 1)
-        self.assertEquals(a[0].feature.name, 'CRISPR DSB target')
+        self.assertEquals(a[0].feature.name, 'CRISPR-Cas9 (pam ngg) target')
+        self.assertEquals(a[0].feature.operation.type, Operation.CRISPR_DSB[0])
+        self.assertEquals(a[0].feature.operation.genome, c)
+
+        # annotation is visible in parent genome, since it's not on new base pairs
+        a = g.fragments.all()[0].indexed_fragment().annotations()
+        self.assertEquals(len(a), 1)
+        self.assertEquals(a[0].feature.operation.genome, c)
 
     def test_crispr_dsb_finds_and_annotates_target_on_reverse_strand(self):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'
@@ -187,13 +193,9 @@ class GenomeCrisprDSBTest(TestCase):
         g = self.build_genome(False, str(Seq(s1+pam+s2).reverse_complement()))
         guide = s1[-20:]
 
-        c = crispr_dsb(g, guide, 'ngg', 3)
+        c = crispr_dsb(g, guide, 'ngg')
         self.assertNotEquals(c.id, g.id)
         self.assertEquals(c.parent.id, g.id)
-
-        a = g.fragments.all()[0].indexed_fragment().annotations()
-        # XXX
-        # self.assertEquals(len(a), 0)
 
         a = c.fragments.all()[0].indexed_fragment().annotations()
         self.assertEquals(len(a), 1)
@@ -202,7 +204,9 @@ class GenomeCrisprDSBTest(TestCase):
         self.assertEquals(a[0].feature_base_first, 1)
         self.assertEquals(a[0].feature_base_last, len(guide))
         self.assertEquals(a[0].feature.strand, -1)
-        self.assertEquals(a[0].feature.name, 'CRISPR DSB target')
+        self.assertEquals(a[0].feature.name, 'CRISPR-Cas9 (pam ngg) target')
+        self.assertEquals(a[0].feature.operation.type, Operation.CRISPR_DSB[0])
+        self.assertEquals(a[0].feature.operation.genome, c)
 
     def test_crispr_dsb_finds_and_annotates_target_across_circular_boundary(self):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'
@@ -212,39 +216,48 @@ class GenomeCrisprDSBTest(TestCase):
         g = self.build_genome(True, s)
         guide = s1[-20:]
 
-        c = crispr_dsb(g, guide, 'ngg', 3)
+        c = crispr_dsb(g, guide, 'ngg')
         self.assertNotEquals(c.id, g.id)
         self.assertEquals(c.parent.id, g.id)
 
-        a = g.fragments.all()[0].indexed_fragment().annotations()
-        # XXX
-        # self.assertEquals(len(a), 0)
-
         a = c.fragments.all()[0].indexed_fragment().annotations()
         self.assertEquals(len(a), 2)
+        self.assertEquals(a[0].base_first, 1)
+        self.assertEquals(a[0].base_last, 15)
+        self.assertEquals(a[0].feature_base_first, 6)
+        self.assertEquals(a[0].feature_base_last, 20)
+        self.assertEquals(a[0].feature.strand, 1)
         self.assertEquals(a[1].base_first, len(s)-5+1)
         self.assertEquals(a[1].base_last, len(s))
         self.assertEquals(a[1].feature_base_first, 1)
         self.assertEquals(a[1].feature_base_last, 5)
         self.assertEquals(a[1].feature.strand, 1)
-        self.assertEquals(a[1].feature.name, 'CRISPR DSB target')
-        self.assertEquals(True, False)
 
     def test_crispr_dsb_finds_and_annotates_reverse_complement_across_circular_boundary(self):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'
         s2 = 'gactaggtacgtagtcgtcaggtcagtca'
         pam = 'cgg'
-        s = s1[10:]+pam+s2+s1[0:10]
+        s = s1[-15:]+pam+s2+s1[0:len(s1)-15]
         g = self.build_genome(True, str(Seq(s).reverse_complement()))
         guide = s1[-20:]
-        t = find_crispr_target(g, guide, 'ngg')
-        self.assertEquals(len(t), 1)
-        self.assertEquals(t[0].fragment_id, g.fragments.all()[0].id)
-        self.assertEquals(t[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(t[0].subject_start, (len(s)-(s1.index(guide)+1-10))%len(s)+1)
-        self.assertEquals(t[0].subject_end, (len(s)-(len(s1)-10))%len(s)+1)
-        self.assertEquals(t[0].pam, 'ngg')
-        self.assertEquals(True, False)
+
+        c = crispr_dsb(g, guide, 'ngg')
+        self.assertNotEquals(c.id, g.id)
+        self.assertEquals(c.parent.id, g.id)
+
+        a = c.fragments.all()[0].indexed_fragment().annotations()
+        self.assertEquals(len(a), 2)
+        self.assertEquals(a[0].base_first, 1)
+        self.assertEquals(a[0].base_last, 5)
+        self.assertEquals(a[0].feature_base_first, 16)
+        self.assertEquals(a[0].feature_base_last, 20)
+        self.assertEquals(a[0].feature.strand, -1)
+
+        self.assertEquals(a[1].base_first, len(s)-15+1)
+        self.assertEquals(a[1].base_last, len(s))
+        self.assertEquals(a[1].feature_base_first, 1)
+        self.assertEquals(a[1].feature_base_last, 15)
+        self.assertEquals(a[1].feature.strand, -1)
 
     def test_crispr_dsb_creates_operations(self):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'
@@ -253,22 +266,28 @@ class GenomeCrisprDSBTest(TestCase):
         g = self.build_genome(False, s1+pam+s2)
         guide = s1[-20:]
 
-        c = crispr_dsb(g, guide, 'ngg', 3)
-        self.assertEquals(g.operations.count(), 0)
-        self.assertEquals(c.operations.count(), 1)
-        self.assertEquals(c.operations.all()[0].type, Operation.CRISPR_DSB[0])
+        c = crispr_dsb(g, guide, 'ngg')
+        self.assertEquals(g.operation_set.count(), 0)
+        self.assertEquals(c.operation_set.count(), 1)
+        self.assertEquals(c.operation_set.all()[0].type, Operation.CRISPR_DSB[0])
 
     def test_crispr_dsb_api_works(self):
-        self.assertEquals(Operation.objects.count(), 0)
-        data = dict(genome_name='FooBar', notes='blah',
-                    guide=self.target, pam='ngg', create=True)
-        res = self.client.post('/genomes/'+str(self.genome.id)+'/crispr/dsb/',
-                               data=json.dumps(data),
+        s1 = 'agaaggtctggtagcgatgtagtcgatct'
+        s2 = 'gactaggtacgtagtcgtcaggtcagtca'
+        pam = 'cgg'
+        g = self.build_genome(False, s1+pam+s2)
+        guide = s1[-20:]
+
+        data = dict(genome_name='FooBar', notes='blah', guide=guide, pam='ngg', create=True)
+        res = self.client.post('/edge/genomes/'+str(g.id)+'/crispr/dsb/', data=json.dumps(data),
                                content_type='application/json')
         self.assertEquals(res.status_code, 201)
+
         self.assertEquals(Operation.objects.count(), 1)
-        self.assertEquals(self.genome.children.count(), 1)
-        c = self.genome.children.all()[0]
-        self.assertEquals(c.operations.all()[0].type, Operation.CRISPR_DSB[0])
-        self.assertEquals(c.params, json.dumps(dict(guide=self.target, pam='ngg')))
-        self.assertEquals(True, False)
+        self.assertEquals(g.children.count(), 1)
+        c = g.children.all()[0]
+        a = c.fragments.all()[0].indexed_fragment().annotations()
+        self.assertEquals(len(a), 1)
+        self.assertEquals(a[0].feature.operation.genome, c)
+        self.assertEquals(c.operation_set.all()[0].type, Operation.CRISPR_DSB[0])
+        self.assertEquals(c.operation_set.all()[0].params, json.dumps(dict(guide=guide, pam='ngg')))

@@ -7,17 +7,18 @@ class Fragment_Annotator:
     Mixin for annotating a fragment.
     """
 
-    def _add_feature(self, name, type, length, strand, qualifiers=None):
+    def _add_feature(self, name, type, length, strand, qualifiers=None, operation=None):
         if strand not in (1, -1, None):
             raise Exception('Strand must be 1, -1, or None')
         qualifiers = {} if qualifiers is None else qualifiers
-        f = Feature(name=name, type=type, length=length, strand=strand)
+        f = Feature(name=name, type=type, length=length, strand=strand, operation=operation)
         f.set_qualifiers(qualifiers)
         f.save()
         return f
 
     @transaction.atomic()
-    def annotate(self, first_base1, last_base1, name, type, strand, qualifiers=None):
+    def annotate(self, first_base1, last_base1, name, type, strand,
+                 qualifiers=None, operation=None):
         if self.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
             length = self.length-first_base1+1+last_base1
@@ -32,7 +33,7 @@ class Fragment_Annotator:
         # did two splits, so must reload annotation_start in case that got splitted
         annotation_start = annotation_start.reload()
 
-        new_feature = self._add_feature(name, type, length, strand, qualifiers)
+        new_feature = self._add_feature(name, type, length, strand, qualifiers, operation)
 
         # now, starting with chunk annotation_start, walk through chunks until
         # we hit annotation_end, and add annotation for each chunk

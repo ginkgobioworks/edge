@@ -71,7 +71,7 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
     # get sequence between arms, including arm
     region_start = fragment.circ_bp(region_start)
     region_end = fragment.circ_bp(region_end)
-    
+
     if region_end < region_start:
         assert fragment.circular is True
         region_p1 = fragment.get_sequence(bp_lo=region_start)
@@ -133,11 +133,24 @@ def recombine(genome, cassette, min_homology_arm_length,
     regions = find_swap_region(genome, cassette, min_homology_arm_length)
     if regions is None or len(regions) != 1:
         return None
-
-    new_genome = genome.update()
     region = regions[0]
     region_start = region.start
     region_end = region.end
+
+    new_genome = genome.update()
+
+    if genome_name is None or genome_name.strip() == "":
+        genome_name = "%s recombined %d-%d with %d bps" % (genome.name,
+                                                           region.start,
+                                                           region.end,
+                                                           len(cassette))
+    new_genome.name = genome_name
+    new_genome.notes = notes
+    new_genome.save()
+
+    params = dict(cassette=cassette, homology_arm_length=min_homology_arm_length)
+    op = Operation(genome=new_genome, type=Operation.RECOMBINATION[0], params=json.dumps(params))
+    op.save()
 
     new_fragment_id = None
     with new_genome.update_fragment_by_fragment_id(region.fragment_id) as f:
@@ -151,26 +164,15 @@ def recombine(genome, cassette, min_homology_arm_length,
             assert f.circular is True
             f.replace_bases(region_start, f.length-region_start+1, new_region)
             f.remove_bases(1, region_end)
+            # adjust region_start after removing sequence at the start
+            region_start -= region_end
 
         new_fragment_id = f.id
 
-    cassette_name = 'Recombination cassette' if cassette_name is None else cassette_name
+    cassette_name = "Recombination cassette" if cassette_name is None else cassette_name
     with new_genome.annotate_fragment_by_fragment_id(new_fragment_id) as f:
+        # region_start is already adjusted
         f.annotate(region_start, region_start+len(new_region)-1,
-                   cassette_name, 'feature', 1)
-
-    if genome_name is None or genome_name.strip() == "":
-        genome_name = "%s recombined %d-%d with %d bps" % (genome.name,
-                                                           region.start,
-                                                           region.end,
-                                                           len(cassette))
-    new_genome.name = genome_name
-    new_genome.notes = notes
-    new_genome.save()
-
-    params = dict(cassette=cassette, homology_arm_length=min_homology_arm_length)
-    op = Operation(type=Operation.RECOMBINATION[0], params=json.dumps(params))
-    op.save()
-    new_genome.operations.add(op)
+                   cassette_name, 'operation', 1, operation=op)
 
     return new_genome
