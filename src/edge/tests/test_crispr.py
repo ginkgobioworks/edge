@@ -271,6 +271,15 @@ class GenomeCrisprDSBTest(TestCase):
         self.assertEquals(c.operation_set.count(), 1)
         self.assertEquals(c.operation_set.all()[0].type, Operation.CRISPR_DSB[0])
 
+    def test_crispr_dsb_creates_new_fragment(self):
+        s1 = 'agaaggtctggtagcgatgtagtcgatct'
+        s2 = 'gactaggtacgtagtcgtcaggtcagtca'
+        pam = 'cgg'
+        g = self.build_genome(False, s1+pam+s2)
+        guide = s1[-20:]
+        c = crispr_dsb(g, guide, 'ngg')
+        self.assertEquals(c.fragments.all()[0].parent, g.fragments.all()[0])
+
     def test_crispr_dsb_api_works(self):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'
         s2 = 'gactaggtacgtagtcgtcaggtcagtca'

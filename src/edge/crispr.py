@@ -120,7 +120,11 @@ def crispr_dsb(genome, guide, pam, genome_name=None, notes=None):
             annotation_start = target.subject_end
             annotation_end = target.subject_start
 
-        with new_genome.annotate_fragment_by_fragment_id(target.fragment_id) as f:
+        new_fragment_id = None
+        with new_genome.update_fragment_by_fragment_id(target.fragment_id) as f:
+            new_fragment_id = f.id
+
+        with new_genome.annotate_fragment_by_fragment_id(new_fragment_id) as f:
             feature = 'CRISPR-Cas9 (pam %s) target' % pam
             f.annotate(annotation_start, annotation_end, feature,
                        'event', target.strand, operation=op)
