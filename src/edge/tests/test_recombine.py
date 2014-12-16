@@ -432,3 +432,50 @@ class GenomeRecombinationTest(TestCase):
         c = Genome.objects.get(pk=r['id'])
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
                           ''.join([upstream, cassette, downstream]))
+
+    def test_recombines_multiple_times_on_different_fragments(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaaaaa"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = ''.join([front_bs, replaced, back_bs])
+
+        f1 = 't'*20+template+'c'*20+template+'c'*30
+        f2 = 't'*40+template+'c'*15+template+'c'*20
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, f1, f2)
+        self.assertEquals(g.fragments.count(), 2)
+
+        c = recombine(g, cassette, arm_len)
+        self.assertEquals(c.fragments.count(), 2)
+
+        self.assertEquals(c.fragments.all()[1].indexed_fragment().sequence,
+                          't'*20+upstream+cassette+downstream +
+                          'c'*20+upstream+cassette+downstream+'c'*30)
+        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+                          't'*40+upstream+cassette+downstream +
+                          'c'*15+upstream+cassette+downstream+'c'*20)
+
+    def test_recombines_multiple_times_on_circular_fragment(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaaaaa"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = ''.join([front_bs, replaced, back_bs])
+
+        f = middle[0:8]+back_bs+downstream+'t'*20+template+'c'*20+upstream+front_bs+middle[8:]
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(True, f)
+        c = recombine(g, cassette, arm_len)
+        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+                          downstream+'t'*20+upstream+cassette+downstream +
+                          'c'*20+upstream+cassette)

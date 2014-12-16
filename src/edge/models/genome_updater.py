@@ -36,16 +36,19 @@ class Genome_Updater:
         self._add_updated_fragment(u)
 
     @contextmanager
-    def update_fragment_by_fragment_id(self, fragment_id, new_name=None):
+    def update_fragment_by_fragment_id(self, fragment_id, new_name=None, new_fragment=True):
         if self.parent is None:
             raise Exception('Cannot update fragment without a parent genome. Try editing instead.')
         f = [x for x in self.fragments.filter(id=fragment_id)]
         if len(f) != 1:
             raise Exception('Zero or more than one fragments have ID %s' % (fragment_id,))
         new_name = f[0].name if new_name is None else new_name
-        u = f[0].indexed_fragment().update(new_name)
+        u = f[0].indexed_fragment()
+        if new_fragment is True:
+            u = u.update(new_name)
         yield u
-        self._add_updated_fragment(u)
+        if new_fragment is True:
+            self._add_updated_fragment(u)
 
     def add_fragment(self, name, sequence, circular=False):
         if len(sequence) == 0:
