@@ -216,7 +216,7 @@ class GenomeView(ViewBase):
             type_str = type_str[0]
         else:
             type_str = ''
-        d = dict(type=type_str, notes=op.notes, params=json.loads(op.params))
+        d = dict(type=type_str, params=json.loads(op.params))
         return d
 
     @staticmethod
@@ -399,18 +399,56 @@ class GenomePcrView(ViewBase):
         return r, 200
 
 
-class GenomeCrisprDSBView(ViewBase):
-    def on_post(self, request, genome_id):
-        from edge.crispr import find_crispr_target, crispr_dsb
+class GenomeOperationViewBase(ViewBase):
 
+    def on_post(self, request, genome_id):
         genome = get_genome_or_404(genome_id)
+
+        # always require a 'create' argument
+        parser = RequestParser()
+        parser.add_argument('create', field_type=bool, required=True, location='json')
+        args = parser.parse_args(request)
+        create = args['create']
+
+        args, op_class = self.parse_arguments(request)
+
+        if create is False:
+            r = op_class.check(genome, **args)
+            return [x.to_dict() for x in r], 200
+
+        else:
+            op = op_class.get_operation(**args)
+
+            # find another a child genome with same operation
+            child = None
+            for existing_child in genome.children.all():
+                if existing_child.operation_set.count() == 1 and\
+                   existing_child.operation_set.all()[0].type == op.type and\
+                   existing_child.operation_set.all()[0].params == op.params:
+                    child = existing_child
+
+            if child is None:
+                child = op_class.perform(genome, **args)
+                if child:
+                    schedule_building_blast_db(child.id)
+                    return GenomeView.to_dict(child), 201
+
+            if child is None:
+                return None, 400
+            else:
+                return GenomeView.to_dict(child), 200
+
+
+class GenomeCrisprDSBView(GenomeOperationViewBase):
+
+    def parse_arguments(self, request):
+        from edge.crispr import CrisprOp
 
         parser = RequestParser()
         parser.add_argument('guide', field_type=str, required=True,
                             default=None, location='json')
         parser.add_argument('pam', field_type=str, required=True,
                             default=None, location='json')
-        parser.add_argument('create', field_type=bool, required=True, location='json')
         parser.add_argument('genome_name', field_type=str, required=False,
                             default=None, location='json')
         parser.add_argument('notes', field_type=str, required=False,
@@ -419,32 +457,20 @@ class GenomeCrisprDSBView(ViewBase):
         args = parser.parse_args(request)
         guide = args['guide']
         pam = args['pam']
-        create = args['create']
         genome_name = args['genome_name']
         notes = args['notes']
 
-        if create is False:
-            r = find_crispr_target(genome, guide, pam)
-            return [x.to_dict() for x in r], 200
-        else:
-            c = crispr_dsb(genome, guide, pam, genome_name=genome_name, notes=notes)
-            if c is None:
-                return None, 400
-            else:
-                schedule_building_blast_db(c.id)
-                return GenomeView.to_dict(c), 201
+        return (dict(guide=guide, pam=pam, genome_name=genome_name, notes=notes), CrisprOp)
 
 
-class GenomeRecombinationView(ViewBase):
+class GenomeRecombinationView(GenomeOperationViewBase):
 
-    def on_post(self, request, genome_id):
-        from edge.recombine import find_swap_region, recombine
-        genome = get_genome_or_404(genome_id)
+    def parse_arguments(self, request):
+        from edge.recombine import RecombineOp
 
         parser = RequestParser()
         parser.add_argument('cassette', field_type=str, required=True, location='json')
         parser.add_argument('homology_arm_length', field_type=int, required=True, location='json')
-        parser.add_argument('create', field_type=bool, required=True, location='json')
         parser.add_argument('genome_name', field_type=str, required=False,
                             default=None, location='json')
         parser.add_argument('cassette_name', field_type=str, required=False,
@@ -454,22 +480,11 @@ class GenomeRecombinationView(ViewBase):
 
         args = parser.parse_args(request)
         cassette = args['cassette']
-        arm_length = args['homology_arm_length']
-        create = args['create']
+        homology_arm_length = args['homology_arm_length']
         genome_name = args['genome_name']
         cassette_name = args['cassette_name']
         notes = args['notes']
 
-        if create is False:
-            r = find_swap_region(genome, cassette, arm_length)
-            return [x.to_dict() for x in r], 200
-        else:
-            c = recombine(genome, cassette, arm_length,
-                          genome_name=genome_name,
-                          cassette_name=cassette_name,
-                          notes=notes)
-            if c is None:
-                return None, 400
-            else:
-                schedule_building_blast_db(c.id)
-                return GenomeView.to_dict(c), 201
+        return (dict(cassette=cassette, homology_arm_length=homology_arm_length,
+                     genome_name=genome_name, cassette_name=cassette_name,
+                     notes=notes), RecombineOp)

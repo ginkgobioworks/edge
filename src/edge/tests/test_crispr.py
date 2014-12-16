@@ -300,3 +300,25 @@ class GenomeCrisprDSBTest(TestCase):
         self.assertEquals(a[0].feature.operation.genome, c)
         self.assertEquals(c.operation_set.all()[0].type, Operation.CRISPR_DSB[0])
         self.assertEquals(c.operation_set.all()[0].params, json.dumps(dict(guide=guide, pam='ngg')))
+
+    def test_multiple_api_calls_return_same_child(self):
+        s1 = 'agaaggtctggtagcgatgtagtcgatct'
+        s2 = 'gactaggtacgtagtcgtcaggtcagtca'
+        pam = 'cgg'
+        g = self.build_genome(False, s1+pam+s2)
+        guide = s1[-20:]
+        data = dict(genome_name='FooBar', notes='blah', guide=guide, pam='ngg', create=True)
+
+        res = self.client.post('/edge/genomes/'+str(g.id)+'/crispr/dsb/', data=json.dumps(data),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 201)
+        r = json.loads(res.content)
+        c1 = r['id']
+
+        res = self.client.post('/edge/genomes/'+str(g.id)+'/crispr/dsb/', data=json.dumps(data),
+                               content_type='application/json')
+        # returns 200 not 201
+        self.assertEquals(res.status_code, 200)
+        r = json.loads(res.content)
+        c2 = r['id']
+        self.assertEquals(c1, c2)

@@ -53,7 +53,6 @@
   <div ng-repeat='op in genome.operations'>
     <p>
       {{ op.type }}
-      <span ng-if="op.notes">{{ op.notes }}</span>
     </p>
     <ul ng-if="op.params">
       <li ng-repeat='(k,v) in op.params' class="op-params">

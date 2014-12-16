@@ -196,11 +196,11 @@ def shift_regions(regions, fragment_id, start, replaced, added, new_fragment_id)
 
 
 @transaction.atomic()
-def recombine(genome, cassette, min_homology_arm_length,
+def recombine(genome, cassette, homology_arm_length,
               genome_name=None, cassette_name=None, notes=None):
     cassette = str(Seq(cassette))  # clean the sequence
 
-    regions = find_swap_region(genome, cassette, min_homology_arm_length)
+    regions = find_swap_region(genome, cassette, homology_arm_length)
     if regions is None:
         return None
 
@@ -212,8 +212,8 @@ def recombine(genome, cassette, min_homology_arm_length,
     new_genome.notes = notes
     new_genome.save()
 
-    params = dict(cassette=cassette, homology_arm_length=min_homology_arm_length)
-    op = Operation(genome=new_genome, type=Operation.RECOMBINATION[0], params=json.dumps(params))
+    op = RecombineOp.get_operation(cassette=cassette, homology_arm_length=homology_arm_length)
+    op.genome = new_genome
     op.save()
 
     cassette_name = "Recombination cassette" if cassette_name is None else cassette_name
@@ -228,10 +228,30 @@ def recombine(genome, cassette, min_homology_arm_length,
         region = regions[0]
         start, replaced, added, new_fragment_id =\
             recombine_region(new_genome, region, cassette,
-                             min_homology_arm_length, cassette_name, op,
+                             homology_arm_length, cassette_name, op,
                              need_new_fragment)
         need_new_fragment = False
         regions = shift_regions(regions[1:],
                                 region.fragment_id, start, replaced, added, new_fragment_id)
 
     return new_genome
+
+
+class RecombineOp(object):
+
+    @staticmethod
+    def check(genome, cassette, homology_arm_length,
+              genome_name=None, cassette_name=None, notes=None):
+        return find_swap_region(genome, cassette, homology_arm_length)
+
+    @staticmethod
+    def get_operation(cassette, homology_arm_length,
+                      genome_name=None, cassette_name=None, notes=None):
+        params = dict(cassette=cassette, homology_arm_length=homology_arm_length)
+        op = Operation(type=Operation.RECOMBINATION[0], params=json.dumps(params))
+        return op
+
+    @staticmethod
+    def perform(genome, cassette, homology_arm_length, genome_name, cassette_name, notes):
+        return recombine(genome, cassette, homology_arm_length,
+                         genome_name=genome_name, cassette_name=cassette_name, notes=notes)

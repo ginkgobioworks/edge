@@ -479,3 +479,39 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
                           downstream+'t'*20+upstream+cassette+downstream +
                           'c'*20+upstream+cassette)
+
+    def test_multiple_recombines_return_same_child(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = ''.join([front_bs, replaced, back_bs])
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % g.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=arm_len,
+                                                    create=True,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 201)
+        r = json.loads(res.content)
+        c1 = r['id']
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % g.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=arm_len,
+                                                    create=True,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        # returns 200 not 201
+        self.assertEquals(res.status_code, 200)
+        r = json.loads(res.content)
+        c2 = r['id']
+        self.assertEquals(c1, c2)

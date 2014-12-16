@@ -108,8 +108,8 @@ def crispr_dsb(genome, guide, pam, genome_name=None, notes=None):
     new_genome.notes = notes
     new_genome.save()
 
-    params = dict(guide=guide, pam=pam)
-    op = Operation(genome=new_genome, type=Operation.CRISPR_DSB[0], params=json.dumps(params))
+    op = CrisprOp.get_operation(guide=guide, pam=pam)
+    op.genome = new_genome
     op.save()
 
     for target in targets:
@@ -130,3 +130,20 @@ def crispr_dsb(genome, guide, pam, genome_name=None, notes=None):
                        'event', target.strand, operation=op)
 
     return new_genome
+
+
+class CrisprOp(object):
+
+    @staticmethod
+    def check(genome, guide, pam, genome_name=None, notes=None):
+        return find_crispr_target(genome, guide, pam)
+
+    @staticmethod
+    def get_operation(guide, pam, genome_name=None, notes=None):
+        params = dict(guide=guide, pam=pam)
+        op = Operation(type=Operation.CRISPR_DSB[0], params=json.dumps(params))
+        return op
+
+    @staticmethod
+    def perform(genome, guide, pam, genome_name, notes):
+        return crispr_dsb(genome, guide, pam, genome_name=genome_name, notes=notes)

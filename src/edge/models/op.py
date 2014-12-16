@@ -14,5 +14,4 @@ class Operation(models.Model):
 
     genome = models.ForeignKey(Genome)
     type = models.IntegerField(choices=(RECOMBINATION, CRISPR_DSB, PCR_SEQ_VERIFICATION))
-    notes = models.TextField(null=True, blank=True)
     params = models.TextField(null=True, blank=True)
