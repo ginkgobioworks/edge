@@ -520,33 +520,6 @@ function GenomeFragmentController($scope, $routeParams, $injector, $http) {
     $scope.postIndexCallbacks.push(fetchGenome);
 }
 
-function GenomeOpController($scope, $http, $location) {
-    $scope.op_error = undefined;
-
-    $scope.doOp = function(action, op) {
-        op['op'] = action;
-        var data = JSON.stringify(op);
-        $http.put('/edge/genomes/'+$scope.genomeId+'/fragments/'+$scope.fragmentId+'/', data).
-            success(function(genome) {
-                // got a new genome back
-                $scope.op_error = undefined;
-                var url = '/edge/genomes/'+genome.id+'/';
-                $location.path(url);
-            }).
-            error(function(data, status, headers, config) {
-                $scope.op_error = data;
-            });
-    }
-}
-
-function GenomeOpWithFragmentController($scope, $http) {
-    $http.get('/edge/fragments/').success(function(data) {
-        $scope.fragments = data;
-    });
-
-    $scope.orderProp = 'name';
-}
-
 var edgeFeatureTypes = [
     "-10_signal",
     "-35_signal",

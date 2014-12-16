@@ -26,8 +26,6 @@ urlpatterns = patterns(
     url('^fragments/(?P<fragment_id>\d+)/annotations/$', FragmentAnnotationsView.as_view()),
     url('^genomes/(?P<genome_id>\d+)/annotations/$', GenomeAnnotationsView.as_view()),
     url('^genomes/(?P<genome_id>\d+)/fragments/$', GenomeFragmentListView.as_view()),
-    url('^genomes/(?P<genome_id>\d+)/fragments/(?P<fragment_id>\d+)/$',
-        GenomeFragmentView.as_view()),
     url('^genomes/(?P<genome_id>\d+)/blast/$', GenomeBlastView.as_view()),
     url('^genomes/(?P<genome_id>\d+)/pcr/$', GenomePcrView.as_view()),
     url('^genomes/(?P<genome_id>\d+)/recombination/$', GenomeRecombinationView.as_view()),
