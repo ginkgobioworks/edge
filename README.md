@@ -4,7 +4,7 @@ Edge keeps structural changes between a genome and child genomes derived from it
 
 Edge uses O(D) amount of storage for each modified genome, where D is the number of differences between a modified genome and its parent. The current implementation additionally keeps a cache of annotations to base pair numbers, but this cache is soft-data and is invalidated and re-built on demand.
 
-A modified genome can be re-created by re-applying operations to a new genome (think git rebase). Currently, however, annotating a genome is not an operation.
+A modified genome can be re-created by re-applying operations to a new genome (think git rebase). Currently, however, annotating a genome is not an operation. Also, applying the same operation to a genome twice results in a single child genome, not two.
 
 Edge provides UIs to look at operations and changes, and APIs for making changes. Edge can export genome sequences and annotations as GFF files.  While Edge comes with a simple UI for browsing features and sequences, the UI is primitive compared to other specialized applications. 
 
