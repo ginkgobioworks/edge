@@ -138,7 +138,7 @@ def get_verification_primers(genome, region, cassette):
     upstream_window = CHECK_JUNCTION_PRIMER_WINDOW+CHECK_JUNCTION_SIZE/2
     downstream_window = min(len(cassette), CHECK_JUNCTION_PRIMER_WINDOW+CHECK_JUNCTION_SIZE/2)
     back = cassette[0:downstream_window]
-    
+
     # don't bother looking for primers if front part of cassette is same as
     # region to be replaced
     if region.start > 1 and back.lower() != region.sequence[0:downstream_window].lower():
@@ -146,9 +146,9 @@ def get_verification_primers(genome, region, cassette):
         template = front+back
         roi_start = len(front)-CHECK_JUNCTION_SIZE/2 if len(front) > CHECK_JUNCTION_SIZE/2 else 0
         roi_len = min(CHECK_JUNCTION_SIZE, min(len(front), CHECK_JUNCTION_SIZE/2)+len(cassette))
-        region.verification_front = remove_working_primers(
-          genome, design_primers_from_template(template, roi_start, roi_len, {})
-        )
+        region.verification_front =\
+            remove_working_primers(genome,
+                                   design_primers_from_template(template, roi_start, roi_len, {}))
 
     #
     # back junction
@@ -167,9 +167,9 @@ def get_verification_primers(genome, region, cassette):
         template = front+back
         roi_start = len(front)-CHECK_JUNCTION_SIZE/2 if len(front) > CHECK_JUNCTION_SIZE/2 else 0
         roi_len = min(CHECK_JUNCTION_SIZE, min(len(back), CHECK_JUNCTION_SIZE/2)+len(cassette))
-        region.verification_back = remove_working_primers(
-          genome, design_primers_from_template(template, roi_start, roi_len, {})
-        )
+        region.verification_back =\
+            remove_working_primers(genome,
+                                   design_primers_from_template(template, roi_start, roi_len, {}))
 
     #
     # cassette
@@ -178,11 +178,13 @@ def get_verification_primers(genome, region, cassette):
     if region.start > 1 and region.start+len(region.sequence) < fragment.length:
         front = fragment.get_sequence(region.start-CHECK_JUNCTION_PRIMER_WINDOW, region.start-1)
         back = fragment.get_sequence(region.start+len(region.sequence),
-                                     region.start+len(region.sequence)+CHECK_JUNCTION_PRIMER_WINDOW-1)
+                                     region.start+len(region.sequence) +
+                                     CHECK_JUNCTION_PRIMER_WINDOW-1)
         template = front+cassette+back
         roi_start = template.index(cassette)
         roi_len = len(cassette)
-        region.verification_cassette = design_primers_from_template(template, roi_start, roi_len, {})
+        region.verification_cassette =\
+            design_primers_from_template(template, roi_start, roi_len, {})
 
 
 def find_swap_region(genome, cassette, min_homology_arm_length, verification_primers=False):
