@@ -614,3 +614,33 @@ class GenomeRecombinationTest(TestCase):
         arm_len = min(len(front_bs), len(back_bs))
 
         self.__test_verification_primers(template, middle, cassette, arm_len, True)
+
+    def test_does_not_return_front_back_junction_verification_primers_if_they_are_not_useful(self):
+        upstream = "gagattgtccgcgttttagctgatacgtacgtgtcgatcgacttgcgtatctgatcatctgacgtagat"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "ccagtcgctgaggcagtcgatgcaggcatcgatcaggctggcacctgtgagccgagctcacgtatgcatcatcattga"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacatagctagtactagtcacgtagtcatttgtcgtacgtacgtattgagtcatca"
+        replaced = "gactacgatcagtcgtagtaacgcgtagcgtagtcagcgtacacgtacgtagacgacgtacatgcatcgtactgtatc"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = ''.join([front_bs, replaced, back_bs])
+        arm_len = min(len(front_bs), len(back_bs))
+
+        g = self.build_genome(False, template)
+        r = find_swap_region(g, cassette, arm_len, verification_primers=True)
+
+        self.assertEquals(len(r), 1)
+        self.assertEquals(len(r[0].verification_cassette), 5)
+        self.assertEquals(len(r[0].verification_front), 5)
+        self.assertEquals(len(r[0].verification_back), 5)
+
+        # cassette same as region to be replaced, front and back verification
+        # primers are not useful
+        cassette = ''.join([front_bs, middle, back_bs])
+        r = find_swap_region(g, cassette, arm_len, verification_primers=True)
+
+        self.assertEquals(len(r), 1)
+        self.assertEquals(len(r[0].verification_cassette), 5)
+        self.assertEquals(len(r[0].verification_front), 0)
+        self.assertEquals(len(r[0].verification_back), 0)
