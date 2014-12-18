@@ -146,6 +146,11 @@ class FragmentTests(TestCase):
             for j in range(i, len(self.root_sequence)):
                 self.assertEquals(f.get_sequence(i+1, j+1), self.root_sequence[i:j+1])
 
+    def test_get_circular_sequence(self):
+        s = 'agttcgaggctga'
+        f = Fragment.create_with_sequence('Foo', s, circular=True)
+        self.assertEquals(f.get_sequence(len(s)-3+1, 4), s[-3:]+s[:4])
+
     def test_insert_sequence_in_middle(self):
         f = self.root.update('Bar')
         f.insert_bases(3, 'gataca')

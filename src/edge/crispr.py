@@ -34,32 +34,12 @@ def target_followed_by_pam(blast_res, pam):
     if blast_res.strand() > 0:
         pam_start = blast_res.subject_end+1
         pam_end = pam_start+len(pam)-1
-
-        pam_start = fragment.circ_bp(pam_start)
-        pam_end = fragment.circ_bp(pam_end)
-
-        if pam_start < pam_end:
-            query = fragment.get_sequence(bp_lo=pam_start, bp_hi=pam_end)
-        else:
-            assert fragment.circular is True
-            query_p1 = fragment.get_sequence(bp_lo=pam_start)
-            query_p2 = fragment.get_sequence(bp_hi=pam_end)
-            query = query_p1+query_p2
+        query = fragment.get_sequence(bp_lo=pam_start, bp_hi=pam_end)
 
     else:
         pam_end = blast_res.subject_end-1
         pam_start = pam_end-len(pam)+1
-
-        pam_end = fragment.circ_bp(pam_end)
-        pam_start = fragment.circ_bp(pam_start)
-
-        if pam_start < pam_end:
-            query = fragment.get_sequence(bp_lo=pam_start, bp_hi=pam_end)
-        else:
-            assert fragment.circular is True
-            query_p1 = fragment.get_sequence(bp_lo=pam_start)
-            query_p2 = fragment.get_sequence(bp_hi=pam_end)
-            query = query_p1+query_p2
+        query = fragment.get_sequence(bp_lo=pam_start, bp_hi=pam_end)
         query = str(Seq(query).reverse_complement())
 
     if match_pam(pam, query) is True:

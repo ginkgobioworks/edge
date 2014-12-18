@@ -92,7 +92,7 @@ def blast(dbname, blast_program, query, evalue_threshold=0.001):
 
     cl = str(blast_cl)
     cl = "%s/%s" % (settings.NCBI_BIN_DIR, cl)
-    #print cl
+    # print cl
     r = subprocess.call(cl.split(" "))
     os.unlink(infile)
 

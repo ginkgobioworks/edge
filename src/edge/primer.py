@@ -62,13 +62,12 @@ def primer3_run(opts):
     for l in out.split('\n'):
         if '=' in l:
             l = l.split('=')
-            r[l[0]]='='.join(l[1:])
+            r[l[0]] = '='.join(l[1:])
 
     return parse_primer3_output(r)
 
 
-def primer3_design(template, roi_start, roi_len, opts):
-
+def design_primers_from_template(template, roi_start, roi_len, opts):
     min_primer_product_size = min(PRIMER3_MIN_PRIMER*2+roi_len, len(template))
     max_primer_product_size = len(template)
 
@@ -82,42 +81,19 @@ def primer3_design(template, roi_start, roi_len, opts):
                      SEQUENCE_TARGET='%s,%s' % (roi_start, roi_len)))
 
     return primer3_run(opts)
-    
 
-def design_primers(fragment, roi_start_bp, roi_len, upstream_window, downstream_window, opts,
-                   replacement_sequence=None):
+
+def design_primers(fragment, roi_start_bp, roi_len, upstream_window, downstream_window, opts):
     """
     Design primer using primer3 pipeline. Returns list of designed primers.
     """
 
     fragment = fragment.indexed_fragment()
 
-    if roi_start_bp+roi_len-1 <= fragment.length:
-        roi = fragment.get_sequence(bp_lo=roi_start_bp, bp_hi=roi_start_bp+roi_len-1)
-    else:
-        end_bp = fragment.circ_bp(roi_start_bp+roi_len-1)
-        roi = fragment.get_sequence(bp_lo=roi_start_bp)+fragment.get_sequence(bp_hi=end_bp)
-
+    roi = fragment.get_sequence(bp_lo=roi_start_bp, bp_hi=roi_start_bp+roi_len-1)
     bp_lo = roi_start_bp-upstream_window
     bp_hi = roi_start_bp+roi_len-1+downstream_window
-    if fragment.circular is True:
-        bp_lo = fragment.circ_bp(bp_lo)
-        bp_hi = fragment.circ_bp(bp_hi)
-    else:
-        bp_lo = 1 if bp_lo < 1 else bp_lo
-        bp_hi = fragment.length if bp_hi > fragment.length else bp_hi
-
-    template = None
-    if bp_hi < bp_lo:
-        assert fragment.circular is True
-        template_p1 = fragment.get_sequence(bp_lo=bp_lo)
-        template_p2 = fragment.get_sequence(bp_hi=bp_hi)
-        template = template_p1+template_p2
-    else:
-        template = fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
+    template = fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
 
     roi_start = template.index(roi)+1
-    if replacement_sequence is not None:
-        re.sub(roi, replacement_sequence, template)
-        roi = replacement_sequence
-    return primer3_design(template, roi_start, len(roi), opts)
+    return design_primers_from_template(template, roi_start, len(roi), opts)

@@ -66,18 +66,9 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
     bp_lo = fwd_primer_res.subject_end+1
     bp_hi = rev_primer_res.subject_end-1
 
-    bp_lo = fragment.circ_bp(bp_lo)
-    bp_hi = fragment.circ_bp(bp_hi)
-
-    if bp_hi < bp_lo:
-        assert fragment.circular is True
-        product_mid_p1 = fragment.get_sequence(bp_lo=bp_lo)
-        product_mid_p2 = fragment.get_sequence(bp_hi=bp_hi)
-        product_mid = product_mid_p1+product_mid_p2
-        if len(product_mid) > MAX_PCR_SIZE:
-            return None
-    else:
-        product_mid = fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
+    product_mid = fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
+    if len(product_mid) > MAX_PCR_SIZE:
+        return None
 
     product = '%s%s%s' % (fwd_primer, product_mid, str(Seq(rev_primer).reverse_complement()))
 

@@ -169,7 +169,9 @@ class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_U
             yield fcl.chunk
 
     def circ_bp(self, bp):
-        return ((bp-1) % self.length)+1
+        if self.circular is True:
+            return ((bp-1) % self.length)+1
+        return bp
 
     @property
     def length(self):
@@ -183,7 +185,7 @@ class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_U
     def fragment_chunk(self, chunk):
         return self.fragment_chunk_location_set.filter(chunk=chunk)[0]
 
-    def get_sequence(self, bp_lo=None, bp_hi=None):
+    def __get_linear_sequence(self, bp_lo=None, bp_hi=None):
         q = self.fragment_chunk_location_set.select_related('chunk')
         if bp_lo is not None:
             q = q.filter(base_last__gte=bp_lo)
@@ -207,6 +209,24 @@ class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_U
             last_chunk_base_last = fcl.base_last
 
         return ''.join(sequence)
+
+    def get_sequence(self, bp_lo=None, bp_hi=None):
+        if bp_lo is not None:
+            bp_lo = self.circ_bp(bp_lo)
+            bp_lo = 1 if bp_lo < 1 else bp_lo
+
+        if bp_hi is not None:
+            bp_hi = self.circ_bp(bp_hi)
+            bp_hi = self.length if bp_hi > self.length else bp_hi
+
+        if bp_lo is None or bp_hi is None or bp_lo <= bp_hi:
+            return self.__get_linear_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
+
+        else:
+            assert self.circular is True
+            s1 = self.__get_linear_sequence(bp_lo=bp_lo)
+            s2 = self.__get_linear_sequence(bp_hi=bp_hi)
+            return s1+s2
 
     @property
     def sequence(self):

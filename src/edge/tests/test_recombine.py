@@ -544,16 +544,15 @@ class GenomeRecombinationTest(TestCase):
         r = find_swap_region(g, cassette, arm_len, verification_primers=True)
 
         self.assertEquals(len(r), 1)
-
         self.assertEquals(len(r[0].verification_cassette), 5)
         self.assertEquals(len(r[0].verification_front), 5)
         self.assertEquals(len(r[0].verification_back), 5)
 
-        # cassette verification primers should NOT work on unmodified genome
+        # cassette verification primers should work on unmodified genome
         for primer in r[0].verification_cassette:
             p = pcr_from_genome(g, primer['PRIMER_LEFT_SEQUENCE'], primer['PRIMER_RIGHT_SEQUENCE'])
             self.assertNotEqual(p[0], None)
-            self.assertEquals(p[0].index(middle) >= 0, False)
+            self.assertEquals(p[0].index(middle) >= 0, True)
 
         # front verification primers should NOT produce product
         for primer in r[0].verification_front:
@@ -564,3 +563,33 @@ class GenomeRecombinationTest(TestCase):
         for primer in r[0].verification_back:
             p = pcr_from_genome(g, primer['PRIMER_LEFT_SEQUENCE'], primer['PRIMER_RIGHT_SEQUENCE'])
             self.assertEqual(p[0], None)
+
+        # do recombination, then try primers again on modified genome
+
+        c = recombine(g, cassette, arm_len)
+        for f in c.fragments.all():
+            try:
+                os.unlink(fragment_fasta_fn(f))
+            except:
+                pass
+        build_all_genome_dbs(refresh=True)
+
+        # cassette verification primers should work on modified genome, finding cassette
+        for primer in r[0].verification_cassette:
+            p = pcr_from_genome(c, primer['PRIMER_LEFT_SEQUENCE'], primer['PRIMER_RIGHT_SEQUENCE'])
+            self.assertNotEqual(p[0], None)
+            self.assertEquals(p[0].index(cassette) >= 0, True)
+
+        # front verification primers should find a product including front of cassette
+        for primer in r[0].verification_front:
+            p = pcr_from_genome(c, primer['PRIMER_LEFT_SEQUENCE'], primer['PRIMER_RIGHT_SEQUENCE'])
+            self.assertNotEqual(p[0], None)
+            self.assertEquals(p[0].index(cassette[0:edge.recombine.CHECK_JUNCTION_SIZE/2]) >= 0,
+                              True)
+
+        # back verification primers should find a product including back of cassette
+        for primer in r[0].verification_back:
+            p = pcr_from_genome(c, primer['PRIMER_LEFT_SEQUENCE'], primer['PRIMER_RIGHT_SEQUENCE'])
+            self.assertNotEqual(p[0], None)
+            self.assertEquals(p[0].index(cassette[-edge.recombine.CHECK_JUNCTION_SIZE/2:]) >= 0,
+                              True)
