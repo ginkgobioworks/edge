@@ -526,20 +526,9 @@ class GenomeRecombinationTest(TestCase):
         c2 = r['id']
         self.assertEquals(c1, c2)
 
-    def test_finds_verification_primers_for_swap_region(self):
+    def __test_verification_primers(self, template, middle, cassette, arm_len, is_reversed):
         from edge.pcr import pcr_from_genome
 
-        upstream = "gagattgtccgcgttttagctgatacgtacgtgtcgatcgacttgcgtatctgatcatctgacgtagat"
-        front_bs = "catagcgcacaggacgcggag"
-        middle = "ccagtcgctgaggcagtcgatgcaggcatcgatcaggctggcacctgtgagccgagctcacgtatgcatcatcattga"
-        back_bs = "taatgaccccgaagcagg"
-        downstream = "gttaaggcgcgaacatagctagtactagtcacgtagtcatttgtcgtacgtacgtattgagtcatca"
-        replaced = "gactacgatcagtcgtagtaacgcgtagcgtagtcagcgtacacgtacgtagacgacgtacatgcatcgtactgtatc"
-
-        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
-        cassette = ''.join([front_bs, replaced, back_bs])
-
-        arm_len = min(len(front_bs), len(back_bs))
         g = self.build_genome(False, template)
         r = find_swap_region(g, cassette, arm_len, verification_primers=True)
 
@@ -567,12 +556,16 @@ class GenomeRecombinationTest(TestCase):
         # do recombination, then try primers again on modified genome
 
         c = recombine(g, cassette, arm_len)
+
         for f in c.fragments.all():
             try:
                 os.unlink(fragment_fasta_fn(f))
             except:
                 pass
         build_all_genome_dbs(refresh=True)
+
+        if is_reversed:
+            cassette = str(Seq(cassette).reverse_complement())
 
         # cassette verification primers should work on modified genome, finding cassette
         for primer in r[0].verification_cassette:
@@ -593,3 +586,31 @@ class GenomeRecombinationTest(TestCase):
             self.assertNotEqual(p[0], None)
             self.assertEquals(p[0].index(cassette[-edge.recombine.CHECK_JUNCTION_SIZE/2:]) >= 0,
                               True)
+
+    def test_finds_verification_primers_for_swap_region(self):
+        upstream = "gagattgtccgcgttttagctgatacgtacgtgtcgatcgacttgcgtatctgatcatctgacgtagat"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "ccagtcgctgaggcagtcgatgcaggcatcgatcaggctggcacctgtgagccgagctcacgtatgcatcatcattga"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacatagctagtactagtcacgtagtcatttgtcgtacgtacgtattgagtcatca"
+        replaced = "gactacgatcagtcgtagtaacgcgtagcgtagtcagcgtacacgtacgtagacgacgtacatgcatcgtactgtatc"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = ''.join([front_bs, replaced, back_bs])
+        arm_len = min(len(front_bs), len(back_bs))
+
+        self.__test_verification_primers(template, middle, cassette, arm_len, False)
+
+    def test_finds_verification_primers_with_reverse_complement_cassette(self):
+        upstream = "gagattgtccgcgttttagctgatacgtacgtgtcgatcgacttgcgtatctgatcatctgacgtagat"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "ccagtcgctgaggcagtcgatgcaggcatcgatcaggctggcacctgtgagccgagctcacgtatgcatcatcattga"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacatagctagtactagtcacgtagtcatttgtcgtacgtacgtattgagtcatca"
+        replaced = "gactacgatcagtcgtagtaacgcgtagcgtagtcagcgtacacgtacgtagacgacgtacatgcatcgtactgtatc"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = str(Seq(''.join([front_bs, replaced, back_bs])).reverse_complement())
+        arm_len = min(len(front_bs), len(back_bs))
+
+        self.__test_verification_primers(template, middle, cassette, arm_len, True)

@@ -22,9 +22,9 @@ class RecombinationRegion(object):
         self.cassette_reversed = cassette_reversed
         self.front_arm = front_arm
         self.back_arm = back_arm
-        self.verification_front = None
-        self.verification_back = None
-        self.verification_cassette = None
+        self.verification_front = []
+        self.verification_back = []
+        self.verification_cassette = []
 
     def to_dict(self):
         return self.__dict__
@@ -116,6 +116,8 @@ def get_verification_primers(region, cassette):
     """
 
     fragment = Fragment.objects.get(pk=region.fragment_id).indexed_fragment()
+    if region.cassette_reversed:
+        cassette = str(Seq(cassette).reverse_complement())
 
     # front junction
     upstream_window = CHECK_JUNCTION_PRIMER_WINDOW+CHECK_JUNCTION_SIZE/2
