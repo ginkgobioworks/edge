@@ -5,9 +5,16 @@ from django.test import TestCase
 from edge.recombine import find_swap_region, recombine
 from edge.models import Genome, Fragment, Genome_Fragment, Operation
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
+import edge.recombine
 
 
 class GenomeRecombinationTest(TestCase):
+    def setUp(self):
+        self.old_check_junction_size = edge.recombine.CHECK_JUNCTION_SIZE
+        edge.recombine.CHECK_JUNCTION_SIZE = 50
+
+    def tearDown(self):
+        edge.recombine.CHECK_JUNCTION_SIZE = self.old_check_junction_size
 
     def build_genome(self, circular, *templates):
         g = Genome(name='Foo')
@@ -454,10 +461,13 @@ class GenomeRecombinationTest(TestCase):
         c = recombine(g, cassette, arm_len)
         self.assertEquals(c.fragments.count(), 2)
 
-        self.assertEquals(c.fragments.all()[1].indexed_fragment().sequence,
+        sequences = [f.indexed_fragment().sequence for f in c.fragments.all()]
+        sequences = sorted(sequences, key=lambda s: len(s))
+
+        self.assertEquals(sequences[0],
                           't'*20+upstream+cassette+downstream +
                           'c'*20+upstream+cassette+downstream+'c'*30)
-        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+        self.assertEquals(sequences[1],
                           't'*40+upstream+cassette+downstream +
                           'c'*15+upstream+cassette+downstream+'c'*20)
 
@@ -515,3 +525,42 @@ class GenomeRecombinationTest(TestCase):
         r = json.loads(res.content)
         c2 = r['id']
         self.assertEquals(c1, c2)
+
+    def test_finds_verification_primers_for_swap_region(self):
+        from edge.pcr import pcr_from_genome
+
+        upstream = "gagattgtccgcgttttagctgatacgtacgtgtcgatcgacttgcgtatctgatcatctgacgtagat"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "ccagtcgctgaggcagtcgatgcaggcatcgatcaggctggcacctgtgagccgagctcacgtatgcatcatcattga"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacatagctagtactagtcacgtagtcatttgtcgtacgtacgtattgagtcatca"
+        replaced = "gactacgatcagtcgtagtaacgcgtagcgtagtcagcgtacacgtacgtagacgacgtacatgcatcgtactgtatc"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = ''.join([front_bs, replaced, back_bs])
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+        r = find_swap_region(g, cassette, arm_len, verification_primers=True)
+
+        self.assertEquals(len(r), 1)
+
+        self.assertEquals(len(r[0].verification_cassette), 5)
+        self.assertEquals(len(r[0].verification_front), 5)
+        self.assertEquals(len(r[0].verification_back), 5)
+
+        # cassette verification primers should NOT work on unmodified genome
+        for primer in r[0].verification_cassette:
+            p = pcr_from_genome(g, primer['PRIMER_LEFT_SEQUENCE'], primer['PRIMER_RIGHT_SEQUENCE'])
+            self.assertNotEqual(p[0], None)
+            self.assertEquals(p[0].index(middle) >= 0, False)
+
+        # front verification primers should NOT produce product
+        for primer in r[0].verification_front:
+            p = pcr_from_genome(g, primer['PRIMER_LEFT_SEQUENCE'], primer['PRIMER_RIGHT_SEQUENCE'])
+            self.assertEqual(p[0], None)
+
+        # back verification primers should NOT produce product
+        for primer in r[0].verification_back:
+            p = pcr_from_genome(g, primer['PRIMER_LEFT_SEQUENCE'], primer['PRIMER_RIGHT_SEQUENCE'])
+            self.assertEqual(p[0], None)

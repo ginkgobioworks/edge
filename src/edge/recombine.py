@@ -2,7 +2,12 @@ import json
 from django.db import transaction
 from edge.blast import blast_genome
 from edge.models import Fragment, Operation
+from edge.primer import design_primers
 from Bio.Seq import Seq
+
+
+CHECK_JUNCTION_PRIMER_WINDOW = 200
+CHECK_JUNCTION_SIZE = 300
 
 
 class RecombinationRegion(object):
@@ -17,6 +22,9 @@ class RecombinationRegion(object):
         self.cassette_reversed = cassette_reversed
         self.front_arm = front_arm
         self.back_arm = back_arm
+        self.verification_front = None
+        self.verification_back = None
+        self.verification_cassette = None
 
     def to_dict(self):
         return self.__dict__
@@ -110,7 +118,40 @@ def find_possible_swap_regions(genome, front_arm_sequence, back_arm_sequence):
     return regions
 
 
-def find_swap_region(genome, cassette, min_homology_arm_length):
+def get_verification_primers(region, cassette):
+    fragment = Fragment.objects.get(pk=region.fragment_id)
+
+    # front junction
+    roi_start = region.start
+    roi_len = min(len(region.sequence), CHECK_JUNCTION_SIZE)
+    upstream_window = CHECK_JUNCTION_PRIMER_WINDOW
+    downstream_window = len(region.sequence)-roi_len
+    if downstream_window > 0:
+        region.verification_front = design_primers(fragment, roi_start, roi_len,
+                                                   upstream_window, downstream_window, {},
+                                                   replacement_sequence=cassette)
+
+    # back junction
+    roi_start = region.start+len(region.sequence)
+    roi_len = min(len(region.sequence), CHECK_JUNCTION_SIZE)
+    roi_start -= roi_len
+    upstream_window = len(region.sequence)-roi_len
+    downstream_window = CHECK_JUNCTION_PRIMER_WINDOW
+    if upstream_window > 0:
+        region.verification_back = design_primers(fragment, roi_start, roi_len,
+                                                  upstream_window, downstream_window, {},
+                                                  replacement_sequence=cassette)
+
+    # cassette
+    roi_start = region.start
+    roi_len = len(region.sequence)
+    upstream_window = downstream_window = CHECK_JUNCTION_PRIMER_WINDOW
+    region.verification_cassette = design_primers(fragment, roi_start, roi_len,
+                                                  upstream_window, downstream_window, {},
+                                                  replacement_sequence=cassette)
+
+
+def find_swap_region(genome, cassette, min_homology_arm_length, verification_primers=False):
     """
     Find a region on genome that can be recombined out using the cassette.
     Returns homology arms and possible regions.
@@ -122,7 +163,13 @@ def find_swap_region(genome, cassette, min_homology_arm_length):
     front_arm = cassette[0:min_homology_arm_length]
     back_arm = cassette[-min_homology_arm_length:]
 
-    return find_possible_swap_regions(genome, front_arm, back_arm)
+    regions = find_possible_swap_regions(genome, front_arm, back_arm)
+
+    if verification_primers is True:
+        for region in regions:
+            get_verification_primers(region, cassette)
+
+    return regions
 
 
 def recombine_region(genome, region, cassette, min_homology_arm_length, cassette_name,
