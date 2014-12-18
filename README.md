@@ -37,3 +37,9 @@ If you need BLAST support, run
 cd ncbi; ./install
 cd ../src; python manage.py build_edge_blastdb
 ```
+
+If you need Primer3 support, run
+
+```
+cd primer3; ./install
+```

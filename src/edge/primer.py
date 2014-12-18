@@ -1,4 +1,8 @@
-import primer3.bindings as p3
+import re
+import os
+import tempfile
+import subprocess
+from django.conf import settings
 from edge.models import Fragment
 
 
@@ -28,28 +32,73 @@ PRIMER3_DEFAULTS = {
 }
 
 
-def primer3_design(fragment, product_start_bp, product_len,
-                   front_distance, back_distance, primer3_opts):
+def parse_primer3_output(d):
+    primers = {}
+
+    for k in d:
+        m = re.search('\d+', k)
+        if m:
+            i = int(m.group(0))
+            if i not in primers:
+                primers[i] = {}
+            k2 = re.sub('_%s_' % i, '_', k)
+            primers[i][k2] = d[k]
+
+    return [primers[k] for k in sorted(primers.keys())]
+
+
+def primer3_run(opts):
+    fn = None
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        fn = f.name
+        for k in opts:
+            f.write('%s=%s\n' % (k, opts[k]))
+        f.write('PRIMER_THERMODYNAMIC_PARAMETERS_PATH=%s/primer3_config/\n' % settings.PRIMER3_DIR)
+        f.write('=')
+
+    cmd = "%s/primer3_core %s" % (settings.PRIMER3_DIR, fn)
+    out = subprocess.check_output(cmd.split(' '))
+    os.unlink(fn)
+    r = {}
+    for l in out.split('\n'):
+        if '=' in l:
+            l = l.split('=')
+            r[l[0]]='='.join(l[1:])
+
+    return parse_primer3_output(r)
+
+
+def primer3_design(template, roi_start, roi_len, opts):
+
+    min_primer_product_size = PRIMER3_MIN_PRIMER*2+roi_len
+    max_primer_product_size = len(template)
+
+    opts = {}
+    opts.update(PRIMER3_DEFAULTS)
+    opts.update(opts)
+    opts.update(dict(PRIMER_PRODUCT_SIZE_RANGE='%s-%s' % (min_primer_product_size,
+                                                          max_primer_product_size),
+                     SEQUENCE_ID='_',
+                     SEQUENCE_TEMPLATE=template,
+                     SEQUENCE_TARGET='%s,%s' % (roi_start, roi_len)))
+
+    return primer3_run(opts)
+    
+
+def design_primers(fragment, roi_start_bp, roi_len, upstream_window, downstream_window, opts):
     """
     Design primer using primer3 pipeline. Returns list of designed primers.
     """
 
     fragment = fragment.indexed_fragment()
-
-    print 'desired product: %s, %s' % (product_start_bp, product_len)
-    print 'fragment: %s' % fragment.sequence
-
-    if product_start_bp+product_len-1 <= fragment.length:
-        product = fragment.get_sequence(bp_lo=product_start_bp, bp_hi=product_start_bp+product_len-1)
+    if roi_start_bp+roi_len-1 <= fragment.length:
+        roi = fragment.get_sequence(bp_lo=roi_start_bp, bp_hi=roi_start_bp+roi_len-1)
     else:
-        end_bp = fragment.circ_bp(product_start_bp+product_len-1)
-        product = fragment.get_sequence(bp_lo=product_start_bp)+fragment.get_sequence(bp_hi=end_bp)
+        end_bp = fragment.circ_bp(roi_start_bp+roi_len-1)
+        roi = fragment.get_sequence(bp_lo=roi_start_bp)+fragment.get_sequence(bp_hi=end_bp)
 
-    min_primer_product_size = PRIMER3_MIN_PRIMER*2+len(product)
-    max_primer_product_size = PRIMER3_MAX_PRIMER*2+len(product)+front_distance+back_distance
-
-    bp_lo = fragment.circ_bp(product_start_bp-front_distance-PRIMER3_MAX_PRIMER)
-    bp_hi = fragment.circ_bp(product_start_bp+product_len-1+back_distance+PRIMER3_MAX_PRIMER)
+    bp_lo = fragment.circ_bp(roi_start_bp-upstream_window)
+    bp_hi = fragment.circ_bp(roi_start_bp+roi_len-1+downstream_window)
 
     template = None
     if bp_hi < bp_lo:
@@ -60,21 +109,5 @@ def primer3_design(fragment, product_start_bp, product_len,
     else:
         template = fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
 
-    product_start = template.index(product)+1
-
-    opts = {}
-    opts.update(PRIMER3_DEFAULTS)
-    opts.update(primer3_opts)
-    opts['PRIMER_PRODUCT_SIZE_RANGE'] = [[min_primer_product_size, max_primer_product_size]]
-    opts['PRIMER_TASK'] = 'pick_cloning_primers'
-    opts['PRIMER_PICK_ANYWAY'] = 1
-
-    print 'template %s' % template
-    print 'product start %s, len %s' % (product_start, len(product))
-    print 'product size range: %s' % opts['PRIMER_PRODUCT_SIZE_RANGE']
-
-    r = p3.designPrimers(
-        dict(SEQUENCE_ID='_', SEQUENCE_TEMPLATE=str(template),
-             SEQUENCE_TARGET=[product_start, len(product)]), opts)
-
-    return r
+    roi_start = template.index(roi)+1
+    return primer3_design(template, roi_start, len(roi), opts)

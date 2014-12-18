@@ -17,7 +17,3 @@ biopython == 1.63
 
 # gff parsing
 bcbio-gff == 0.4
-
-# primer3
-Cython
-primer3-py == 0.4.1
