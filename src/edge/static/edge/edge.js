@@ -628,18 +628,23 @@ function GenomeRecombinationController($scope, $routeParams, $http, $location) {
     $http.get('/edge/genomes/'+$scope.genomeId+'/').success(function(data) { $scope.genome = data; });
 
     $scope.FindRegions = function() {
+        $scope.regions = undefined;
+        $scope.waiting = true;
         $scope.cassette = $scope.cassette.replace(/\s+/g,'');
         var data = JSON.stringify({cassette: $scope.cassette,
                                    homology_arm_length: $scope.homology_arm_length,
-                                   create: false});
+                                   create: false,
+                                   design_primers: true});
         $http.post('/edge/genomes/'+$scope.genomeId+'/recombination/', data)
              .success(function(data) {
-                          $scope.regions = data;
-                      })
+                 $scope.waiting = false;
+                 $scope.regions = data;
+             })
              .error(function(data, status, headers, config) { $scope.errors = data; });
     };
 
     $scope.Recombine = function() {
+        $scope.waiting = true;
         $scope.cassette = $scope.cassette.replace(/\s+/g,'');
         var data = JSON.stringify({cassette: $scope.cassette,
                                    homology_arm_length: $scope.homology_arm_length,
@@ -647,6 +652,7 @@ function GenomeRecombinationController($scope, $routeParams, $http, $location) {
                                    create: true});
         $http.post('/edge/genomes/'+$scope.genomeId+'/recombination/', data)
              .success(function(genome) {
+                 $scope.waiting = false;
                  var url = '/genomes/'+genome.id+'/';
                  $location.path(url);
              })

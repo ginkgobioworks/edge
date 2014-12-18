@@ -477,6 +477,8 @@ class GenomeRecombinationView(GenomeOperationViewBase):
                             default=None, location='json')
         parser.add_argument('notes', field_type=str, required=False,
                             default=None, location='json')
+        parser.add_argument('design_primers', field_type=bool, required=False,
+                            default=False, location='json')
 
         args = parser.parse_args(request)
         cassette = args['cassette']
@@ -484,7 +486,8 @@ class GenomeRecombinationView(GenomeOperationViewBase):
         genome_name = args['genome_name']
         cassette_name = args['cassette_name']
         notes = args['notes']
+        design_primers = args['design_primers']
 
         return (dict(cassette=cassette, homology_arm_length=homology_arm_length,
                      genome_name=genome_name, cassette_name=cassette_name,
-                     notes=notes), RecombineOp)
+                     notes=notes, design_primers=design_primers), RecombineOp)

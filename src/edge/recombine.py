@@ -187,7 +187,7 @@ def get_verification_primers(genome, region, cassette):
             design_primers_from_template(template, roi_start, roi_len, {})
 
 
-def find_swap_region(genome, cassette, min_homology_arm_length, verification_primers=False):
+def find_swap_region(genome, cassette, min_homology_arm_length, design_primers=False):
     """
     Find a region on genome that can be recombined out using the cassette.
     Returns homology arms and possible regions.
@@ -201,7 +201,7 @@ def find_swap_region(genome, cassette, min_homology_arm_length, verification_pri
 
     regions = find_possible_swap_regions(genome, front_arm, back_arm)
 
-    if verification_primers is True:
+    if design_primers is True:
         for region in regions:
             get_verification_primers(genome, region, cassette)
 
@@ -324,17 +324,19 @@ class RecombineOp(object):
 
     @staticmethod
     def check(genome, cassette, homology_arm_length,
-              genome_name=None, cassette_name=None, notes=None):
-        return find_swap_region(genome, cassette, homology_arm_length)
+              genome_name=None, cassette_name=None, notes=None, design_primers=False):
+        return find_swap_region(genome, cassette, homology_arm_length,
+                                design_primers=design_primers)
 
     @staticmethod
     def get_operation(cassette, homology_arm_length,
-                      genome_name=None, cassette_name=None, notes=None):
+                      genome_name=None, cassette_name=None, notes=None, design_primers=False):
         params = dict(cassette=cassette, homology_arm_length=homology_arm_length)
         op = Operation(type=Operation.RECOMBINATION[0], params=json.dumps(params))
         return op
 
     @staticmethod
-    def perform(genome, cassette, homology_arm_length, genome_name, cassette_name, notes):
+    def perform(genome, cassette, homology_arm_length, genome_name, cassette_name, notes,
+                design_primers=False):
         return recombine(genome, cassette, homology_arm_length,
                          genome_name=genome_name, cassette_name=cassette_name, notes=notes)

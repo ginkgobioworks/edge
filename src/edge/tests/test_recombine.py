@@ -530,7 +530,7 @@ class GenomeRecombinationTest(TestCase):
         from edge.pcr import pcr_from_genome
 
         g = self.build_genome(False, template)
-        r = find_swap_region(g, cassette, arm_len, verification_primers=True)
+        r = find_swap_region(g, cassette, arm_len, design_primers=True)
 
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].verification_cassette), 5)
@@ -628,7 +628,7 @@ class GenomeRecombinationTest(TestCase):
         arm_len = min(len(front_bs), len(back_bs))
 
         g = self.build_genome(False, template)
-        r = find_swap_region(g, cassette, arm_len, verification_primers=True)
+        r = find_swap_region(g, cassette, arm_len, design_primers=True)
 
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].verification_cassette), 5)
@@ -638,7 +638,7 @@ class GenomeRecombinationTest(TestCase):
         # cassette same as region to be replaced, front and back verification
         # primers are not useful
         cassette = ''.join([front_bs, middle, back_bs])
-        r = find_swap_region(g, cassette, arm_len, verification_primers=True)
+        r = find_swap_region(g, cassette, arm_len, design_primers=True)
 
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].verification_cassette), 5)

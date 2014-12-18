@@ -30,12 +30,40 @@
     <button class="btn btn-primary" ng-click="FindRegions()">Preview</button>
 </form>
 
+<div ng-if="waiting === true">
+  <p>
+    <br/>
+    <em>Waiting for server to respond ...</em>
+    <br/>
+  </p>
+</div>
+
 <div ng-if="regions !== undefined" class="results">
     <p ng-if="regions.length === 0"><em>No matching region</em></p>
     <ul ng-if="regions.length > 0">
         <li ng-repeat="region in regions">
-            Found homology region on fragment {{ region.fragment_name }}:
-            {{ region.start }}-{{ region.end }} bps
+            <p>
+                Found homology region on fragment {{ region.fragment_name }}:
+                {{ region.start }}-{{ region.end }} bps
+            </p>
+            <div ng-if="region.verification_front.length > 0" class="primers">
+                <p>5' junction verification primers</p>
+                <ul>
+                    <li ng-repeat='primer in region.verification_front'><partial template='primer' /></li>
+                </ul>
+            </div>
+            <div ng-if="region.verification_back.length > 0" class="primers">
+                <p>3' junction verification primers</p>
+                <ul>
+                    <li ng-repeat='primer in region.verification_back'><partial template='primer' /></li>
+                </ul>
+            </div>
+            <div ng-if="region.verification_cassette.length > 0" class="primers">
+                <p>Whole cassette verification primers</p>
+                <ul>
+                    <li ng-repeat='primer in region.verification_cassette'><partial template='primer' /></li>
+                </ul>
+            </div>
         </li>
     </ul>
     <p ng-if="regions.length === 1">

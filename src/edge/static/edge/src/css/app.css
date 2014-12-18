@@ -2,6 +2,7 @@
 .space-top { margin-top:25px; }
 .space-top-small { margin-top:10px; }
 .select-mini { font-size:0.9em; }
+.primers { margin:15px 0px; }
 
 .annotation-summary { display:inline-block; margin-right:10px; margin-top:10px; }
 .annotation-zoom { display:inline-block; position:absolute; }
