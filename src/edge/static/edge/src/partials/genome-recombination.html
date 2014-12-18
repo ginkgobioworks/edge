@@ -47,19 +47,31 @@
                 {{ region.start }}-{{ region.end }} bps
             </p>
             <div ng-if="region.verification_front.length > 0" class="primers">
-                <p>5' junction verification primers</p>
+                <p>
+                    5' junction PCR primers
+                    <br/>
+                    (product on modified genome only, no product on WT)
+                </p>
                 <ul>
                     <li ng-repeat='primer in region.verification_front'><partial template='primer' /></li>
                 </ul>
             </div>
             <div ng-if="region.verification_back.length > 0" class="primers">
-                <p>3' junction verification primers</p>
+                <p>
+                    3' junction PCR primers
+                    <br/>
+                    (product on modified genome only, no product on WT)
+                </p>
                 <ul>
                     <li ng-repeat='primer in region.verification_back'><partial template='primer' /></li>
                 </ul>
             </div>
             <div ng-if="region.verification_cassette.length > 0" class="primers">
-                <p>Whole cassette verification primers</p>
+                <p>
+                    Whole cassette PCR primers
+                    <br/>
+                    (product on modified genome and WT)
+                </p>
                 <ul>
                     <li ng-repeat='primer in region.verification_cassette'><partial template='primer' /></li>
                 </ul>
