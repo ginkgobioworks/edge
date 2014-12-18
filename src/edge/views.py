@@ -209,39 +209,51 @@ class FragmentListView(ViewBase):
 class GenomeView(ViewBase):
 
     @staticmethod
-    def op_to_dict(op, include_fragments):
+    def op_to_dict(genome, op):
         choices = Operation._meta.get_field_by_name('type')[0].choices
         type_str = [t[1] for t in choices if t[0] == op.type]
         if len(type_str) > 0:
             type_str = type_str[0]
         else:
             type_str = ''
-        d = dict(type=type_str, params=json.loads(op.params))
+
+        annotations = {}
+        if genome.has_location_index:
+            genome = genome.indexed_genome()
+            for feature in op.feature_set.all():
+                fragment_annotations = genome.find_annotation_by_feature(feature)
+                for fragment_id, fragment_annotations in fragment_annotations.iteritems():
+                    if fragment_id not in annotations:
+                        annotations[fragment_id] = []
+                    annotations[fragment_id].extend(fragment_annotations)
+
+        annotation_list = []
+        for fragment_id in annotations:
+            f = genome.fragments.filter(id=fragment_id)[0]
+            v = annotations[fragment_id]
+            v = [FragmentAnnotationsView.to_dict(x) for x in v]
+            for a in v:
+                a['fragment_id'] = fragment_id
+                a['fragment_name'] = f.name
+                annotation_list.append(a)
+
+        d = dict(type=type_str, params=json.loads(op.params), annotations=annotation_list)
         return d
 
     @staticmethod
-    def to_dict(genome, include_changes=True, compute_length=True,
-                include_fragments=True, include_operations=True):
-        changes = None
-        if include_changes is True:
-            if genome.has_location_index:
-                genome = genome.indexed_genome()
-                changes = genome.changed_locations_by_fragment()
-                changes = {f.id: v for f, v in changes.iteritems()}
+    def to_dict(genome, compute_length=True, include_fragments=True, include_operations=True):
+        operations = []
+        if include_operations:
+            for op in genome.operation_set.all():
+                d = GenomeView.op_to_dict(genome, op)
+                operations.append(d)
+
         fragments = None
         if include_fragments:
             fragments = []
             for f in genome.fragments.all():
                 d = FragmentView.to_dict(f, compute_length=compute_length)
-                if changes is not None and f.id in changes:
-                    d['changes'] = changes[f.id]
                 fragments.append(d)
-
-        operations = []
-        if include_operations:
-            for op in genome.operation_set.all():
-                d = GenomeView.op_to_dict(op, include_fragments)
-                operations.append(d)
 
         d = dict(id=genome.id,
                  uri=reverse('genome', kwargs=dict(genome_id=genome.id)),
@@ -349,7 +361,6 @@ class GenomeListView(ViewBase):
             else:
                 genomes = Genome.objects.filter(active=True).order_by('-id')[s:s+p]
         return [GenomeView.to_dict(genome,
-                                   include_changes=False,
                                    compute_length=False,
                                    include_fragments=False)
                 for genome in genomes]

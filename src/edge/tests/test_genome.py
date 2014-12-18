@@ -115,6 +115,20 @@ class GenomeTest(TestCase):
         self.assertEquals(annotations[f.id][0].base_last, 8)
         self.assertEquals(annotations[f.id][0].feature.name, 'Foo gene')
 
+    def test_find_annotation_by_feature(self):
+        genome = Genome.create('Foo')
+        s = 'atggcatattcgcagct'
+        f = genome.add_fragment('chrI', s)
+        feature = f.annotate(3, 8, 'Foo gene', 'gene', 1)
+
+        annotations = genome.indexed_genome().find_annotation_by_feature(feature)
+        self.assertEquals(len(annotations), 1)
+        self.assertEquals(f.id in annotations, True)
+        self.assertEquals(len(annotations[f.id]), 1)
+        self.assertEquals(annotations[f.id][0].base_first, 3)
+        self.assertEquals(annotations[f.id][0].base_last, 8)
+        self.assertEquals(annotations[f.id][0].feature.name, 'Foo gene')
+
     def test_changes_return_empty_array_if_no_parent(self):
         genome = Genome.create('Foo')
         self.assertEquals(len(genome.fragments.all()), 0)

@@ -48,3 +48,5 @@ class Fragment_Annotator:
             chunk = fc.next_chunk
             if chunk is None:
                 chunk = self.start_chunk
+
+        return new_feature

@@ -79,6 +79,11 @@ class Indexed_Genome(Genome):
             by_f[annotation.fragment.id].append(annotation)
         return by_f
 
+    def find_annotation_by_feature(self, feature):
+        q = Chunk_Feature.objects.filter(chunk__fragment_chunk_location__fragment__genome=self,
+                                         feature=feature)
+        return self.__annotations_from_chunk_features(list(q))
+
     def find_annotation_by_name(self, name):
         q = Chunk_Feature.objects.filter(chunk__fragment_chunk_location__fragment__genome=self,
                                          feature__name=name)

@@ -18,11 +18,18 @@
 
 <div class="lead space-top">
     <p>Genome: <a href="#/genomes/{{ genome.id }}" ng-bind-html-unsafe='genome.name'></a> </p>
-    <p>Changes:</p>
-    <ul><li ng-repeat="tuple in changes_and_locs">
+    <p>
+      Changes:
+      <span ng-repeat="op in genome.operations">
+        <span ng-repeat="annotation in op.annotations">
+          <span ng-if="annotation.fragment_id === fragment.id">
             <a href="javascript:void(0);"
-               ng-click="zoomAt(tuple.annotation)">{{ tuple.desc }}</a>
-        </li></ul>
+               ng-click="zoomAt(annotation)"
+             >{{ annotation.name }} ({{ annotation.base_first }}-{{ annotation.base_last }})</a>
+          </span>
+        </span>
+      </span>
+    </p>
 </div>
 
 <partial template="genome-fragment-layout"></partial>
