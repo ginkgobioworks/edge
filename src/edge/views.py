@@ -444,6 +444,10 @@ class GenomeOperationViewBase(ViewBase):
                 if child:
                     schedule_building_blast_db(child.id)
                     return GenomeView.to_dict(child), 201
+            else:  # found existing child, turn child to 'active' if it is not
+                if child.active is False:
+                    child.active = True
+                    child.save()
 
             if child is None:
                 return None, 400

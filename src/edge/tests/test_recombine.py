@@ -526,6 +526,43 @@ class GenomeRecombinationTest(TestCase):
         c2 = r['id']
         self.assertEquals(c1, c2)
 
+    def test_multiple_recombines_return_active_child(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = ''.join([front_bs, replaced, back_bs])
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % g.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=arm_len,
+                                                    create=True,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 201)
+        r = json.loads(res.content)
+        c = Genome.objects.get(pk=r['id'])
+        c.active = False
+        c.save()
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % g.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=arm_len,
+                                                    create=True,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 200)
+        r = json.loads(res.content)
+        c = Genome.objects.get(pk=r['id'])
+        self.assertEquals(c.active, True)
+
     def __test_verification_primers(self, template, middle, cassette, arm_len, is_reversed):
         from edge.pcr import pcr_from_genome
 
