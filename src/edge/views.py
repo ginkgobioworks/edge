@@ -244,7 +244,7 @@ class GenomeView(ViewBase):
     def to_dict(genome, compute_length=True, include_fragments=True, include_operations=True):
         operations = []
         if include_operations:
-            for op in genome.operation_set.all():
+            for op in genome.operation_set.order_by('id'):
                 d = GenomeView.op_to_dict(genome, op)
                 operations.append(d)
 
@@ -362,7 +362,8 @@ class GenomeListView(ViewBase):
                 genomes = Genome.objects.filter(active=True).order_by('-id')[s:s+p]
         return [GenomeView.to_dict(genome,
                                    compute_length=False,
-                                   include_fragments=False)
+                                   include_fragments=False,
+                                   include_operations=False)
                 for genome in genomes]
 
     def on_post(self, request):
