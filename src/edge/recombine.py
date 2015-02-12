@@ -9,6 +9,17 @@ from Bio.Seq import Seq
 
 CHECK_JUNCTION_PRIMER_WINDOW = 200
 CHECK_JUNCTION_SIZE = 200
+END_BPS_IGNORE = 6
+
+
+def remove_overhangs(s):
+    if s is None or len(s) == 0:
+        return s
+    if s[0] == '(' and s.find(')') >= 0:
+        s = s[s.find(')')+1:]
+    if s[-1] == ')' and s.rfind('(') >= 0:
+        s = s[:s.rfind('(')]
+    return s
 
 
 class RecombinationRegion(object):
@@ -187,25 +198,42 @@ def get_verification_primers(genome, region, cassette):
             design_primers_from_template(template, roi_start, roi_len, {})
 
 
-def find_swap_region(genome, cassette, min_homology_arm_length, design_primers=False):
+def _find_swap_region(genome, cassette, min_homology_arm_length, design_primers=False,
+                      try_smaller_sequence=True):
     """
     Find a region on genome that can be recombined out using the cassette.
-    Returns homology arms and possible regions.
+    Returns homology arms and possible regions along with cassette used to find matches.
     """
 
+    cassette = remove_overhangs(cassette)
     if len(cassette) < 2*min_homology_arm_length:
-        return None
+        return (None, cassette)
 
     front_arm = cassette[0:min_homology_arm_length]
     back_arm = cassette[-min_homology_arm_length:]
 
     regions = find_possible_swap_regions(genome, front_arm, back_arm)
+    if len(regions) == 0 and try_smaller_sequence:
+        cassette = cassette[END_BPS_IGNORE:-END_BPS_IGNORE]
+        if len(cassette) >= 2*min_homology_arm_length:
+            return _find_swap_region(genome, cassette, min_homology_arm_length,
+                                     design_primers, False)
+        return ([], cassette)
 
     if design_primers is True:
         for region in regions:
             get_verification_primers(genome, region, cassette)
 
-    return regions
+    return (regions, cassette)
+
+
+def find_swap_region(genome, cassette, min_homology_arm_length, design_primers=False):
+    """
+    Same as _find_swap_region, but does not return cassette used to find matches.
+    """
+
+    x = _find_swap_region(genome, cassette, min_homology_arm_length, design_primers, True)
+    return x[0]
 
 
 def recombine_region(genome, region, cassette, min_homology_arm_length, cassette_name,
@@ -281,9 +309,10 @@ def shift_regions(regions, fragment_id, start, replaced, added, new_fragment_id)
 @transaction.atomic()
 def recombine(genome, cassette, homology_arm_length,
               genome_name=None, cassette_name=None, notes=None):
+    cassette = remove_overhangs(cassette)
     cassette = str(Seq(cassette))  # clean the sequence
 
-    regions = find_swap_region(genome, cassette, homology_arm_length)
+    regions, cassette = _find_swap_region(genome, cassette, homology_arm_length)
     if regions is None:
         return None
 
@@ -331,6 +360,7 @@ class RecombineOp(object):
     @staticmethod
     def get_operation(cassette, homology_arm_length,
                       genome_name=None, cassette_name=None, notes=None, design_primers=False):
+        cassette = remove_overhangs(cassette)
         params = dict(cassette=cassette, homology_arm_length=homology_arm_length)
         op = Operation(type=Operation.RECOMBINATION[0], params=json.dumps(params))
         return op

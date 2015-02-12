@@ -2,10 +2,32 @@ import os
 import json
 from Bio.Seq import Seq
 from django.test import TestCase
-from edge.recombine import find_swap_region, recombine
+from edge.recombine import find_swap_region, recombine, remove_overhangs
 from edge.models import Genome, Fragment, Genome_Fragment, Operation
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 import edge.recombine
+
+
+class RemoveOverhangsTest(TestCase):
+    def test_removes_front_overhang(self):
+        self.assertEquals(remove_overhangs('(atg/)aa'), 'aa')
+
+    def test_removes_back_overhang(self):
+        self.assertEquals(remove_overhangs('aa(atg/)'), 'aa')
+
+    def test_removes_front_and_back(self):
+        self.assertEquals(remove_overhangs('(atg/)aa(atg/)'), 'aa')
+
+    def test_does_not_remove_internal_overhang(self):
+        self.assertEquals(remove_overhangs('(atg/)a(atg/)a(atg/)'), 'a(atg/)a')
+
+    def test_does_not_remove_unclosed_overhang(self):
+        self.assertEquals(remove_overhangs('(atg/aa'), '(atg/aa')
+        self.assertEquals(remove_overhangs('atg/aa)'), 'atg/aa)')
+
+    def test_works_with_single_char_input(self):
+        self.assertEquals(remove_overhangs(')'), ')')
+        self.assertEquals(remove_overhangs('('), '(')
 
 
 class GenomeRecombinationTest(TestCase):
@@ -246,6 +268,25 @@ class GenomeRecombinationTest(TestCase):
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
                           ''.join([upstream, cassette, downstream]))
+
+    def test_recombines_ignoring_upstream_and_downstream_bases(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = ''.join(['a'*6+front_bs, replaced, back_bs+'a'*6])
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+        c = recombine(g, cassette, arm_len)
+
+        self.assertNotEqual(g.id, c.id)
+        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+                          ''.join([upstream, front_bs, replaced, back_bs, downstream]))
 
     def test_creates_operation(self):
         upstream = "gagattgtccgcgtttt"
