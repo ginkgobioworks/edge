@@ -9,7 +9,7 @@ from Bio.Seq import Seq
 
 CHECK_JUNCTION_PRIMER_WINDOW = 200
 CHECK_JUNCTION_SIZE = 200
-END_BPS_IGNORE = 6
+END_BPS_IGNORE = 8
 
 
 def remove_overhangs(s):
