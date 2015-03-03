@@ -22,6 +22,89 @@ def remove_overhangs(s):
     return s
 
 
+def blast_result_annotations(res):
+    fragment = Fragment.objects.get(pk=res.fragment_id).indexed_fragment()
+
+    # get annotations, but only those that correspond to a full feature
+   
+    annotations = [dict(base_first=a.base_first,
+                        base_last=a.base_last,
+                        feature_name=a.feature.name,
+                        fragment_id=fragment.id)
+                   for a in fragment.annotations(res.subject_start, res.subject_end)
+                   if a.feature_base_first == 1 and a.feature_base_last == a.feature.length and
+                      a.base_first >= res.subject_start and a.base_last <= res.subject_end]
+
+    return annotations
+
+
+def identify_changes(query, subject):
+    # identify changes w/r/t subject, assuming subject is complete sequence of
+    # some feature. query and subject are alignments from blast.
+
+    diffs = []
+    si = 0
+
+    for i, s in enumerate(subject):
+        s = s.upper()
+        q = query[i].upper()
+
+        if s == '-':
+            # insertion in query
+            diffs.append('+%s%s' % (si, q))
+
+        elif q == '-':
+            # deletion in query
+            diffs.append('-%s%s' % (si, s))
+            si += 1
+
+        elif q != s:
+            # mutation
+            diffs.append('%s%s%s' % (s, si, q))
+            si += 1
+
+        else:
+            # same
+            si += 1
+
+    return diffs
+
+
+def get_cassette_annotation(annotation, blast_res):
+    # for an annotation in blast result, returns fragment of query from blast
+    # result and differences to subject
+
+    q = []
+    s = []
+
+    subject_i = blast_res.subject_start-1
+    query_i = blast_res.query_start-1
+    query_start = None
+    query_end = None
+
+    for i, subject_base in enumerate(blast_res.alignment['subject']):
+        if subject_base != '-':
+            subject_i += 1
+      
+        query_base = blast_res.alignment['query'][i]
+        if query_base != '-':
+            query_i += 1
+
+        if subject_i >= annotation['base_first'] and subject_i <= annotation['base_last']:
+            if subject_i == annotation['base_first']:
+                query_start = query_i
+            if subject_i == annotation['base_last']:
+                query_end = query_i
+            q.append(blast_res.alignment['query'][i])
+            s.append(blast_res.alignment['subject'][i])
+
+    diffs = identify_changes(q, s)
+    diffs = ' '.join(diffs)
+
+    return dict(base_first=query_start, base_last=query_end,
+                feature_name=annotation['feature_name']+' '+diffs)
+
+
 class RecombinationRegion(object):
 
     def __init__(self, fragment_id, fragment_name,
@@ -40,6 +123,45 @@ class RecombinationRegion(object):
 
     def to_dict(self):
         return self.__dict__
+
+    def update_annotations(self, genome, cassette):
+        self.cassette_annotations = self.get_cassette_annotations(genome, cassette)
+
+    def get_cassette_annotations(self, genome, cassette):
+        return self.get_cassette_inherited_annotations(genome, cassette) +\
+               self.get_cassette_new_annotations(genome, cassette)
+
+    def get_cassette_inherited_annotations(self, genome, cassette):
+        # blast cassette against unmodified genome
+        if self.cassette_reversed:
+            cassette = str(Seq(cassette).reverse_complement())
+        cassette_blast_res = blast_genome(genome, 'blastn', cassette)
+
+        # find matches inside region to be replaced
+        matches = [res for res in cassette_blast_res\
+                   if res.fragment_id == self.fragment_id and
+                      res.subject_start >= self.start and res.subject_end <= self.end]
+
+        inherited_annotations = []
+
+        for blast_res in matches:
+            # get annotations for each match
+            annotations = blast_result_annotations(blast_res)
+
+            print blast_res.to_dict()
+            print annotations
+
+            # update annotations with blast result
+            for annotation in annotations:
+                inherited_annotations.append(get_cassette_annotation(annotation, blast_res))
+
+        return inherited_annotations
+
+    def get_cassette_new_annotations(self, genome, cassette):
+        # XXX
+        # detect ORF on cassette
+
+        return []
 
 
 def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
@@ -243,7 +365,13 @@ def find_swap_region(genome, cassette, min_homology_arm_length,
 
     x = _find_swap_region(genome, cassette, min_homology_arm_length,
                           design_primers, primer3_opts, True)
-    return x[0]
+
+    regions = []
+    for region in x[0]:
+        region.update_annotations(genome, cassette)
+        regions.append(region)
+
+    return regions
 
 
 def recombine_region(genome, region, cassette, min_homology_arm_length, cassette_name,
