@@ -13,7 +13,7 @@
 
 <h3>Recombination on Genome {{ genome.id }}: <span ng-bind-html-unsafe='genome.name'></span></h3>
 
-<form role="form" class="space-top">
+<form role="form" class="space-top" id="recombine-inputs">
     <div class="form-inline">
         Homology arm length
         <div class="form-group">
@@ -30,6 +30,45 @@
     <button class="btn btn-primary" ng-click="FindRegions()">Preview</button>
 </form>
 
+<div id="recombine-primer3-opts" class="space-top">
+  <p>
+    Primer3 params (for verification primers)
+  </p>
+
+  <table class="table table-condensed">
+    <tr>
+      <td>OPT_SIZE:</td>
+      <td><input ng-model="primer3_opts.PRIMER_OPT_SIZE" /></td>
+      <td>MIN_SIZE:</td>
+      <td><input ng-model="primer3_opts.PRIMER_MIN_SIZE" /></td>
+      <td>MAX_SIZE:</td>
+      <td><input ng-model="primer3_opts.PRIMER_MAX_SIZE" /></td>
+    </tr>
+    <tr>
+      <td>OPT_TM:</td>
+      <td><input ng-model="primer3_opts.PRIMER_OPT_TM" /></td>
+      <td>MIN_TM:</td>
+      <td><input ng-model="primer3_opts.PRIMER_MIN_TM" /></td>
+      <td>MAX_TM:</td>
+      <td><input ng-model="primer3_opts.PRIMER_MAX_TM" /></td>
+    </tr>
+    <tr>
+      <td>MIN_GC:</td>
+      <td><input ng-model="primer3_opts.PRIMER_MIN_GC" /></td>
+      <td>MAX_GC:</td>
+      <td><input ng-model="primer3_opts.PRIMER_MAX_GC" /></td>
+    </tr>
+    <tr>
+      <td>SALT_MONOVALENT:</td>
+      <td><input ng-model="primer3_opts.PRIMER_SALT_MONOVALENT" /></td>
+      <td>DNA_CONC nM:</td>
+      <td><input ng-model="primer3_opts.PRIMER_DNA_CONC" /></td>
+    </tr>
+  </table>
+</div>
+
+<div class="clearfix"></div>
+
 <div ng-if="waiting === true">
   <p>
     <br/>
@@ -40,12 +79,12 @@
 
 <div ng-if="regions !== undefined" class="results">
     <p ng-if="regions.length === 0"><em>No matching region</em></p>
-    <ul ng-if="regions.length > 0">
-        <li ng-repeat="region in regions">
-            <p>
+    <div ng-if="regions.length > 0">
+        <div ng-repeat="region in regions" class="recombine-candidate">
+            <h5>
                 Found homology region on fragment {{ region.fragment_name }}:
                 {{ region.start }}-{{ region.end }} bps
-            </p>
+            </h5>
             <div ng-if="region.verification_front.length > 0" class="primers">
                 <p>
                     PCR primers to verify 5' junction
@@ -76,8 +115,8 @@
                     <li ng-repeat='primer in region.verification_cassette'><partial template='primer' /></li>
                 </ul>
             </div>
-        </li>
-    </ul>
+        </div>
+    </div>
     <p ng-if="regions.length === 1">
       <button class="btn btn-primary" ng-click="Recombine()">Create post-recombination genome</button>
     </p>

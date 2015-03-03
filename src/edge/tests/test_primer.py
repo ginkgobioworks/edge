@@ -39,7 +39,6 @@ class DesignPrimerTest(TestCase):
             self.assertNotEqual(p[0], None)
             self.assertEquals(p[0].index(product) >= 0, True)
 
-
     def test_computes_primer_distance_to_junction(self):
         upstream = "cagtacgatcgttggtatgctgactactagcgtagctagcacgtcgtgtccaggcttgagcgacgt"
         product = "cagctggtaatcgtactcgtactagcatcgtacgtgtctgatcatctgacgtatcatctga"
@@ -49,15 +48,15 @@ class DesignPrimerTest(TestCase):
         WIN = 10
         junctions = [len(upstream)+1, len(upstream)+len(product)-1]
         res = design_primers_from_template(template, len(upstream)+1-WIN, len(product)+WIN*2,
-                                           junctions, ())
+                                           junctions, {})
         self.assertEquals(len(res), 5)
         for r in res:
             left = r['PRIMER_LEFT_SEQUENCE']
             self.assertEquals(r['PRIMER_LEFT_SEQUENCE_DISTANCE_TO_JUNCTION'] >= WIN, True)
-            self.assertEquals(template.lower().index(left.lower())+\
-                              len(left)+\
+            self.assertEquals(template.lower().index(left.lower()) +
+                              len(left) +
                               r['PRIMER_LEFT_SEQUENCE_DISTANCE_TO_JUNCTION'], junctions[0])
             right = str(Seq(r['PRIMER_RIGHT_SEQUENCE']).reverse_complement())
             self.assertEquals(r['PRIMER_RIGHT_SEQUENCE_DISTANCE_TO_JUNCTION'] >= WIN, True)
-            self.assertEquals(template.lower().index(right.lower())-\
+            self.assertEquals(template.lower().index(right.lower()) -
                               r['PRIMER_RIGHT_SEQUENCE_DISTANCE_TO_JUNCTION'], junctions[1])

@@ -48,3 +48,10 @@ div.alignment div { white-space: nowrap; }
 
 #sequence-viewer { margin-top: 20px; }
 .op-params { word-break: break-all; font-family: courier; }
+
+.recombine-candidate { margin: 15px 0px; }
+#recombine-inputs { float:left; margin-right: 20px; }
+#recombine-primer3-opts { float:left; width: inherit; }
+#recombine-primer3-opts table { font-size: 0.9em; width: inherit; }
+#recombine-primer3-opts table input { width: 40px; }
+

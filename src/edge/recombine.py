@@ -133,7 +133,7 @@ def remove_working_primers(genome, primers):
     return failed_primers
 
 
-def get_verification_primers(genome, region, cassette):
+def get_verification_primers(genome, region, cassette, primer3_opts):
     """
     Design primers to verify replacing region with cassette.
     """
@@ -162,7 +162,7 @@ def get_verification_primers(genome, region, cassette):
         region.verification_front =\
             remove_working_primers(genome,
                                    design_primers_from_template(template, roi_start, roi_len,
-                                                                junction, {}))
+                                                                junction, primer3_opts))
 
     #
     # back junction
@@ -186,7 +186,7 @@ def get_verification_primers(genome, region, cassette):
         region.verification_back =\
             remove_working_primers(genome,
                                    design_primers_from_template(template, roi_start, roi_len,
-                                                                junction, {}))
+                                                                junction, primer3_opts))
 
     #
     # cassette
@@ -203,11 +203,11 @@ def get_verification_primers(genome, region, cassette):
         roi_len = len(cassette)
         region.verification_cassette =\
             design_primers_from_template(template, roi_start, roi_len,
-                                         junctions, {})
+                                         junctions, primer3_opts)
 
 
-def _find_swap_region(genome, cassette, min_homology_arm_length, design_primers=False,
-                      try_smaller_sequence=True):
+def _find_swap_region(genome, cassette, min_homology_arm_length,
+                      design_primers=False, primer3_opts=None, try_smaller_sequence=True):
     """
     Find a region on genome that can be recombined out using the cassette.
     Returns homology arms and possible regions along with cassette used to find matches.
@@ -230,17 +230,19 @@ def _find_swap_region(genome, cassette, min_homology_arm_length, design_primers=
 
     if design_primers is True:
         for region in regions:
-            get_verification_primers(genome, region, cassette)
+            get_verification_primers(genome, region, cassette, primer3_opts)
 
     return (regions, cassette)
 
 
-def find_swap_region(genome, cassette, min_homology_arm_length, design_primers=False):
+def find_swap_region(genome, cassette, min_homology_arm_length,
+                     design_primers=False, primer3_opts=None):
     """
     Same as _find_swap_region, but does not return cassette used to find matches.
     """
 
-    x = _find_swap_region(genome, cassette, min_homology_arm_length, design_primers, True)
+    x = _find_swap_region(genome, cassette, min_homology_arm_length,
+                          design_primers, primer3_opts, True)
     return x[0]
 
 
@@ -361,13 +363,16 @@ class RecombineOp(object):
 
     @staticmethod
     def check(genome, cassette, homology_arm_length,
-              genome_name=None, cassette_name=None, notes=None, design_primers=False):
+              genome_name=None, cassette_name=None, notes=None,
+              design_primers=False, primer3_opts=None):
         return find_swap_region(genome, cassette, homology_arm_length,
-                                design_primers=design_primers)
+                                design_primers=design_primers,
+                                primer3_opts=primer3_opts)
 
     @staticmethod
     def get_operation(cassette, homology_arm_length,
-                      genome_name=None, cassette_name=None, notes=None, design_primers=False):
+                      genome_name=None, cassette_name=None, notes=None,
+                      design_primers=False, primer3_opts=None):
         cassette = remove_overhangs(cassette)
         params = dict(cassette=cassette, homology_arm_length=homology_arm_length)
         op = Operation(type=Operation.RECOMBINATION[0], params=json.dumps(params))
@@ -375,6 +380,6 @@ class RecombineOp(object):
 
     @staticmethod
     def perform(genome, cassette, homology_arm_length, genome_name, cassette_name, notes,
-                design_primers=False):
+                design_primers=False, primer3_opts=None):
         return recombine(genome, cassette, homology_arm_length,
                          genome_name=genome_name, cassette_name=cassette_name, notes=notes)
