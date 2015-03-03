@@ -155,11 +155,14 @@ def get_verification_primers(genome, region, cassette):
     if region.start > 1 and back.lower() != region.sequence[0:downstream_window].lower():
         front = fragment.get_sequence(region.start-upstream_window, region.start-1)
         template = front+back
+        junction = [len(front)]
         roi_start = len(front)-CHECK_JUNCTION_SIZE/2 if len(front) > CHECK_JUNCTION_SIZE/2 else 0
         roi_len = min(CHECK_JUNCTION_SIZE, min(len(front), CHECK_JUNCTION_SIZE/2)+len(cassette))
+        # remove primers that works on un-modified genome for creating a PCR product
         region.verification_front =\
             remove_working_primers(genome,
-                                   design_primers_from_template(template, roi_start, roi_len, {}))
+                                   design_primers_from_template(template, roi_start, roi_len,
+                                                                junction, {}))
 
     #
     # back junction
@@ -176,11 +179,14 @@ def get_verification_primers(genome, region, cassette):
         back = fragment.get_sequence(region.start+len(region.sequence),
                                      region.start+len(region.sequence)+downstream_window-1)
         template = front+back
+        junction = [len(front)]
         roi_start = len(front)-CHECK_JUNCTION_SIZE/2 if len(front) > CHECK_JUNCTION_SIZE/2 else 0
         roi_len = min(CHECK_JUNCTION_SIZE, min(len(back), CHECK_JUNCTION_SIZE/2)+len(cassette))
+        # remove primers that works on un-modified genome for creating a PCR product
         region.verification_back =\
             remove_working_primers(genome,
-                                   design_primers_from_template(template, roi_start, roi_len, {}))
+                                   design_primers_from_template(template, roi_start, roi_len,
+                                                                junction, {}))
 
     #
     # cassette
@@ -192,10 +198,12 @@ def get_verification_primers(genome, region, cassette):
                                      region.start+len(region.sequence) +
                                      CHECK_JUNCTION_PRIMER_WINDOW-1)
         template = front+cassette+back
+        junctions = [len(front), len(front+cassette)-1]
         roi_start = template.index(cassette)
         roi_len = len(cassette)
         region.verification_cassette =\
-            design_primers_from_template(template, roi_start, roi_len, {})
+            design_primers_from_template(template, roi_start, roi_len,
+                                         junctions, {})
 
 
 def _find_swap_region(genome, cassette, min_homology_arm_length, design_primers=False,

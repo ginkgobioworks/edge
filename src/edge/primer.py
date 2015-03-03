@@ -3,6 +3,7 @@ import os
 import tempfile
 import subprocess
 from django.conf import settings
+from Bio.Seq import Seq
 
 
 PRIMER3_MIN_PRIMER = 18
@@ -67,7 +68,7 @@ def primer3_run(opts):
     return parse_primer3_output(r)
 
 
-def design_primers_from_template(template, roi_start, roi_len, opts):
+def design_primers_from_template(template, roi_start, roi_len, junctions, opts):
     min_primer_product_size = min(PRIMER3_MIN_PRIMER*2+roi_len, len(template))
     max_primer_product_size = len(template)
 
@@ -80,7 +81,21 @@ def design_primers_from_template(template, roi_start, roi_len, opts):
                      SEQUENCE_TEMPLATE=template,
                      SEQUENCE_TARGET='%s,%s' % (roi_start, roi_len)))
 
-    return primer3_run(opts)
+    primers = primer3_run(opts)
+    #print junctions
+    if junctions and len(junctions) > 0:
+        for primer in primers:
+            p1 = primer['PRIMER_LEFT_SEQUENCE']
+            p2 = primer['PRIMER_RIGHT_SEQUENCE']
+            p2_rc = str(Seq(p2).reverse_complement())
+            p1_i = template.lower().index(p1.lower())
+            p2_i = template.lower().index(p2_rc.lower())
+            #print 'primers at %s %s' % (p1_i, p2_i)
+            primer['PRIMER_LEFT_SEQUENCE_DISTANCE_TO_JUNCTION'] = junctions[0]-(p1_i+len(p1))
+            primer['PRIMER_RIGHT_SEQUENCE_DISTANCE_TO_JUNCTION'] = p2_i-junctions[-1]
+            #print primer
+
+    return primers
 
 
 def design_primers(fragment, roi_start_bp, roi_len, upstream_window, downstream_window, opts):
@@ -96,4 +111,5 @@ def design_primers(fragment, roi_start_bp, roi_len, upstream_window, downstream_
     template = fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
 
     roi_start = template.index(roi)+1
-    return design_primers_from_template(template, roi_start, len(roi), opts)
+    return design_primers_from_template(template, roi_start, len(roi),
+                                        [upstream_window, upstream_window+len(roi)-1], opts)
