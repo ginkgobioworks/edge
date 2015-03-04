@@ -8,6 +8,8 @@
 .annotation-zoom { display:inline-block; position:absolute; }
 .zoom-container { position:absolute; width:95%; }
 
+.bp-control, .annotation-control { margin-bottom: 15px; text-align:center; }
+
 .annotation-strand-fwd { border-top-right-radius: 20% 50%; border-bottom-right-radius: 20% 50%; }
 .annotation-strand-rev { border-top-left-radius: 20% 50%; border-bottom-left-radius: 20% 50%; }
 

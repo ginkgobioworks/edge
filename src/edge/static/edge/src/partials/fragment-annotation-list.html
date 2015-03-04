@@ -34,16 +34,16 @@
     </div>
 </form>
 
-<div class="well space-top">
-<div class="input-group">
-    <span class="input-group-addon"> Search: </span>
-    <input ng-model="query" class='form-control'>
-    <span class="input-group-addon"> Sort by: </span>
-    <select ng-model="annotationOrderProp" class='form-control'>
-        <option value="base_first">Position</option>
-        <option value="name">Alphabetical</option>
-    </select>
-</div>
+<div class="space-top annotation-control">
+    <div class="input-group">
+        <span class="input-group-addon"> Search: </span>
+        <input ng-model="query" class='form-control'>
+        <span class="input-group-addon"> Sort by: </span>
+        <select ng-model="annotationOrderProp" class='form-control'>
+            <option value="base_first">Position</option>
+            <option value="name">Alphabetical</option>
+        </select>
+    </div>
 </div>
 
 <div ng-if="display_summary == false || (query && query.length >= 2)">

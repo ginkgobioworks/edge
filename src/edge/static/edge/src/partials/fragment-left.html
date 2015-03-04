@@ -12,17 +12,37 @@
 </div>
 
 <div ng-show="display_summary == false">
-    <div class="well">
-    <div class="input-group">
-        <div class="input-group-addon glyphicon glyphicon-zoom-out" ng-click="zoomOut()"></div>
-        <div class="input-group-addon glyphicon glyphicon-arrow-left" ng-click="zoomMoveLeft()"></div>
-        <div class="input-group-addon"
-             style="top:1px; position:relative;"> {{ zoom.base_first }} bps - {{ zoom.base_last }} bps </div>
-        <div class="input-group-addon glyphicon glyphicon-arrow-right" ng-click="zoomMoveRight()"></div>
-        <div class="input-group-addon glyphicon glyphicon-zoom-in" ng-click="zoomIn()"></div>
-        <div class="input-group-addon glyphicon glyphicon-fullscreen" ng-click="showSummary()"></div>
-    </div>
-    </div>
+
+    <form class="form-inline bp-control">
+        <button class="btn btn-default" ng-click="zoomOut()">
+          <span class="glyphicon glyphicon-zoom-out"></span>
+        </button>
+
+        <button class="btn btn-default" ng-click="zoomMoveLeft()">
+          <span class="glyphicon glyphicon-arrow-left"></span>
+        </button>
+
+        Bps:
+        <div class="form-group">
+            <input class="form-control" type="text" ng-model="zoom.base_first" size="6" />
+        </div>
+        <div class="form-group">
+            <input class="form-control" type="text" ng-model="zoom.base_last" size="6" />
+        </div>
+        <button class="btn btn-default" ng-click="userGoto()">Go</button>
+
+        <button class="btn btn-default" ng-click="zoomMoveRight()">
+          <span class="glyphicon glyphicon-arrow-right"></span>
+        </button>
+
+        <button class="btn btn-default" ng-click="zoomIn()">
+          <span class="glyphicon glyphicon-zoom-in"></span>
+        </button>
+
+        <button class="btn btn-default" ng-click="showSummary()">
+          <span class="glyphicon glyphicon-fullscreen"></span>
+        </button>
+    </form>
 
     <div class="zoom-container">
         <span ng-repeat="display in zoom.display"

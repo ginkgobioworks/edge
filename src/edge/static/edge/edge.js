@@ -172,7 +172,7 @@ function GenomeDetailController($scope, $routeParams, $http) {
     });
 }
 
-function FragmentControllerBase($scope, $routeParams, $http) {
+function FragmentControllerBase($scope, $routeParams, $http, $location) {
     var DEFAULT_ZOOM = 2000;
 
     $scope.featureTypes = edgeFeatureTypes;
@@ -299,25 +299,21 @@ function FragmentControllerBase($scope, $routeParams, $http) {
     }
 
     $scope.zoomAt = function(annotation) {
-        // reset
-        $scope.zoom = {};
-        $scope.display_summary = false;
         // get DEFAULT_ZOOM bps upstream and downstream from annotation
         var base_first = annotation['base_first']-DEFAULT_ZOOM;
         if (base_first < 1) { base_first = 1; }
         var base_last = annotation['base_last']+DEFAULT_ZOOM;
         if (base_last > $scope.fragment['length']) { base_last = $scope.fragment['length']; }
-        $scope.zoomRefresh(base_first, base_last);
+
+        $scope.goto(base_first, base_last, true);
     }
 
     $scope.zoomAtExact = function(annotation) {
-        // reset
-        $scope.zoom = {};
-        $scope.display_summary = false;
         var base_first = annotation['base_first'];
         var base_last = annotation['base_last'];
         if (base_last > $scope.fragment['length']) { base_last = $scope.fragment['length']; }
-        $scope.zoomRefresh(base_first, base_last);
+
+        $scope.goto(base_first, base_last, true);
     }
 
     $scope.zoomMoveRight = function() {
@@ -325,8 +321,9 @@ function FragmentControllerBase($scope, $routeParams, $http) {
         var base_first = $scope.zoom['base_last'];
         var base_last = base_first+cur_zoom;
         if (base_last > $scope.fragment['length']) { base_last = $scope.fragment['length']; }
+
         if (base_first < base_last) {
-            $scope.zoomRefresh(base_first, base_last);
+            $scope.goto(base_first, base_last, false);
         }
     }
 
@@ -336,9 +333,8 @@ function FragmentControllerBase($scope, $routeParams, $http) {
             var base_last = $scope.zoom['base_first'];
             var base_first = base_last-cur_zoom;
             if (base_first < 1) { base_first = 1; }
-            if (base_first < base_last) {
-                $scope.zoomRefresh(base_first, base_last);
-            }
+            if (base_first < base_last)
+                $scope.goto(base_first, base_last, false);
         }
     }
 
@@ -347,15 +343,29 @@ function FragmentControllerBase($scope, $routeParams, $http) {
         var base_last = $scope.zoom['base_last']+DEFAULT_ZOOM;
         if (base_first < 1) { base_first = 1; }
         if (base_last > $scope.fragment['length']) { base_last = $scope.fragment['length']; }
-        $scope.zoomRefresh(base_first, base_last);
+
+        $scope.goto(base_first, base_last, false);
     }
 
     $scope.zoomIn = function() {
         if ($scope.zoom['base_last']-$scope.zoom['base_first'] > 2*DEFAULT_ZOOM) {
             var base_first = $scope.zoom['base_first']+DEFAULT_ZOOM;
             var base_last = $scope.zoom['base_last']-DEFAULT_ZOOM;
-            $scope.zoomRefresh(base_first, base_last);
+
+            $scope.goto(base_first, base_last, false);
         }
+    }
+
+    $scope.goto = function(base_first, base_last, reset) {
+        if (reset) {
+            $scope.zoom = {};
+            $scope.display_summary = false;
+        }
+        $scope.zoomRefresh(base_first, base_last);
+    }
+
+    $scope.userGoto = function() {
+        $scope.goto($scope.zoom['base_first'], $scope.zoom['base_last'], true);
     }
 
     $scope.showSummary = function() {
@@ -389,7 +399,8 @@ function FragmentControllerBase($scope, $routeParams, $http) {
                 new_a['formatted_qualifiers'] = "";
                 $scope.annotations.push(new_a);
                 $scope.annotate_error = undefined;
-                $scope.zoomRefresh($scope.zoom['base_first'], $scope.zoom['base_last']);
+
+                $scope.goto($scope.zoom['base_first'], $scope.zoom['base_last'], false);
             }).
             error(function(data, status, headers, config) {
                 $scope.annotate_error = data;
@@ -435,8 +446,26 @@ function FragmentControllerBase($scope, $routeParams, $http) {
                     $scope.summary_annotations.push(annotation);
                 }
             });
-            $scope.showSummary();
+
             $scope.postIndexCallbacks.forEach(function(cb) { cb(); })
+
+
+            $scope.showSummary();
+
+            var bp = $location.search().bp;
+            if (bp) {
+                bp = bp.split(',').slice(0,2);
+                bp[0] = parseInt(bp[0]);
+                bp[1] = parseInt(bp[1]);
+                if (bp[0]) {
+                    if (!bp[1]) {
+                        bp[1] = bp[0]+DEFAULT_ZOOM;
+                        bp[0] = bp[0]-DEFAULT_ZOOM;
+                     }
+                    $scope.goto(bp[0], bp[1], true);
+                }
+            }
+
         });
     });
 

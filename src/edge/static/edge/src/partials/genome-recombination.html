@@ -82,9 +82,11 @@
     <div ng-if="regions.length > 0">
         <div ng-repeat="region in regions" class="recombine-candidate">
             <h5>
-                Found homology region on fragment {{ region.fragment_name }}:
-                {{ region.start }}-{{ region.end }} bps
+                Found homology region on fragment
+                <a href="#/genomes/{{ genome.id }}/fragments/{{ region.fragment_id }}?bp={{ region.start }},{{ region.end }}"
+                 >{{ region.fragment_name }}: {{ region.start }}-{{ region.end }} bps</a>
             </h5>
+
             <div ng-if="region.verification_front.length > 0" class="primers">
                 <p>
                     PCR primers to verify 5' junction

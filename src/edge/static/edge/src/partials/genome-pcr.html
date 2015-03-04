@@ -34,7 +34,9 @@
         </p>
         <div class="sequence sequence-break">{{ results[0] }}</div>
         <p>
-            Genomic region PCR-ed: {{ results[3].fragment_name }} {{ results[3].region[0] }}-{{ results[3].region[1] }}
+            Genomic region amplified:
+            <a href="#/genomes/{{ genome.id }}/fragments/{{ results[3].fragment_id }}?bp={{ results[3].region[0] }},{{ results[3].region[1] }}"
+             >{{ results[3].fragment_name }} {{ results[3].region[0] }}-{{ results[3].region[1] }}</a>
         </p>
     </div>
     
@@ -61,7 +63,9 @@
             <td>
                 {{ hit.hit_def }}
                 <br/>
-                {{ hit.subject_start }}-{{ hit.subject_end }}
+
+                <a href="#/genomes/{{ genome.id }}/fragments/{{ hit.fragment_id }}?bp={{ hit.subject_start }}"
+                 >{{ hit.subject_start }}-{{ hit.subject_end }}</a>
             </td>
             <td>
                 {{ hit.evalue }}
@@ -84,7 +88,9 @@
             <td>
                 {{ hit.hit_def }}
                 <br/>
-                {{ hit.subject_start }}-{{ hit.subject_end }}
+                
+                <a href="#/genomes/{{ genome.id }}/fragments/{{ hit.fragment_id }}?bp={{ hit.subject_start }}"
+                 >{{ hit.subject_start }}-{{ hit.subject_end }}</a>
             </td>
             <td>
                 {{ hit.evalue }}
