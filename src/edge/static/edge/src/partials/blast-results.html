@@ -1,0 +1,25 @@
+<table class="table table-condensed table-bordered">
+    <tr class="success">
+        <th>Query</th>
+        <th>Fragment</th>
+        <th>e-value</th>
+        <th>Alignment</th>
+    </tr>
+
+    <tr ng-repeat="hit in blast_results">
+        <td> Query {{ hit.query_start }}-{{ hit.query_end }} </td>
+        <td>
+            {{ hit.hit_def }}
+            <a href="#/genomes/{{ genome.id }}/fragments/{{ hit.fragment_id }}?bp={{ hit.subject_start }}"
+             >{{ hit.subject_start }}-{{ hit.subject_end }}</a>
+        </td>
+        <td> {{ hit.evalue.toExponential(4) }} </td>
+        <td>
+            <div class="alignment">
+                <div>{{ hit.alignment.subject }}</div>
+                <div>{{ hit.alignment.matchi }}</div>
+                <div>{{ hit.alignment.query }}</div>
+            </div>
+        </td>
+    </tr>
+</table>

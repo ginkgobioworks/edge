@@ -51,6 +51,8 @@ div.alignment div { white-space: nowrap; }
 #sequence-viewer { margin-top: 20px; }
 .op-params { word-break: break-all; font-family: courier; }
 
+#blast-inputs .sequence { height: 150px; }
+
 .recombine-candidate { margin: 15px 0px; }
 #recombine-inputs { float:left; margin-right: 20px; }
 #recombine-primer3-opts { float:left; width: inherit; }

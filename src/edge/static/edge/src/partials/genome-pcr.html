@@ -46,65 +46,7 @@
         </p>
     </div>
 
-    <table class="table table-condensed table-bordered">
-        <tr class="success">
-            <th>Primer</th>
-            <th>Fragment</th>
-            <th>Evalue</th>
-            <th>Alignment</th>
-        </tr>
-
-        <tr ng-repeat="hit in results[1]">
-            <td>
-                Primer1
-                <br/>
-                {{ hit.query_start }}-{{ hit.query_end }}
-            </td>
-            <td>
-                {{ hit.hit_def }}
-                <br/>
-
-                <a href="#/genomes/{{ genome.id }}/fragments/{{ hit.fragment_id }}?bp={{ hit.subject_start }}"
-                 >{{ hit.subject_start }}-{{ hit.subject_end }}</a>
-            </td>
-            <td>
-                {{ hit.evalue }}
-            </td>
-            <td>
-                <div class="alignment">
-                    <div>{{ hit.alignment.subject }}</div>
-                    <div>{{ hit.alignment.matchi }}</div>
-                    <div>{{ hit.alignment.query }}</div>
-                </div>
-            </td>
-        </tr>
-
-        <tr ng-repeat="hit in results[2]">
-            <td>
-                Primer2
-                <br/>
-                {{ hit.query_start }}-{{ hit.query_end }}
-            </td>
-            <td>
-                {{ hit.hit_def }}
-                <br/>
-                
-                <a href="#/genomes/{{ genome.id }}/fragments/{{ hit.fragment_id }}?bp={{ hit.subject_start }}"
-                 >{{ hit.subject_start }}-{{ hit.subject_end }}</a>
-            </td>
-            <td>
-                {{ hit.evalue }}
-            </td>
-            <td>
-                <div class="alignment">
-                    <div>{{ hit.alignment.subject }}</div>
-                    <div>{{ hit.alignment.matchi }}</div>
-                    <div>{{ hit.alignment.query }}</div>
-                </div>
-            </td>
-        </tr>
-
-    </table>
+    <partial template="blast-results" ng-init="blast_results=results[1].concat(results[2])"></partial>
 
 </div>
 
