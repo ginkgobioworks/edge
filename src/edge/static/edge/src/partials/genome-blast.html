@@ -29,6 +29,14 @@
     <button class="btn btn-primary" ng-click="Blast(query, program)">BLAST</button>
 </div>
 
+<div ng-if="waiting === true">
+  <p>
+    <br/>
+    <em>Waiting for server to respond ...</em>
+    <br/>
+  </p>
+</div>
+
 <div ng-if="results" class="space-top">
     <partial template="blast-results" ng-init="blast_results=results"></partial>
 </div>
