@@ -5,6 +5,7 @@ from Bio.Seq import Seq
 from edge.recombine import find_swap_region, recombine
 from edge.models import Genome, Fragment, Genome_Fragment
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
+import edge.orfs
 
 
 class GenomeRecombinationAnnotationsTest(TestCase):
@@ -32,6 +33,12 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         self.arm_len = min(len(self.front_bs), len(self.back_bs))
         self.genome = self.build_genome(False, self.template)
         self.fragment = self.genome.fragments.all()[0].indexed_fragment()
+
+        self.old_min_protein_len = edge.orfs.min_protein_len
+        edge.orfs.min_protein_len = 10
+
+    def tearDown(self):
+        edge.orfs.min_protein_len = self.old_min_protein_len
 
     def test_does_not_preserve_annotation_if_replaced_is_different(self):
         replaced = "aaaaaaaaaaaaaaaaaaa"

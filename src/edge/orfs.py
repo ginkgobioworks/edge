@@ -2,7 +2,7 @@ import math
 from Bio.Seq import Seq
 
 trans_table = 1       # standard translation table
-min_protein_len = 10
+min_protein_len = 100
 
 
 def detect_orfs(seq):

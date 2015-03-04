@@ -115,6 +115,18 @@
                     <li ng-repeat='primer in region.verification_cassette'><partial template='primer' /></li>
                 </ul>
             </div>
+            <div ng-if="region.cassette_annotations.length > 0">
+                <p>
+                    Inherited and new annotations on cassette
+                </p>
+                <ul>
+                    <li ng-repeat='a in region.cassette_annotations'>
+                      {{ a.base_first }}-{{a.base_last }} bps on cassette,
+                      {{ a.feature_name }} ({{ a.feature_type }})
+                      <span ng-if="a.feature_strand === -1">reversed</span>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
     <p ng-if="regions.length === 1">
