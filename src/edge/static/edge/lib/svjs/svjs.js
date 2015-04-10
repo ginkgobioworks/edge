@@ -116,7 +116,7 @@ window.SvJs = function ($, selector) {
 
                 var i = 0;
                 _.map(row.split(''), function(bp) {
-                    var td = $('<td></td>');
+                    var td = $('<td class="sequence-single-bp"></td>');
                     tr_mid.append(td);
                     td.append(bp);
 

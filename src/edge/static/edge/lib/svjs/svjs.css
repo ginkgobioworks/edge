@@ -16,6 +16,7 @@ table.svjs tr.sequence-annotation td div {
 }
 table.svjs tr.sequence-annotation-start td div { text-align: left; margin-top: -6px; }
 table.svjs tr.sequence-annotation-end td div { text-align: right; margin-top: -8px; }
+.sequence-single-bp { letter-spacing: -1px; }
 
 table.svjs tr.sequence-annotation-start-first { border-top:1px solid #ddd; }
 table.svjs tr.sequence-annotation-end-last { border-bottom:1px solid #ddd; }
