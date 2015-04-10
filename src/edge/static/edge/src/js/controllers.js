@@ -327,6 +327,11 @@ function FragmentControllerBase($scope, $routeParams, $http, $location) {
         $scope.zoomRefresh(base_first, base_last);
     }
 
+    $scope.updateBaseInput = function() {
+        $scope.zoom['base_first'] = parseInt($scope.zoom['base_first']);
+        $scope.zoom['base_last'] = parseInt($scope.zoom['base_last']);
+    }
+
     $scope.userGoto = function() {
         $scope.goto($scope.zoom['base_first'], $scope.zoom['base_last'], true);
     }

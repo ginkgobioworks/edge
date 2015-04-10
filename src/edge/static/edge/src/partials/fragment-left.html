@@ -24,10 +24,10 @@
 
         Bps:
         <div class="form-group">
-            <input class="form-control" type="text" ng-model="zoom.base_first" size="6" />
+            <input class="form-control" type="text" ng-model="zoom.base_first" size="6" ng-change="updateBaseInput()" />
         </div>
         <div class="form-group">
-            <input class="form-control" type="text" ng-model="zoom.base_last" size="6" />
+            <input class="form-control" type="text" ng-model="zoom.base_last" size="6" ng-change="updateBaseInput()" />
         </div>
         <button class="btn btn-default" ng-click="userGoto()">Go</button>
 
