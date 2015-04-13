@@ -8,6 +8,8 @@ from edge.orfs import detect_orfs
 from Bio.Seq import Seq
 
 
+SINGLE_CROSSOVER_MAX_GAP = 2000
+MAX_INTEGRATION_SIZE = 50000
 CHECK_JUNCTION_PRIMER_WINDOW = 200
 CHECK_JUNCTION_SIZE = 200
 END_BPS_IGNORE = 8
@@ -116,13 +118,22 @@ def get_cassette_annotation(annotation, blast_res):
 class RecombinationRegion(object):
 
     def __init__(self, fragment_id, fragment_name,
-                 start, end, sequence, cassette_reversed, front_arm, back_arm):
+                 start, end, sequence,
+                 original_cassette, cassette_reversed,
+                 front_arm, back_arm):
+
         self.fragment_id = fragment_id
         self.fragment_name = fragment_name
         self.start = start
         self.end = end
         self.sequence = sequence
+        self.original_cassette = original_cassette
         self.cassette_reversed = cassette_reversed
+
+        self.cassette = self.original_cassette
+        if self.cassette_reversed:
+            self.cassette = str(Seq(self.original_cassette).reverse_complement())
+
         self.front_arm = front_arm
         self.back_arm = back_arm
         self.verification_front = []
@@ -132,18 +143,16 @@ class RecombinationRegion(object):
     def to_dict(self):
         return self.__dict__
 
-    def update_annotations(self, genome, cassette):
-        self.cassette_annotations = self.get_cassette_annotations(genome, cassette)
+    def update_annotations(self, genome):
+        self.cassette_annotations = self.get_cassette_annotations(genome)
 
-    def get_cassette_annotations(self, genome, cassette):
-        return self.get_cassette_inherited_annotations(genome, cassette) +\
-            self.get_cassette_new_annotations(genome, cassette)
+    def get_cassette_annotations(self, genome):
+        return self.get_cassette_inherited_annotations(genome) +\
+            self.get_cassette_new_annotations(genome)
 
-    def get_cassette_inherited_annotations(self, genome, cassette):
+    def get_cassette_inherited_annotations(self, genome):
         # blast cassette against unmodified genome
-        if self.cassette_reversed:
-            cassette = str(Seq(cassette).reverse_complement())
-        cassette_blast_res = blast_genome(genome, 'blastn', cassette)
+        cassette_blast_res = blast_genome(genome, 'blastn', self.cassette)
 
         # find matches inside region to be replaced
         matches = [res for res in cassette_blast_res
@@ -165,11 +174,11 @@ class RecombinationRegion(object):
 
         return inherited_annotations
 
-    def get_cassette_new_annotations(self, genome, cassette):
+    def get_cassette_new_annotations(self, genome):
         # detect ORF on cassette
 
         annotations = []
-        for orf in detect_orfs(cassette):
+        for orf in detect_orfs(self.cassette):
             annotations.append(dict(base_first=orf['start'], base_last=orf['end'],
                                     feature_name=orf['name'],
                                     feature_type='ORF',
@@ -179,7 +188,7 @@ class RecombinationRegion(object):
 
 
 def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
-                                     back_arm_sequence, back_arm_blastres):
+                                     back_arm_sequence, back_arm_blastres, cassette):
     """
     Computes a region on fragment flanked by two arms from blast results.
     """
@@ -206,40 +215,106 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
 
     fragment = front_arm_blastres.fragment.indexed_fragment()
 
+    single_crossover = False
+    single_crossover_front_0_i = None
+    single_crossover_back_1_i = None
+
+    front_0 = front_arm_blastres.subject_start
+    front_1 = front_arm_blastres.subject_end
+    back_0 = back_arm_blastres.subject_start
+    back_1 = back_arm_blastres.subject_end
+
     # must align in the right orientation
-    if front_arm_blastres.strand() < 0:
-        # aligns to antisense strand
-        if back_arm_blastres.subject_start > front_arm_blastres.subject_end and\
-           fragment.circular is False:
-            return None
-        region_start = back_arm_blastres.subject_end
-        region_end = front_arm_blastres.subject_start
-        is_reversed = True
-    else:
-        # aligns to sense strand
-        if back_arm_blastres.subject_start < front_arm_blastres.subject_end and\
-           fragment.circular is False:
-            return None
-        region_start = front_arm_blastres.subject_start
-        region_end = back_arm_blastres.subject_end
+    if front_arm_blastres.strand() > 0:  # on +1 strand
         is_reversed = False
 
-    # get sequence between arms, including arm
-    region_start = fragment.circ_bp(region_start)
-    region_end = fragment.circ_bp(region_end)
-    region = fragment.get_sequence(bp_lo=region_start, bp_hi=region_end)
+        if (fragment.circular is False and
+            back_1 < front_0 and front_0-back_1 <= SINGLE_CROSSOVER_MAX_GAP) or \
+           (fragment.circular is True and
+            ((back_1 < front_0 and front_0-back_1 <= SINGLE_CROSSOVER_MAX_GAP) or
+             (back_1 < front_0+fragment.length and
+              front_0+fragment.length-back_1 <= SINGLE_CROSSOVER_MAX_GAP))):
+            single_crossover = True
+            region_start = back_0
+            region_end = front_1
+            single_crossover_front_dup_1 = front_0-1
+            single_crossover_back_dup_0 = back_1+1
+
+        elif (fragment.circular is False and
+              front_1 < back_0 and back_0-front_1 <= MAX_INTEGRATION_SIZE) or \
+             (fragment.circular is True and
+              ((front_1 < back_0 and back_0-front_1 <= MAX_INTEGRATION_SIZE) or
+               (front_1 < back_0+fragment.length and
+                back_0+fragment.length-front_1 <= MAX_INTEGRATION_SIZE))):
+            single_crossover = False
+            region_start = front_0
+            region_end = back_1
+
+        else:
+            return None
+
+    else:  # on -1 strand
+        is_reversed = True
+
+        if (fragment.circular is False and
+            back_1 > front_0 and back_1-front_0 <= SINGLE_CROSSOVER_MAX_GAP) or \
+           (fragment.circular is True and
+            ((back_1 > front_0 and back_1-front_0 <= SINGLE_CROSSOVER_MAX_GAP) or
+             (back_1+fragment.length > front_0 and
+              back_1+fragment.length-front_0 <= SINGLE_CROSSOVER_MAX_GAP))):
+            single_crossover = True
+            region_start = front_1
+            region_end = back_0
+            single_crossover_front_dup_1 = back_1-1
+            single_crossover_back_dup_0 = front_0+1
+
+        elif (fragment.circular is False and
+              front_1 > back_0 and front_1-back_0 <= MAX_INTEGRATION_SIZE) or \
+             (fragment.circular is True and
+              ((front_1 > back_0 and front_1-back_0 <= MAX_INTEGRATION_SIZE) or
+               (front_1+fragment.length > back_0 and
+                front_1+fragment.length-back_0 <= MAX_INTEGRATION_SIZE))):
+            single_crossover = False
+            region_start = back_1
+            region_end = front_0
+
+        else:
+            return None
+
+    if single_crossover is True:
+        region_start = fragment.circ_bp(region_start)
+        region_end = fragment.circ_bp(region_end)
+        region = fragment.get_sequence(bp_lo=region_start, bp_hi=region_end)
+        single_crossover_front_dup_1 = fragment.circ_bp(single_crossover_front_dup_1)
+        single_crossover_back_dup_0 = fragment.circ_bp(single_crossover_back_dup_0)
+        front_dup = fragment.get_sequence(bp_lo=region_start, bp_hi=single_crossover_front_dup_1)
+        back_dup = fragment.get_sequence(bp_lo=single_crossover_back_dup_0, bp_hi=region_end)
+
+        if is_reversed:
+            cassette = str(Seq(back_dup).reverse_complement()) +\
+                cassette + str(Seq(front_dup).reverse_complement())
+
+        else:
+            cassette = front_dup + cassette + back_dup
+
+    else:
+        # get sequence between arms, including arm
+        region_start = fragment.circ_bp(region_start)
+        region_end = fragment.circ_bp(region_end)
+        region = fragment.get_sequence(bp_lo=region_start, bp_hi=region_end)
 
     return RecombinationRegion(fragment.id,
                                fragment.name,
                                region_start,
                                region_end,
                                region,
+                               cassette,
                                is_reversed,
                                front_arm_sequence,
                                back_arm_sequence)
 
 
-def find_possible_swap_regions(genome, front_arm_sequence, back_arm_sequence):
+def find_possible_swap_regions(genome, front_arm_sequence, back_arm_sequence, cassette):
     """
     Computes all possible recombined region from arm sequences.
     """
@@ -251,7 +326,8 @@ def find_possible_swap_regions(genome, front_arm_sequence, back_arm_sequence):
     for a_res in front_arm_results:
         for b_res in back_arm_results:
             region = compute_swap_region_from_results(front_arm_sequence, a_res,
-                                                      back_arm_sequence, b_res)
+                                                      back_arm_sequence, b_res,
+                                                      cassette)
             if region is not None:
                 regions.append(region)
 
@@ -269,14 +345,13 @@ def remove_working_primers(genome, primers):
     return failed_primers
 
 
-def get_verification_primers(genome, region, cassette, primer3_opts):
+def get_verification_primers(genome, region, primer3_opts):
     """
     Design primers to verify replacing region with cassette.
     """
 
     fragment = Fragment.objects.get(pk=region.fragment_id).indexed_fragment()
-    if region.cassette_reversed:
-        cassette = str(Seq(cassette).reverse_complement())
+    cassette = region.cassette
 
     #
     # front junction
@@ -351,12 +426,13 @@ def _find_swap_region(genome, cassette, min_homology_arm_length,
 
     cassette = remove_overhangs(cassette)
     if len(cassette) < 2*min_homology_arm_length:
-        return (None, cassette)
+        return None
 
     front_arm = cassette[0:min_homology_arm_length]
     back_arm = cassette[-min_homology_arm_length:]
 
-    regions = find_possible_swap_regions(genome, front_arm, back_arm)
+    regions = find_possible_swap_regions(genome, front_arm, back_arm, cassette)
+
     if len(regions) == 0 and try_smaller_sequence:
         cassette = cassette[END_BPS_IGNORE:-END_BPS_IGNORE]
         if len(cassette) >= 2*min_homology_arm_length:
@@ -364,16 +440,16 @@ def _find_swap_region(genome, cassette, min_homology_arm_length,
                                      design_primers=design_primers,
                                      primer3_opts=primer3_opts,
                                      try_smaller_sequence=False)
-        return ([], cassette)
+        return []
 
     if design_primers is True:
         for region in regions:
-            get_verification_primers(genome, region, cassette, primer3_opts)
+            get_verification_primers(genome, region, primer3_opts)
 
     for region in regions:
-        region.update_annotations(genome, cassette)
+        region.update_annotations(genome)
 
-    return (regions, cassette)
+    return regions
 
 
 def find_swap_region(genome, cassette, min_homology_arm_length,
@@ -386,10 +462,10 @@ def find_swap_region(genome, cassette, min_homology_arm_length,
                           design_primers=design_primers,
                           primer3_opts=primer3_opts,
                           try_smaller_sequence=True)
-    return x[0]
+    return x
 
 
-def recombine_region(genome, region, cassette, min_homology_arm_length, cassette_name,
+def recombine_region(genome, region, min_homology_arm_length, cassette_name,
                      op, need_new_fragment):
     """
     Recombines on a given region. Returns recombination cassette location, how
@@ -398,13 +474,11 @@ def recombine_region(genome, region, cassette, min_homology_arm_length, cassette
 
     region_start = region.start
     region_end = region.end
+    cassette = region.cassette
 
     new_fragment_id = None
     with genome.update_fragment_by_fragment_id(region.fragment_id,
                                                new_fragment=need_new_fragment) as f:
-        if region.cassette_reversed:
-            cassette = str(Seq(cassette).reverse_complement())
-
         replaced = 0
         if region_start < region_end:
             f.replace_bases(region_start, region_end-region_start+1, cassette)
@@ -475,7 +549,8 @@ def recombine(genome, cassette, homology_arm_length,
     cassette = remove_overhangs(cassette)
     cassette = str(Seq(cassette))  # clean the sequence
 
-    regions, cassette = _find_swap_region(genome, cassette, homology_arm_length)
+    regions = _find_swap_region(genome, cassette, homology_arm_length)
+
     if regions is None:
         return None
 
@@ -491,7 +566,7 @@ def recombine(genome, cassette, homology_arm_length,
     op.genome = new_genome
     op.save()
 
-    cassette_name = "Recombination cassette" if cassette_name is None else cassette_name
+    cassette_name = "Integration cassette" if cassette_name is None else cassette_name
 
     # sort regions by starting positions, then by length. sorting by starting
     # position is important for shift_regions to work. sorting by length allows
@@ -502,7 +577,7 @@ def recombine(genome, cassette, homology_arm_length,
     while len(regions) > 0:
         region = regions[0]
         start, replaced, added, new_fragment_id =\
-            recombine_region(new_genome, region, cassette,
+            recombine_region(new_genome, region,
                              homology_arm_length, cassette_name, op,
                              need_new_fragment)
         need_new_fragment = False

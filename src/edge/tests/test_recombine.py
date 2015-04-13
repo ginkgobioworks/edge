@@ -34,9 +34,12 @@ class GenomeRecombinationTest(TestCase):
     def setUp(self):
         self.old_check_junction_size = edge.recombine.CHECK_JUNCTION_SIZE
         edge.recombine.CHECK_JUNCTION_SIZE = 50
+        self.old_single_cross_over_gap_max = edge.recombine.SINGLE_CROSSOVER_MAX_GAP
+        edge.recombine.SINGLE_CROSSOVER_MAX_GAP = 10
 
     def tearDown(self):
         edge.recombine.CHECK_JUNCTION_SIZE = self.old_check_junction_size
+        edge.recombine.SINGLE_CROSSOVER_MAX_GAP = self.old_single_cross_over_gap_max
 
     def build_genome(self, circular, *templates):
         g = Genome(name='Foo')
@@ -722,3 +725,107 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(r[0].verification_cassette), 5)
         self.assertEquals(len(r[0].verification_front), 0)
         self.assertEquals(len(r[0].verification_back), 0)
+
+
+class SingleCrossoverTest(TestCase):
+    def setUp(self):
+        self.old_check_junction_size = edge.recombine.CHECK_JUNCTION_SIZE
+        edge.recombine.CHECK_JUNCTION_SIZE = 50
+        self.old_single_cross_over_gap_max = edge.recombine.SINGLE_CROSSOVER_MAX_GAP
+        self.new_max_gap = 20
+        edge.recombine.SINGLE_CROSSOVER_MAX_GAP = self.new_max_gap
+
+    def tearDown(self):
+        edge.recombine.CHECK_JUNCTION_SIZE = self.old_check_junction_size
+        edge.recombine.SINGLE_CROSSOVER_MAX_GAP = self.old_single_cross_over_gap_max
+
+    def build_genome(self, circular, *templates):
+        g = Genome(name='Foo')
+        g.save()
+        for seq in templates:
+            f = Fragment.create_with_sequence('Bar', seq, circular=circular)
+            Genome_Fragment(genome=g, fragment=f, inherited=False).save()
+            try:
+                os.unlink(fragment_fasta_fn(f))
+            except:
+                pass
+        build_all_genome_dbs(refresh=True)
+        return g
+
+    def test_single_crossover_integrates_correctly(self):
+        upstream = "gagattgtccgcgtttt"
+        locus = "catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc"
+        downstream = "gttaaggcgcgaacat"
+        insertion = "aaaaaaaaaaaaaaaaaaa"
+        locus_len = len(locus)
+        bs_len = int(locus_len/2)
+
+        template = ''.join([upstream, locus, downstream])
+        cassette = ''.join([locus[locus_len-bs_len:], insertion, locus[0:bs_len]])
+
+        g = self.build_genome(False, template)
+        c = recombine(g, cassette, bs_len-2)
+
+        self.assertNotEqual(g.id, c.id)
+        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+                          ''.join([upstream, locus, insertion, locus, downstream]))
+
+    def test_single_crossover_integrates_correctly_with_gap_in_homology(self):
+        upstream = "gagattgtccgcgtttt"
+        locus = "catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc"
+        downstream = "gttaaggcgcgaacat"
+        insertion = "aaaaaaaaaaaaaaaaaaa"
+        locus_len = len(locus)
+        gap = self.new_max_gap/2
+        arm_short = 2
+        bs_len = int(locus_len/2)-(gap-arm_short)
+
+        template = ''.join([upstream, locus, downstream])
+        cassette = ''.join([locus[locus_len-bs_len:], insertion, locus[0:bs_len]])
+
+        g = self.build_genome(False, template)
+        c = recombine(g, cassette, bs_len-arm_short)
+
+        self.assertNotEqual(g.id, c.id)
+        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+                          ''.join([upstream, locus, insertion, locus, downstream]))
+
+    def test_single_crossover_integrates_correctly_with_reverse_complement_of_locus(self):
+        upstream = "gagattgtccgcgtttt"
+        locus = "catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc"
+        downstream = "gttaaggcgcgaacat"
+        insertion = "aaaaaaaaaaaaaaaaaaa"
+        locus_len = len(locus)
+        bs_len = int(locus_len/2)
+
+        template = ''.join([upstream, locus, downstream])
+        cassette = ''.join([locus[locus_len-bs_len:], insertion, locus[0:bs_len]])
+        cassette = str(Seq(cassette).reverse_complement())
+
+        g = self.build_genome(False, template)
+        c = recombine(g, cassette, bs_len-2)
+
+        self.assertNotEqual(g.id, c.id)
+        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+                          ''.join([upstream, locus, insertion, locus, downstream]))
+
+    def test_single_crossover_integrates_correctly_with_reverse_complement_and_gap_in_locus(self):
+        upstream = "gagattgtccgcgtttt"
+        locus = "catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc"
+        downstream = "gttaaggcgcgaacat"
+        insertion = "aaaaaaaaaaaaaaaaaaa"
+        locus_len = len(locus)
+        gap = self.new_max_gap/2
+        arm_short = 2
+        bs_len = int(locus_len/2)-(gap-arm_short)
+
+        template = ''.join([upstream, locus, downstream])
+        cassette = ''.join([locus[locus_len-bs_len:], insertion, locus[0:bs_len]])
+        cassette = str(Seq(cassette).reverse_complement())
+
+        g = self.build_genome(False, template)
+        c = recombine(g, cassette, bs_len-arm_short)
+
+        self.assertNotEqual(g.id, c.id)
+        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+                          ''.join([upstream, locus, insertion, locus, downstream]))
