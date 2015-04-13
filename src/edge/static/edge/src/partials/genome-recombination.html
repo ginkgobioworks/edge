@@ -82,9 +82,13 @@
     <div ng-if="regions.length > 0">
         <div ng-repeat="region in regions" class="recombine-candidate">
             <h5>
-                Found homology region on fragment
+                Found integration region on fragment
                 <a href="#/genomes/{{ genome.id }}/fragments/{{ region.fragment_id }}?bp={{ region.start }},{{ region.end }}"
-                 >{{ region.fragment_name }}: {{ region.start }}-{{ region.end }} bps</a>
+                 >{{ region.fragment_name }}: {{ region.start }}-{{ region.end }}</a>
+                Post integration region length: {{ region.cassette.length }} bps
+                <span ng-if="region.cassette_reversed">
+                  (cassette will be integrated in reverse direction)
+                </span>
             </h5>
 
             <div ng-if="region.verification_front.length > 0" class="primers">
