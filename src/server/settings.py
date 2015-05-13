@@ -77,7 +77,7 @@ DATABASES = {
         'OPTIONS': { "init_command": "SET storage_engine=INNODB;" },
         'HOST': '',
         'PORT': '',
-        'NAME' : 'edge',
+        'NAME' : 'toolbox_dev',
         'USER': 'root',
         'PASSWORD': 'password',
         'ATOMIC_REQUESTS': True,
