@@ -539,7 +539,7 @@ def recombine(genome, cassette, homology_arm_length,
     regions = find_swap_region(genome, cassette, homology_arm_length)
     # will return [] if cannot find region
 
-    if regions is None:
+    if regions is None or len(regions) == 0:
         return None
 
     new_genome = genome.update()
