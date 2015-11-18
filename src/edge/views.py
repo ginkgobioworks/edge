@@ -482,13 +482,14 @@ class GenomeCrisprDSBView(GenomeOperationViewBase):
 
 
 class GenomeRecombinationView(GenomeOperationViewBase):
+    DEFAULT_HA_LENGTH = 30
 
     def parse_arguments(self, request):
         from edge.recombine import RecombineOp
 
         parser = RequestParser()
         parser.add_argument('cassette', field_type=str, required=True, location='json')
-        parser.add_argument('homology_arm_length', field_type=int, required=True, location='json')
+        parser.add_argument('homology_arm_length', field_type=int, required=False, location='json')
         parser.add_argument('genome_name', field_type=str, required=False,
                             default=None, location='json')
         parser.add_argument('cassette_name', field_type=str, required=False,
@@ -508,6 +509,9 @@ class GenomeRecombinationView(GenomeOperationViewBase):
         notes = args['notes']
         design_primers = args['design_primers']
         primer3_opts = args['primer3_opts']
+
+        if homology_arm_length is None:
+            homology_arm_length = GenomeRecombinationView.DEFAULT_HA_LENGTH
 
         return (dict(cassette=cassette, homology_arm_length=homology_arm_length,
                      genome_name=genome_name, cassette_name=cassette_name,

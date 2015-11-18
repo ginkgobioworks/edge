@@ -437,9 +437,9 @@ def find_swap_region(genome, cassette, min_homology_arm_length,
         cassette = cassette[END_BPS_IGNORE:-END_BPS_IGNORE]
         if len(cassette) >= 2*min_homology_arm_length:
             return find_swap_region(genome, cassette, min_homology_arm_length,
-                                     design_primers=design_primers,
-                                     primer3_opts=primer3_opts,
-                                     try_smaller_sequence=False)
+                                    design_primers=design_primers,
+                                    primer3_opts=primer3_opts,
+                                    try_smaller_sequence=False)
         return []
 
     if design_primers is True:
