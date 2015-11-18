@@ -417,8 +417,8 @@ def get_verification_primers(genome, region, primer3_opts):
                                          junctions, primer3_opts)
 
 
-def _find_swap_region(genome, cassette, min_homology_arm_length,
-                      design_primers=False, primer3_opts=None, try_smaller_sequence=True):
+def find_swap_region(genome, cassette, min_homology_arm_length,
+                     design_primers=False, primer3_opts=None, try_smaller_sequence=True):
     """
     Find a region on genome that can be recombined out using the cassette.
     Returns homology arms and possible regions along with cassette used to find matches.
@@ -436,7 +436,7 @@ def _find_swap_region(genome, cassette, min_homology_arm_length,
     if len(regions) == 0 and try_smaller_sequence:
         cassette = cassette[END_BPS_IGNORE:-END_BPS_IGNORE]
         if len(cassette) >= 2*min_homology_arm_length:
-            return _find_swap_region(genome, cassette, min_homology_arm_length,
+            return find_swap_region(genome, cassette, min_homology_arm_length,
                                      design_primers=design_primers,
                                      primer3_opts=primer3_opts,
                                      try_smaller_sequence=False)
@@ -450,19 +450,6 @@ def _find_swap_region(genome, cassette, min_homology_arm_length,
         region.update_annotations(genome)
 
     return regions
-
-
-def find_swap_region(genome, cassette, min_homology_arm_length,
-                     design_primers=False, primer3_opts=None):
-    """
-    Same as _find_swap_region, but does not return cassette used to find matches.
-    """
-
-    x = _find_swap_region(genome, cassette, min_homology_arm_length,
-                          design_primers=design_primers,
-                          primer3_opts=primer3_opts,
-                          try_smaller_sequence=True)
-    return x
 
 
 def recombine_region(genome, region, min_homology_arm_length, cassette_name,
@@ -549,7 +536,8 @@ def recombine(genome, cassette, homology_arm_length,
     cassette = remove_overhangs(cassette)
     cassette = str(Seq(cassette))  # clean the sequence
 
-    regions = _find_swap_region(genome, cassette, homology_arm_length)
+    regions = find_swap_region(genome, cassette, homology_arm_length)
+    # will return [] if cannot find region
 
     if regions is None:
         return None
