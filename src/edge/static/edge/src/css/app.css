@@ -46,7 +46,7 @@ form .sequence { width:400px; height:200px; }
 .results { margin-top:20px; }
 
 div.alignment { font-family: courier; font-size: 0.8em; }
-div.alignment div { white-space: nowrap; }
+div.alignment div { white-space: pre !important; }
 
 #sequence-viewer { margin-top: 20px; }
 .op-params { word-break: break-all; font-family: courier; }
