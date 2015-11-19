@@ -215,6 +215,7 @@ function FragmentControllerBase($scope, $routeParams, $http, $location) {
                 $scope.zoom['sequence'] = data;
                 $scope.zoom['has_sequence'] = true;
                 if ($scope.zoom['sequence_viewer'] === undefined) {
+                    jQuery('#sequence-viewer').empty();
                     $scope.zoom['sequence_viewer'] = SvJs(jQuery, '#sequence-viewer');
                 }
                 // $scope.zoom['sequence_viewer'].setSequence(data.sequence, f);
@@ -258,7 +259,9 @@ function FragmentControllerBase($scope, $routeParams, $http, $location) {
         var display = layoutAnnotations(zoom_annotations, $scope.zoom['base_first'], $scope.zoom['base_last']);
         $scope.zoom['display'] = display;
         $scope.zoom['has_sequence'] = false;
-        if ($scope.zoom['sequence_viewer'] !== undefined) { $scope.zoom['sequence_viewer'].clear(); }
+        if ($scope.zoom['sequence_viewer'] !== undefined) {
+            $scope.zoom['sequence_viewer'].clear(); 
+        }
     }
 
     $scope.zoomAt = function(annotation) {
