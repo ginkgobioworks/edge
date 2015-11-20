@@ -574,9 +574,9 @@ def recombine(genome, cassette, homology_arm_length,
 
 
 @transaction.atomic()
-def annotate_integration(genome, new_genome, region_before, region_after, cassette_name, op):
+def annotate_integration(genome, new_genome, regions_before, regions_after, cassette_name, op):
 
-    for before, after in zip(region_before, region_after):
+    for before, after in zip(regions_before, regions_after):
         annotations = get_cassette_annotations(genome, before['cassette'], before['fragment_id'],
                                                before['start'], before['end'])
 
@@ -633,11 +633,15 @@ class RecombineOp(object):
     @staticmethod
     def perform(genome, cassette, homology_arm_length, genome_name, cassette_name, notes,
                 design_primers=False, primer3_opts=None):
+        from edge.tasks import annotate_integration_task
+
         x = recombine(genome, cassette, homology_arm_length,
                       genome_name=genome_name, cassette_name=cassette_name, notes=notes)
 
-        annotate_integration(genome, x['new_genome'],
-                             x['regions']['before'], x['regions']['after'],
-                             x['cassette_name'], x['operation'])
+        # schedule background job to lift over annotations, after 10 seconds
+        annotate_integration_task.apply_async(
+            (genome_id, x['new_genome'].id,
+             x['regions']['before'], x['regions']['after'],
+             x['cassette_name'], x['operation'].id), countdown=10)
 
         return x['new_genome']
