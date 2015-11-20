@@ -13,7 +13,7 @@ from django.core.management.base import BaseCommand
 def make_required_dirs(path):
     dirn = os.path.dirname(path)
     try:
-        os.makedirs(dirn)
+        os.makedirs(dirn, 0777)
     except:
         pass
 
@@ -28,6 +28,7 @@ def fragment_fasta_fn(fragment):
 def build_fragment_fasta(fragment):
     fn = fragment_fasta_fn(fragment)
     make_required_dirs(fn)
+
     if not os.path.isfile(fn):  # have not built this fasta
         print 'building %s' % fn
         # this may take awhile, so do this first, so user interrupt does
