@@ -2,7 +2,7 @@ import os
 import json
 from django.test import TestCase
 from Bio.Seq import Seq
-from edge.recombine import find_swap_region, recombine
+from edge.recombine import find_swap_region_with_annotations, recombine
 from edge.models import Genome, Fragment, Genome_Fragment
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 import edge.orfs
@@ -48,7 +48,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
                                len(self.upstream)+len(self.front_bs)+len(self.middle)-1,
                                'Foo', 'gene', 1)
 
-        r = find_swap_region(self.genome, cassette, self.arm_len)
+        r = find_swap_region_with_annotations(self.genome, cassette, self.arm_len)
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].cassette_annotations), 0)
 
@@ -63,7 +63,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
                                len(self.upstream)+len(self.front_bs)+len(self.middle),
                                'Foo', 'gene', 1)
 
-        r = find_swap_region(self.genome, cassette, self.arm_len)
+        r = find_swap_region_with_annotations(self.genome, cassette, self.arm_len)
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].cassette_annotations), 1)
         a = r[0].cassette_annotations[0]
@@ -80,9 +80,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
                                len(self.upstream)+len(self.front_bs)+len(self.middle),
                                'Foo', 'gene', 1)
 
-        r = find_swap_region(self.genome, cassette, self.arm_len)
+        r = find_swap_region_with_annotations(self.genome, cassette, self.arm_len)
         self.assertEquals(len(r), 1)
-        print r[0].cassette_annotations
         self.assertEquals(len(r[0].cassette_annotations), 1)
         a = r[0].cassette_annotations[0]
         self.assertEquals(a['base_first'], len(self.front_bs)+1)
@@ -97,7 +96,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
                                len(self.upstream)+len(self.front_bs)+len(self.middle),
                                'Foo', 'gene', 1)
 
-        r = find_swap_region(self.genome, cassette, self.arm_len)
+        r = find_swap_region_with_annotations(self.genome, cassette, self.arm_len)
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].cassette_annotations), 1)
         a = r[0].cassette_annotations[0]
@@ -113,7 +112,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
                                len(self.upstream)+len(self.front_bs)+len(self.middle)-1,
                                'Foo', 'gene', 1)
 
-        r = find_swap_region(self.genome, cassette, self.arm_len)
+        r = find_swap_region_with_annotations(self.genome, cassette, self.arm_len)
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].cassette_annotations), 1)
         a = r[0].cassette_annotations[0]
@@ -129,7 +128,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
                                len(self.upstream)+len(self.front_bs)+len(self.middle),
                                'Foo', 'foobar', -1)
 
-        r = find_swap_region(self.genome, cassette, self.arm_len)
+        r = find_swap_region_with_annotations(self.genome, cassette, self.arm_len)
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].cassette_annotations), 1)
         a = r[0].cassette_annotations[0]
@@ -148,7 +147,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
                                len(self.upstream)+len(self.front_bs)+len(self.middle),
                                'Foo', 'changed', 1)
 
-        r = find_swap_region(self.genome, cassette, self.arm_len)
+        r = find_swap_region_with_annotations(self.genome, cassette, self.arm_len)
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].cassette_annotations), 2)
 
@@ -178,7 +177,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
                                len(self.upstream)+len(self.front_bs)+len(self.middle),
                                'Foo', 'gene', 1)
 
-        r = find_swap_region(self.genome, cassette, self.arm_len)
+        r = find_swap_region_with_annotations(self.genome, cassette, self.arm_len)
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].cassette_annotations), 1)
         a = r[0].cassette_annotations[0]
@@ -194,7 +193,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
                                len(self.upstream)+len(self.front_bs)+len(self.middle),
                                'Foo', 'gene', 1)
 
-        r = find_swap_region(self.genome, cassette, self.arm_len)
+        r = find_swap_region_with_annotations(self.genome, cassette, self.arm_len)
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].cassette_annotations), 1)
 
@@ -214,7 +213,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
                                len(self.upstream)+len(self.front_bs)+len(self.middle),
                                'Foo', 'gene', 1)
 
-        r = find_swap_region(self.genome, cassette, self.arm_len)
+        r = find_swap_region_with_annotations(self.genome, cassette, self.arm_len)
         self.assertEquals(len(r), 1)
         self.assertEquals(len(r[0].cassette_annotations), 1)
 

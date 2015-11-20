@@ -50,6 +50,13 @@ if TESTING:
     TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
     SOUTH_TESTS_MIGRATE = False
 
+# for Django Celery
+import djcelery
+djcelery.setup_loader()
+CELERY_SEND_TASK_SENT_EVENT = True
+if TESTING:
+    CELERY_ALWAYS_EAGER = True  # skip the daemon
+
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

@@ -454,6 +454,17 @@ def find_swap_region(genome, cassette, min_homology_arm_length,
     return regions
 
 
+def find_swap_region_with_annotations(genome, cassette, homology_arm_length,
+                                      design_primers=False, primer3_opts=None):
+    regions = find_swap_region(genome, cassette, homology_arm_length,
+                               design_primers=design_primers,
+                               primer3_opts=primer3_opts)
+    # get annotations affected by the integration
+    for region in regions:
+        region.update_annotations(genome)
+    return regions
+
+
 def recombine_region(genome, region, min_homology_arm_length, op, need_new_fragment):
     """
     Recombines on a given region. Returns recombination cassette location, how
@@ -517,8 +528,8 @@ def shift_regions(regions, fragment_id, start, replaced, added, new_fragment_id)
 
 
 @transaction.atomic()
-def recombine(genome, cassette, homology_arm_length,
-              genome_name=None, cassette_name=None, notes=None):
+def recombine_sequence(genome, cassette, homology_arm_length,
+                       genome_name=None, cassette_name=None, notes=None):
     cassette = remove_overhangs(cassette)
     cassette = str(Seq(cassette))  # clean the sequence
 
@@ -545,30 +556,31 @@ def recombine(genome, cassette, homology_arm_length,
     # shift_region to remove longer of the overlapping regions.
     regions = sorted(regions, key=lambda r: (r.start, len(r.sequence)))
 
-    region_before = [dict(fragment_id=region.fragment_id,
-                          start=region.start, end=region.end,
-                          cassette_reversed=region.cassette_reversed,
-                          cassette=region.cassette) for region in regions]
-    region_after = []
+    regions_before = [dict(fragment_id=region.fragment_id,
+                           start=region.start, end=region.end,
+                           cassette_reversed=region.cassette_reversed,
+                           cassette=region.cassette) for region in regions]
+    regions_after = []
 
     need_new_fragment = True
     while len(regions) > 0:
         region = regions[0]
-        region_after.append(dict(fragment_id=region.fragment_id,
-                                 start=region.start, end=region.end))
 
         start, replaced, added, new_fragment_id =\
             recombine_region(new_genome, region, homology_arm_length, op, need_new_fragment)
+
+        regions_after.append(dict(fragment_id=region.fragment_id, start=start))
+
         # use the same fragment after the first new fragment
         need_new_fragment = False
         regions = shift_regions(regions[1:],
                                 region.fragment_id, start, replaced, added, new_fragment_id)
-        for r in region_after:
+        for r in regions_after:
             if r['fragment_id'] == region.fragment_id:
                 r['fragment_id'] = new_fragment_id
 
     return dict(new_genome=new_genome,
-                regions=dict(before=region_before, after=region_after),
+                regions=dict(before=regions_before, after=regions_after),
                 cassette_name=cassette_name,
                 operation=op)
 
@@ -603,23 +615,31 @@ def annotate_integration(genome, new_genome, regions_before, regions_after, cass
                            annotation['feature_strand'])
 
 
+def recombine(genome, cassette, homology_arm_length,
+              genome_name=None, cassette_name=None, notes=None):
+
+    x = recombine_sequence(genome, cassette, homology_arm_length,
+                           genome_name=genome_name, cassette_name=cassette_name, notes=notes)
+
+    # schedule background job to lift over annotations, after 10 seconds
+    from edge.tasks import annotate_integration_task
+    annotate_integration_task.apply_async(
+        (genome.id, x['new_genome'].id,
+         x['regions']['before'], x['regions']['after'],
+         x['cassette_name'], x['operation'].id), countdown=10)
+
+    return x['new_genome']
+
+
 class RecombineOp(object):
 
     @staticmethod
     def check(genome, cassette, homology_arm_length,
               genome_name=None, cassette_name=None, notes=None,
               design_primers=False, primer3_opts=None):
-
-        regions = find_swap_region(genome, cassette, homology_arm_length,
-                                   design_primers=design_primers,
-                                   primer3_opts=primer3_opts)
-
-        # get annotations affected by the integration
-        for region in regions:
-            region.update_annotations(genome)
-
-        return regions
-
+        return find_swap_region_with_annotations(genome, cassette, homology_arm_length,
+                                                 design_primers=design_primers,
+                                                 primer3_opts=primer3_opts)
 
     @staticmethod
     def get_operation(cassette, homology_arm_length,
@@ -633,15 +653,5 @@ class RecombineOp(object):
     @staticmethod
     def perform(genome, cassette, homology_arm_length, genome_name, cassette_name, notes,
                 design_primers=False, primer3_opts=None):
-        from edge.tasks import annotate_integration_task
-
-        x = recombine(genome, cassette, homology_arm_length,
-                      genome_name=genome_name, cassette_name=cassette_name, notes=notes)
-
-        # schedule background job to lift over annotations, after 10 seconds
-        annotate_integration_task.apply_async(
-            (genome_id, x['new_genome'].id,
-             x['regions']['before'], x['regions']['after'],
-             x['cassette_name'], x['operation'].id), countdown=10)
-
-        return x['new_genome']
+        return recombine(genome, cassette, homology_arm_length,
+                         genome_name=genome_name, cassette_name=cassette_name, notes=notes)

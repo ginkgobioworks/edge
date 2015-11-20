@@ -339,6 +339,35 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(a[0].feature.operation.type, Operation.RECOMBINATION[0])
         self.assertEquals(a[0].feature.operation.genome, c)
 
+    def test_annotates_reversed_cassette(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = str(Seq(''.join([front_bs, replaced, back_bs])).reverse_complement())
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+
+        a = g.fragments.all()[0].indexed_fragment().annotations()
+        self.assertEquals(len(a), 0)
+
+        c = recombine(g, cassette, arm_len)
+
+        a = c.fragments.all()[0].indexed_fragment().annotations()
+        self.assertEquals(len(a), 1)
+        self.assertEquals(a[0].base_first, len(upstream)+1)
+        self.assertEquals(a[0].base_last, len(upstream+cassette))
+        self.assertEquals(a[0].feature_base_first, 1)
+        self.assertEquals(a[0].feature_base_last, len(cassette))
+        # on reverse strand
+        self.assertEquals(a[0].feature.strand, -1)
+        self.assertEquals(a[0].feature.operation.type, Operation.RECOMBINATION[0])
+        self.assertEquals(a[0].feature.operation.genome, c)
+
     def test_integrates_and_annotates_cassette_across_circular_boundary(self):
         upstream = "gagattgtccgcgtttt"
         front_bs = "catagcgcacaggacgcggag"
