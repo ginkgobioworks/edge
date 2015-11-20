@@ -20,7 +20,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
             except:
                 pass
         build_all_genome_dbs(refresh=True)
-        return g
+        return Genome.objects.get(pk=g.id)
 
     def setUp(self):
         self.upstream = "gagattgtccgcgtttt"

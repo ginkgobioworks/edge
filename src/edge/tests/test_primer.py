@@ -20,7 +20,7 @@ class DesignPrimerTest(TestCase):
             except:
                 pass
         build_all_genome_dbs(refresh=True)
-        return g
+        return Genome.objects.get(pk=g.id)
 
     def test_primer3_finds_primers_when_given_range_to_find_primers(self):
         upstream = "cagtacgatcgttggtatgctgactactagcgtagctagcacgtcgtgtccaggcttgagcgacgt"

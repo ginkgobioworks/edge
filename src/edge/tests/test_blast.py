@@ -31,6 +31,7 @@ class GenomeBlastTest(TestCase):
         except:
             pass
         build_all_genome_dbs(refresh=True)
+        g1 = Genome.objects.get(pk=g1.id)
 
         query = s1[6:20]+'aaaaaaaaa'
         r = blast_genome(g1, 'blastn', query)
@@ -55,6 +56,7 @@ class GenomeBlastTest(TestCase):
         except:
             pass
         build_all_genome_dbs(refresh=True)
+        g1 = Genome.objects.get(pk=g1.id)
 
         query = str(Seq(s1[6:20]).reverse_complement())+'tttttttttt'
         r = blast_genome(g1, 'blastn', query)
@@ -78,6 +80,7 @@ class GenomeBlastTest(TestCase):
         except:
             pass
         build_all_genome_dbs(refresh=True)
+        g1 = Genome.objects.get(pk=g1.id)
 
         query = (s1[-10:]+s1[0:10])+'ttttttttttt'
         res = blast_genome(g1, 'blastn', query)
@@ -114,6 +117,7 @@ class GenomeBlastTest(TestCase):
         except:
             pass
         build_all_genome_dbs(refresh=True)
+        g1 = Genome.objects.get(pk=g1.id)
 
         query = s1[5:20]+'tttttttttt'
         r = blast_genome(g1, 'blastn', query)
@@ -131,6 +135,7 @@ class GenomeBlastTest(TestCase):
         except:
             pass
         build_all_genome_dbs(refresh=True)
+        g1 = Genome.objects.get(pk=g1.id)
 
         query = (s1[-10:]+s1[0:10])+'tttttttttt'
         res = blast_genome(g1, 'blastn', query)

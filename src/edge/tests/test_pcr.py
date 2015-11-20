@@ -21,7 +21,7 @@ class GenomePcrTest(TestCase):
             except:
                 pass
         build_all_genome_dbs(refresh=True)
-        return g
+        return Genome.objects.get(pk=g.id)
 
     def test_pcr_produces_expected_product(self):
         upstream = "gagattgtccgcgtttt"

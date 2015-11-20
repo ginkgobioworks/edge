@@ -20,7 +20,7 @@ class GenomeCrisprDSBTest(TestCase):
             except:
                 pass
         build_all_genome_dbs(refresh=True)
-        return g
+        return Genome.objects.get(pk=g.id)
 
     def test_find_crispr_target_finds_target_on_forward_strand(self):
         s1 = 'agaaggtctggtagcgatgtagtcgatct'

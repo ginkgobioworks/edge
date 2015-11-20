@@ -11,9 +11,10 @@ from edge.models import *
 
 def schedule_building_blast_db(genome_id, countdown=None):
     from edge.tasks import build_genome_blastdb
-    # scheduling building genome DB in the future, so our transaction has a
-    # chance to commit
-    countdown = 10 if countdown is None else countdown
+    # scheduling building genome DB in the future, so a) our transaction has a
+    # chance to commit and b) we avoid an immediate followup operation building
+    # db on demand at the same time as this delayed building of database
+    countdown = 30 if countdown is None else countdown
     build_genome_blastdb.apply_async((genome_id, ), countdown=countdown)
 
 
@@ -380,7 +381,10 @@ class GenomeBlastView(ViewBase):
 
     def on_post(self, request, genome_id):
         from edge.blast import blast_genome
+        from edge.blastdb import check_and_build_genome_db
+
         genome = get_genome_or_404(genome_id)
+        check_and_build_genome_db(genome)
 
         parser = RequestParser()
         parser.add_argument('query', field_type=str, required=True, location='json')
@@ -396,7 +400,10 @@ class GenomePcrView(ViewBase):
 
     def on_post(self, request, genome_id):
         from edge.pcr import pcr_from_genome
+        from edge.blastdb import check_and_build_genome_db
+
         genome = get_genome_or_404(genome_id)
+        check_and_build_genome_db(genome)
 
         parser = RequestParser()
         parser.add_argument('primers', field_type=list, required=True, location='json')
@@ -414,7 +421,10 @@ class GenomePcrView(ViewBase):
 class GenomeOperationViewBase(ViewBase):
 
     def on_post(self, request, genome_id):
+        from edge.blastdb import check_and_build_genome_db
+
         genome = get_genome_or_404(genome_id)
+        check_and_build_genome_db(genome)
 
         # always require a 'create' argument
         parser = RequestParser()

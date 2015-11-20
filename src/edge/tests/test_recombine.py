@@ -52,7 +52,7 @@ class GenomeRecombinationTest(TestCase):
             except:
                 pass
         build_all_genome_dbs(refresh=True)
-        return g
+        return Genome.objects.get(pk=g.id)
 
     def test_finds_correct_region_for_swapping(self):
         upstream = "gagattgtccgcgtttt"
@@ -673,6 +673,8 @@ class GenomeRecombinationTest(TestCase):
             except:
                 pass
         build_all_genome_dbs(refresh=True)
+        # reload to get blastdb
+        c = Genome.objects.get(pk=c.id)
 
         if is_reversed:
             cassette = str(Seq(cassette).reverse_complement())
@@ -779,7 +781,7 @@ class SingleCrossoverTest(TestCase):
             except:
                 pass
         build_all_genome_dbs(refresh=True)
-        return g
+        return Genome.objects.get(pk=g.id)
 
     def test_single_crossover_integrates_correctly(self):
         upstream = "gagattgtccgcgtttt"

@@ -4,18 +4,30 @@ import os.path
 import tempfile
 import subprocess
 from edge.models import Fragment, Genome
-from edge.blast import BLAST_DB, genome_db_name
+from edge.blast import BLAST_DB, default_genome_db_name
 from edge.blast import Blast_Accession
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
 
+def make_required_dirs(path):
+    dirn = os.path.dirname(path)
+    try:
+        os.makedirs(dirn)
+    except:
+        pass
+
+
 def fragment_fasta_fn(fragment):
-    return '%s/edge-fragment-%s-nucl.fa' % (settings.NCBI_DATA_DIR, fragment.id)
+    return '%s/fragment/%s/%s/edge-fragment-%s-nucl.fa' % (settings.NCBI_DATA_DIR,
+                                                           fragment.id % 1024,
+                                                           (fragment.id >> 10) % 1024,
+                                                           fragment.id)
 
 
 def build_fragment_fasta(fragment):
     fn = fragment_fasta_fn(fragment)
+    make_required_dirs(fn)
     if not os.path.isfile(fn):  # have not built this fasta
         print 'building %s' % fn
         # this may take awhile, so do this first, so user interrupt does
@@ -34,12 +46,12 @@ def build_fragment_fasta(fragment):
 
 def build_db(fragments, dbname, refresh=True):
     if len(fragments) == 0:
-        return
+        return None
 
     if refresh is False and \
        (os.path.isfile(dbname+'.nal') or os.path.isfile(dbname+'.nsq')):
         print 'already built %s' % dbname
-        return
+        return dbname
 
     fns = []
     for fragment in fragments:
@@ -55,6 +67,7 @@ def build_db(fragments, dbname, refresh=True):
                     f.write(line)
 
     print 'building blast db %s' % dbname
+    make_required_dirs(dbname)
     cmd = "%s/makeblastdb -in %s -out %s " % (settings.NCBI_BIN_DIR, fafile, dbname)
     cmd += "-title edge -dbtype nucl -parse_seqids -input_type fasta"
 
@@ -63,11 +76,19 @@ def build_db(fragments, dbname, refresh=True):
         print r
 
     os.unlink(fafile)
+    return dbname
 
 
 def build_genome_db(genome, refresh=False):
     fragments = list(genome.fragments.all())
-    build_db(fragments, genome_db_name(genome), refresh=refresh)
+    dbname = build_db(fragments, default_genome_db_name(genome), refresh=refresh)
+    genome.blastdb = dbname
+    genome.save()
+
+
+def check_and_build_genome_db(genome, refresh=False):
+    if not genome.blastdb or refresh:
+        build_genome_db(genome, refresh)
 
 
 def build_all_genome_dbs(refresh=False):

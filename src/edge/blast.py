@@ -12,8 +12,10 @@ from Bio.Blast import NCBIXML
 BLAST_DB = "%s/edge-nucl" % settings.NCBI_DATA_DIR
 
 
-def genome_db_name(genome):
-    return "%s/edge-genome-%d-nucl" % (settings.NCBI_DATA_DIR, genome.id)
+def default_genome_db_name(genome):
+    return "%s/genome/%s/%s/edge-genome-%d-nucl" % (settings.NCBI_DATA_DIR,
+                                                    genome.id % 1024, (genome.id >> 10) % 1024,
+                                                    genome.id)
 
 
 class Blast_Accession(object):
@@ -137,7 +139,10 @@ def blast(dbname, blast_program, query, evalue_threshold=0.001):
 
 
 def blast_genome(genome, blast_program, query, evalue_threshold=0.001):
-    results = blast(genome_db_name(genome), blast_program, query,
+    dbname = genome.blastdb
+    if not dbname:
+        return []
+    results = blast(dbname, blast_program, query,
                     evalue_threshold=evalue_threshold)
     genome_fragment_ids = [f.id for f in genome.fragments.all()]
     return [r for r in results if r.fragment_id in genome_fragment_ids]

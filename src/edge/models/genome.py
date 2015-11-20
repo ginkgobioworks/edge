@@ -15,6 +15,7 @@ class Genome(models.Model, Genome_Updater):
     fragments = models.ManyToManyField(Fragment, through='Genome_Fragment')
     created_on = models.DateTimeField('Created', auto_now_add=True, null=True)
     active = models.BooleanField(default=True)
+    blastdb = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
         return self.name
