@@ -13,9 +13,12 @@ from django.core.management.base import BaseCommand
 def make_required_dirs(path):
     dirn = os.path.dirname(path)
     try:
+        original_umask = os.umask(0)
         os.makedirs(dirn, 0777)
     except:
         pass
+    finally:
+        os.umask(original_umask)
 
 
 def fragment_fasta_fn(fragment):
