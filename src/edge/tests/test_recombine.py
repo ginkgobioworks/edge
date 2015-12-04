@@ -32,13 +32,24 @@ class RemoveOverhangsTest(TestCase):
 
 class GenomeRecombinationTest(TestCase):
     def setUp(self):
-        self.old_check_junction_size = edge.recombine.CHECK_JUNCTION_SIZE
-        edge.recombine.CHECK_JUNCTION_SIZE = 50
+        self.old_check_junction_lu = edge.recombine.CHECK_JUNCTION_LEFT_UP
+        self.old_check_junction_ld = edge.recombine.CHECK_JUNCTION_LEFT_DN
+        self.old_check_junction_ru = edge.recombine.CHECK_JUNCTION_RIGHT_UP
+        self.old_check_junction_rd = edge.recombine.CHECK_JUNCTION_RIGHT_DN
+
+        edge.recombine.CHECK_JUNCTION_LEFT_UP = 10
+        edge.recombine.CHECK_JUNCTION_LEFT_DN = 40
+        edge.recombine.CHECK_JUNCTION_RIGHT_UP = 40
+        edge.recombine.CHECK_JUNCTION_RIGHT_DN = 10
+
         self.old_single_cross_over_gap_max = edge.recombine.SINGLE_CROSSOVER_MAX_GAP
         edge.recombine.SINGLE_CROSSOVER_MAX_GAP = 10
 
     def tearDown(self):
-        edge.recombine.CHECK_JUNCTION_SIZE = self.old_check_junction_size
+        edge.recombine.CHECK_JUNCTION_LEFT_UP = self.old_check_junction_lu
+        edge.recombine.CHECK_JUNCTION_LEFT_DN = self.old_check_junction_ld
+        edge.recombine.CHECK_JUNCTION_RIGHT_UP = self.old_check_junction_ru
+        edge.recombine.CHECK_JUNCTION_RIGHT_DN = self.old_check_junction_rd
         edge.recombine.SINGLE_CROSSOVER_MAX_GAP = self.old_single_cross_over_gap_max
 
     def build_genome(self, circular, *templates):
@@ -689,14 +700,14 @@ class GenomeRecombinationTest(TestCase):
         for primer in r[0].verification_front:
             p = pcr_from_genome(c, primer['PRIMER_LEFT_SEQUENCE'], primer['PRIMER_RIGHT_SEQUENCE'])
             self.assertNotEqual(p[0], None)
-            self.assertEquals(p[0].index(cassette[0:edge.recombine.CHECK_JUNCTION_SIZE/2]) >= 0,
+            self.assertEquals(p[0].index(cassette[0:edge.recombine.CHECK_JUNCTION_LEFT_DN]) >= 0,
                               True)
 
         # back verification primers should find a product including back of cassette
         for primer in r[0].verification_back:
             p = pcr_from_genome(c, primer['PRIMER_LEFT_SEQUENCE'], primer['PRIMER_RIGHT_SEQUENCE'])
             self.assertNotEqual(p[0], None)
-            self.assertEquals(p[0].index(cassette[-edge.recombine.CHECK_JUNCTION_SIZE/2:]) >= 0,
+            self.assertEquals(p[0].index(cassette[-edge.recombine.CHECK_JUNCTION_RIGHT_UP:]) >= 0,
                               True)
 
     def test_finds_verification_primers_for_swap_region(self):
@@ -760,14 +771,25 @@ class GenomeRecombinationTest(TestCase):
 
 class SingleCrossoverTest(TestCase):
     def setUp(self):
-        self.old_check_junction_size = edge.recombine.CHECK_JUNCTION_SIZE
-        edge.recombine.CHECK_JUNCTION_SIZE = 50
+        self.old_check_junction_lu = edge.recombine.CHECK_JUNCTION_LEFT_UP
+        self.old_check_junction_ld = edge.recombine.CHECK_JUNCTION_LEFT_DN
+        self.old_check_junction_ru = edge.recombine.CHECK_JUNCTION_RIGHT_UP
+        self.old_check_junction_rd = edge.recombine.CHECK_JUNCTION_RIGHT_DN
+
+        edge.recombine.CHECK_JUNCTION_LEFT_UP = 10
+        edge.recombine.CHECK_JUNCTION_LEFT_DN = 40
+        edge.recombine.CHECK_JUNCTION_RIGHT_UP = 40
+        edge.recombine.CHECK_JUNCTION_RIGHT_DN = 10
+
         self.old_single_cross_over_gap_max = edge.recombine.SINGLE_CROSSOVER_MAX_GAP
         self.new_max_gap = 20
         edge.recombine.SINGLE_CROSSOVER_MAX_GAP = self.new_max_gap
 
     def tearDown(self):
-        edge.recombine.CHECK_JUNCTION_SIZE = self.old_check_junction_size
+        edge.recombine.CHECK_JUNCTION_LEFT_UP = self.old_check_junction_lu
+        edge.recombine.CHECK_JUNCTION_LEFT_DN = self.old_check_junction_ld
+        edge.recombine.CHECK_JUNCTION_RIGHT_UP = self.old_check_junction_ru
+        edge.recombine.CHECK_JUNCTION_RIGHT_DN = self.old_check_junction_rd
         edge.recombine.SINGLE_CROSSOVER_MAX_GAP = self.old_single_cross_over_gap_max
 
     def build_genome(self, circular, *templates):

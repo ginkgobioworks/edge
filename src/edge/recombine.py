@@ -12,8 +12,12 @@ from Bio.Seq import Seq
 SINGLE_CROSSOVER_MAX_GAP = 2000
 MAX_INTEGRATION_SIZE = 50000
 CHECK_JUNCTION_PRIMER_WINDOW = 200
-CHECK_JUNCTION_SIZE = 200
 END_BPS_IGNORE = 8
+
+CHECK_JUNCTION_LEFT_UP = 10
+CHECK_JUNCTION_LEFT_DN = 190
+CHECK_JUNCTION_RIGHT_UP = 190
+CHECK_JUNCTION_RIGHT_DN = 10
 
 
 def remove_overhangs(s):
@@ -358,12 +362,23 @@ def get_verification_primers(genome, region, primer3_opts):
     fragment = Fragment.objects.get(pk=region.fragment_id).indexed_fragment()
     cassette = region.cassette
 
+    check_junction_lu = CHECK_JUNCTION_LEFT_UP
+    check_junction_ld = CHECK_JUNCTION_LEFT_DN
+    check_junction_ru = CHECK_JUNCTION_RIGHT_UP
+    check_junction_rd = CHECK_JUNCTION_RIGHT_DN
+
+    if primer3_opts:
+        if 'EDGE_CHECK_JUNCTION_LEFT_HA' in primer3_opts:
+            check_junction_ld = int(primer3_opts['EDGE_CHECK_JUNCTION_LEFT_HA'])
+        if 'EDGE_CHECK_JUNCTION_RIGHT_HA' in primer3_opts:
+            check_junction_ru = int(primer3_opts['EDGE_CHECK_JUNCTION_RIGHT_HA'])
+
     #
     # front junction
     #
 
-    upstream_window = CHECK_JUNCTION_PRIMER_WINDOW+CHECK_JUNCTION_SIZE/2
-    downstream_window = min(len(cassette), CHECK_JUNCTION_PRIMER_WINDOW+CHECK_JUNCTION_SIZE/2)
+    upstream_window = CHECK_JUNCTION_PRIMER_WINDOW+check_junction_lu
+    downstream_window = min(len(cassette), CHECK_JUNCTION_PRIMER_WINDOW+check_junction_ld)
     back = cassette[0:downstream_window]
 
     # don't bother looking for primers if front part of cassette is same as
@@ -372,8 +387,9 @@ def get_verification_primers(genome, region, primer3_opts):
         front = fragment.get_sequence(region.start-upstream_window, region.start-1)
         template = front+back
         junction = [len(front)]
-        roi_start = len(front)-CHECK_JUNCTION_SIZE/2 if len(front) > CHECK_JUNCTION_SIZE/2 else 0
-        roi_len = min(CHECK_JUNCTION_SIZE, min(len(front), CHECK_JUNCTION_SIZE/2)+len(cassette))
+        roi_start = len(front)-check_junction_lu if len(front) > check_junction_lu else 0
+        roi_len = min(check_junction_lu+check_junction_ld,
+                      min(len(front), check_junction_ld)+len(cassette))
         # remove primers that works on un-modified genome for creating a PCR product
         region.verification_front =\
             remove_working_primers(genome,
@@ -384,8 +400,8 @@ def get_verification_primers(genome, region, primer3_opts):
     # back junction
     #
 
-    upstream_window = min(len(cassette), CHECK_JUNCTION_PRIMER_WINDOW+CHECK_JUNCTION_SIZE/2)
-    downstream_window = CHECK_JUNCTION_PRIMER_WINDOW+CHECK_JUNCTION_SIZE/2
+    upstream_window = min(len(cassette), CHECK_JUNCTION_PRIMER_WINDOW+check_junction_ru)
+    downstream_window = CHECK_JUNCTION_PRIMER_WINDOW+check_junction_rd
     front = cassette[-upstream_window:]
 
     # don't bother looking for primers if front part of cassette is same as
@@ -396,8 +412,9 @@ def get_verification_primers(genome, region, primer3_opts):
                                      region.start+len(region.sequence)+downstream_window-1)
         template = front+back
         junction = [len(front)]
-        roi_start = len(front)-CHECK_JUNCTION_SIZE/2 if len(front) > CHECK_JUNCTION_SIZE/2 else 0
-        roi_len = min(CHECK_JUNCTION_SIZE, min(len(back), CHECK_JUNCTION_SIZE/2)+len(cassette))
+        roi_start = len(front)-check_junction_ru if len(front) > check_junction_ru else 0
+        roi_len = min(check_junction_ru+check_junction_rd,
+                      min(len(back), check_junction_rd)+len(cassette))
         # remove primers that works on un-modified genome for creating a PCR product
         region.verification_back =\
             remove_working_primers(genome,
