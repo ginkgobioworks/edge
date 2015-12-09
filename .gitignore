@@ -1,5 +1,8 @@
-*.swp
+db.sqlite3*
+test.db*
+.webassets-cache
 *.pyc
-Vagrantfile.local
-.vagrant
-production.log
+edge.egg-info
+build
+dist
+.*.sw?

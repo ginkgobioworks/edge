@@ -1,4 +1,4 @@
--r core.txt
+-r production.txt
 
 # testing
 nose
