@@ -45,7 +45,6 @@ def gather_package_data(config):
         for root, dirs, files in os.walk(dirname):
             root = os.path.relpath(root, "src/")
             pkgdata += [os.path.join(root, fn) for fn in files]
-    print pkgdata
     config["package_data"] = {"edge": pkgdata}
 
 def setup_config():
