@@ -3,8 +3,9 @@
 import glob
 import os
 import pip
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.install import install as InstallCommand
+
 
 PACKAGE_ROOT = os.path.relpath(os.path.abspath(os.path.split(__file__)[0]), os.getcwd())
 
@@ -37,6 +38,16 @@ def gather_scripts(config):
     scripts = glob.glob(os.path.join(PACKAGE_ROOT, "scripts", "edge_*"))
     config["scripts"] = scripts
 
+def gather_package_data(config):
+    top_level = ["src/templates", "src/static"]
+    pkgdata = []
+    for dirname in top_level:
+        for root, dirs, files in os.walk(dirname):
+            root = os.path.relpath(root, "src/")
+            pkgdata += [os.path.join(root, fn) for fn in files]
+    print pkgdata
+    config["package_data"] = {"edge": pkgdata}
+
 def setup_config():
     config = {
         "name": "edge",
@@ -45,13 +56,13 @@ def setup_config():
         "author_email": "team@ginkgobioworks.com",
         "description": "Genome Engineering Tool",
         "license": "MIT",
-        "packages": ["edge", "edge.server"],
+        "packages": ["edge"] + ["edge.%s" % pkg for pkg in find_packages("src")],
         "package_dir": {"edge": "src"},
-        "include_package_data": True,
         "zip_safe": False,
         "cmdclass": {"install": EdgeInstallCommand},
     }
     gather_scripts(config)
+    gather_package_data(config)
     return config
 
 if __name__ == "__main__":
