@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+#export EDGE_TESTING=1
+export EDGE_DEFAULT_DB=sqlite
+
+edge_manage.py syncdb --noinput
+edge_manage.py migrate --fake
+edge_manage.py runserver 0.0.0.0:8000
