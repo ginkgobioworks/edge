@@ -1,5 +1,4 @@
 import json
-from django.db import transaction
 from edge.blast import blast_genome
 from edge.models import Operation
 from Bio.Seq import Seq
@@ -71,7 +70,6 @@ def find_crispr_target(genome, guide, pam):
     return targets
 
 
-@transaction.atomic()
 def crispr_dsb(genome, guide, pam, genome_name=None, notes=None):
 
     targets = find_crispr_target(genome, guide, pam)

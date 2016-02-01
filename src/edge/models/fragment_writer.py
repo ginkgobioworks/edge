@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.db import connection
 from django.db.models import F
 from edge.models.chunk import *
@@ -59,9 +58,8 @@ class Fragment_Writer:
                 index.fresh = False
                 index.save()
 
-    # really important this happens atomically, otherwise we may have corrupted
-    # chunk and index
-    @transaction.atomic()
+    # make sure you call this atomically! otherwise we may have corrupted chunk
+    # and index
     def __split_chunk(self, chunk, bps_to_split):
         s1 = chunk.sequence[0:bps_to_split]
         s2 = chunk.sequence[bps_to_split:]

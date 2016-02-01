@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.db.models import F
 from edge.models.chunk import *
 
@@ -30,7 +29,6 @@ class Fragment_Updater:
         )
         return new_chunk
 
-    @transaction.atomic()
     def insert_bases(self, before_base1, sequence):
         # find chunks before and containing the insertion point
         prev_chunk, chunk = self._find_and_split_before(before_base1)
@@ -72,7 +70,6 @@ class Fragment_Updater:
                 base_last=fragment_length+1+len(sequence)-1
             )
 
-    @transaction.atomic()
     def remove_bases(self, before_base1, length):
         if length <= 0:
             raise Exception('Cannot remove less than one base pair')
@@ -108,7 +105,6 @@ class Fragment_Updater:
                                         .update(base_first=F('base_first')-length,
                                                 base_last=F('base_last')-length)
 
-    @transaction.atomic()
     def replace_bases(self, before_base1, length_to_remove, sequence):
 
         if length_to_remove <= 0:
@@ -119,7 +115,6 @@ class Fragment_Updater:
         self.remove_bases(before_base1, length_to_remove)
         self.insert_bases(before_base1, sequence)
 
-    @transaction.atomic()
     def insert_fragment(self, before_base1, fragment):
         fragment = fragment.indexed_fragment()
 
@@ -173,7 +168,6 @@ class Fragment_Updater:
                 )
             c += len(chunk.sequence)
 
-    @transaction.atomic()
     def replace_with_fragment(self, before_base1, length_to_remove, fragment):
 
         if length_to_remove <= 0:

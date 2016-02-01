@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.views.generic.base import View
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.db import transaction
 from edge.models import *
 
 
@@ -162,6 +163,7 @@ class FragmentAnnotationsView(ViewBase):
             annotations = to_return
         return [FragmentAnnotationsView.to_dict(annotation) for annotation in annotations]
 
+    @transaction.atomic()
     def on_post(self, request, fragment_id):
         annotation_parser = RequestParser()
         annotation_parser.add_argument('base_first', field_type=int, required=True, location='json')
@@ -199,6 +201,7 @@ class FragmentListView(ViewBase):
             fragments = Fragment.user_defined_fragments(None, s, s+p)
         return [FragmentView.to_dict(fragment) for fragment in fragments]
 
+    @transaction.atomic()
     def on_post(self, request):
         args = fragment_parser.parse_args(request)
         fragment = Fragment.create_with_sequence(name=args['name'],
@@ -296,6 +299,7 @@ class GenomeAnnotationsView(ViewBase):
 
 class GenomeFragmentListView(ViewBase):
 
+    @transaction.atomic()
     def on_post(self, request, genome_id):  # adding new fragment
         args = fragment_parser.parse_args(request)
         genome = get_genome_or_404(genome_id)
@@ -367,6 +371,7 @@ class GenomeListView(ViewBase):
                                    include_operations=False)
                 for genome in genomes]
 
+    @transaction.atomic()
     def on_post(self, request):
         genome_parser = RequestParser()
         genome_parser.add_argument('name', field_type=str, required=True, location='json')
@@ -420,6 +425,7 @@ class GenomePcrView(ViewBase):
 
 class GenomeOperationViewBase(ViewBase):
 
+    @transaction.atomic()
     def on_post(self, request, genome_id):
         from edge.blastdb import check_and_build_genome_db
 

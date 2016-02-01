@@ -1,4 +1,3 @@
-from django.db import transaction
 from edge.models.chunk import *
 
 
@@ -16,7 +15,6 @@ class Fragment_Annotator:
         f.save()
         return f
 
-    @transaction.atomic()
     def annotate(self, first_base1, last_base1, name, type, strand,
                  qualifiers=None, operation=None):
         if self.circular and last_base1 < first_base1:
