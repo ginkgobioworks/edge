@@ -1,8 +1,7 @@
 from time import time
 import json
-from django.db import transaction
 from edge.blast import blast_genome
-from edge.models import Fragment, Operation
+from edge.models import Genome, Fragment, Operation
 from edge.primer import design_primers_from_template
 from edge.pcr import pcr_from_genome
 from edge.orfs import detect_orfs
@@ -544,7 +543,6 @@ def shift_regions(regions, fragment_id, start, replaced, added, new_fragment_id)
     return [r for r in regions if r is not None]
 
 
-@transaction.atomic()
 def recombine_sequence(genome, cassette, homology_arm_length,
                        genome_name=None, cassette_name=None, notes=None):
     cassette = remove_overhangs(cassette)
@@ -553,6 +551,10 @@ def recombine_sequence(genome, cassette, homology_arm_length,
     regions = find_swap_region(genome, cassette, homology_arm_length)
     if regions is None or len(regions) == 0:
         return None
+
+    locked_genome = Genome.objects.select_for_update().filter(pk=genome.id)
+    locked_genome = list(locked_genome)
+    genome = locked_genome[0]
 
     if genome_name is None or genome_name.strip() == "":
         genome_name = "%s recombined with %d bps integration cassette" % (genome.name,
@@ -602,13 +604,19 @@ def recombine_sequence(genome, cassette, homology_arm_length,
                 operation=op)
 
 
-@transaction.atomic()
 def annotate_integration(genome, new_genome, regions_before, regions_after, cassette_name, op):
 
+    before_and_after_with_annotations = []
     for before, after in zip(regions_before, regions_after):
         annotations = get_cassette_annotations(genome, before['cassette'], before['fragment_id'],
                                                before['start'], before['end'])
+        before_and_after_with_annotations.append((before, after, annotations))
 
+    locked_genome = Genome.objects.select_for_update().filter(pk=genome.id)
+    locked_genome = list(locked_genome)
+    genome = locked_genome[0]
+
+    for before, after, annotations in before_and_after_with_annotations:
         with new_genome.annotate_fragment_by_fragment_id(after['fragment_id']) as f:
             # region_start is already adjusted for multiple integration in this
             # fragment
