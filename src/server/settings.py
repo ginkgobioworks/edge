@@ -147,3 +147,5 @@ NCBI_DATA_DIR = os.getenv("EDGE_NCBI_DATA_DIR", NCBI_DIR+'/blastdb')
 
 # Primer3
 PRIMER3_DIR = os.getenv("EDGE_PRIMER3_DIR", BASE_DIR+'/../primer3')
+PRIMER3_BIN = os.getenv("EDGE_PRIMER3_BIN", os.path.join(PRIMER3_DIR, "primer3_core"))
+PRIMER3_CONFIG = os.getenv("EDGE_PRIMER3_CONFIG", os.path.join(PRIMER3_DIR, "primer3_config")) + '/'
