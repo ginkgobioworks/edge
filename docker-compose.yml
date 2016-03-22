@@ -1,0 +1,28 @@
+edgedb:
+    image: mysql:5.6
+    environment:
+        MYSQL_DATABASE: edge
+        MYSQL_ROOT_PASSWORD: password
+        MYSQL_USER: edge
+        MYSQL_PASSWORD: edge
+    ports:
+        - "3306"
+
+edge:
+    build: .
+    ports:
+        - "8080:8080"
+    links:
+        - edgedb
+    environment:
+        EDGE_MYSQL_HOST: edgedb
+        EDGE_MYSQL_PORT: 3306
+        EDGE_DEFAULT_DB: mysql
+        EDGE_TESTING: 1
+        EDGE_MYSQL_NAME: edge
+        EDGE_MYSQL_USER: root
+        EDGE_MYSQL_PASSWORD: password
+        EDGE_NCBI_BIN_DIR: "/usr/bin/"
+        EDGE_NCBI_DATA_DIR: "/tmp/blastdb"
+        EGDE_PRIMER3_DIR: "/usr/bin/"
+

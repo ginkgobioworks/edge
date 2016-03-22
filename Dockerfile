@@ -1,16 +1,18 @@
 FROM ubuntu:14.04
 MAINTAINER Giles Hall
 RUN apt-get update && \
-    apt-get install -y python python-dev build-essential python-setuptools python-virtualenv
+    apt-get install -y git build-essential libmysqlclient-dev \
+        python python-dev python-setuptools python-virtualenv python-pip \
+        nodejs nodejs-legacy npm primer3 ncbi-blast+
+RUN npm install -g bower
 
 # running environment
-ENV EDGE_DEFAULT_DB=sqlite
-ENV EDGE_TESTING=1
-ADD / /opt/edge
-WORKDIR /opt/edge
-RUN virtualenv env && ./env/bin/python setup.py install
-ENTRYPOINT ["/opt/edge/startup.sh"]
-
-# MySQL
-#VOLUME ["/var/lib/mysql"]
-#RUN apt-get install -y mysql-server
+RUN useradd -ms /bin/bash edge
+ADD / /home/edge/src/edge
+RUN chown -R edge.edge /home/edge
+USER edge
+WORKDIR /home/edge/src/edge
+RUN virtualenv /home/edge/env && /home/edge/env/bin/python setup.py install
+EXPOSE 8000
+ENTRYPOINT ["scripts/wait-for-it.sh", "-t", "60", "edgedb:3306", "--", "scripts/entrypoint.sh"]
+CMD ["init", "run"]

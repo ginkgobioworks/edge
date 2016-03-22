@@ -1,0 +1,9 @@
+db.sqlite3*
+test.db*
+.webassets-cache
+*.pyc
+edge.egg-info
+build
+dist
+.*.sw?
+src/static/edge/lib

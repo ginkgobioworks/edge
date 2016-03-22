@@ -81,11 +81,11 @@ DATABASE_CONFIG = {
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': { "init_command": "SET storage_engine=INNODB;" },
-        'HOST': '',
-        'PORT': '',
-        'NAME' : 'toolbox_dev',
-        'USER': 'root',
-        'PASSWORD': 'password',
+        'HOST': os.getenv("EDGE_MYSQL_HOST", ""),
+        'PORT': os.getenv("EDGE_MYSQL_PORT", ""),
+        'NAME' : os.getenv("EDGE_MYSQL_NAME", 'toolbox_dev'),
+        'USER': os.getenv("EDGE_MYSQL_USER", 'root'),
+        'PASSWORD': os.getenv("EDGE_MYSQL_PASSWORD", "password"),
         'ATOMIC_REQUESTS': True,
     }
 }
