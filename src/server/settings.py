@@ -27,7 +27,7 @@ TEMPLATE_DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 import sys
-TESTING = sys.argv[1:2] == ['test']
+TESTING = (sys.argv[1:2] == ['test']) or ("EDGE_TESTING" in os.environ)
 
 
 # Application definition
@@ -66,15 +66,14 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'server.urls'
-
-WSGI_APPLICATION = 'server.wsgi.application'
+ROOT_URLCONF = 'edge.server.urls'
+WSGI_APPLICATION = 'edge.server.wsgi.application'
 
 
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 
-DATABASES = {
+DATABASE_CONFIG = {
     'sqlite': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
@@ -91,13 +90,16 @@ DATABASES = {
     }
 }
 
-DEFAULT_DB = 'mysql'
+DEFAULT_DB = os.getenv("EDGE_DEFAULT_DB", 'mysql')
+DATABASES = {"default": DATABASE_CONFIG[DEFAULT_DB]}
 
+"""
 DATABASES['default'] = DATABASES[DEFAULT_DB]
 if TESTING:
     other_dbs = [db for db in DATABASES if db != 'default']
     for db in other_dbs:
         del DATABASES[db]
+"""
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
@@ -139,9 +141,9 @@ LOGGING = {
 
 
 # NCBI blast
-NCBI_DIR = BASE_DIR+'/../ncbi'
-NCBI_BIN_DIR = NCBI_DIR+'/bin'
-NCBI_DATA_DIR = NCBI_DIR+'/blastdb'
+NCBI_DIR = os.getenv("EDGE_NCBI_DIR", BASE_DIR+'/../ncbi')
+NCBI_BIN_DIR = os.getenv("EDGE_NCBI_BIN_DIR", NCBI_DIR+'/bin')
+NCBI_DATA_DIR = os.getenv("EDGE_NCBI_DATA_DIR", NCBI_DIR+'/blastdb')
 
 # Primer3
-PRIMER3_DIR = BASE_DIR+'/../primer3'
+PRIMER3_DIR = os.getenv("EDGE_PRIMER3_DIR", BASE_DIR+'/../primer3')

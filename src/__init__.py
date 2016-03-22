@@ -1,3 +1,5 @@
+#from . import server
+
 def import_gff(name, fn):
     """
     Creates a new genome using the specified GFF file.
