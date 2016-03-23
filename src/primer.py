@@ -60,8 +60,6 @@ def primer3_run(opts):
         f.write('=')
 
     cmd = [settings.PRIMER3_BIN, fn]
-    print("cmd: " + str(cmd))
-    print("env: " + str(os.environ))
     out = subprocess.check_output(cmd)
     os.unlink(fn)
     r = {}
