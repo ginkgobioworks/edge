@@ -59,8 +59,10 @@ def primer3_run(opts):
         f.write('PRIMER_THERMODYNAMIC_PARAMETERS_PATH=%s\n' % settings.PRIMER3_CONFIG)
         f.write('=')
 
-    cmd = "%s %s" % (settings.PRIMER3_BIN, fn)
-    out = subprocess.check_output(cmd.split(' '))
+    cmd = [settings.PRIMER3_BIN, fn]
+    print("cmd: " + str(cmd))
+    print("env: " + str(os.environ))
+    out = subprocess.check_output(cmd)
     os.unlink(fn)
     r = {}
     for l in out.split('\n'):

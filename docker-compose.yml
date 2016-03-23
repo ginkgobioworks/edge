@@ -24,5 +24,6 @@ edge:
         EDGE_MYSQL_PASSWORD: password
         EDGE_NCBI_BIN_DIR: "/usr/bin/"
         EDGE_NCBI_DATA_DIR: "/tmp/blastdb"
-        EGDE_PRIMER3_DIR: "/usr/bin/"
+        EDGE_PRIMER3_BIN: "/usr/bin/primer3_core"
+        EDGE_PRIMER3_CONFIG: "/etc/primer3_config"
 
