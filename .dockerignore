@@ -5,5 +5,5 @@ test.db*
 edge.egg-info
 build
 dist
+env
 .*.sw?
-src/static/edge/lib

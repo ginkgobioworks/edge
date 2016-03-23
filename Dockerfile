@@ -12,7 +12,9 @@ ADD / /home/edge/src/edge
 RUN chown -R edge.edge /home/edge
 USER edge
 WORKDIR /home/edge/src/edge
-RUN virtualenv /home/edge/env && /home/edge/env/bin/python setup.py install
+RUN virtualenv /home/edge/env && \
+    /home/edge/env/bin/python setup.py install && \
+    /home/edge/env/bin/edge_manage.py assets build
 EXPOSE 8000
 ENTRYPOINT ["scripts/wait-for-it.sh", "-t", "60", "edgedb:3306", "--", "scripts/entrypoint.sh"]
 CMD ["init", "run"]

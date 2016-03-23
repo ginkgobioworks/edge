@@ -4,13 +4,12 @@
   "main": [],
   "ignore": [ "**/**" ],
   "main": [
-    "./src/edge/static/edge/edge.min.js",
-    "./src/edge/static/edge/edge_jst.js",
-    "./src/edge/static/edge/edge.css"
+    "./src/static/edge/edge.min.js",
+    "./src/static/edge/edge_jst.js",
+    "./src/static/edge/edge.css"
   ],
   "dependencies": {
     "bootstrap": "3.0.0",
-    "underscore": "1.6.0",
     "svjs": "git://github.com/benjiec/svjs.git#master"
   }
 }

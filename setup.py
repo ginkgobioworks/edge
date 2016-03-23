@@ -99,8 +99,9 @@ def gather_package_data(config):
 if __name__ == "__main__":
     # allow setup.py to be run from any path
     os.chdir(SourceDir)
-    print("cwd: " + os.getcwd())
     conf = SetupConfiguration.copy()
     conf["scripts"] = gather_scripts()
     conf["packages"] = gather_packages()
+    #import pprint
+    #pprint.pprint(conf)
     setuptools.setup(**conf)

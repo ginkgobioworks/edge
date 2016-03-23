@@ -1,5 +1,15 @@
 #from . import server
 
+from django.conf import settings
+import pprint
+
+def django_settings():
+    return {key: getattr(settings, key) for key in dir(settings) if not key.startswith("__")}
+
+def print_django_settings():
+    settings = django_settings()
+    pprint.pprint(settings)
+
 def import_gff(name, fn):
     """
     Creates a new genome using the specified GFF file.

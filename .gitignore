@@ -6,3 +6,6 @@ edge.egg-info
 build
 dist
 .*.sw?
+scripts/edge
+tags
+env
