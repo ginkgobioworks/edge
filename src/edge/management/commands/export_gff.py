@@ -9,5 +9,5 @@ class Command(BaseCommand):
         parser.add_argument('filename', type=str)
 
     def handle(self, *args, **options):
-        io = IO(Genome.objects.get(pk=options['genome_id']))
+        io = IO(Genome.objects.get(pk=options['genome-id']))
         io.to_gff(options['filename'])
