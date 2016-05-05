@@ -1,7 +1,6 @@
 # django
 pytz >= 2013b
-Django == 1.6
-South == 0.8.4
+Django == 1.8.*
 
 # Celery
 celery >= 3.0.13
