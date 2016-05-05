@@ -3,7 +3,7 @@ from django.db.models import F
 from edge.models.chunk import *
 
 
-class Fragment_Writer(object):
+class Fragment_Writer:
     """
     Mixin that includes helpers for updating a fragment.
     """

@@ -1,179 +1,182 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-from django.db import migrations, models
-import edge.models.genome_updater
-import edge.models.fragment_updater
-import django.db.models.deletion
-import edge.models.fragment_writer
-import edge.models.fragment_annotator
+import datetime
+from south.db import db
+from south.v2 import SchemaMigration
+from django.db import models
 
 
-class Migration(migrations.Migration):
+class Migration(SchemaMigration):
 
-    dependencies = [
-    ]
+    def forwards(self, orm):
+        # Adding model 'Fragment'
+        db.create_table(u'edge_fragment', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('circular', self.gf('django.db.models.fields.BooleanField')()),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=256)),
+            ('parent', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Fragment'], null=True)),
+            ('start_chunk', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Chunk'], null=True)),
+        ))
+        db.send_create_signal('edge', ['Fragment'])
 
-    operations = [
-        migrations.CreateModel(
-            name='Chunk',
-            fields=[
-                ('id', models.BigIntegerField(serialize=False, primary_key=True)),
-                ('sequence', models.TextField(null=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Chunk_Feature',
-            fields=[
-                ('id', models.BigIntegerField(serialize=False, primary_key=True)),
-                ('feature_base_first', models.IntegerField()),
-                ('feature_base_last', models.IntegerField()),
-                ('chunk', models.ForeignKey(to='edge.Chunk', on_delete=django.db.models.deletion.PROTECT)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Edge',
-            fields=[
-                ('id', models.BigIntegerField(serialize=False, primary_key=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Feature',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.CharField(max_length=100)),
-                ('type', models.CharField(max_length=100)),
-                ('strand', models.IntegerField(null=True)),
-                ('length', models.IntegerField()),
-                ('_qualifiers', models.TextField(null=True, db_column=b'qualifiers')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Fragment',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('circular', models.BooleanField()),
-                ('name', models.CharField(max_length=256)),
-                ('est_length', models.IntegerField(null=True, verbose_name=b'Estimated length', blank=True)),
-                ('created_on', models.DateTimeField(auto_now_add=True, verbose_name=b'Created', null=True)),
-                ('active', models.BooleanField(default=True)),
-                ('parent', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='edge.Fragment', null=True)),
-                ('start_chunk', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='edge.Chunk', null=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Fragment_Chunk_Location',
-            fields=[
-                ('id', models.BigIntegerField(serialize=False, primary_key=True)),
-                ('base_first', models.IntegerField()),
-                ('base_last', models.IntegerField()),
-                ('chunk', models.ForeignKey(to='edge.Chunk', on_delete=django.db.models.deletion.PROTECT)),
-                ('fragment', models.ForeignKey(to='edge.Fragment', on_delete=django.db.models.deletion.PROTECT)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Fragment_Index',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('fresh', models.BooleanField()),
-                ('updated_on', models.DateTimeField(null=True, verbose_name=b'Updated')),
-                ('fragment', models.OneToOneField(to='edge.Fragment')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Genome',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.CharField(max_length=256)),
-                ('notes', models.TextField(null=True, blank=True)),
-                ('created_on', models.DateTimeField(auto_now_add=True, verbose_name=b'Created', null=True)),
-                ('active', models.BooleanField(default=True)),
-                ('blastdb', models.TextField(null=True, blank=True)),
-            ],
-            bases=(edge.models.genome_updater.Genome_Updater, models.Model),
-        ),
-        migrations.CreateModel(
-            name='Genome_Fragment',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('inherited', models.BooleanField()),
-                ('fragment', models.ForeignKey(to='edge.Fragment')),
-                ('genome', models.ForeignKey(to='edge.Genome')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Operation',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('type', models.IntegerField(choices=[(1, b'Homologous Recombination'), (2, b'CRISPR-Cas9 WT (Double Stranded Break)'), (3, b'PCR Product Sequence Verification')])),
-                ('params', models.TextField(null=True, blank=True)),
-                ('genome', models.ForeignKey(to='edge.Genome')),
-            ],
-        ),
-        migrations.AddField(
-            model_name='genome',
-            name='fragments',
-            field=models.ManyToManyField(to='edge.Fragment', through='edge.Genome_Fragment'),
-        ),
-        migrations.AddField(
-            model_name='genome',
-            name='parent',
-            field=models.ForeignKey(related_name='children', on_delete=django.db.models.deletion.PROTECT, to='edge.Genome', null=True),
-        ),
-        migrations.AddField(
-            model_name='feature',
-            name='operation',
-            field=models.ForeignKey(to='edge.Operation', null=True),
-        ),
-        migrations.AddField(
-            model_name='edge',
-            name='fragment',
-            field=models.ForeignKey(to='edge.Fragment', on_delete=django.db.models.deletion.PROTECT),
-        ),
-        migrations.AddField(
-            model_name='edge',
-            name='from_chunk',
-            field=models.ForeignKey(related_name='out_edges', on_delete=django.db.models.deletion.PROTECT, to='edge.Chunk'),
-        ),
-        migrations.AddField(
-            model_name='edge',
-            name='to_chunk',
-            field=models.ForeignKey(related_name='in_edges', on_delete=django.db.models.deletion.PROTECT, to='edge.Chunk', null=True),
-        ),
-        migrations.AddField(
-            model_name='chunk_feature',
-            name='feature',
-            field=models.ForeignKey(to='edge.Feature', on_delete=django.db.models.deletion.PROTECT),
-        ),
-        migrations.AddField(
-            model_name='chunk',
-            name='initial_fragment',
-            field=models.ForeignKey(to='edge.Fragment', on_delete=django.db.models.deletion.PROTECT),
-        ),
-        migrations.CreateModel(
-            name='Indexed_Fragment',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=(edge.models.fragment_writer.Fragment_Writer, edge.models.fragment_annotator.Fragment_Annotator, edge.models.fragment_updater.Fragment_Updater, 'edge.fragment'),
-        ),
-        migrations.CreateModel(
-            name='Indexed_Genome',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=('edge.genome',),
-        ),
-        migrations.AlterUniqueTogether(
-            name='fragment_chunk_location',
-            unique_together=set([('fragment', 'chunk')]),
-        ),
-        migrations.AlterIndexTogether(
-            name='fragment_chunk_location',
-            index_together=set([('fragment', 'base_first'), ('fragment', 'base_last')]),
-        ),
-    ]
+        # Adding model 'Chunk'
+        db.create_table(u'edge_chunk', (
+            ('id', self.gf('django.db.models.fields.BigIntegerField')(primary_key=True)),
+            ('initial_fragment', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Fragment'])),
+            ('sequence', self.gf('django.db.models.fields.TextField')(null=True)),
+        ))
+        db.send_create_signal('edge', ['Chunk'])
+
+        # Adding model 'Edge'
+        db.create_table(u'edge_edge', (
+            ('id', self.gf('django.db.models.fields.BigIntegerField')(primary_key=True)),
+            ('from_chunk', self.gf('django.db.models.fields.related.ForeignKey')(related_name='out_edges', to=orm['edge.Chunk'])),
+            ('fragment', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Fragment'])),
+            ('to_chunk', self.gf('django.db.models.fields.related.ForeignKey')(related_name='in_edges', null=True, to=orm['edge.Chunk'])),
+        ))
+        db.send_create_signal('edge', ['Edge'])
+
+        # Adding model 'Feature'
+        db.create_table(u'edge_feature', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=100)),
+            ('type', self.gf('django.db.models.fields.CharField')(max_length=100)),
+            ('strand', self.gf('django.db.models.fields.IntegerField')(null=True)),
+            ('length', self.gf('django.db.models.fields.IntegerField')()),
+        ))
+        db.send_create_signal('edge', ['Feature'])
+
+        # Adding model 'Chunk_Feature'
+        db.create_table(u'edge_chunk_feature', (
+            ('id', self.gf('django.db.models.fields.BigIntegerField')(primary_key=True)),
+            ('chunk', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Chunk'])),
+            ('feature', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Feature'])),
+            ('feature_base_first', self.gf('django.db.models.fields.IntegerField')()),
+            ('feature_base_last', self.gf('django.db.models.fields.IntegerField')()),
+        ))
+        db.send_create_signal('edge', ['Chunk_Feature'])
+
+        # Adding model 'Fragment_Chunk_Location'
+        db.create_table(u'edge_fragment_chunk_location', (
+            ('id', self.gf('django.db.models.fields.BigIntegerField')(primary_key=True)),
+            ('fragment', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Fragment'])),
+            ('chunk', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Chunk'])),
+            ('base_first', self.gf('django.db.models.fields.IntegerField')()),
+            ('base_last', self.gf('django.db.models.fields.IntegerField')()),
+        ))
+        db.send_create_signal('edge', ['Fragment_Chunk_Location'])
+
+        # Adding unique constraint on 'Fragment_Chunk_Location', fields ['fragment', 'chunk']
+        db.create_unique(u'edge_fragment_chunk_location', ['fragment_id', 'chunk_id'])
+
+        # Adding model 'Genome'
+        db.create_table(u'edge_genome', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=256)),
+            ('parent', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Genome'], null=True)),
+            ('notes', self.gf('django.db.models.fields.TextField')(null=True)),
+        ))
+        db.send_create_signal('edge', ['Genome'])
+
+        # Adding model 'Genome_Fragment'
+        db.create_table(u'edge_genome_fragment', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('genome', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Genome'])),
+            ('fragment', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['edge.Fragment'])),
+            ('inherited', self.gf('django.db.models.fields.BooleanField')()),
+        ))
+        db.send_create_signal('edge', ['Genome_Fragment'])
+
+
+    def backwards(self, orm):
+        # Removing unique constraint on 'Fragment_Chunk_Location', fields ['fragment', 'chunk']
+        db.delete_unique(u'edge_fragment_chunk_location', ['fragment_id', 'chunk_id'])
+
+        # Deleting model 'Fragment'
+        db.delete_table(u'edge_fragment')
+
+        # Deleting model 'Chunk'
+        db.delete_table(u'edge_chunk')
+
+        # Deleting model 'Edge'
+        db.delete_table(u'edge_edge')
+
+        # Deleting model 'Feature'
+        db.delete_table(u'edge_feature')
+
+        # Deleting model 'Chunk_Feature'
+        db.delete_table(u'edge_chunk_feature')
+
+        # Deleting model 'Fragment_Chunk_Location'
+        db.delete_table(u'edge_fragment_chunk_location')
+
+        # Deleting model 'Genome'
+        db.delete_table(u'edge_genome')
+
+        # Deleting model 'Genome_Fragment'
+        db.delete_table(u'edge_genome_fragment')
+
+
+    models = {
+        'edge.chunk': {
+            'Meta': {'object_name': 'Chunk'},
+            'id': ('django.db.models.fields.BigIntegerField', [], {'primary_key': 'True'}),
+            'initial_fragment': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Fragment']"}),
+            'sequence': ('django.db.models.fields.TextField', [], {'null': 'True'})
+        },
+        'edge.chunk_feature': {
+            'Meta': {'object_name': 'Chunk_Feature'},
+            'chunk': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Chunk']"}),
+            'feature': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Feature']"}),
+            'feature_base_first': ('django.db.models.fields.IntegerField', [], {}),
+            'feature_base_last': ('django.db.models.fields.IntegerField', [], {}),
+            'id': ('django.db.models.fields.BigIntegerField', [], {'primary_key': 'True'})
+        },
+        'edge.edge': {
+            'Meta': {'object_name': 'Edge'},
+            'fragment': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Fragment']"}),
+            'from_chunk': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'out_edges'", 'to': "orm['edge.Chunk']"}),
+            'id': ('django.db.models.fields.BigIntegerField', [], {'primary_key': 'True'}),
+            'to_chunk': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'in_edges'", 'null': 'True', 'to': "orm['edge.Chunk']"})
+        },
+        'edge.feature': {
+            'Meta': {'object_name': 'Feature'},
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'length': ('django.db.models.fields.IntegerField', [], {}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'strand': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
+            'type': ('django.db.models.fields.CharField', [], {'max_length': '100'})
+        },
+        'edge.fragment': {
+            'Meta': {'object_name': 'Fragment'},
+            'circular': ('django.db.models.fields.BooleanField', [], {}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '256'}),
+            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Fragment']", 'null': 'True'}),
+            'start_chunk': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Chunk']", 'null': 'True'})
+        },
+        'edge.fragment_chunk_location': {
+            'Meta': {'unique_together': "(('fragment', 'chunk'),)", 'object_name': 'Fragment_Chunk_Location'},
+            'base_first': ('django.db.models.fields.IntegerField', [], {}),
+            'base_last': ('django.db.models.fields.IntegerField', [], {}),
+            'chunk': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Chunk']"}),
+            'fragment': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Fragment']"}),
+            'id': ('django.db.models.fields.BigIntegerField', [], {'primary_key': 'True'})
+        },
+        'edge.genome': {
+            'Meta': {'object_name': 'Genome'},
+            'fragments': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['edge.Fragment']", 'through': "orm['edge.Genome_Fragment']", 'symmetrical': 'False'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '256'}),
+            'notes': ('django.db.models.fields.TextField', [], {'null': 'True'}),
+            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Genome']", 'null': 'True'})
+        },
+        'edge.genome_fragment': {
+            'Meta': {'object_name': 'Genome_Fragment'},
+            'fragment': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Fragment']"}),
+            'genome': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['edge.Genome']"}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'inherited': ('django.db.models.fields.BooleanField', [], {})
+        }
+    }
+
+    complete_apps = ['edge']

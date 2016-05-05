@@ -14,8 +14,8 @@ def remove_genome(genome_id):
 
 
 class Command(BaseCommand):
-    def add_arguments(self, parser):
-        parser.add_argument('genome-id', type=int)
 
     def handle(self, *args, **options):
-        remove_genome(options['genome-id'])
+        if len(args) != 1:
+            raise Exception('Expecting genome ID as argument')
+        remove_genome(args[0])
