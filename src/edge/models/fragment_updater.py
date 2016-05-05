@@ -2,7 +2,7 @@ from django.db.models import F
 from edge.models.chunk import *
 
 
-class Fragment_Updater:
+class Fragment_Updater(object):
     """
     Mixin for sequence manipulation within fragment.
     """

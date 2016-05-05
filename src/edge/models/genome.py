@@ -4,7 +4,7 @@ from edge.models.fragment import *
 from edge.models.genome_updater import Genome_Updater
 
 
-class Genome(models.Model, Genome_Updater):
+class Genome(Genome_Updater, models.Model):
     class Meta:
         app_label = "edge"
 

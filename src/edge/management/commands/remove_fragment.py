@@ -17,8 +17,8 @@ def remove_fragment(fragment_id):
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument('fragment-id', type=int)
 
     def handle(self, *args, **options):
-        if len(args) != 1:
-            raise Exception('Expecting fragment ID as argument')
-        remove_fragment(args[0])
+        remove_fragment(options['fragment-id'])

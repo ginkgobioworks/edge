@@ -4,14 +4,10 @@ from edge.io import IO
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument('genome-id', type=int)
+        parser.add_argument('filename', type=str)
 
     def handle(self, *args, **options):
-        if len(args) != 2:
-            raise Exception('Expecting integer genome ID and filename as arguments')
-        try:
-            genome_id = int(args[0])
-        except:
-            raise Exception('Expecting integer genome ID and filename as arguments')
-
-        io = IO(Genome.objects.get(pk=genome_id))
-        io.to_gff(args[1])
+        io = IO(Genome.objects.get(pk=options['genome-id']))
+        io.to_gff(options['filename'])
