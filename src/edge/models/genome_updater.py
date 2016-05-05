@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from edge.models.fragment import Fragment
 
 
-class Genome_Updater(object):
+class Genome_Updater:
     """
     Mixin with helpers for updating genome.
     """

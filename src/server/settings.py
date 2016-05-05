@@ -41,12 +41,14 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
 
     'django_assets',
+    'south',
     'edge',
 )
 
 if TESTING:
     INSTALLED_APPS += ('django_nose',)
     TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+    SOUTH_TESTS_MIGRATE = False
 
 # for Django Celery
 import djcelery
