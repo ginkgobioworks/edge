@@ -1,0 +1,4 @@
+#!/bin/bash
+
+docker-compose run edge python manage.py syncdb --noinput
+docker-compose run edge python manage.py migrate

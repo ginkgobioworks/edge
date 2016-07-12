@@ -82,11 +82,11 @@ DATABASES = {
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': { "init_command": "SET storage_engine=INNODB;" },
-        'HOST': '',
-        'PORT': '',
-        'NAME' : 'toolbox_dev',
-        'USER': 'root',
-        'PASSWORD': 'password',
+        'HOST': os.getenv("DB_HOST", ""),
+        'PORT': "",
+        'NAME': os.getenv("DB_NAME", ""),
+        'USER': os.getenv("DB_USER", ""),
+        'PASSWORD': os.getenv('DB_PASSWORD', ""),
         'ATOMIC_REQUESTS': True,
     }
 }
