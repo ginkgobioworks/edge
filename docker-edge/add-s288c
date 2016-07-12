@@ -1,5 +1,2 @@
-WORKDIR $EDGE_HOME
-RUN python src/manage.py import_gff 'Saccharomyces cerevisiae' example/sc_s288c.gff
-RUN python src/manage.py build_edge_blastdb
-
-
+docker-compose run edge python manage.py import_gff 'Saccharomyces cerevisiae' ../example/sc_s288c.gff
+docker-compose run edge python manage.py build_edge_blastdb

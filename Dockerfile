@@ -1,9 +1,6 @@
 FROM python:2.7
 
-COPY requirements.txt requirements.txt
-COPY requirements-dev.txt requirements-dev.txt
-RUN pip install -r requirements-dev.txt
-
+WORKDIR /
 COPY ncbi ncbi
 WORKDIR /ncbi
 RUN ./install
@@ -13,6 +10,12 @@ COPY primer3 primer3
 WORKDIR /primer3
 RUN ./install
 
+WORKDIR /
+COPY requirements.txt requirements.txt
+COPY requirements-dev.txt requirements-dev.txt
+RUN pip install -r requirements-dev.txt
+
+WORKDIR /
 ENV EDGE_HOME /edge
 RUN mkdir -p $EDGE_HOME
 COPY . $EDGE_HOME
