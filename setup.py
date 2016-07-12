@@ -6,7 +6,7 @@ import os
 import sys
 import subprocess
 
-with open("requirements/core.txt", "r") as f:
+with open("requirements.txt", "r") as f:
     install_requires = [x.strip() for x in f.readlines() if not x.strip().startswith("#")]
 
 setup(name="edge",
