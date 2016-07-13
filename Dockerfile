@@ -22,7 +22,7 @@ COPY . $EDGE_HOME
 
 RUN mkdir -p $EDGE_HOME/ncbi/blastdb
 WORKDIR $EDGE_HOME/ncbi
-RUN ln -sf /ncbi/ncbi-blast-2.2.27+-src bin
+RUN ln -sf /ncbi/ncbi-blast-2.2.27+-src/c++/GCC492-Debug64/bin bin
 
 WORKDIR $EDGE_HOME/primer3
 RUN ln -sf /primer3/primer3_core .
