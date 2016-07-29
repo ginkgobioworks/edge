@@ -647,6 +647,9 @@ def recombine(genome, cassette, homology_arm_length,
     x = recombine_sequence(genome, cassette, homology_arm_length,
                            genome_name=genome_name, cassette_name=cassette_name, notes=notes)
 
+    if x is None:
+        return x
+
     # schedule background job to lift over annotations, after 10 seconds
     from edge.tasks import annotate_integration_task
     annotate_integration_task.apply_async(
