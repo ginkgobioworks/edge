@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
 
@@ -29,6 +28,16 @@ ALLOWED_HOSTS = ['*']
 import sys
 TESTING = sys.argv[1:2] == ['test']
 
+# for Django Celery
+
+BROKER_URL = os.environ.get('AMQP_URL', 'amqp://guest@localhost:5672//')
+
+import djcelery
+djcelery.setup_loader()
+CELERY_SEND_TASK_SENT_EVENT = True
+
+if TESTING:
+  CELERY_ALWAYS_EAGER = True  # skip the daemon
 
 # Application definition
 
@@ -43,19 +52,13 @@ INSTALLED_APPS = (
     'django_assets',
     'south',
     'edge',
+    'djcelery',
 )
 
 if TESTING:
     INSTALLED_APPS += ('django_nose',)
     TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
     SOUTH_TESTS_MIGRATE = False
-
-# for Django Celery
-import djcelery
-djcelery.setup_loader()
-CELERY_SEND_TASK_SENT_EVENT = True
-if TESTING:
-    CELERY_ALWAYS_EAGER = True  # skip the daemon
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
