@@ -133,7 +133,7 @@ class GFFFragmentImporter(object):
 
         if first_base1 not in self.__fclocs or\
            (last_base1 < len(self.__sequence) and last_base1+1 not in self.__fclocs):
-            raise Exception('Missing chunks for feature')
+            raise Exception('Cannot find appropriate sequence for feature: %s, start %s, end %s' % (name, first_base1, last_base1))
 
         annotation_start = self.__fclocs[first_base1]
         if last_base1 != len(self.__sequence):
