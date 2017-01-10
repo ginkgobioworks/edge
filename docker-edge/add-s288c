@@ -1,2 +1,2 @@
-docker-compose run edge python manage.py import_gff 'Saccharomyces cerevisiae' ../example/sc_s288c.gff
-docker-compose run edge python manage.py build_edge_blastdb
+docker-compose run --rm edge python manage.py import_gff 'Saccharomyces cerevisiae' ../example/sc_s288c.gff
+docker-compose run --rm edge python manage.py build_edge_blastdb
