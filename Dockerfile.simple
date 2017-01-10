@@ -1,0 +1,16 @@
+# To create a simple image w/o blast or primer3 support
+
+FROM python:2.7
+
+WORKDIR /
+COPY requirements.txt requirements.txt
+COPY requirements-dev.txt requirements-dev.txt
+RUN pip install -r requirements-dev.txt
+
+WORKDIR /
+ENV EDGE_HOME /edge
+RUN mkdir -p $EDGE_HOME
+COPY . $EDGE_HOME
+
+WORKDIR $EDGE_HOME/src
+CMD python manage.py runserver 0.0.0.0:8000
