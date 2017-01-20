@@ -8,6 +8,8 @@ services:
       - "9000:8888"
     depends_on:
       - edge-db
+    volumes: 
+      - ..:/edge
     environment:
       DB_HOST: edge-db
       DB_NAME: edge-dev
