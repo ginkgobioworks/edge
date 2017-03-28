@@ -1,4 +1,5 @@
 from time import time
+import re
 import json
 from edge.blast import blast_genome
 from edge.models import Genome, Fragment, Operation
@@ -11,7 +12,7 @@ from Bio.Seq import Seq
 SINGLE_CROSSOVER_MAX_GAP = 2000
 MAX_INTEGRATION_SIZE = 50000
 CHECK_JUNCTION_PRIMER_WINDOW = 200
-END_BPS_IGNORE = 8
+END_BPS_IGNORE = 20
 
 CHECK_JUNCTION_LEFT_UP = 10
 CHECK_JUNCTION_LEFT_DN = 190
@@ -22,10 +23,10 @@ CHECK_JUNCTION_RIGHT_DN = 10
 def remove_overhangs(s):
     if s is None or len(s) == 0:
         return s
-    if s[0] == '(' and s.find(')') >= 0:
-        s = s[s.find(')')+1:]
-    if s[-1] == ')' and s.rfind('(') >= 0:
-        s = s[:s.rfind('(')]
+    s = re.sub("^\([\w\-\/]*\)", "", s)
+    s = re.sub("\([\w\-\/]*\)$", "", s)
+    s = re.sub("^\<[\w\-\/]*\>", "", s)
+    s = re.sub("\<[\w\-\/]*\>$", "", s)
     return s
 
 
@@ -645,6 +646,9 @@ def recombine(genome, cassette, homology_arm_length,
 
     x = recombine_sequence(genome, cassette, homology_arm_length,
                            genome_name=genome_name, cassette_name=cassette_name, notes=notes)
+
+    if x is None:
+        return x
 
     # schedule background job to lift over annotations, after 10 seconds
     from edge.tasks import annotate_integration_task

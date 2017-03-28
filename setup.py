@@ -57,7 +57,7 @@ class EdgeInstallCommand(InstallCommand):
         InstallCommand.finalize_options(self)
 
     def populate_requirements(self):
-        reqfn = os.path.join(SourceDir, "requirements", "%s.txt" % self.deployment)
+        reqfn = os.path.join(SourceDir, "requirements.txt")
         requirements = pip.req.parse_requirements(reqfn, session=pip.download.PipSession())
         self.distribution.install_requires = [str(req.req) for req in requirements]
 
@@ -102,6 +102,4 @@ if __name__ == "__main__":
     conf = SetupConfiguration.copy()
     conf["scripts"] = gather_scripts()
     conf["packages"] = gather_packages()
-    #import pprint
-    #pprint.pprint(conf)
     setuptools.setup(**conf)

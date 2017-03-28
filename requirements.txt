@@ -1,0 +1,19 @@
+# django
+pytz >= 2013b
+Django == 1.6
+South == 0.8.4
+
+# Celery
+celery == 3.1.7
+django-celery == 3.1.1
+flower
+
+# assets
+django_assets == 0.8
+jsmin == 2.0.9
+
+# biopython
+biopython == 1.63
+
+# gff parsing
+bcbio-gff == 0.4

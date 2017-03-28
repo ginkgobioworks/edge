@@ -1,20 +1,32 @@
-FROM ubuntu:14.04
-MAINTAINER Giles Hall
-RUN apt-get update && \
-    apt-get install -y git build-essential libmysqlclient-dev \
-        python python-dev python-setuptools python-virtualenv python-pip \
-        nodejs nodejs-legacy npm primer3 ncbi-blast+
-RUN npm install -g bower
+FROM python:2.7
 
-# running environment
-RUN useradd -ms /bin/bash edge
-ADD / /home/edge/src/edge
-RUN chown -R edge.edge /home/edge
-USER edge
-WORKDIR /home/edge/src/edge
-RUN virtualenv /home/edge/env && \
-    /home/edge/env/bin/python setup.py install && \
-    /home/edge/env/bin/edge_manage.py assets build
-EXPOSE 8000
-ENTRYPOINT ["scripts/wait-for-it.sh", "-t", "60", "edgedb:3306", "--", "scripts/entrypoint.sh"]
-CMD ["init", "run"]
+WORKDIR /
+COPY ncbi ncbi
+WORKDIR /ncbi
+RUN ./install
+
+WORKDIR /
+COPY primer3 primer3
+WORKDIR /primer3
+RUN ./install
+
+WORKDIR /
+COPY requirements.txt requirements.txt
+COPY requirements-dev.txt requirements-dev.txt
+RUN pip install -r requirements-dev.txt
+
+WORKDIR /
+ENV EDGE_HOME /edge
+RUN mkdir -p $EDGE_HOME
+COPY . $EDGE_HOME
+
+RUN mkdir -p $EDGE_HOME/ncbi/blastdb
+WORKDIR $EDGE_HOME/ncbi
+RUN ln -sf /ncbi/ncbi-blast-2.2.27+-src/c++/GCC492-Debug64/bin bin
+
+WORKDIR $EDGE_HOME/primer3
+RUN ln -sf /primer3/primer3_core .
+RUN ln -sf /primer3/primer3_config .
+
+WORKDIR $EDGE_HOME/src
+CMD python manage.py runserver 0.0.0.0:8000

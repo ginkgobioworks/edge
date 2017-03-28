@@ -28,6 +28,16 @@ ALLOWED_HOSTS = ['*']
 import sys
 TESTING = (sys.argv[1:2] == ['test']) or ("EDGE_TESTING" in os.environ)
 
+# for Django Celery
+
+BROKER_URL = os.environ.get('AMQP_URL', 'amqp://guest@localhost:5672//')
+
+import djcelery
+djcelery.setup_loader()
+CELERY_SEND_TASK_SENT_EVENT = True
+
+if TESTING:
+  CELERY_ALWAYS_EAGER = True  # skip the daemon
 
 # Application definition
 
@@ -41,19 +51,13 @@ INSTALLED_APPS = (
     'django_assets',
     'south',
     'edge',
+    'djcelery',
 )
 
 if TESTING:
     INSTALLED_APPS += ('django_nose',)
     TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
     SOUTH_TESTS_MIGRATE = False
-
-# for Django Celery
-import djcelery
-djcelery.setup_loader()
-CELERY_SEND_TASK_SENT_EVENT = True
-if TESTING:
-    CELERY_ALWAYS_EAGER = True  # skip the daemon
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -80,11 +84,11 @@ DATABASE_CONFIG = {
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
         'OPTIONS': { "init_command": "SET storage_engine=INNODB;" },
-        'HOST': os.getenv("EDGE_MYSQL_HOST", ""),
-        'PORT': os.getenv("EDGE_MYSQL_PORT", ""),
-        'NAME' : os.getenv("EDGE_MYSQL_NAME", 'toolbox_dev'),
-        'USER': os.getenv("EDGE_MYSQL_USER", 'root'),
-        'PASSWORD': os.getenv("EDGE_MYSQL_PASSWORD", "password"),
+        'HOST': os.getenv("DB_HOST", ""),
+        'PORT': "",
+        'NAME': os.getenv("DB_NAME", ""),
+        'USER': os.getenv("DB_USER", ""),
+        'PASSWORD': os.getenv('DB_PASSWORD', ""),
         'ATOMIC_REQUESTS': True,
     }
 }
