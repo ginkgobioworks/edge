@@ -8,7 +8,20 @@ A modified genome can be re-created by re-applying operations to a new genome (t
 
 Edge provides UIs to look at operations and changes, and APIs for making changes. Edge can export genome sequences and annotations as GFF files.  While Edge comes with a simple UI for browsing features and sequences, the UI is primitive compared to other specialized applications. 
 
-### Try it
+### Try it using Docker
+```
+cd docker-edge-simple
+bash run-server
+```
+Then checkout in your browser http://localhost:9000/edge/#/genomes
+
+Example to import an genome, try
+```
+cd docker-edge-simple
+bash add-s288c
+```
+
+### Try it without Docker
 
 Construct your virtual env and pip install dependencies (use
 requirements/{dev,core}.txt).

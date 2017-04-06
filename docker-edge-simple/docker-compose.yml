@@ -5,7 +5,7 @@ services:
       context: ..
       dockerfile: Dockerfile.simple
     ports:
-      - "9000:8888"
+      - "9000:8000"
     depends_on:
       - edge-db
     volumes: 
