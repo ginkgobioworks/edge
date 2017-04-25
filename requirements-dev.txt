@@ -1,8 +1,8 @@
 -r requirements.txt
 
 # testing
-nose
-django-nose
+nose==1.3
+django-nose==1.2
 
 # code checking
 pep8
