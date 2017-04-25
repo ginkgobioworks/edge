@@ -7,5 +7,5 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^genomes-api/(?P<genome_id>[0-9]+)/(?P<option>[\b(export|import)\b]*)[/]*$', views.GenomeAPI),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^edge/', include('edge.urls'))
+    url(r'^edge/', include('edge.urls')),
 )
