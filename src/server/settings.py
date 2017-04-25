@@ -48,7 +48,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
     'django_assets',
     'south',
     'edge',
@@ -148,8 +147,3 @@ NCBI_DATA_DIR = NCBI_DIR+'/blastdb'
 
 # Primer3
 PRIMER3_DIR = BASE_DIR+'/../primer3'
-
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
-    'PAGINATE_BY': 10
-}

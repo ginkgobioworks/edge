@@ -13,22 +13,8 @@ from django.db import transaction
 from django.core.servers.basehttp import FileWrapper
 from django.views.decorators.csrf import csrf_exempt
 
-from rest_framework.renderers import JSONRenderer
-from rest_framework.parsers import JSONParser
-from rest_framework import viewsets
-
 from edge.models import *
 from edge.io import *
-from serializers import *
-
-class JSONResponse(HttpResponse):
-    """
-    An HttpResponse that renders its content into JSON.
-    """
-    def __init__(self, data, **kwargs):
-        content = JSONRenderer().render(data)
-        kwargs['content_type'] = 'application/json'
-        super(JSONResponse, self).__init__(content, **kwargs)
 
 @csrf_exempt
 def GenomeAPI(request, genome_id, option=None):
@@ -49,34 +35,6 @@ def GenomeAPI(request, genome_id, option=None):
         else:
             d = dict(id=genome.id, name=genome.name, notes=genome.notes)
             return JSONResponse(d)
-
-class FragmentViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows groups to be viewed or edited.
-    """
-    queryset = Fragment.objects.all()
-    serializer_class = FragmentSerializer
-
-class GenomeViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows groups to be viewed or edited.
-    """
-    queryset = Genome.objects.all()
-    serializer_class = GenomeSerializer
-
-
-    # if request.method == 'GET':
-    #     genomes = Genome.objects.all()
-    #     serializer = GenomeNewSerializer(genomes, many=True)
-    #     return JSONResponse(serializer.data)
-    # elif request.method == 'POST':
-    #     data = JSONParser().parse(request)
-    #     serializer = GenomeNewSerializer(data=data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return JSONResponse(serializer.data, status=201)
-    #     return JSONResponse(serializer.errors, status=400)
-
 
 def schedule_building_blast_db(genome_id, countdown=None):
     from edge.tasks import build_genome_blastdb

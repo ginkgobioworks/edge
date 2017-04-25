@@ -17,6 +17,3 @@ biopython == 1.63
 
 # gff parsing
 bcbio-gff == 0.4
-
-# djangorestframework
-djangorestframework == 2.4.8
