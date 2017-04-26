@@ -24,9 +24,9 @@ class IO(object):
             outf.write('\n')
         outf.close()
 
-    def to_gff(self, filename):
+    def to_gff_file(self, file):
         """
-        Export to GFF format, saving to the specified filename.
+        Export to GFF format, saving to provided file like object.
         """
         records = []
 
@@ -49,5 +49,11 @@ class IO(object):
             rec.features = features
             records.append(rec)
 
+        GFF.write(records, file, include_fasta=True)
+
+    def to_gff(self, filename):
+        """
+        Export to GFF format, saving to the specified filename.
+        """
         with open(filename, "w") as out_handle:
-            GFF.write(records, out_handle, include_fasta=True)
+            self.to_gff_file(out_handle)

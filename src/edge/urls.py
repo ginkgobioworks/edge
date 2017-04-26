@@ -31,5 +31,5 @@ urlpatterns = patterns(
     url('^genomes/(?P<genome_id>\d+)/recombination/$', GenomeRecombinationView.as_view()),
     url('^genomes/(?P<genome_id>\d+)/crispr/dsb/$', GenomeCrisprDSBView.as_view()),
 
-    url('^genomes/(?P<genome_id>\d+)/(?P<option>[\b(export|import)\b]*)[/]*$', GenomeAPI),
+    url('^genomes/(?P<genome_id>\d+)/export/$', genome_export),
 )
