@@ -1,14 +1,40 @@
 import json
 import random
+import os
+import mimetypes
+
 from contextlib import contextmanager
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from django.views.generic.base import View
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.db import transaction
-from edge.models import *
+from django.core.servers.basehttp import FileWrapper
+from django.views.decorators.csrf import csrf_exempt
 
+from edge.models import *
+from edge.io import *
+
+@csrf_exempt
+def GenomeAPI(request, genome_id, option=None):
+    """
+    List genome information, export gff files
+    """
+    if request.method == 'GET':
+        genome = get_genome_or_404(genome_id)
+        if option == "export":
+            io = IO(Genome.objects.get(pk=genome_id))
+            file_name = "exports/Genome_" + str(genome_id) + ".gff"
+            io.to_gff(file_name)
+            chunk_size = 8192
+            response = StreamingHttpResponse(FileWrapper(open(file_name, 'rb'), chunk_size), content_type=mimetypes.guess_type(file_name)[0])
+            response['Content-Length'] = os.path.getsize(file_name)    
+            response['Content-Disposition'] = "attachment; filename=%s" % file_name
+            return response
+        else:
+            d = dict(id=genome.id, name=genome.name, notes=genome.notes)
+            return JSONResponse(d)
 
 def schedule_building_blast_db(genome_id, countdown=None):
     from edge.tasks import build_genome_blastdb

@@ -13,4 +13,8 @@ RUN mkdir -p $EDGE_HOME
 COPY . $EDGE_HOME
 
 WORKDIR $EDGE_HOME/src
+CMD python manage.py syncdb --noinput
+CMD python manage.py migrate
+CMD python manage.py assets build
+CMD python manage.py collectstatic --noinput
 CMD python manage.py runserver 0.0.0.0:8000
