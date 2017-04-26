@@ -4,6 +4,8 @@ services:
     build: ..
     volumes:
       - ..:/edge
+      - /edge/ncbi
+      - /edge/primer3
     ports:
       - "9000:8000"
     depends_on:
