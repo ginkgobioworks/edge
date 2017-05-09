@@ -1,5 +1,8 @@
 Edge
-----
+====
+
+.. image:: https://travis-ci.org/ginkgobioworks/edge.svg?branch=master
+    :target: https://travis-ci.org/ginkgobioworks/edge
 
 Edge keeps structural changes between a genome and child genomes derived
 from it. A user creates a modified genome by applying a sequence-based
@@ -28,7 +31,7 @@ the UI is primitive compared to other specialized applications.
 
 
 Try it using Docker
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 ::
 
@@ -69,7 +72,7 @@ either service:
 
 
 Try it without Docker
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 Construct your virtual env and pip install dependencies (use
 requirements.txt).
@@ -107,7 +110,7 @@ If you need Primer3 support, run
 
 
 Development, testing, and release
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------
 
 When developing locally, you can run tests in the controlled environment of the docker container
 from your local machine with ``make test-ext.``
