@@ -1,7 +1,7 @@
-.PHONY: image \
+.PHONY: help all image \
 	clean clean-pyc clean-build clean-js \
 	${SETUP_COMMANDS} \
-	${MANAGE_COMMANDS} \
+	${MANAGE_COMMANDS} watch \
 	test-all \
 	bump/major bump/minor bump/patch \
 	start \
@@ -19,6 +19,7 @@ help:
 	@echo "flake8 - check style with flake8"
 	@echo "run - run the dev server"
 	@echo "start - run migration and run the dev server"
+	@echo "watch - watch static assets and recompile automatically"
 	@echo "sdist, bdist_wheel - package"
 	@echo "bump/major bump/minor bump/patch - bump the version"
 	@echo "release - package and upload a release"
@@ -35,13 +36,15 @@ PROJECT_NAME = edge
 BUILD_IMAGE ?= ${PROJECT_NAME}
 EDGE_HOME ?= /usr/src/${PROJECT_NAME}
 
-MANAGE = python src/manage.py
+MANAGE = cd src; python manage.py
 SETUP = python setup.py
 
-all: test
+all: test-all
+
+
+# Python packaging commands from setup.py
 
 SETUP_COMMANDS = install_bower build_assets sdist bdist_wheel flake8
-${SETUP_COMMANDS}: args=
 ${SETUP_COMMANDS}:
 	${SETUP} $@ ${args}
 
@@ -53,7 +56,7 @@ clean: clean-build clean-pyc clean-js
 clean-build:
 	rm -rf build/
 	rm -rf dist/
-	rm -rf *.egg-info
+	rm -rf src/*.egg-info
 
 clean-pyc:
 	find . -name '*.pyc' -exec rm -f {} +
@@ -69,17 +72,21 @@ clean-js:
 
 test-all: test flake8
 
-# manage.py
+# Django management commands from manage.py
 
-MANAGE_COMMANDS = build_edge_blastdb build_genome_blastdb export_gff import_gff remove_fragment remove_genome test
-${MANAGE_COMMANDS}: args=
+MANAGE_COMMANDS = \
+  build_edge_blastdb build_genome_blastdb \
+  export_gff import_gff \
+  remove_fragment remove_genome \
+  createsuperuser test
+
 ${MANAGE_COMMANDS}:
 	${MANAGE} $@ ${args}
 
-start: migrate run
+start: clean migrate run
 
-run: build_assets
-	${MANAGE} runserver ${SERVER_IP}:${SERVER_PORT}
+run: install_bower build_assets
+	${MANAGE} runserver ${EDGE_IP}:${EDGE_PORT}
 
 migrate: syncdb
 	${MANAGE} migrate
@@ -87,19 +94,21 @@ migrate: syncdb
 syncdb:
 	${MANAGE} syncdb --noinput
 
+watch: install_bower
+	${MANAGE} assets watch
 
-# Bump and release
+
+# Bump the version and release
 
 bump/major bump/minor bump/patch:
 	bumpversion --verbose $(@F)
-
 
 release: clean sdist bdist_wheel
 	ls -l dist
 	twine upload dist/*
 
 
-# Util scripts
+# Examples
 
 add-s288c:
 	${MANAGE} import_gff 'Saccharomyces cerevisiae' example/sc_s288c.gff
@@ -108,7 +117,7 @@ add-s288c:
 
 # Generically execute make targets from outside the Docker container
 
-MAKE_EXT = docker-compose run --rm ${service_name} make -C ${EDGE_HOME}
+MAKE_EXT = docker-compose run --rm --service-ports ${service_name} make -C ${EDGE_HOME}
 
 %-ext: service_name = ${PROJECT_NAME}
 %-sim: service_name = ${PROJECT_NAME}-simple
