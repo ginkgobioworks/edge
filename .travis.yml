@@ -1,25 +1,36 @@
 language: python
 python: 2.7
 env:
-  - TARGET=test
-  - TARGET=flake8
+  global:
+    - DB_HOST=localhost
+    - DB_NAME=edge-dev
+    - DB_USER=root
+    - DB_PASSWORD=''
+  matrix:
+    - TARGET=test
+    - TARGET=flake8
 matrix:
   allow_failures:
     - env: TARGET=flake8
+
+services: mysql
+
 cache:
   pip: true
   directories:
     - ncbi
     - primer3
+
 before_install:
   - npm install --global bower
+  - mysql -e 'CREATE DATABASE edge-dev;'
 install:
   - pip install --requirement requirements.txt
   - pip install --editable .
-before_script:
-  - make migrate
+
 script:
   - make $TARGET
+
 deploy:
   provider: pypi
   user: ginkgodev
