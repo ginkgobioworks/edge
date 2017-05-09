@@ -3,7 +3,7 @@
     <ol class="breadcrumb">
         <li> Edge </li>
         <li> <a href="#/genomes">Genomes</a> </li>
-        <li ng-bind-html-unsafe='genome.name'></li>
+        <li ng-bind-html='genome.name'></li>
     </ol>
   </div>
 </header>
@@ -22,11 +22,11 @@
     </ul>
   </div>
 
-  Genome {{ genome.id }}: <span ng-bind-html-unsafe='genome.name'></span>
+  Genome {{ genome.id }}: <span ng-bind-html='genome.name'></span>
 </h3>
 
 <div class="lead space-top">
-  <p>Parent: <span ng-bind-html-unsafe="parent"></span></p>
+  <p>Parent: <span ng-bind-html="parent"></span></p>
   <p ng-if="genome.notes">Notes: {{ genome.notes }} </p>
 </div>
 
@@ -55,7 +55,7 @@
 </tr></thead>
 <tr ng-repeat="fragment in genome.fragments | orderBy:id">
     <td> <a href="#/genomes/{{genome.id}}/fragments/{{fragment.id}}"
-          ng-bind-html-unsafe='fragment.name'></a> </td>
+          ng-bind-html='fragment.name'></a> </td>
     <td>
       <span ng-if='fragment.length'>{{fragment.length | number}}</span>
       <span ng-if='!fragment.length'><em>Not indexed</em></span>

@@ -1,4 +1,4 @@
-var app = angular.module('edge', []).
+var app = angular.module('edge', ['ngRoute', 'ngSanitize']).
     config(['$routeProvider', function($routeProvider) {
         $routeProvider.
             when('/genomes',

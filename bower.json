@@ -7,7 +7,9 @@
     "./src/edge/static/edge/edge.css"
   ],
   "dependencies": {
-    "angular": "1.2.1",
+    "angular": "1.2.32",
+    "angular-route": "1.2.32",
+    "angular-sanitize": "1.2.32",
     "bootstrap": "3.0.0",
     "underscore": "1.6.0",
     "svjs": "git://github.com/benjiec/svjs.git#f2f7a8796bcaf619009b4151c3eb4cfd69dad6b1"

@@ -3,7 +3,7 @@
     <ol class="breadcrumb">
         <li> Edge </li>
         <li> <a href="#/genomes">Genomes</a> </li>
-        <li> <a href="#/genomes/{{ genome.id }}"><span ng-bind-html-unsafe='genome.name'></span></a> </li>
+        <li> <a href="#/genomes/{{ genome.id }}"><span ng-bind-html='genome.name'></span></a> </li>
         <li> Blast </li>
     </ol>
   </div>
@@ -11,7 +11,7 @@
 
 <div class="container">
 
-<h3>BLAST on Genome {{ genome.id }}: <span ng-bind-html-unsafe='genome.name'></span></h3>
+<h3>BLAST on Genome {{ genome.id }}: <span ng-bind-html='genome.name'></span></h3>
 
 <div role="form" id="blast-inputs" class="space-top" ng-init="program = 'blastn'">
     <div class="form-inline">
