@@ -1,0 +1,19 @@
+# django
+pytz == 2017.2
+Django == 1.6.11
+South == 1.0.2
+
+# Celery
+celery == 3.1.25
+django-celery == 3.1.1
+flower==0.9.1
+
+# gff parsing
+bcbio-gff == 0.4
+
+# Web assets
+django_assets == 0.8
+jsmin == 2.0.9
+
+numpy == 1.12.1
+biopython == 1.63

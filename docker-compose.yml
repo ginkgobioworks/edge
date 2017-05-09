@@ -1,0 +1,42 @@
+version: '2.1'
+
+services:
+  .edge-base:
+    build:
+      context: .
+    image: edge
+    volumes: &edge-volumes
+      - .:${EDGE_HOME:-/usr/src/edge}
+      # Let the ncbi and primer3 installation not be affected by mounting the current directory
+      - ${EDGE_HOME:-/usr/src/edge}/ncbi
+      - ${EDGE_HOME:-/usr/src/edge}/primer3
+    ports:
+      - 9000:8000
+    environment:
+      DB_HOST: edge-db
+      DB_NAME: edge-dev
+      DB_USER: root
+      DB_PASSWORD: edge-dev-pw
+
+  edge:
+    extends: .edge-base
+    depends_on:
+      - edge-db
+    volumes: *edge-volumes
+
+  edge-simple:
+    image: edge-simple
+    extends: .edge-base
+    depends_on:
+      - edge-db
+    build:
+      args:
+        - install_ncbi=false
+        - install_primer3=false
+    volumes: *edge-volumes
+
+  edge-db:
+    image: mysql:5.5
+    environment:
+      MYSQL_ROOT_PASSWORD: edge-dev-pw
+      MYSQL_DATABASE: edge-dev

@@ -1,16 +1,16 @@
 {
   "name": "edge",
-  "version": "0.1",
-  "main": [],
+  "description": "For build only: not for release",
   "ignore": [ "**/**" ],
   "main": [
-    "./src/edge/static/edge/edge.min.js",
-    "./src/edge/static/edge/edge_jst.js",
+    "./src/edge/static/edge/src/edge.js",
     "./src/edge/static/edge/edge.css"
   ],
   "dependencies": {
+    "angular": "1.2.1",
     "bootstrap": "3.0.0",
     "underscore": "1.6.0",
-    "svjs": "git://github.com/benjiec/svjs.git#master"
-  }
+    "svjs": "git://github.com/benjiec/svjs.git#f2f7a8796bcaf619009b4151c3eb4cfd69dad6b1"
+  },
+  "private": true
 }
