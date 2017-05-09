@@ -17,6 +17,7 @@ services:
       DB_NAME: edge-dev
       DB_USER: root
       DB_PASSWORD: edge-dev-pw
+    tty: true
 
   edge:
     extends: .edge-base
