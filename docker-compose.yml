@@ -40,3 +40,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: edge-dev-pw
       MYSQL_DATABASE: edge-dev
+    volumes:
+      - edge-db-data:/var/lib/mysql
+
+volumes:
+  edge-db-data:
