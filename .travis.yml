@@ -24,6 +24,8 @@ cache:
 before_install:
   - npm install --global bower
   - mysql -e "CREATE DATABASE $DB_NAME;"
+  - 'cd $TRAVIS_BUILD_DIR/ncbi && ./install'
+  - 'cd $TRAVIS_BUILD_DIR/primer3 && ./install'
 install:
   - pip install --requirement requirements.txt
   - pip install --editable .
