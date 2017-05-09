@@ -3,7 +3,7 @@ python: 2.7
 env:
   global:
     - DB_HOST=localhost
-    - DB_NAME=edge-dev
+    - DB_NAME=edge_dev
     - DB_USER=root
     - DB_PASSWORD=''
   matrix:
@@ -23,7 +23,7 @@ cache:
 
 before_install:
   - npm install --global bower
-  - mysql -e 'CREATE DATABASE edge-dev;'
+  - mysql -e "CREATE DATABASE $DB_NAME;"
 install:
   - pip install --requirement requirements.txt
   - pip install --editable .

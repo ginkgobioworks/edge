@@ -14,7 +14,7 @@ services:
       - 9000:8000
     environment:
       DB_HOST: edge-db
-      DB_NAME: edge-dev
+      DB_NAME: edge_dev
       DB_USER: root
       DB_PASSWORD: edge-dev-pw
     tty: true
@@ -40,7 +40,7 @@ services:
     image: mysql:5.5
     environment:
       MYSQL_ROOT_PASSWORD: edge-dev-pw
-      MYSQL_DATABASE: edge-dev
+      MYSQL_DATABASE: edge_dev
     volumes:
       - edge-db-data:/var/lib/mysql
 
