@@ -2,7 +2,7 @@
 	clean clean-pyc clean-build clean-js \
 	${SETUP_COMMANDS} \
 	${MANAGE_COMMANDS} watch \
-	test-all \
+	test-all test-ci \
 	bump/major bump/minor bump/patch \
 	start \
 	release
@@ -71,6 +71,8 @@ clean-js:
 # Testing
 
 test-all: test flake8
+
+test-ci: migrate test
 
 # Django management commands from manage.py
 

@@ -120,7 +120,8 @@ setup(
     'pytz >= 1023b',
   ],
   tests_require=[
-    'nose'
+    'nose',
+    'coverage',
     'django-nose < 1.4',
     'flake8',
     'mysql-python',
