@@ -5,7 +5,6 @@ from edge.models.chunk import (
     Edge,
     Fragment_Chunk_Location,
 )
-from edge.models.fragment import Fragment_Index
 
 
 class Fragment_Writer:
@@ -55,6 +54,7 @@ class Fragment_Writer:
             self._annotate_chunk(split2, *a2)
 
     def __invalidate_index_for(self, fragment_ids):
+        from edge.models.fragment import Fragment_Index
         for f in fragment_ids:
             index = Fragment_Index.objects.filter(fragment_id=f)
             if index.count():
