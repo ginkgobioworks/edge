@@ -1,4 +1,0 @@
-tar -xzvf ncbi-blast-2.2.27+-src.tar.gz 
-(cd ncbi-blast-2.2.27+-src/c++; ./configure; make)
-ln -sf ncbi-blast-2.2.27+-src/c++/*/bin .
-mkdir -p blastdb

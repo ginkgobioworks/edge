@@ -28,8 +28,10 @@ help:
 	@echo "export_gff, import_gff - custom manage.py django commands"
 	@echo "remove_fragment, remove_genome - custom manage.py django commands"
 	@echo "push - push the image to the docker registry"
-	@echo "NB: add '-ext' to any target to run it from the host machine in the full image"
-	@echo "    add '-sim' to any target to run it from the host machine in the simple image"
+	@echo "NB: add '-ext' to any target to run it inside the image from the host machine; will"
+	@echo "    rebuild the image."
+	@echo "    add '-ext_fast' to any target to run it from the host machine in the image"
+	@echo "    without rebuilding"
 
 
 PROJECT_NAME = edge
@@ -119,17 +121,19 @@ add-s288c:
 
 # Generically execute make targets from outside the Docker container
 
-MAKE_EXT = docker-compose run --rm --service-ports ${service_name} make -C ${EDGE_HOME}
+MAKE_EXT = docker-compose run --rm --service-ports ${PROJECT_NAME} make -C ${EDGE_HOME}
 
-%-ext: service_name = ${PROJECT_NAME}
-%-sim: service_name = ${PROJECT_NAME}-simple
-%-ext %-sim: image
+%-ext : image
 	${MAKE_EXT} $*
 
+# Run a command from outside the image without rebuilding the image; useful when you already have
+# a version of the image running
+%-ext_fast :
+	${MAKE_EXT} $*
 
 # Build the image
 
 image:
-	GIT_USER_NAME=`git config user.name` GIT_USER_EMAIL=`git config user.email` docker-compose build --pull ${service_name}
+	GIT_USER_NAME=`git config user.name` GIT_USER_EMAIL=`git config user.email` docker-compose build --pull ${PROJECT_NAME}
 
 #  vim: set noet :

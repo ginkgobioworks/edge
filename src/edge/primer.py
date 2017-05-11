@@ -56,10 +56,10 @@ def primer3_run(opts):
         fn = f.name
         for k in opts:
             f.write('%s=%s\n' % (k, opts[k]))
-        f.write('PRIMER_THERMODYNAMIC_PARAMETERS_PATH=%s/primer3_config/\n' % settings.PRIMER3_DIR)
+        f.write('PRIMER_THERMODYNAMIC_PARAMETERS_PATH=%s\n' % settings.PRIMER3_CONFIG_DIR)
         f.write('=')
 
-    cmd = "%s/primer3_core %s" % (settings.PRIMER3_DIR, fn)
+    cmd = "%s %s" % (settings.PRIMER3_BIN, fn)
     out = subprocess.check_output(cmd.split(' '))
     os.unlink(fn)
     r = {}

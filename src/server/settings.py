@@ -141,12 +141,14 @@ LOGGING = {
 
 
 # NCBI blast
-NCBI_DIR = BASE_DIR+'/../ncbi'
-NCBI_BIN_DIR = NCBI_DIR+'/bin'
-NCBI_DATA_DIR = NCBI_DIR+'/blastdb'
+NCBI_DIR = os.getenv('NCBI_DIR', BASE_DIR + '/../ncbi')
+NCBI_BIN_DIR = os.getenv('NCBI_BIN_DIR', NCBI_DIR + '/bin')
+NCBI_DATA_DIR = os.getenv('NCBI_DATA_DIR', NCBI_DIR + '/blastdb')
 
 # Primer3
-PRIMER3_DIR = BASE_DIR+'/../primer3'
+PRIMER3_BIN = os.getenv('PRIMER3_BIN', BASE_DIR + '/../primer3/primer3_core')
+PRIMER3_CONFIG_DIR = os.getenv('PRIMER3_CONFIG_DIR', BASE_DIR + '/../primer3/primer3_config')
+
 
 NOSE_ARGS = [
   '--with-coverage',

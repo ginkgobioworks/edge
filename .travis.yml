@@ -6,6 +6,9 @@ env:
     - DB_NAME=edge_dev
     - DB_USER=root
     - DB_PASSWORD=''
+    - NCBI_BIN_DIR=/usr/bin
+    - PRIMER3_BIN=/usr/bin/primer3_core
+    - PRIMER3_CONFIG_DIR=/etc/primer3_config/
   matrix:
     - TARGET=test-ci
     - TARGET=flake8
@@ -13,19 +16,20 @@ matrix:
   allow_failures:
     - env: TARGET=flake8
 
+addons:
+  apt:
+    packages:
+      - ncbi-blast+
+      - primer3
+
 services: mysql
 
 cache:
   pip: true
-  directories:
-    - ncbi
-    - primer3
 
 before_install:
   - npm install --global bower
   - mysql -e "CREATE DATABASE $DB_NAME;"
-  - 'cd $TRAVIS_BUILD_DIR/ncbi && ./install'
-  - 'cd $TRAVIS_BUILD_DIR/primer3 && ./install'
 install:
   - pip install --requirement requirements.txt
   - pip install --editable .
