@@ -59,3 +59,6 @@ production.log
 # DBs
 db.sqlite3*
 test.db*
+
+# don't check in NCBI data
+ncbi/
