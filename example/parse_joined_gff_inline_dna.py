@@ -20,6 +20,7 @@ f = open(fn, 'r')
 def unescape(s):
   return re.sub('\s', '_', urllib.unquote(s))
 
+
 for l in f.read().split('\n'):
   l = l.strip()
   if l == '':
@@ -29,7 +30,7 @@ for l in f.read().split('\n'):
       curseq.append('>%s' % unescape(l[6:]))
       started = True
     elif l.startswith('##end-DNA'):
-      fasta.append('\n'.join(curseq));
+      fasta.append('\n'.join(curseq))
       curseq = []
       started = False
     else:

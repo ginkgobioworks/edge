@@ -140,7 +140,7 @@ class FragmentSequenceView(ViewBase):
         if f is None:
             f = 1
         if l is None:
-            l = f+len(s)-1
+            l = f + len(s) - 1
         return {'sequence': s, 'base_first': f, 'base_last': l}
 
 
@@ -172,9 +172,9 @@ class FragmentAnnotationsView(ViewBase):
         if m is not None and len(annotations) > m:
             to_return = []
             while len(to_return) < m:
-                i = random.randint(0, len(annotations)-1)
+                i = random.randint(0, len(annotations) - 1)
                 to_return.append(annotations[i])
-                new_a = annotations[0:i]+annotations[i+1:]
+                new_a = annotations[0:i] + annotations[i + 1:]
                 annotations = new_a
             annotations = to_return
         return [FragmentAnnotationsView.to_dict(annotation) for annotation in annotations]
@@ -212,9 +212,9 @@ class FragmentListView(ViewBase):
         q = args['q']
         p = 200 if p > 200 else p
         if q is not None and q.strip() != '':
-            fragments = Fragment.user_defined_fragments(Q(name__icontains=q), s, s+p)
+            fragments = Fragment.user_defined_fragments(Q(name__icontains=q), s, s + p)
         else:
-            fragments = Fragment.user_defined_fragments(None, s, s+p)
+            fragments = Fragment.user_defined_fragments(None, s, s + p)
         return [FragmentView.to_dict(fragment) for fragment in fragments]
 
     @transaction.atomic()
@@ -378,9 +378,9 @@ class GenomeListView(ViewBase):
                     where = where | Q(id=q)
                 genomes = Genome.objects.filter(active=True)\
                                         .filter(where)\
-                                        .order_by('-id')[s:s+p]
+                                        .order_by('-id')[s:s + p]
             else:
-                genomes = Genome.objects.filter(active=True).order_by('-id')[s:s+p]
+                genomes = Genome.objects.filter(active=True).order_by('-id')[s:s + p]
         return [GenomeView.to_dict(genome,
                                    compute_length=False,
                                    include_fragments=False,

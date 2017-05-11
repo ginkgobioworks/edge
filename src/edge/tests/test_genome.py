@@ -152,7 +152,7 @@ class GenomeTest(TestCase):
 
         changes = g.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
-        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s)+6)])
+        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s) + 6)])
 
     def test_update_fragment_by_id(self):
         genome = Genome.create('Foo')
@@ -163,7 +163,8 @@ class GenomeTest(TestCase):
         with g2.update_fragment_by_fragment_id(f1.id) as f2:
             f2.insert_bases(3, 'gataca')
 
-        self.assertEquals(g2.fragments.all()[0].indexed_fragment().sequence, s[0:2]+'gataca'+s[2:])
+        self.assertEquals(g2.fragments.all()[0].indexed_fragment(
+        ).sequence, s[0:2] + 'gataca' + s[2:])
         self.assertEquals(genome.fragments.all()[0].indexed_fragment().sequence, s)
 
     def test_can_update_fragment_by_name_and_assign_new_name(self):
@@ -213,11 +214,12 @@ class GenomeTest(TestCase):
 
         changes = g2.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
-        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s)+6)])
+        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s) + 6)])
 
         changes = g3.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
-        self.assertItemsEqual([c.location for c in changes], [(3, 8), (9, 14), (15, len(s)+6+6)])
+        self.assertItemsEqual([c.location for c in changes], [
+                              (3, 8), (9, 14), (15, len(s) + 6 + 6)])
 
     def test_only_get_changes_from_changed_fragment(self):
         genome = Genome.create('Foo')
@@ -237,7 +239,7 @@ class GenomeTest(TestCase):
 
         changes = g2.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
-        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s)+6)])
+        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s) + 6)])
 
     def test_can_remove_and_get_changes_back(self):
         genome = Genome.create('Foo')
@@ -256,7 +258,7 @@ class GenomeTest(TestCase):
 
         changes = g.indexed_genome().changes()
         self.assertEquals(len(changes), 2)
-        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, len(s)-4)])
+        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, len(s) - 4)])
 
     def test_can_insert_and_remove_and_get_all_changes_back(self):
         genome = Genome.create('Foo')
@@ -277,7 +279,7 @@ class GenomeTest(TestCase):
         changes = g.indexed_genome().changes()
         self.assertEquals(len(changes), 4)
         self.assertItemsEqual([c.location for c in changes],
-                              [(1, 2), (3, 8), (9, 9), (10, len(s)+6-4)])
+                              [(1, 2), (3, 8), (9, 9), (10, len(s) + 6 - 4)])
 
     def test_can_add_notes_on_update(self):
         genome = Genome.create('Foo')
@@ -318,19 +320,19 @@ class GenomeTest(TestCase):
         s2 = 'acgatcgggattgagtcgattc'
 
         # add initial sequence
-        f1 = genome.add_fragment('chrI', s0+s1+s2)
-        f2 = genome.add_fragment('chrII', s0+s1+s2)
+        f1 = genome.add_fragment('chrI', s0 + s1 + s2)
+        f2 = genome.add_fragment('chrII', s0 + s1 + s2)
 
         # annotate it to break it up into chunks
         with genome.annotate_fragment_by_name('chrI') as f:
             f.annotate(1, len(s0), 'F1', 'feature', 1)
-            f.annotate(len(s0)+1, len(s0)+len(s1), 'F2', 'feature', 1)
-            f.annotate(len(s0)+len(s1)+1, len(s0)+len(s1)+len(s2), 'F3', 'feature', 1)
+            f.annotate(len(s0) + 1, len(s0) + len(s1), 'F2', 'feature', 1)
+            f.annotate(len(s0) + len(s1) + 1, len(s0) + len(s1) + len(s2), 'F3', 'feature', 1)
 
         with genome.annotate_fragment_by_name('chrII') as f:
             f.annotate(1, len(s0), 'F1', 'feature', 1)
-            f.annotate(len(s0)+1, len(s0)+len(s1), 'F2', 'feature', 1)
-            f.annotate(len(s0)+len(s1)+1, len(s0)+len(s1)+len(s2), 'F3', 'feature', 1)
+            f.annotate(len(s0) + 1, len(s0) + len(s1), 'F2', 'feature', 1)
+            f.annotate(len(s0) + len(s1) + 1, len(s0) + len(s1) + len(s2), 'F3', 'feature', 1)
 
         # insert
         u = genome.update()
@@ -339,17 +341,18 @@ class GenomeTest(TestCase):
             f1 = f
         with u.update_fragment_by_name('chrII') as f:
             f.insert_bases(3, 'gataca')
-            f.insert_bases(6+len(s0)+len(s1)+2, 'gataca')
+            f.insert_bases(6 + len(s0) + len(s1) + 2, 'gataca')
             f2 = f
 
         g2 = Genome.objects.get(pk=u.pk)
         changes = g2.indexed_genome().changed_locations_by_fragment()
         for f in changes:
             if f.id == f1.id:
-                self.assertEquals(changes[f], [[1, len(s0)+6]])
+                self.assertEquals(changes[f], [[1, len(s0) + 6]])
             elif f.id == f2.id:
-                self.assertEquals(changes[f],
-                                  [[1, len(s0)+6],
-                                   [len(s0)+len(s1)+6+1, len(s0)+6+len(s1)+len(s2)+6]])
+                self.assertEquals(
+                    changes[f],
+                    [[1, len(s0) + 6],
+                     [len(s0) + len(s1) + 6 + 1, len(s0) + 6 + len(s1) + len(s2) + 6]])
             else:
                 raise Exception('Unexpected fragment')

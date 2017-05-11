@@ -8,5 +8,6 @@ def parse(fn):
             print feature
     in_handle.close()
 
+
 if len(sys.argv) > 1:
     parse(sys.argv[1])

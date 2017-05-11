@@ -30,8 +30,8 @@ class GenomePcrTest(TestCase):
         p2_bs = "taatgaccccgaagcagg"
         downstream = "gttaaggcgcgaacat"
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
-        p1 = 'aaaaaaaaaa'+p1_bs
-        p2 = 'tttttttttt'+str(Seq(p2_bs).reverse_complement())
+        p1 = 'aaaaaaaaaa' + p1_bs
+        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template)
         r = pcr_from_genome(g, p1, p2)
@@ -40,7 +40,9 @@ class GenomePcrTest(TestCase):
         self.assertEquals(len(r[2]), 1)  # one binding site for each primer
         self.assertEquals(r[3]['fragment_name'], g.fragments.all()[0].name)
         self.assertEquals(r[3]['fragment_id'], g.fragments.all()[0].id)
-        self.assertEquals(r[3]['region'], (len(upstream)+1, len(upstream+p1_bs+middle+p2_bs)))
+        self.assertEquals(
+            r[3]['region'],
+            (len(upstream) + 1, len(upstream + p1_bs + middle + p2_bs)))
 
     def test_finds_pcr_product_across_circular_boundary(self):
         upstream = "gagattgtccgcgtttt"
@@ -48,8 +50,8 @@ class GenomePcrTest(TestCase):
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
         downstream = "gttaaggcgcgaacat"
-        p1 = 'aaaaaaaaaa'+p1_bs
-        p2 = 'tttttttttt'+str(Seq(p2_bs).reverse_complement())
+        p1 = 'aaaaaaaaaa' + p1_bs
+        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
 
         template = ''.join([middle[10:], p2_bs, downstream, upstream, p1_bs, middle[0:10]])
         g = self.build_genome(True, template)
@@ -58,7 +60,7 @@ class GenomePcrTest(TestCase):
         self.assertEquals(r[3]['fragment_name'], g.fragments.all()[0].name)
         self.assertEquals(r[3]['fragment_id'], g.fragments.all()[0].id)
         self.assertEquals(r[3]['region'],
-                          (len(template)-10-len(p1_bs)+1, len(middle)-10+len(p2_bs)))
+                          (len(template) - 10 - len(p1_bs) + 1, len(middle) - 10 + len(p2_bs)))
 
     def test_finds_pcr_product_when_fwd_primer_is_across_circular_boundary(self):
         upstream = "gagattgtccgcgtttt"
@@ -66,8 +68,8 @@ class GenomePcrTest(TestCase):
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
         downstream = "gttaaggcgcgaacat"
-        p1 = 'aaaaaaaaaa'+p1_bs
-        p2 = 'tttttttttt'+str(Seq(p2_bs).reverse_complement())
+        p1 = 'aaaaaaaaaa' + p1_bs
+        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
 
         template = ''.join([p1_bs[5:], middle, p2_bs, downstream, upstream, p1_bs[0:5]])
         g = self.build_genome(True, template)
@@ -75,7 +77,9 @@ class GenomePcrTest(TestCase):
         self.assertEquals(r[0], ''.join([p1, middle, str(Seq(p2).reverse_complement())]))
         self.assertEquals(r[3]['fragment_name'], g.fragments.all()[0].name)
         self.assertEquals(r[3]['fragment_id'], g.fragments.all()[0].id)
-        self.assertEquals(r[3]['region'], (len(template)-5+1, len(p1_bs)-5+len(middle+p2_bs)))
+        self.assertEquals(
+            r[3]['region'],
+            (len(template) - 5 + 1, len(p1_bs) - 5 + len(middle + p2_bs)))
 
     def test_finds_pcr_product_when_rev_primer_is_across_circular_boundary(self):
         upstream = "gagattgtccgcgtttt"
@@ -83,8 +87,8 @@ class GenomePcrTest(TestCase):
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
         downstream = "gttaaggcgcgaacat"
-        p1 = 'aaaaaaaaaa'+p1_bs
-        p2 = 'tttttttttt'+str(Seq(p2_bs).reverse_complement())
+        p1 = 'aaaaaaaaaa' + p1_bs
+        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
 
         template = ''.join([p2_bs[5:], downstream, upstream, p1_bs, middle, p2_bs[0:5]])
         g = self.build_genome(True, template)
@@ -92,17 +96,19 @@ class GenomePcrTest(TestCase):
         self.assertEquals(r[0], ''.join([p1, middle, str(Seq(p2).reverse_complement())]))
         self.assertEquals(r[3]['fragment_name'], g.fragments.all()[0].name)
         self.assertEquals(r[3]['fragment_id'], g.fragments.all()[0].id)
-        self.assertEquals(r[3]['region'], (len(p2_bs)-5+len(downstream+upstream)+1, len(p2_bs)-5))
+        self.assertEquals(
+            r[3]['region'],
+            (len(p2_bs) - 5 + len(downstream + upstream) + 1, len(p2_bs) - 5))
 
     def test_pcr_produces_product_with_multiple_binding_sites_but_one_overlapping_region(self):
         p1_bs = "catagcgcacaggacgcggag"
-        upstream = "gagattgtccgcgtttt"+str(Seq(p1_bs).reverse_complement())
+        upstream = "gagattgtccgcgtttt" + str(Seq(p1_bs).reverse_complement())
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
         downstream = "gttaaggcgcgaacat"
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
-        p1 = 'aaaaaaaaaa'+p1_bs
-        p2 = 'tttttttttt'+str(Seq(p2_bs).reverse_complement())
+        p1 = 'aaaaaaaaaa' + p1_bs
+        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template)
         r = pcr_from_genome(g, p1, p2)
@@ -111,17 +117,19 @@ class GenomePcrTest(TestCase):
         self.assertEquals(len(r[2]), 1)  # one binding site for this primer
         self.assertEquals(r[3]['fragment_name'], g.fragments.all()[0].name)
         self.assertEquals(r[3]['fragment_id'], g.fragments.all()[0].id)
-        self.assertEquals(r[3]['region'], (len(upstream)+1, len(upstream+p1_bs+middle+p2_bs)))
+        self.assertEquals(
+            r[3]['region'],
+            (len(upstream) + 1, len(upstream + p1_bs + middle + p2_bs)))
 
     def test_pcr_does_not_produce_product_with_multiple_overlapping_regions(self):
         p1_bs = "catagcgcacaggacgcggag"
-        upstream = "gagattgtccgcgtttt"+str(Seq(p1_bs).reverse_complement())
+        upstream = "gagattgtccgcgtttt" + str(Seq(p1_bs).reverse_complement())
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
-        downstream = "gttaaggc"+p2_bs+"gcgaacat"
+        downstream = "gttaaggc" + p2_bs + "gcgaacat"
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
-        p1 = 'aaaaaaaaaa'+p1_bs
-        p2 = 'tttttttttt'+str(Seq(p2_bs).reverse_complement())
+        p1 = 'aaaaaaaaaa' + p1_bs
+        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template)
         r = pcr_from_genome(g, p1, p2)
@@ -136,8 +144,8 @@ class GenomePcrTest(TestCase):
         p2_bs = "gctagcatca"
         downstream = "gttaaggcgcgaacat"
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
-        p1 = 'aaaaaaaaaa'+p1_bs
-        p2 = 'tttttttttt'+str(Seq(p2_bs).reverse_complement())
+        p1 = 'aaaaaaaaaa' + p1_bs
+        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template)
         r = pcr_from_genome(g, p1, p2)
@@ -156,7 +164,7 @@ class GenomePcrTest(TestCase):
                 c = 'c'
             if c == 'c':
                 c = 'a'
-            return s[0:n]+c+s[n+1:]
+            return s[0:n] + c + s[n + 1:]
 
         p1_bs = "catagcgcacaggacgcggag"
         upstream = "gagattgtccgcgtttt"
@@ -164,9 +172,9 @@ class GenomePcrTest(TestCase):
         p2_bs = "gctagcatcagtacgta"
         downstream = "gttaaggcgcgaacat"
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
-        p1 = 'aaaaaaaaaa'+mutate(mutate(mutate(p1_bs, 5), 9), 11)
-        p1_good = 'aaaaaaaaaa'+p1_bs
-        p2 = 'tttttttttt'+str(Seq(p2_bs).reverse_complement())
+        p1 = 'aaaaaaaaaa' + mutate(mutate(mutate(p1_bs, 5), 9), 11)
+        p1_good = 'aaaaaaaaaa' + p1_bs
+        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template)
         r = pcr_from_genome(g, p1, p2)
@@ -188,8 +196,8 @@ class GenomePcrTest(TestCase):
         downstream = "gttaaggcgcgaacat"
         template1 = ''.join([upstream, p1_bs, middle])
         template2 = ''.join([middle, p2_bs, downstream])
-        p1 = 'aaaaaaaaaa'+p1_bs
-        p2 = 'tttttttttt'+str(Seq(p2_bs).reverse_complement())
+        p1 = 'aaaaaaaaaa' + p1_bs
+        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template1, template2)
         r = pcr_from_genome(g, p1, p2)
@@ -204,8 +212,8 @@ class GenomePcrTest(TestCase):
         p2_bs = "taatgaccccgaagcagg"
         downstream = "gttaaggcgcgaacat"
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
-        p1 = 'aaaaaaaaaa'+p1_bs
-        p2 = 'tttttttttt'+str(Seq(p2_bs).reverse_complement())
+        p1 = 'aaaaaaaaaa' + p1_bs
+        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
 
         g1 = self.build_genome(False, template, template)
         g2 = self.build_genome(False, template)
@@ -227,8 +235,8 @@ class GenomePcrTest(TestCase):
         p2_bs = "taatgaccccgaagcagg"
         downstream = "gttaaggcgcgaacat"
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
-        p1 = 'aaaaaaaaaa'+p1_bs
-        p2 = 'tttttttttt'+str(Seq(p2_bs).reverse_complement())
+        p1 = 'aaaaaaaaaa' + p1_bs
+        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
         g = self.build_genome(False, template)
 
         res = self.client.post('/edge/genomes/%s/pcr/' % g.id,
@@ -240,12 +248,12 @@ class GenomePcrTest(TestCase):
         self.assertEquals(len(d), 4)
         self.assertEquals(d[0], ''.join([p1, middle, str(Seq(p2).reverse_complement())]))
         self.assertEquals(len(d[1]), 1)
-        self.assertEquals(d[1][0]['subject_start'], len(upstream)+1)
-        self.assertEquals(d[1][0]['subject_end'], len(upstream)+len(p1_bs))
-        self.assertEquals(d[1][0]['query_start'], len(p1)-len(p1_bs)+1)
+        self.assertEquals(d[1][0]['subject_start'], len(upstream) + 1)
+        self.assertEquals(d[1][0]['subject_end'], len(upstream) + len(p1_bs))
+        self.assertEquals(d[1][0]['query_start'], len(p1) - len(p1_bs) + 1)
         self.assertEquals(d[1][0]['query_end'], len(p1))
         self.assertEquals(len(d[2]), 1)
-        self.assertEquals(d[2][0]['subject_start'], len(template)-len(downstream))
-        self.assertEquals(d[2][0]['subject_end'], len(template)-len(downstream)-len(p2_bs)+1)
-        self.assertEquals(d[2][0]['query_start'], len(p2)-len(p2_bs)+1)
+        self.assertEquals(d[2][0]['subject_start'], len(template) - len(downstream))
+        self.assertEquals(d[2][0]['subject_end'], len(template) - len(downstream) - len(p2_bs) + 1)
+        self.assertEquals(d[2][0]['query_start'], len(p2) - len(p2_bs) + 1)
         self.assertEquals(d[2][0]['query_end'], len(p2))

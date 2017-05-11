@@ -24,8 +24,8 @@ class Fragment_Updater:
         self._add_edges(new_chunk, Edge(from_chunk=new_chunk, fragment=self, to_chunk=None))
         self.fragment_chunk_location_set.create(
             chunk=new_chunk,
-            base_first=cur_fragment_length+1,
-            base_last=cur_fragment_length+1+len(sequence)-1
+            base_first=cur_fragment_length + 1,
+            base_last=cur_fragment_length + 1 + len(sequence) - 1
         )
         return new_chunk
 
@@ -52,22 +52,22 @@ class Fragment_Updater:
         # shift base_first and base_last for existing chunks
         if before_base1 is not None:
             self.fragment_chunk_location_set.filter(base_first__gte=before_base1)\
-                                            .update(base_first=F('base_first')+len(sequence),
-                                                    base_last=F('base_last')+len(sequence))
+                                            .update(base_first=F('base_first') + len(sequence),
+                                                    base_last=F('base_last') + len(sequence))
 
         # insert location for new chunk
         if before_base1 is not None:
             self.fragment_chunk_location_set.create(
                 chunk=new_chunk,
                 base_first=before_base1,
-                base_last=before_base1+len(sequence)-1
+                base_last=before_base1 + len(sequence) - 1
             )
         else:
             fragment_length = self.length
             self.fragment_chunk_location_set.create(
                 chunk=new_chunk,
-                base_first=fragment_length+1,
-                base_last=fragment_length+1+len(sequence)-1
+                base_first=fragment_length + 1,
+                base_last=fragment_length + 1 + len(sequence) - 1
             )
 
     def remove_bases(self, before_base1, length):
@@ -77,7 +77,7 @@ class Fragment_Updater:
             raise Exception('Missing position to remove sequences')
 
         prev_chunk, dont_use_stale_after_second_split = self._find_and_split_before(before_base1)
-        removal_end, next_chunk = self._find_and_split_before(before_base1+length)
+        removal_end, next_chunk = self._find_and_split_before(before_base1 + length)
 
         if prev_chunk is not None:  # remove chunks after prev_chunk_id
             if next_chunk:  # delete prior to end of fragment
@@ -98,12 +98,12 @@ class Fragment_Updater:
 
         # remove location for deleted chunks
         self.fragment_chunk_location_set.filter(base_first__gte=before_base1,
-                                                base_first__lt=before_base1+length).delete()
+                                                base_first__lt=before_base1 + length).delete()
 
         # shift base_first and base_last for existing chunks
         self.fragment_chunk_location_set.filter(base_first__gt=before_base1)\
-                                        .update(base_first=F('base_first')-length,
-                                                base_last=F('base_last')-length)
+                                        .update(base_first=F('base_first') - length,
+                                                base_last=F('base_last') - length)
 
     def replace_bases(self, before_base1, length_to_remove, sequence):
 
@@ -146,8 +146,8 @@ class Fragment_Updater:
         # shift base_first and base_last for existing chunks
         if before_base1 is not None:
             self.fragment_chunk_location_set.filter(base_first__gte=before_base1)\
-                                            .update(base_first=F('base_first')+fragment_length,
-                                                    base_last=F('base_last')+fragment_length)
+                                            .update(base_first=F('base_first') + fragment_length,
+                                                    base_last=F('base_last') + fragment_length)
 
         # add location for new chunks in the new fragment
         values = []
@@ -157,14 +157,14 @@ class Fragment_Updater:
             if before_base1 is not None:
                 self.fragment_chunk_location_set.create(
                     chunk=chunk,
-                    base_first=before_base1+c,
-                    base_last=before_base1+c+len(chunk.sequence)-1
+                    base_first=before_base1 + c,
+                    base_last=before_base1 + c + len(chunk.sequence) - 1
                 )
             else:
                 self.fragment_chunk_location_set.create(
                     chunk=chunk,
-                    base_first=original_length+1+c,
-                    base_last=original_length+1+c+len(chunk.sequence)-1
+                    base_first=original_length + 1 + c,
+                    base_last=original_length + 1 + c + len(chunk.sequence) - 1
                 )
             c += len(chunk.sequence)
 

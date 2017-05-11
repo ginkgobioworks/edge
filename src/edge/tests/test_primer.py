@@ -28,10 +28,10 @@ class DesignPrimerTest(TestCase):
         downstream = "agtgacgtcgtgtgtagcgtactgtatcgtgtgtcgcgcgtagtcatctgatcgtacgtactgaat"
         template = ''.join([upstream, product, downstream])
 
-        g = self.build_genome(False, 'a'*40+template+'a'*40)
+        g = self.build_genome(False, 'a' * 40 + template + 'a' * 40)
         f = g.fragments.all()[0]
 
-        res = design_primers(f, 40+len(upstream)+1, len(product), 50, 50, {})
+        res = design_primers(f, 40 + len(upstream) + 1, len(product), 50, 50, {})
         self.assertEquals(len(res), 5)
 
         for r in res:
@@ -46,9 +46,9 @@ class DesignPrimerTest(TestCase):
         template = ''.join([upstream, product, downstream])
 
         WIN = 10
-        junctions = [len(upstream)+1, len(upstream)+len(product)-1]
-        res = design_primers_from_template(template, len(upstream)+1-WIN, len(product)+WIN*2,
-                                           junctions, {})
+        junctions = [len(upstream) + 1, len(upstream) + len(product) - 1]
+        res = design_primers_from_template(template, len(
+            upstream) + 1 - WIN, len(product) + WIN * 2, junctions, {})
         self.assertEquals(len(res), 5)
         for r in res:
             left = r['PRIMER_LEFT_SEQUENCE']

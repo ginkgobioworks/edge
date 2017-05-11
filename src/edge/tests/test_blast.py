@@ -33,7 +33,7 @@ class GenomeBlastTest(TestCase):
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
 
-        query = s1[6:20]+'aaaaaaaaa'
+        query = s1[6:20] + 'aaaaaaaaa'
         r = blast_genome(g1, 'blastn', query)
         # only returns hit from genome
         self.assertEquals(len(r), 1)
@@ -58,7 +58,7 @@ class GenomeBlastTest(TestCase):
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
 
-        query = str(Seq(s1[6:20]).reverse_complement())+'tttttttttt'
+        query = str(Seq(s1[6:20]).reverse_complement()) + 'tttttttttt'
         r = blast_genome(g1, 'blastn', query)
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, f1.id)
@@ -82,7 +82,7 @@ class GenomeBlastTest(TestCase):
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
 
-        query = (s1[-10:]+s1[0:10])+'ttttttttttt'
+        query = (s1[-10:] + s1[0:10]) + 'ttttttttttt'
         res = blast_genome(g1, 'blastn', query)
 
         # we are not removing redundant matches when matching across circular
@@ -97,8 +97,8 @@ class GenomeBlastTest(TestCase):
                 self.assertEquals(r.fragment_id, f1.id)
                 self.assertEquals(r.query_start, 1)
                 self.assertEquals(r.query_end, 20)
-                self.assertEquals(r.subject_start, len(s1)-10+1)
-                self.assertEquals(r.subject_end, len(s1)+10)
+                self.assertEquals(r.subject_start, len(s1) - 10 + 1)
+                self.assertEquals(r.subject_end, len(s1) + 10)
                 self.assertEquals(r.fragment_length, len(s1))
                 self.assertEquals(r.strand(), 1)
                 found = True
@@ -119,7 +119,7 @@ class GenomeBlastTest(TestCase):
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
 
-        query = s1[5:20]+'tttttttttt'
+        query = s1[5:20] + 'tttttttttt'
         r = blast_genome(g1, 'blastn', query)
         self.assertEquals(len(r), 1)
 
@@ -137,7 +137,7 @@ class GenomeBlastTest(TestCase):
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
 
-        query = (s1[-10:]+s1[0:10])+'tttttttttt'
+        query = (s1[-10:] + s1[0:10]) + 'tttttttttt'
         res = blast_genome(g1, 'blastn', query)
 
         for r in res:
@@ -170,7 +170,7 @@ class GenomeBlastAPITest(TestCase):
             pass
         build_all_genome_dbs(refresh=True)
 
-        query = s1[6:20]+'aaaaaaaaa'
+        query = s1[6:20] + 'aaaaaaaaa'
 
         res = self.client.post('/edge/genomes/%s/blast/' % g1.id,
                                data=json.dumps(dict(program='blastn', query=query)),
@@ -208,7 +208,7 @@ class GenomeBlastAPITest(TestCase):
             pass
         build_all_genome_dbs(refresh=True)
 
-        query = str(Seq(s1[6:20]).reverse_complement())+'tttttttttt'
+        query = str(Seq(s1[6:20]).reverse_complement()) + 'tttttttttt'
 
         res = self.client.post('/edge/genomes/%s/blast/' % g1.id,
                                data=json.dumps(dict(program='blastn', query=query)),

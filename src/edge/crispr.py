@@ -31,13 +31,13 @@ def target_followed_by_pam(blast_res, pam):
     fragment = blast_res.fragment.indexed_fragment()
 
     if blast_res.strand() > 0:
-        pam_start = blast_res.subject_end+1
-        pam_end = pam_start+len(pam)-1
+        pam_start = blast_res.subject_end + 1
+        pam_end = pam_start + len(pam) - 1
         query = fragment.get_sequence(bp_lo=pam_start, bp_hi=pam_end)
 
     else:
-        pam_end = blast_res.subject_end-1
-        pam_start = pam_end-len(pam)+1
+        pam_end = blast_res.subject_end - 1
+        pam_start = pam_end - len(pam) + 1
         query = fragment.get_sequence(bp_lo=pam_start, bp_hi=pam_end)
         query = str(Seq(query).reverse_complement())
 

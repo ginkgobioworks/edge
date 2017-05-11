@@ -19,14 +19,14 @@ class Fragment_Annotator:
                  qualifiers=None, operation=None):
         if self.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
-            length = self.length-first_base1+1+last_base1
+            length = self.length - first_base1 + 1 + last_base1
         else:
-            length = last_base1-first_base1+1
+            length = last_base1 - first_base1 + 1
             if length <= 0:
                 raise Exception('Annotation must have length one or more')
 
         prev_chunk, annotation_start = self._find_and_split_before(first_base1)
-        annotation_end, next_chunk = self._find_and_split_before(last_base1+1)
+        annotation_end, next_chunk = self._find_and_split_before(last_base1 + 1)
 
         # did two splits, so must reload annotation_start in case that got split
         annotation_start = annotation_start.reload()
@@ -39,7 +39,7 @@ class Fragment_Annotator:
         a_i = 1
         while True:
             fc = self.fragment_chunk(chunk)
-            self._annotate_chunk(chunk, new_feature, a_i, a_i+len(chunk.sequence)-1)
+            self._annotate_chunk(chunk, new_feature, a_i, a_i + len(chunk.sequence) - 1)
             a_i += len(chunk.sequence)
             if chunk.id == annotation_end.id:
                 break

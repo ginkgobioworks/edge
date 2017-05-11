@@ -87,8 +87,8 @@ def get_annotation_on_cassette(annotation, blast_res):
     q = []
     s = []
 
-    subject_i = blast_res.subject_start-1
-    query_i = blast_res.query_start-1
+    subject_i = blast_res.subject_start - 1
+    query_i = blast_res.query_start - 1
     query_start = None
     query_end = None
 
@@ -112,7 +112,7 @@ def get_annotation_on_cassette(annotation, blast_res):
     feature_name = annotation['feature_name']
     if len(diffs) > 0:
         diffs = ' '.join(diffs)
-        feature_name = feature_name+' '+diffs
+        feature_name = feature_name + ' ' + diffs
 
     return dict(base_first=query_start, base_last=query_end,
                 feature_name=feature_name,
@@ -159,8 +159,9 @@ def get_cassette_new_annotations(cassette):
 
 
 def get_cassette_annotations(genome, cassette, fragment_id, region_start, region_end):
-    return get_cassette_inherited_annotations(genome, cassette, fragment_id, region_start, region_end) +\
-        get_cassette_new_annotations(cassette)
+    return get_cassette_inherited_annotations(
+        genome, cassette, fragment_id, region_start, region_end) + get_cassette_new_annotations(
+        cassette)
 
 
 class RecombinationRegion(object):
@@ -218,8 +219,8 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
     # arms must align nicely
     if front_arm_blastres.identity_ratio() < MIN_IDENTITIES or\
        back_arm_blastres.identity_ratio() < MIN_IDENTITIES or\
-       front_arm_blastres.alignment_length() < len(front_arm_sequence)-MAX_MISSING_BP or\
-       back_arm_blastres.alignment_length() < len(back_arm_sequence)-MAX_MISSING_BP:
+       front_arm_blastres.alignment_length() < len(front_arm_sequence) - MAX_MISSING_BP or\
+       back_arm_blastres.alignment_length() < len(back_arm_sequence) - MAX_MISSING_BP:
         return None
 
     fragment = front_arm_blastres.fragment.indexed_fragment()
@@ -238,23 +239,23 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
         is_reversed = False
 
         if (fragment.circular is False and
-            back_1 < front_0 and front_0-back_1 <= SINGLE_CROSSOVER_MAX_GAP) or \
+            back_1 < front_0 and front_0 - back_1 <= SINGLE_CROSSOVER_MAX_GAP) or \
            (fragment.circular is True and
-            ((back_1 < front_0 and front_0-back_1 <= SINGLE_CROSSOVER_MAX_GAP) or
-             (back_1 < front_0+fragment.length and
-              front_0+fragment.length-back_1 <= SINGLE_CROSSOVER_MAX_GAP))):
+            ((back_1 < front_0 and front_0 - back_1 <= SINGLE_CROSSOVER_MAX_GAP) or
+             (back_1 < front_0 + fragment.length and
+              front_0 + fragment.length - back_1 <= SINGLE_CROSSOVER_MAX_GAP))):
             single_crossover = True
             region_start = back_0
             region_end = front_1
-            single_crossover_front_dup_1 = front_0-1
-            single_crossover_back_dup_0 = back_1+1
+            single_crossover_front_dup_1 = front_0 - 1
+            single_crossover_back_dup_0 = back_1 + 1
 
         elif (fragment.circular is False and
-              front_1 < back_0 and back_0-front_1 <= MAX_INTEGRATION_SIZE) or \
+              front_1 < back_0 and back_0 - front_1 <= MAX_INTEGRATION_SIZE) or \
              (fragment.circular is True and
-              ((front_1 < back_0 and back_0-front_1 <= MAX_INTEGRATION_SIZE) or
-               (front_1 < back_0+fragment.length and
-                back_0+fragment.length-front_1 <= MAX_INTEGRATION_SIZE))):
+              ((front_1 < back_0 and back_0 - front_1 <= MAX_INTEGRATION_SIZE) or
+               (front_1 < back_0 + fragment.length and
+                back_0 + fragment.length - front_1 <= MAX_INTEGRATION_SIZE))):
             single_crossover = False
             region_start = front_0
             region_end = back_1
@@ -266,23 +267,23 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
         is_reversed = True
 
         if (fragment.circular is False and
-            back_1 > front_0 and back_1-front_0 <= SINGLE_CROSSOVER_MAX_GAP) or \
+            back_1 > front_0 and back_1 - front_0 <= SINGLE_CROSSOVER_MAX_GAP) or \
            (fragment.circular is True and
-            ((back_1 > front_0 and back_1-front_0 <= SINGLE_CROSSOVER_MAX_GAP) or
-             (back_1+fragment.length > front_0 and
-              back_1+fragment.length-front_0 <= SINGLE_CROSSOVER_MAX_GAP))):
+            ((back_1 > front_0 and back_1 - front_0 <= SINGLE_CROSSOVER_MAX_GAP) or
+             (back_1 + fragment.length > front_0 and
+              back_1 + fragment.length - front_0 <= SINGLE_CROSSOVER_MAX_GAP))):
             single_crossover = True
             region_start = front_1
             region_end = back_0
-            single_crossover_front_dup_1 = back_1-1
-            single_crossover_back_dup_0 = front_0+1
+            single_crossover_front_dup_1 = back_1 - 1
+            single_crossover_back_dup_0 = front_0 + 1
 
         elif (fragment.circular is False and
-              front_1 > back_0 and front_1-back_0 <= MAX_INTEGRATION_SIZE) or \
+              front_1 > back_0 and front_1 - back_0 <= MAX_INTEGRATION_SIZE) or \
              (fragment.circular is True and
-              ((front_1 > back_0 and front_1-back_0 <= MAX_INTEGRATION_SIZE) or
-               (front_1+fragment.length > back_0 and
-                front_1+fragment.length-back_0 <= MAX_INTEGRATION_SIZE))):
+              ((front_1 > back_0 and front_1 - back_0 <= MAX_INTEGRATION_SIZE) or
+               (front_1 + fragment.length > back_0 and
+                front_1 + fragment.length - back_0 <= MAX_INTEGRATION_SIZE))):
             single_crossover = False
             region_start = back_1
             region_end = front_0
@@ -377,19 +378,19 @@ def get_verification_primers(genome, region, primer3_opts):
     # front junction
     #
 
-    upstream_window = CHECK_JUNCTION_PRIMER_WINDOW+check_junction_lu
-    downstream_window = min(len(cassette), CHECK_JUNCTION_PRIMER_WINDOW+check_junction_ld)
+    upstream_window = CHECK_JUNCTION_PRIMER_WINDOW + check_junction_lu
+    downstream_window = min(len(cassette), CHECK_JUNCTION_PRIMER_WINDOW + check_junction_ld)
     back = cassette[0:downstream_window]
 
     # don't bother looking for primers if front part of cassette is same as
     # region to be replaced
     if region.start > 1 and back.lower() != region.sequence[0:downstream_window].lower():
-        front = fragment.get_sequence(region.start-upstream_window, region.start-1)
-        template = front+back
+        front = fragment.get_sequence(region.start - upstream_window, region.start - 1)
+        template = front + back
         junction = [len(front)]
-        roi_start = len(front)-check_junction_lu if len(front) > check_junction_lu else 0
-        roi_len = min(check_junction_lu+check_junction_ld,
-                      min(len(front), check_junction_ld)+len(cassette))
+        roi_start = len(front) - check_junction_lu if len(front) > check_junction_lu else 0
+        roi_len = min(check_junction_lu + check_junction_ld,
+                      min(len(front), check_junction_ld) + len(cassette))
         # remove primers that works on un-modified genome for creating a PCR product
         region.verification_front =\
             remove_working_primers(genome,
@@ -400,21 +401,21 @@ def get_verification_primers(genome, region, primer3_opts):
     # back junction
     #
 
-    upstream_window = min(len(cassette), CHECK_JUNCTION_PRIMER_WINDOW+check_junction_ru)
-    downstream_window = CHECK_JUNCTION_PRIMER_WINDOW+check_junction_rd
+    upstream_window = min(len(cassette), CHECK_JUNCTION_PRIMER_WINDOW + check_junction_ru)
+    downstream_window = CHECK_JUNCTION_PRIMER_WINDOW + check_junction_rd
     front = cassette[-upstream_window:]
 
     # don't bother looking for primers if front part of cassette is same as
     # region to be replaced
-    if region.start+len(region.sequence) < fragment.length and\
+    if region.start + len(region.sequence) < fragment.length and\
        front.lower() != region.sequence[-upstream_window:].lower():
-        back = fragment.get_sequence(region.start+len(region.sequence),
-                                     region.start+len(region.sequence)+downstream_window-1)
-        template = front+back
+        back = fragment.get_sequence(region.start + len(region.sequence),
+                                     region.start + len(region.sequence) + downstream_window - 1)
+        template = front + back
         junction = [len(front)]
-        roi_start = len(front)-check_junction_ru if len(front) > check_junction_ru else 0
-        roi_len = min(check_junction_ru+check_junction_rd,
-                      min(len(back), check_junction_rd)+len(cassette))
+        roi_start = len(front) - check_junction_ru if len(front) > check_junction_ru else 0
+        roi_len = min(check_junction_ru + check_junction_rd,
+                      min(len(back), check_junction_rd) + len(cassette))
         # remove primers that works on un-modified genome for creating a PCR product
         region.verification_back =\
             remove_working_primers(genome,
@@ -425,13 +426,13 @@ def get_verification_primers(genome, region, primer3_opts):
     # cassette
     #
 
-    if region.start > 1 and region.start+len(region.sequence) < fragment.length:
-        front = fragment.get_sequence(region.start-CHECK_JUNCTION_PRIMER_WINDOW, region.start-1)
-        back = fragment.get_sequence(region.start+len(region.sequence),
-                                     region.start+len(region.sequence) +
-                                     CHECK_JUNCTION_PRIMER_WINDOW-1)
-        template = front+cassette+back
-        junctions = [len(front), len(front+cassette)-1]
+    if region.start > 1 and region.start + len(region.sequence) < fragment.length:
+        front = fragment.get_sequence(region.start - CHECK_JUNCTION_PRIMER_WINDOW, region.start - 1)
+        back = fragment.get_sequence(region.start + len(region.sequence),
+                                     region.start + len(region.sequence) +
+                                     CHECK_JUNCTION_PRIMER_WINDOW - 1)
+        template = front + cassette + back
+        junctions = [len(front), len(front + cassette) - 1]
         roi_start = template.index(cassette)
         roi_len = len(cassette)
         region.verification_cassette =\
@@ -447,7 +448,7 @@ def find_swap_region(genome, cassette, min_homology_arm_length,
     """
 
     cassette = remove_overhangs(cassette)
-    if len(cassette) < 2*min_homology_arm_length:
+    if len(cassette) < 2 * min_homology_arm_length:
         return None
 
     front_arm = cassette[0:min_homology_arm_length]
@@ -457,7 +458,7 @@ def find_swap_region(genome, cassette, min_homology_arm_length,
 
     if len(regions) == 0 and try_smaller_sequence:
         cassette = cassette[END_BPS_IGNORE:-END_BPS_IGNORE]
-        if len(cassette) >= 2*min_homology_arm_length:
+        if len(cassette) >= 2 * min_homology_arm_length:
             return find_swap_region(genome, cassette, min_homology_arm_length,
                                     design_primers=design_primers,
                                     primer3_opts=primer3_opts,
@@ -497,12 +498,12 @@ def recombine_region(genome, region, min_homology_arm_length, op, need_new_fragm
                                                new_fragment=need_new_fragment) as f:
         replaced = 0
         if region_start < region_end:
-            f.replace_bases(region_start, region_end-region_start+1, cassette)
-            replaced = region_end-region_start+1
+            f.replace_bases(region_start, region_end - region_start + 1, cassette)
+            replaced = region_end - region_start + 1
         else:
             assert f.circular is True
-            f.replace_bases(region_start, f.length-region_start+1, cassette)
-            replaced = f.length-region_start+1
+            f.replace_bases(region_start, f.length - region_start + 1, cassette)
+            replaced = f.length - region_start + 1
             f.remove_bases(1, region_end)
             replaced += region_end
             # adjust region_start after removing sequence at the start
@@ -527,16 +528,16 @@ def shift_regions(regions, fragment_id, start, replaced, added, new_fragment_id)
     assert start <= regions[0].start
 
     def updated_region(region):
-        if region.start <= start+replaced-1:  # overlapping
+        if region.start <= start + replaced - 1:  # overlapping
             return None
         region.fragment_id = new_fragment_id
         if region.start < region.end:
-            region.start = region.start-replaced+added
-            region.end = region.end-replaced+added
+            region.start = region.start - replaced + added
+            region.end = region.end - replaced + added
         else:
             # last replacement cannot be across circular boundary, since we are
             # replacing in order of starting position
-            region.start = region.start-replaced+added
+            region.start = region.start - replaced + added
         return region
 
     regions = [region if region.fragment_id != fragment_id else updated_region(region)
@@ -629,13 +630,13 @@ def annotate_integration(genome, new_genome, regions_before, regions_after, cass
                 strand = -1
             else:
                 strand = 1
-            f.annotate(after['start'], after['start']+len(before['cassette'])-1,
+            f.annotate(after['start'], after['start'] + len(before['cassette']) - 1,
                        cassette_name, 'operation', strand, operation=op)
 
             # annotated inherited and new annotations
             for annotation in annotations:
-                f.annotate(after['start']+annotation['base_first']-1,
-                           after['start']+annotation['base_last']-1,
+                f.annotate(after['start'] + annotation['base_first'] - 1,
+                           after['start'] + annotation['base_last'] - 1,
                            annotation['feature_name'],
                            annotation['feature_type'],
                            annotation['feature_strand'])

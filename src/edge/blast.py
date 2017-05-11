@@ -68,7 +68,7 @@ class Blast_Result(object):
         return identities
 
     def identity_ratio(self):
-        return self.identities()*1.0/self.alignment_length()
+        return self.identities() * 1.0 / self.alignment_length()
 
 
 def inverse_match(m):

@@ -44,8 +44,8 @@ class Fragment_Writer:
 
     def _split_annotations(self, annotations, bps_to_split, split1, split2):
         for a in annotations:
-            a1 = (a.feature, a.feature_base_first, a.feature_base_first+bps_to_split-1)
-            a2 = (a.feature, a.feature_base_first+bps_to_split, a.feature_base_last)
+            a1 = (a.feature, a.feature_base_first, a.feature_base_first + bps_to_split - 1)
+            a2 = (a.feature, a.feature_base_first + bps_to_split, a.feature_base_last)
             self._annotate_chunk(split1, *a1)
             self._annotate_chunk(split2, *a2)
 
@@ -101,13 +101,13 @@ class Fragment_Writer:
         for fcl in chunk.fragment_chunk_location_set.filter(fragment_id__in=index_to_update):
             entries.append(Fragment_Chunk_Location(fragment_id=fcl.fragment_id,
                                                    chunk_id=split2.id,
-                                                   base_first=fcl.base_first+len(s1),
+                                                   base_first=fcl.base_first + len(s1),
                                                    base_last=fcl.base_last))
         Fragment_Chunk_Location.bulk_create(entries)
 
         # adjust chunk location index for existing chunk
         chunk.fragment_chunk_location_set.filter(fragment_id__in=index_to_update)\
-                                         .update(base_last=F('base_first')+len(s1)-1)
+                                         .update(base_last=F('base_first') + len(s1) - 1)
         return split2
 
     def _find_chunk_prev_next(self, before_base1):
@@ -161,13 +161,13 @@ class Fragment_Writer:
             chunk_len = len(chunk.sequence)
 
             # can avoid splitting if first bp in this chunk is before_base1
-            if bases_visited-chunk_len+1 == before_base1:
+            if bases_visited - chunk_len + 1 == before_base1:
                 # print 'no need to split before %s' % (before_base1,)
                 return prev_chunk, chunk
 
             # otherwise, have to split the chunk
-            first_bp_in_chunk = bases_visited-chunk_len+1
-            bps_to_split = before_base1-first_bp_in_chunk
+            first_bp_in_chunk = bases_visited - chunk_len + 1
+            bps_to_split = before_base1 - first_bp_in_chunk
 
             # save original annotations, which will be trashed in __split_chunk
             # (which calls __reset_chunk_sequence)

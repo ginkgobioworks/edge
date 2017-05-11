@@ -137,7 +137,7 @@ class Indexed_Genome(Genome):
             if c.fragment.id not in changes:
                 changes[c.fragment.id] = []
             v = changes[c.fragment.id]
-            if len(v) == 0 or v[-1][1]+1 != c.location[0]:
+            if len(v) == 0 or v[-1][1] + 1 != c.location[0]:
                 v.append([c.location[0], c.location[1]])
             else:
                 v[-1][1] = c.location[1]

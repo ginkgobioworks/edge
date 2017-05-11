@@ -1,4 +1,5 @@
-# takes two sequences, strips whitespaces away, computes reverse complement sequence of second primer
+# takes two sequences, strips whitespaces away, computes reverse
+# complement sequence of second primer
 
 a = "A T G A C A A G C G A A C C A G A G T T T C A G C A G G C T T A C G A T G A G A T C G T T T C T T C T G T G G A G G A T T C C A A A A T T T T T G A A A A A T T C C C A C A G T A T A A A A A A G T G T T A C C T A T T G T T T C T G T C C C G G A G A G G A T C A T T C A A T T C A G G G T C A C G T G G G A A A A T G A T A"
 

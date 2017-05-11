@@ -40,7 +40,7 @@ def build_fragment_fasta(fragment):
         # be really lenient, convert any unknown bp to N
         sequence = re.sub(r'[^agctnAGCTN]', 'n', sequence)
         if fragment.circular is True:
-            sequence = sequence+sequence
+            sequence = sequence + sequence
         f = open(fn, 'w')
         f.write(">gnl|edge|%s %s\n%s\n" %
                 (Blast_Accession.make(fragment), fragment.name, sequence))
@@ -53,7 +53,7 @@ def build_db(fragments, dbname, refresh=True):
         return None
 
     if refresh is False and \
-       (os.path.isfile(dbname+'.nal') or os.path.isfile(dbname+'.nsq')):
+       (os.path.isfile(dbname + '.nal') or os.path.isfile(dbname + '.nsq')):
         print 'already built %s' % dbname
         return dbname
 
