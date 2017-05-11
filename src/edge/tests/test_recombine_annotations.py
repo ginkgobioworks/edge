@@ -89,7 +89,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         self.assertEquals(a['feature_name'], 'Foo +11C')
 
     def test_detects_deletion(self):
-        replaced = self.middle[0:10]+self.middle[11:]
+        replaced = self.middle[0:13]+self.middle[14:]
         cassette = ''.join([self.front_bs, replaced, self.back_bs])
 
         self.fragment.annotate(len(self.upstream)+len(self.front_bs)+1,
@@ -102,7 +102,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         a = r[0].cassette_annotations[0]
         self.assertEquals(a['base_first'], len(self.front_bs)+1)
         self.assertEquals(a['base_last'], len(self.front_bs)+len(self.middle)-1)
-        self.assertEquals(a['feature_name'], 'Foo -11A')
+        self.assertEquals(a['feature_name'], 'Foo -14G')
 
     def test_preserves_unchanged_annotation(self):
         replaced = self.middle[0:10]+self.middle[11:]
@@ -121,7 +121,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         self.assertEquals(a['feature_name'], 'Foo')
 
     def test_preserves_feature_direction_and_type(self):
-        replaced = self.middle[0:10]+self.middle[11:]
+        replaced = self.middle[0:13]+self.middle[14:]
         cassette = ''.join([self.front_bs, replaced, self.back_bs])
 
         self.fragment.annotate(len(self.upstream)+len(self.front_bs)+1,
@@ -134,12 +134,12 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         a = r[0].cassette_annotations[0]
         self.assertEquals(a['base_first'], len(self.front_bs)+1)
         self.assertEquals(a['base_last'], len(self.front_bs)+len(self.middle)-1)
-        self.assertEquals(a['feature_name'], 'Foo -11A')
+        self.assertEquals(a['feature_name'], 'Foo -14G')
         self.assertEquals(a['feature_type'], 'foobar')
         self.assertEquals(a['feature_strand'], -1)
 
     def test_preserves_multiple_annotations(self):
-        replaced = self.middle[0:10]+self.middle[11:]
+        replaced = self.middle[0:13]+self.middle[14:]
         cassette = ''.join([self.front_bs, replaced, self.back_bs])
 
         self.fragment.annotate(len(self.upstream)+2, len(self.upstream)+10, 'Bar', 'static', -1)
@@ -161,7 +161,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         a = r[0].cassette_annotations[1]
         self.assertEquals(a['base_first'], len(self.front_bs)+1)
         self.assertEquals(a['base_last'], len(self.front_bs)+len(self.middle)-1)
-        self.assertEquals(a['feature_name'], 'Foo -11A')
+        self.assertEquals(a['feature_name'], 'Foo -14G')
         self.assertEquals(a['feature_type'], 'changed')
         self.assertEquals(a['feature_strand'], 1)
 
@@ -225,7 +225,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         self.assertEquals(a['feature_strand'], -1)
 
     def test_adds_multiple_annotations_to_modified_genome(self):
-        replaced = self.middle[0:10]+self.middle[11:]
+        replaced = self.middle[0:13]+self.middle[14:]
         cassette = ''.join([self.front_bs, replaced, self.back_bs])
 
         self.fragment.annotate(len(self.upstream)+2, len(self.upstream)+10, 'Bar', 'static', -1)
@@ -250,7 +250,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         self.assertEquals(a.base_last, len(self.upstream)+10)
 
         a = annotations[2]
-        self.assertEquals(a.feature.name, 'Foo -11A')
+        self.assertEquals(a.feature.name, 'Foo -14G')
         self.assertEquals(a.feature.type, 'changed')
         self.assertEquals(a.feature.strand, 1)
         self.assertEquals(a.base_first, len(self.upstream)+len(self.front_bs)+1)

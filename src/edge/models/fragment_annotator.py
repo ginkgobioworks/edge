@@ -28,7 +28,7 @@ class Fragment_Annotator:
         prev_chunk, annotation_start = self._find_and_split_before(first_base1)
         annotation_end, next_chunk = self._find_and_split_before(last_base1+1)
 
-        # did two splits, so must reload annotation_start in case that got splitted
+        # did two splits, so must reload annotation_start in case that got split
         annotation_start = annotation_start.reload()
 
         new_feature = self._add_feature(name, type, length, strand, qualifiers, operation)
