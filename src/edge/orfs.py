@@ -49,13 +49,11 @@ def detect_orfs(seq):
                     if strand == 1:
                         start = frame + start_codon * 3 + 1
                         end = frame + aa_end * 3 + has_stop * 3
-                        size = end - start + 1
                         if end > seq_len:
                             end = end % seq_len
                     else:
                         start = seq_len - frame - aa_end * 3 - has_stop * 3 + 1
                         end = seq_len - frame - start_codon * 3
-                        size = end - start + 1
                         if start < 0:
                             start = seq_len + start
 

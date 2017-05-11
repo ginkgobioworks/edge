@@ -1,6 +1,21 @@
-from django.conf.urls import *
+from django.conf.urls import patterns, url
 from django.views.generic.base import TemplateView
-from edge.views import *
+
+from edge.views import (
+    FragmentView,
+    FragmentListView,
+    FragmentSequenceView,
+    FragmentAnnotationsView,
+    GenomeView,
+    GenomeListView,
+    GenomeAnnotationsView,
+    GenomeFragmentListView,
+    GenomeBlastView,
+    GenomePcrView,
+    GenomeRecombinationView,
+    GenomeCrisprDSBView,
+    genome_export,
+)
 
 urlpatterns = patterns(
     '',
@@ -19,11 +34,13 @@ urlpatterns = patterns(
 
     url('^genomes/$', GenomeListView.as_view(), name='genome_list'),
     url('^genomes/(?P<genome_id>\d+)/$', GenomeView.as_view(), name='genome'),
+
     url('^fragments/$', FragmentListView.as_view(), name='fragment_list'),
     url('^fragments/(?P<fragment_id>\d+)/$', FragmentView.as_view(), name='fragment'),
 
     url('^fragments/(?P<fragment_id>\d+)/sequence/$', FragmentSequenceView.as_view()),
     url('^fragments/(?P<fragment_id>\d+)/annotations/$', FragmentAnnotationsView.as_view()),
+
     url('^genomes/(?P<genome_id>\d+)/annotations/$', GenomeAnnotationsView.as_view()),
     url('^genomes/(?P<genome_id>\d+)/fragments/$', GenomeFragmentListView.as_view()),
     url('^genomes/(?P<genome_id>\d+)/blast/$', GenomeBlastView.as_view()),

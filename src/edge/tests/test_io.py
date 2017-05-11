@@ -1,8 +1,14 @@
-from django.test import TestCase
-from edge.models import *
-from edge.io import IO
-import tempfile
 import os
+import tempfile
+
+from django.test import TestCase
+
+from edge.io import IO
+from edge.models import (
+    Fragment,
+    Genome,
+    Genome_Fragment,
+)
 
 
 class IOTest(TestCase):

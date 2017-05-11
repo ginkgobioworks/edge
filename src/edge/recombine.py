@@ -1,12 +1,13 @@
-from time import time
 import re
 import json
+
+from Bio.Seq import Seq
+
 from edge.blast import blast_genome
 from edge.models import Genome, Fragment, Operation
 from edge.primer import design_primers_from_template
 from edge.pcr import pcr_from_genome
 from edge.orfs import detect_orfs
-from Bio.Seq import Seq
 
 
 SINGLE_CROSSOVER_MAX_GAP = 2000
@@ -226,8 +227,6 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
     fragment = front_arm_blastres.fragment.indexed_fragment()
 
     single_crossover = False
-    single_crossover_front_0_i = None
-    single_crossover_back_1_i = None
 
     front_0 = front_arm_blastres.subject_start
     front_1 = front_arm_blastres.subject_end

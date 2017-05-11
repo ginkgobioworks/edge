@@ -1,6 +1,11 @@
-from django.db import connection
 from django.db.models import F
-from edge.models.chunk import *
+from edge.models.chunk import (
+    Chunk,
+    Chunk_Feature,
+    Edge,
+    Fragment_Chunk_Location,
+)
+from edge.models.fragment import Fragment_Index
 
 
 class Fragment_Writer:
@@ -50,7 +55,6 @@ class Fragment_Writer:
             self._annotate_chunk(split2, *a2)
 
     def __invalidate_index_for(self, fragment_ids):
-        from edge.models.fragment import Fragment_Index
         for f in fragment_ids:
             index = Fragment_Index.objects.filter(fragment_id=f)
             if index.count():
@@ -146,15 +150,11 @@ class Fragment_Writer:
             raise Exception('chunk index should be 1-based')
 
         chunk = None
-        chunk_id = None
         prev_chunk = None
         next_chunk = None
         bases_visited = 0
 
         prev_chunk, chunk, next_chunk, bases_visited = self._find_chunk_prev_next(before_base1)
-
-        if chunk:
-            chunk_id = chunk.id
 
         # found the bp we are looking for
         if before_base1 is not None and bases_visited >= before_base1:

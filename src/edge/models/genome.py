@@ -1,6 +1,13 @@
 from django.db import models
-from edge.models.chunk import *
-from edge.models.fragment import *
+
+from edge.importer import GFFImporter
+from edge.models.chunk import (
+    Annotation,
+    Chunk_Feature,
+    Edge,
+    Fragment_Chunk_Location,
+)
+from edge.models.fragment import Fragment
 from edge.models.genome_updater import Genome_Updater
 
 
@@ -29,7 +36,6 @@ class Genome(models.Model, Genome_Updater):
     @staticmethod
     def import_gff(name, gff_fasta_fn):
         genome = Genome.create(name)
-        from edge.importer import GFFImporter
         GFFImporter(genome, gff_fasta_fn).do_import()
         return genome
 

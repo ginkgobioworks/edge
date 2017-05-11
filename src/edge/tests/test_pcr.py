@@ -1,8 +1,9 @@
-import re
 import os
 import json
+
 from Bio.Seq import Seq
 from django.test import TestCase
+
 from edge.pcr import pcr_from_genome
 from edge.models import Genome, Fragment, Genome_Fragment
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn

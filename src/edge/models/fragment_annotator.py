@@ -1,4 +1,4 @@
-from edge.models.chunk import *
+from edge.models.chunk import Feature
 
 
 class Fragment_Annotator:

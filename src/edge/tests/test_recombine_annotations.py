@@ -1,11 +1,12 @@
 import os
-import json
-from django.test import TestCase
+
 from Bio.Seq import Seq
+from django.test import TestCase
+
+import edge.orfs
 from edge.recombine import find_swap_region_with_annotations, recombine
 from edge.models import Genome, Fragment, Genome_Fragment
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
-import edge.orfs
 
 
 class GenomeRecombinationAnnotationsTest(TestCase):

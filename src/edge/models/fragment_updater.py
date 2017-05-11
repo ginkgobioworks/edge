@@ -1,5 +1,5 @@
 from django.db.models import F
-from edge.models.chunk import *
+from edge.models.chunk import Edge
 
 
 class Fragment_Updater:
@@ -150,7 +150,6 @@ class Fragment_Updater:
                                                     base_last=F('base_last') + fragment_length)
 
         # add location for new chunks in the new fragment
-        values = []
         c = 0
         original_length = self.length
         for chunk in fragment.chunks():

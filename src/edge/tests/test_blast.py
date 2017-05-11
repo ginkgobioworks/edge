@@ -1,10 +1,16 @@
 import os
 import json
+
 from Bio.Seq import Seq
 from django.test import TestCase
-from edge.models import Genome, Fragment, Genome_Fragment, Operation
+
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 from edge.blast import blast_genome
+from edge.models import (
+    Fragment,
+    Genome,
+    Genome_Fragment,
+)
 
 
 class GenomeBlastTest(TestCase):

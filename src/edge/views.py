@@ -1,23 +1,19 @@
 import json
 import random
-import os
-import mimetypes
 
-from contextlib import contextmanager
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, StreamingHttpResponse
+from django.http import HttpResponse
 from django.views.generic.base import View
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.db import transaction
-from django.core.servers.basehttp import FileWrapper
 
-from edge.models import *
-from edge.io import *
+from edge.models import Fragment, Genome, Operation
+from edge.io import IO
 
 
 def genome_export(request, genome_id):
-    genome = get_genome_or_404(genome_id)
+    get_genome_or_404(genome_id)
     io = IO(Genome.objects.get(pk=genome_id))
 
     response = HttpResponse(content_type='text/plain')
@@ -371,7 +367,7 @@ class GenomeListView(ViewBase):
             if q is not None and q.strip() != '':
                 where = Q(name__icontains=q)
                 try:
-                    id = int(q)
+                    int(q)  # See if q can be converted to an int
                 except:
                     pass
                 else:

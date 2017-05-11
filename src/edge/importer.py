@@ -1,7 +1,9 @@
-from django.db import connection
-from BCBio import GFF
-from edge.models import *
 import time
+
+from BCBio import GFF
+from django.db import connection
+
+from edge.models import Fragment, Fragment_Chunk_Location
 
 
 class GFFImporter(object):

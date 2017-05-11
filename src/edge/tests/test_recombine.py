@@ -1,11 +1,13 @@
 import os
 import json
+
 from Bio.Seq import Seq
 from django.test import TestCase
-from edge.recombine import find_swap_region, recombine, remove_overhangs
-from edge.models import Genome, Fragment, Genome_Fragment, Operation
-from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
+
 import edge.recombine
+from edge.recombine import find_swap_region, recombine, remove_overhangs
+from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
+from edge.models import Genome, Fragment, Genome_Fragment, Operation
 
 
 class RemoveOverhangsTest(TestCase):
@@ -566,7 +568,17 @@ class GenomeRecombinationTest(TestCase):
         template = ''.join([upstream, front_bs, middle, back_bs, downstream])
         cassette = ''.join([front_bs, replaced, back_bs])
 
-        f = middle[0:8] + back_bs + downstream + 't' * 20 + template + 'c' * 20 + upstream + front_bs + middle[8:]
+        f = (
+            middle[0:8]
+            + back_bs
+            + downstream
+            + 't' * 20
+            + template
+            + 'c' * 20
+            + upstream
+            + front_bs
+            + middle[8:]
+        )
         arm_len = min(len(front_bs), len(back_bs))
         g = self.build_genome(True, f)
         c = recombine(g, cassette, arm_len)

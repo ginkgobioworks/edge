@@ -1,7 +1,6 @@
 from django.test import TestCase
-from edge.models import *
-import os
-import tempfile
+
+from edge.models import Genome
 
 
 class GenomeTest(TestCase):
@@ -17,7 +16,7 @@ class GenomeTest(TestCase):
         genome = Genome.create('Foo')
         self.assertEquals(len(genome.fragments.all()), 0)
         s = 'atggcatattcgcagct'
-        f = genome.add_fragment('chrI', s)
+        genome.add_fragment('chrI', s)
         self.assertEquals(len(genome.fragments.all()), 1)
         self.assertEquals(genome.fragments.all()[0].name, 'chrI')
         self.assertEquals(genome.fragments.all()[0].indexed_fragment().sequence, s)
@@ -27,7 +26,7 @@ class GenomeTest(TestCase):
         self.assertEquals(len(Genome.objects.all()), 1)
         u = parent.update()
         s = 'atggcatattcgcagct'
-        f = u.add_fragment('chrI', s)
+        u.add_fragment('chrI', s)
 
         child = u
         # created a child genome
@@ -133,7 +132,7 @@ class GenomeTest(TestCase):
         genome = Genome.create('Foo')
         self.assertEquals(len(genome.fragments.all()), 0)
         s = 'atggcatattcgcagct'
-        f = genome.add_fragment('chrI', s)
+        genome.add_fragment('chrI', s)
         self.assertEquals(genome.indexed_genome().changes(), [])
 
     def test_can_insert_and_get_changes(self):
@@ -177,7 +176,7 @@ class GenomeTest(TestCase):
         with g.update_fragment_by_name('chrI', 'foobar') as f:
             f.insert_bases(3, 'gataca')
 
-        self.assertItemsEqual([f.name for f in g.fragments.all()], ['foobar'])
+        self.assertItemsEqual([fr.name for fr in g.fragments.all()], ['foobar'])
 
     def test_can_update_fragment_by_id_and_assign_new_name(self):
         genome = Genome.create('Foo')
@@ -189,7 +188,7 @@ class GenomeTest(TestCase):
         with g.update_fragment_by_fragment_id(f0.id, 'foobar') as f:
             f.insert_bases(3, 'gataca')
 
-        self.assertItemsEqual([f.name for f in g.fragments.all()], ['foobar'])
+        self.assertItemsEqual([fr.name for fr in g.fragments.all()], ['foobar'])
 
     def test_can_insert_then_insert_and_get_second_insert_only_as_changes(self):
         genome = Genome.create('Foo')

@@ -1,5 +1,4 @@
 import os
-import re
 import tempfile
 import subprocess
 from django.conf import settings

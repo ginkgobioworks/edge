@@ -1,7 +1,12 @@
 from django.utils import timezone
 from django.db import models
 from django.db.models import Q
-from edge.models.chunk import *
+
+from edge.models.chunk import (
+    Annotation,
+    Chunk_Feature,
+    Fragment_Chunk_Location,
+)
 from edge.models.fragment_writer import Fragment_Writer
 from edge.models.fragment_annotator import Fragment_Annotator
 from edge.models.fragment_updater import Fragment_Updater

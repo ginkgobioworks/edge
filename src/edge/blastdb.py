@@ -7,7 +7,6 @@ from edge.models import Fragment, Genome
 from edge.blast import BLAST_DB, default_genome_db_name
 from edge.blast import Blast_Accession
 from django.conf import settings
-from django.core.management.base import BaseCommand
 
 
 def make_required_dirs(path):

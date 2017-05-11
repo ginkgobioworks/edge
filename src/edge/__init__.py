@@ -1,3 +1,6 @@
+from django.db.backends.signals import connection_created
+
+
 def import_gff(name, fn):
     """
     Creates a new genome using the specified GFF file.
@@ -24,5 +27,4 @@ def _setup_sqlite3(sender, connection, **kwargs):
         cursor.execute('PRAGMA journal_mode = MEMORY;')
 
 
-from django.db.backends.signals import connection_created
 connection_created.connect(_setup_sqlite3)

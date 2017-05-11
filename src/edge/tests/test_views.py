@@ -1,8 +1,8 @@
-import os
 import json
 import re
-import tempfile
 from django.test import TestCase
+
+from edge.models import Genome, Fragment, Genome_Fragment
 
 
 class GenomeListTest(TestCase):
@@ -38,8 +38,6 @@ class GenomeListTest(TestCase):
         self.assertEquals(json.loads(res.content), json.loads(re2.content))
 
     def test_finds_genomes_with_specified_fragment_ids(self):
-        from edge.models import Genome, Fragment, Genome_Fragment
-
         g1 = Genome(name='Foo')
         g1.save()
         g2 = Genome(name='Bar')

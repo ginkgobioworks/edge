@@ -1,5 +1,10 @@
 from django.test import TestCase
-from edge.models import *
+
+from edge.models import (
+    Genome,
+    Fragment,
+    Operation,
+)
 
 
 class AnnotationsTest(TestCase):
