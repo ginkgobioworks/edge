@@ -15,11 +15,13 @@ help:
 	@echo "build_assets - build the static assets"
 	@echo "migrate, syncdb - set up the db"
 	@echo "add-s288c - load example data into the db"
+	@echo "dbshell, shell - run a sql or python shell with the app & db loaded"
 	@echo "test - run base python tests"
 	@echo "flake8 - check style with flake8"
 	@echo "run - run the dev server"
 	@echo "start - run migration and run the dev server"
 	@echo "watch - watch static assets and recompile automatically"
+	@echo "bash - start a bash shell; only really useful when run as bash-ext or bash-ext_fast"
 	@echo "sdist, bdist_wheel - package"
 	@echo "bump/major bump/minor bump/patch - bump the version"
 	@echo "release - package and upload a release"
@@ -82,7 +84,7 @@ MANAGE_COMMANDS = \
   build_edge_blastdb build_genome_blastdb \
   export_gff import_gff \
   remove_fragment remove_genome \
-  createsuperuser test
+  createsuperuser dbshell shell test
 
 ${MANAGE_COMMANDS}:
 	${MANAGE} $@ ${args}
@@ -112,7 +114,12 @@ release: clean sdist bdist_wheel
 	twine upload dist/*
 
 
-# Examples
+# Utilities
+
+bash:
+	bash
+
+# Example data
 
 add-s288c:
 	${MANAGE} import_gff 'Saccharomyces cerevisiae' ../example/sc_s288c.gff
