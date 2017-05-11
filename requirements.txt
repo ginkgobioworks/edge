@@ -1,5 +1,8 @@
 -r requirements-core.txt
 
+# Biopython requires numpy to already be built
+biopython == 1.63
+
 # testing
 nose==1.3.7
 django-nose==1.3
