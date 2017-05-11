@@ -113,7 +113,7 @@ release: clean sdist bdist_wheel
 # Examples
 
 add-s288c:
-	${MANAGE} import_gff 'Saccharomyces cerevisiae' example/sc_s288c.gff
+	${MANAGE} import_gff 'Saccharomyces cerevisiae' ../example/sc_s288c.gff
 	${MANAGE} build_edge_blastdb
 
 
