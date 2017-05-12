@@ -12,9 +12,6 @@ env:
   matrix:
     - TARGET=test-ci
     - TARGET=flake8
-matrix:
-  allow_failures:
-    - env: TARGET=flake8
 
 addons:
   apt:
