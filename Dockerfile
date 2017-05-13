@@ -1,32 +1,49 @@
+# Development Dockerfile to make testing easier under a standardized environment.
+# XXX Do not use for production as-is
+
 FROM python:2.7
+LABEL maintainer Ginkgo Bioworks <devs@ginkgobioworks.com>
 
-WORKDIR /
-COPY ncbi ncbi
-WORKDIR /ncbi
-RUN ./install
+ARG GIT_USER_NAME="Curious Default"
+ARG GIT_USER_EMAIL="devs@ginkgobioworks.com"
 
-WORKDIR /
-COPY primer3 primer3
-WORKDIR /primer3
-RUN ./install
+RUN git config --global user.name "$GIT_USER_NAME" \
+    && git config --global user.email "$GIT_USER_EMAIL"
 
-WORKDIR /
-COPY requirements.txt requirements.txt
-COPY requirements-dev.txt requirements-dev.txt
-RUN pip install -r requirements-dev.txt
 
-WORKDIR /
-ENV EDGE_HOME /edge
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update
+RUN apt-get install --assume-yes --verbose-versions \
+  apt-utils \
+  mysql-client \
+  nodejs \
+  nodejs-legacy \
+  npm \
+  ncbi-blast+ \
+  primer3
+
+RUN npm install --global bower
+RUN echo '{ "allow_root": true }' > $HOME/.bowerrc
+
+ENV EDGE_HOME=/usr/src/edge
 RUN mkdir -p $EDGE_HOME
-COPY . $EDGE_HOME
+WORKDIR $EDGE_HOME
+
+COPY requirements-core.txt ./
+RUN pip install -r requirements-core.txt
+
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
+
+COPY . ./
+RUN pip install --editable .
 
 RUN mkdir -p $EDGE_HOME/ncbi/blastdb
-WORKDIR $EDGE_HOME/ncbi
-RUN ln -sf /ncbi/ncbi-blast-2.2.27+-src/c++/GCC492-Debug64/bin bin
+ENV EDGE_IP=0.0.0.0 \
+    EDGE_PORT=8000 \
+    NCBI_BIN_DIR=/usr/bin \
+    PRIMER3_BIN=/usr/bin/primer3_core \
+    PRIMER3_CONFIG_DIR=/etc/primer3_config/
 
-WORKDIR $EDGE_HOME/primer3
-RUN ln -sf /primer3/primer3_core .
-RUN ln -sf /primer3/primer3_config .
-
-WORKDIR $EDGE_HOME/src
-CMD python manage.py runserver 0.0.0.0:8000
+EXPOSE $EDGE_PORT
+CMD ["make", "start"]

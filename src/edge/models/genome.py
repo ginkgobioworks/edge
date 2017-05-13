@@ -1,6 +1,13 @@
 from django.db import models
-from edge.models.chunk import *
-from edge.models.fragment import *
+
+from edge.importer import GFFImporter
+from edge.models.chunk import (
+    Annotation,
+    Chunk_Feature,
+    Edge,
+    Fragment_Chunk_Location,
+)
+from edge.models.fragment import Fragment
 from edge.models.genome_updater import Genome_Updater
 
 
@@ -29,7 +36,6 @@ class Genome(models.Model, Genome_Updater):
     @staticmethod
     def import_gff(name, gff_fasta_fn):
         genome = Genome.create(name)
-        from edge.importer import GFFImporter
         GFFImporter(genome, gff_fasta_fn).do_import()
         return genome
 
@@ -137,7 +143,7 @@ class Indexed_Genome(Genome):
             if c.fragment.id not in changes:
                 changes[c.fragment.id] = []
             v = changes[c.fragment.id]
-            if len(v) == 0 or v[-1][1]+1 != c.location[0]:
+            if len(v) == 0 or v[-1][1] + 1 != c.location[0]:
                 v.append([c.location[0], c.location[1]])
             else:
                 v[-1][1] = c.location[1]

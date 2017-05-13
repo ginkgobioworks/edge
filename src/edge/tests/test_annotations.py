@@ -1,5 +1,10 @@
 from django.test import TestCase
-from edge.models import *
+
+from edge.models import (
+    Genome,
+    Fragment,
+    Operation,
+)
 
 
 class AnnotationsTest(TestCase):
@@ -140,15 +145,16 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations()[0].base_first, 1)
         self.assertEquals(f.annotations()[0].base_last, 3)
         self.assertEquals(f.annotations()[0].feature.name, 'A1')
-        self.assertEquals(f.annotations()[0].feature_base_first, len(self.root_sequence)-9+1+1)
-        self.assertEquals(f.annotations()[0].feature_base_last, len(self.root_sequence)-9+1+3)
-        self.assertEquals(f.annotations()[0].feature.length, len(self.root_sequence)-9+1+3)
+        self.assertEquals(f.annotations()[0].feature_base_first,
+                          len(self.root_sequence) - 9 + 1 + 1)
+        self.assertEquals(f.annotations()[0].feature_base_last, len(self.root_sequence) - 9 + 1 + 3)
+        self.assertEquals(f.annotations()[0].feature.length, len(self.root_sequence) - 9 + 1 + 3)
         self.assertEquals(f.annotations()[1].base_first, 9)
         self.assertEquals(f.annotations()[1].base_last, len(self.root_sequence))
         self.assertEquals(f.annotations()[1].feature.name, 'A1')
         self.assertEquals(f.annotations()[1].feature_base_first, 1)
-        self.assertEquals(f.annotations()[1].feature_base_last, len(self.root_sequence)-9+1)
-        self.assertEquals(f.annotations()[1].feature.length, len(self.root_sequence)-9+1+3)
+        self.assertEquals(f.annotations()[1].feature_base_last, len(self.root_sequence) - 9 + 1)
+        self.assertEquals(f.annotations()[1].feature.length, len(self.root_sequence) - 9 + 1 + 3)
 
     def test_annotate_circular_fragment_ending_at_bp_1(self):
         f = Fragment.create_with_sequence('Foo', self.root_sequence, circular=True)
@@ -157,15 +163,16 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations()[0].base_first, 1)
         self.assertEquals(f.annotations()[0].base_last, 1)
         self.assertEquals(f.annotations()[0].feature.name, 'A1')
-        self.assertEquals(f.annotations()[0].feature_base_first, len(self.root_sequence)-9+1+1)
-        self.assertEquals(f.annotations()[0].feature_base_last, len(self.root_sequence)-9+1+1)
-        self.assertEquals(f.annotations()[0].feature.length, len(self.root_sequence)-9+1+1)
+        self.assertEquals(f.annotations()[0].feature_base_first,
+                          len(self.root_sequence) - 9 + 1 + 1)
+        self.assertEquals(f.annotations()[0].feature_base_last, len(self.root_sequence) - 9 + 1 + 1)
+        self.assertEquals(f.annotations()[0].feature.length, len(self.root_sequence) - 9 + 1 + 1)
         self.assertEquals(f.annotations()[1].base_first, 9)
         self.assertEquals(f.annotations()[1].base_last, len(self.root_sequence))
         self.assertEquals(f.annotations()[1].feature.name, 'A1')
         self.assertEquals(f.annotations()[1].feature_base_first, 1)
-        self.assertEquals(f.annotations()[1].feature_base_last, len(self.root_sequence)-9+1)
-        self.assertEquals(f.annotations()[1].feature.length, len(self.root_sequence)-9+1+1)
+        self.assertEquals(f.annotations()[1].feature_base_last, len(self.root_sequence) - 9 + 1)
+        self.assertEquals(f.annotations()[1].feature.length, len(self.root_sequence) - 9 + 1 + 1)
 
     def test_annotate_circular_fragment_ending_at_base_last(self):
         f = Fragment.create_with_sequence('Foo', self.root_sequence, circular=True)
@@ -175,8 +182,8 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations()[0].base_last, len(self.root_sequence))
         self.assertEquals(f.annotations()[0].feature.name, 'A1')
         self.assertEquals(f.annotations()[0].feature_base_first, 1)
-        self.assertEquals(f.annotations()[0].feature_base_last, len(self.root_sequence)-9+1)
-        self.assertEquals(f.annotations()[0].feature.length, len(self.root_sequence)-9+1)
+        self.assertEquals(f.annotations()[0].feature_base_last, len(self.root_sequence) - 9 + 1)
+        self.assertEquals(f.annotations()[0].feature.length, len(self.root_sequence) - 9 + 1)
 
     def test_annotations_list_ordered_by_bp(self):
         # annotate bps 5-9 before bps 1-6, but ordered annotations should still
@@ -239,7 +246,7 @@ class AnnotationsTest(TestCase):
         f = self.root.update('Bar')
         f.remove_bases(4, 3)
 
-        n = len(self.root_sequence)-3
+        n = len(self.root_sequence) - 3
         self.assertEquals(len(f.annotations(bp_lo=1, bp_hi=n)), 2)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].base_first, 1)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].base_last, 3)
@@ -250,7 +257,7 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].base_last, n)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].feature.name, 'A1')
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].feature_base_first, 7)
-        self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].feature_base_last, n+3)
+        self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].feature_base_last, n + 3)
 
     def test_does_not_merge_splitted_annotations_if_bp_inserted_in_annotation(self):
         self.root.annotate(1, len(self.root_sequence), 'A1', 'gene', 1)
@@ -259,7 +266,7 @@ class AnnotationsTest(TestCase):
         f = self.root.update('Bar')
         f.insert_bases(4, 'ccc')
 
-        n = len(self.root_sequence)+3
+        n = len(self.root_sequence) + 3
         self.assertEquals(len(f.annotations(bp_lo=1, bp_hi=n)), 2)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].base_first, 1)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].base_last, 3)
@@ -270,7 +277,7 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].base_last, n)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].feature.name, 'A1')
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].feature_base_first, 4)
-        self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].feature_base_last, n-3)
+        self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].feature_base_last, n - 3)
 
     def test_child_inherits_annotation_from_parent_when_parent_annotates_preserved_region(self):
         f = self.root.update('Bar')

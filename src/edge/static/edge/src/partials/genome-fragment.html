@@ -3,8 +3,8 @@
     <ol class="breadcrumb">
         <li> Edge </li>
         <li> <a href="#/genomes">Genomes</a> </li>
-        <li> <a href="#/genomes/{{ genome.id }}" ng-bind-html-unsafe='genome.name'></a> </li>
-        <li ng-bind-html-unsafe='fragment.name'></li>
+        <li> <a href="#/genomes/{{ genome.id }}" ng-bind-html='genome.name'></a> </li>
+        <li ng-bind-html='fragment.name'></li>
     </ol>
   </div>
 </header>
@@ -13,11 +13,11 @@
 
 <h3>
   Fragment {{ fragment.id }}:
-  <span ng-bind-html-unsafe='fragment.name'></span>, {{ fragment.length | number }} bps
+  <span ng-bind-html='fragment.name'></span>, {{ fragment.length | number }} bps
 </h3>
 
 <div class="lead space-top">
-    <p>Genome: <a href="#/genomes/{{ genome.id }}" ng-bind-html-unsafe='genome.name'></a> </p>
+    <p>Genome: <a href="#/genomes/{{ genome.id }}" ng-bind-html='genome.name'></a> </p>
     <p>
       Changes:
       <span ng-repeat="op in genome.operations">

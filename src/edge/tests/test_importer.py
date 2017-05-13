@@ -1,13 +1,17 @@
-from django.test import TestCase
-from edge.models import *
 import os
 import tempfile
+
+from django.test import TestCase
+
+from edge import import_gff
+from edge.models import (
+    Genome,
+)
 
 
 class ImporterTest(TestCase):
 
     def test_import_gff_procedure_creates_genome_and_annotations(self):
-        from edge import import_gff
 
         data = """##gff-version 3
 chrI\tTest\tchromosome\t1\t160\t.\t.\t.\tID=i1;Name=f1
@@ -46,11 +50,11 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
-        self.assertItemsEqual([f.name for f in genome.fragments.all()], ['chrI', 'chrII'])
-        chrI = [f.indexed_fragment() for f in genome.fragments.all() if f.name == 'chrI'][0]
+        self.assertItemsEqual([fr.name for fr in genome.fragments.all()], ['chrI', 'chrII'])
+        chrI = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == 'chrI'][0]
         self.assertEquals(len(chrI.sequence), 160)
         self.assertEquals(len(chrI.annotations()), 2)
-        chrII = [f.indexed_fragment() for f in genome.fragments.all() if f.name == 'chrII'][0]
+        chrII = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == 'chrII'][0]
         self.assertEquals(len(chrII.sequence), 160)
         self.assertEquals(len(chrII.annotations()), 2)
 
@@ -79,10 +83,10 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
-        self.assertItemsEqual([f.name for f in genome.fragments.all()], ['chrI', 'chrII'])
+        self.assertItemsEqual([fr.name for fr in genome.fragments.all()], ['chrI', 'chrII'])
 
         # verify chrI fragment
-        chrI = [f.indexed_fragment() for f in genome.fragments.all() if f.name == 'chrI'][0]
+        chrI = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == 'chrI'][0]
         self.assertEquals(len(chrI.sequence), 160)
         # verify skips annotation on entire sequence
         self.assertEquals(len(chrI.annotations()), 2)
@@ -96,7 +100,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         self.assertEquals(chrI.annotations()[1].feature.strand, -1)
 
         # verify chrII fragment
-        chrII = [f.indexed_fragment() for f in genome.fragments.all() if f.name == 'chrII'][0]
+        chrII = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == 'chrII'][0]
         self.assertEquals(len(chrII.sequence), 160)
         # consecutive annotations merged even though they span multiple chunks
         self.assertEquals(len(chrII.annotations()), 2)
@@ -129,7 +133,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             os.unlink(f.name)
 
         # verify chrI fragment
-        chrI = [f.indexed_fragment() for f in genome.fragments.all() if f.name == 'chrI'][0]
+        chrI = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == 'chrI'][0]
         self.assertEquals(len(chrI.sequence), 160)
         # verify skips annotation on entire sequence
         self.assertEquals(len(chrI.annotations()), 2)
@@ -162,7 +166,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             os.unlink(f.name)
 
         # verify chrI fragment
-        chrI = [f.indexed_fragment() for f in genome.fragments.all() if f.name == 'chrI'][0]
+        chrI = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == 'chrI'][0]
         self.assertEquals(len(chrI.sequence), 160)
         # verify skips annotation on entire sequence
         self.assertEquals(len(chrI.annotations()), 2)
@@ -195,7 +199,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             os.unlink(f.name)
 
         # verify chrI fragment
-        chrI = [f.indexed_fragment() for f in genome.fragments.all() if f.name == 'chrI'][0]
+        chrI = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == 'chrI'][0]
         self.assertEquals(len(chrI.sequence), 160)
         # verify skips annotation on entire sequence
         self.assertEquals(len(chrI.annotations()), 2)
@@ -228,7 +232,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             os.unlink(f.name)
 
         # verify chrI fragment
-        chrI = [f.indexed_fragment() for f in genome.fragments.all() if f.name == 'chrI'][0]
+        chrI = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == 'chrI'][0]
         self.assertEquals(len(chrI.sequence), 160)
         # verify skips annotation on entire sequence
         self.assertEquals(len(chrI.annotations()), 2)

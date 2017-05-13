@@ -1,5 +1,0 @@
-#!/bin/bash
-
-python manage.py test
-pep8 --max-line-length=100 --exclude=migrations edge
-

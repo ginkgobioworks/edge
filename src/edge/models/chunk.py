@@ -44,8 +44,8 @@ class Annotation(object):
         for cf, fcl in chunk_feature_locs:
             if len(annotations) > 0 and\
                annotations[-1].feature.id == cf.feature_id and\
-               annotations[-1].feature_base_last == cf.feature_base_first-1 and\
-               annotations[-1].base_last == fcl.base_first-1:
+               annotations[-1].feature_base_last == cf.feature_base_first - 1 and\
+               annotations[-1].base_last == fcl.base_first - 1:
                 # merge annotation
                 annotations[-1].base_last = fcl.base_last
                 annotations[-1].feature_base_last = cf.feature_base_last
@@ -70,7 +70,8 @@ class BigIntPrimaryModel(models.Model):
         if self.id is None:
             klass = type(self)
             try:
-                self.id = klass.objects.select_for_update().order_by('-id').values('id')[0]['id']+1
+                self.id = klass.objects.select_for_update().order_by(
+                    '-id').values('id')[0]['id'] + 1
             except IndexError:
                 self.id = 1
         return super(BigIntPrimaryModel, self).save(*args, **kwargs)
@@ -154,7 +155,7 @@ class Fragment_Chunk_Location(BigIntPrimaryModel):
     def next_chunk(self):
         for fcl in self.fragment.fragment_chunk_location_set\
                                 .select_related('chunk')\
-                                .filter(base_first=self.base_last+1):
+                                .filter(base_first=self.base_last + 1):
             return fcl.chunk
         return None
 
@@ -167,7 +168,7 @@ class Fragment_Chunk_Location(BigIntPrimaryModel):
         loc = self.location
         if loc[0] == 1:
             return None
-        fc = Fragment_Chunk_Location.objects.get(fragment=self.fragment, base_last=loc[0]-1)
+        fc = Fragment_Chunk_Location.objects.get(fragment=self.fragment, base_last=loc[0] - 1)
         return fc
 
     def annotations(self):
@@ -185,7 +186,7 @@ class Fragment_Chunk_Location(BigIntPrimaryModel):
             cur_id = Fragment_Chunk_Location.objects\
                                             .select_for_update()\
                                             .order_by('-id')\
-                                            .values('id')[0]['id']+1
+                                            .values('id')[0]['id'] + 1
         except IndexError:
             pass
 

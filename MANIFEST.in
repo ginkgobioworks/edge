@@ -1,5 +1,7 @@
 include LICENSE.txt
-include README.md
+include README.rst
+include .bowerrc
+include bower.json
 recursive-include src/edge *
 recursive-exclude * *.pyc
 recursive-exclude * .*.swp

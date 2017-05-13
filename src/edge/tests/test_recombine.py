@@ -1,11 +1,13 @@
 import os
 import json
+
 from Bio.Seq import Seq
 from django.test import TestCase
-from edge.recombine import find_swap_region, recombine, remove_overhangs
-from edge.models import Genome, Fragment, Genome_Fragment, Operation
-from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
+
 import edge.recombine
+from edge.recombine import find_swap_region, recombine, remove_overhangs
+from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
+from edge.models import Genome, Fragment, Genome_Fragment, Operation
 
 
 class RemoveOverhangsTest(TestCase):
@@ -82,8 +84,8 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(r[0].start, len(upstream)+1)
-        self.assertEquals(r[0].end, len(template)-len(downstream))
+        self.assertEquals(r[0].start, len(upstream) + 1)
+        self.assertEquals(r[0].end, len(template) - len(downstream))
         self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
         self.assertEquals(r[0].cassette_reversed, False)
         self.assertEquals(r[0].front_arm, front_bs[0:arm_len])
@@ -107,8 +109,8 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(r[0].start, len(template)-8-len(front_bs)+1)
-        self.assertEquals(r[0].end, len(middle)-8+len(back_bs))
+        self.assertEquals(r[0].start, len(template) - 8 - len(front_bs) + 1)
+        self.assertEquals(r[0].end, len(middle) - 8 + len(back_bs))
         self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
         self.assertEquals(r[0].cassette_reversed, False)
         self.assertEquals(r[0].front_arm, front_bs[0:arm_len])
@@ -132,8 +134,8 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(r[0].start, len(template)-8+1)
-        self.assertEquals(r[0].end, len(front_bs+middle+back_bs)-8)
+        self.assertEquals(r[0].start, len(template) - 8 + 1)
+        self.assertEquals(r[0].end, len(front_bs + middle + back_bs) - 8)
         self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
         self.assertEquals(r[0].cassette_reversed, False)
         self.assertEquals(r[0].front_arm, front_bs[0:arm_len])
@@ -157,8 +159,8 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(r[0].start, len(back_bs)-8+len(downstream+upstream)+1)
-        self.assertEquals(r[0].end, len(back_bs)-8)
+        self.assertEquals(r[0].start, len(back_bs) - 8 + len(downstream + upstream) + 1)
+        self.assertEquals(r[0].end, len(back_bs) - 8)
         self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
         self.assertEquals(r[0].cassette_reversed, False)
         self.assertEquals(r[0].front_arm, front_bs[0:arm_len])
@@ -182,8 +184,8 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(r[0].start, len(upstream)+1)
-        self.assertEquals(r[0].end, len(template)-len(downstream))
+        self.assertEquals(r[0].start, len(upstream) + 1)
+        self.assertEquals(r[0].end, len(template) - len(downstream))
         self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
         self.assertEquals(r[0].cassette_reversed, True)
         self.assertEquals(r[0].front_arm, str(Seq(back_bs[-arm_len:]).reverse_complement()))
@@ -207,8 +209,8 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(r[0].start, len(template)-8-len(front_bs)+1)
-        self.assertEquals(r[0].end, len(middle)-8+len(back_bs))
+        self.assertEquals(r[0].start, len(template) - 8 - len(front_bs) + 1)
+        self.assertEquals(r[0].end, len(middle) - 8 + len(back_bs))
         self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
         self.assertEquals(r[0].cassette_reversed, True)
         self.assertEquals(r[0].front_arm, str(Seq(back_bs[-arm_len:]).reverse_complement()))
@@ -232,8 +234,8 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(r[0].start, len(template)-8+1)
-        self.assertEquals(r[0].end, len(front_bs+middle+back_bs)-8)
+        self.assertEquals(r[0].start, len(template) - 8 + 1)
+        self.assertEquals(r[0].end, len(front_bs + middle + back_bs) - 8)
         self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
         self.assertEquals(r[0].cassette_reversed, True)
         self.assertEquals(r[0].front_arm, str(Seq(back_bs[-arm_len:]).reverse_complement()))
@@ -257,8 +259,8 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
         self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
-        self.assertEquals(r[0].start, len(back_bs)-8+len(downstream+upstream)+1)
-        self.assertEquals(r[0].end, len(back_bs)-8)
+        self.assertEquals(r[0].start, len(back_bs) - 8 + len(downstream + upstream) + 1)
+        self.assertEquals(r[0].end, len(back_bs) - 8)
         self.assertEquals(r[0].sequence, ''.join([front_bs, middle, back_bs]))
         self.assertEquals(r[0].cassette_reversed, True)
         self.assertEquals(r[0].front_arm, str(Seq(back_bs[-arm_len:]).reverse_complement()))
@@ -270,7 +272,7 @@ class GenomeRecombinationTest(TestCase):
         middle = "cggcacctgtgagccg"
         back_bs = "taatgaccccgaagcagg"
         downstream = "gttaaggcgcgaacat"
-        replaced = "a"*100
+        replaced = "a" * 100
 
         template = ''.join([upstream, front_bs, middle, back_bs, downstream])
         cassette = ''.join([front_bs, replaced, back_bs])
@@ -289,12 +291,12 @@ class GenomeRecombinationTest(TestCase):
         middle = "cggcacctgtgagccg"
         back_bs = "taatgaccccgaagcagggcatcgtactactgatgcatgcacactgacgta"
         downstream = "gttaaggcgcgaacat"
-        replaced = "a"*100
+        replaced = "a" * 100
 
         template = ''.join([upstream, front_bs, middle, back_bs, downstream])
-        cassette = ''.join(['c'*6+front_bs, replaced, back_bs+'c'*6])
+        cassette = ''.join(['c' * 6 + front_bs, replaced, back_bs + 'c' * 6])
 
-        arm_len = min(len(front_bs), len(back_bs))/2
+        arm_len = min(len(front_bs), len(back_bs)) / 2
         g = self.build_genome(False, template)
         c = recombine(g, cassette, arm_len)
 
@@ -342,8 +344,8 @@ class GenomeRecombinationTest(TestCase):
 
         a = c.fragments.all()[0].indexed_fragment().annotations()
         self.assertEquals(len(a), 1)
-        self.assertEquals(a[0].base_first, len(upstream)+1)
-        self.assertEquals(a[0].base_last, len(upstream+cassette))
+        self.assertEquals(a[0].base_first, len(upstream) + 1)
+        self.assertEquals(a[0].base_last, len(upstream + cassette))
         self.assertEquals(a[0].feature_base_first, 1)
         self.assertEquals(a[0].feature_base_last, len(cassette))
         self.assertEquals(a[0].feature.strand, 1)
@@ -370,8 +372,8 @@ class GenomeRecombinationTest(TestCase):
 
         a = c.fragments.all()[0].indexed_fragment().annotations()
         self.assertEquals(len(a), 1)
-        self.assertEquals(a[0].base_first, len(upstream)+1)
-        self.assertEquals(a[0].base_last, len(upstream+cassette))
+        self.assertEquals(a[0].base_first, len(upstream) + 1)
+        self.assertEquals(a[0].base_last, len(upstream + cassette))
         self.assertEquals(a[0].feature_base_first, 1)
         self.assertEquals(a[0].feature_base_last, len(cassette))
         # on reverse strand
@@ -400,8 +402,8 @@ class GenomeRecombinationTest(TestCase):
 
         a = c.fragments.all()[0].indexed_fragment().annotations()
         self.assertEquals(len(a), 1)
-        self.assertEquals(a[0].base_first, len(downstream+upstream)+1)
-        self.assertEquals(a[0].base_last, len(downstream+upstream+cassette))
+        self.assertEquals(a[0].base_first, len(downstream + upstream) + 1)
+        self.assertEquals(a[0].base_last, len(downstream + upstream + cassette))
         self.assertEquals(a[0].feature_base_first, 1)
         self.assertEquals(a[0].feature_base_last, len(cassette))
         self.assertEquals(a[0].feature.strand, 1)
@@ -489,8 +491,8 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0]['fragment_id'], g.fragments.all()[0].id)
         self.assertEquals(r[0]['fragment_name'], g.fragments.all()[0].name)
-        self.assertEquals(r[0]['start'], len(upstream)+1)
-        self.assertEquals(r[0]['end'], len(template)-len(downstream))
+        self.assertEquals(r[0]['start'], len(upstream) + 1)
+        self.assertEquals(r[0]['end'], len(template) - len(downstream))
         self.assertEquals(r[0]['sequence'], ''.join([front_bs, middle, back_bs]))
         self.assertEquals(r[0]['cassette_reversed'], False)
         self.assertEquals(r[0]['front_arm'], front_bs[0:arm_len])
@@ -535,8 +537,8 @@ class GenomeRecombinationTest(TestCase):
         template = ''.join([upstream, front_bs, middle, back_bs, downstream])
         cassette = ''.join([front_bs, replaced, back_bs])
 
-        f1 = 't'*20+template+'c'*20+template+'c'*30
-        f2 = 't'*40+template+'c'*15+template+'c'*20
+        f1 = 't' * 20 + template + 'c' * 20 + template + 'c' * 30
+        f2 = 't' * 40 + template + 'c' * 15 + template + 'c' * 20
 
         arm_len = min(len(front_bs), len(back_bs))
         g = self.build_genome(False, f1, f2)
@@ -549,11 +551,11 @@ class GenomeRecombinationTest(TestCase):
         sequences = sorted(sequences, key=lambda s: len(s))
 
         self.assertEquals(sequences[0],
-                          't'*20+upstream+cassette+downstream +
-                          'c'*20+upstream+cassette+downstream+'c'*30)
+                          't' * 20 + upstream + cassette + downstream +
+                          'c' * 20 + upstream + cassette + downstream + 'c' * 30)
         self.assertEquals(sequences[1],
-                          't'*40+upstream+cassette+downstream +
-                          'c'*15+upstream+cassette+downstream+'c'*20)
+                          't' * 40 + upstream + cassette + downstream +
+                          'c' * 15 + upstream + cassette + downstream + 'c' * 20)
 
     def test_recombines_multiple_times_on_circular_fragment(self):
         upstream = "gagattgtccgcgtttt"
@@ -566,13 +568,23 @@ class GenomeRecombinationTest(TestCase):
         template = ''.join([upstream, front_bs, middle, back_bs, downstream])
         cassette = ''.join([front_bs, replaced, back_bs])
 
-        f = middle[0:8]+back_bs+downstream+'t'*20+template+'c'*20+upstream+front_bs+middle[8:]
+        f = (
+            middle[0:8]
+            + back_bs
+            + downstream
+            + 't' * 20
+            + template
+            + 'c' * 20
+            + upstream
+            + front_bs
+            + middle[8:]
+        )
         arm_len = min(len(front_bs), len(back_bs))
         g = self.build_genome(True, f)
         c = recombine(g, cassette, arm_len)
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
-                          downstream+'t'*20+upstream+cassette+downstream +
-                          'c'*20+upstream+cassette)
+                          downstream + 't' * 20 + upstream + cassette + downstream +
+                          'c' * 20 + upstream + cassette)
 
     def test_multiple_recombines_return_same_child(self):
         upstream = "gagattgtccgcgtttt"
@@ -811,13 +823,13 @@ class SingleCrossoverTest(TestCase):
         downstream = "gttaaggcgcgaacat"
         insertion = "aaaaaaaaaaaaaaaaaaa"
         locus_len = len(locus)
-        bs_len = int(locus_len/2)
+        bs_len = int(locus_len / 2)
 
         template = ''.join([upstream, locus, downstream])
-        cassette = ''.join([locus[locus_len-bs_len:], insertion, locus[0:bs_len]])
+        cassette = ''.join([locus[locus_len - bs_len:], insertion, locus[0:bs_len]])
 
         g = self.build_genome(False, template)
-        c = recombine(g, cassette, bs_len-2)
+        c = recombine(g, cassette, bs_len - 2)
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
@@ -829,15 +841,15 @@ class SingleCrossoverTest(TestCase):
         downstream = "gttaaggcgcgaacat"
         insertion = "aaaaaaaaaaaaaaaaaaa"
         locus_len = len(locus)
-        gap = self.new_max_gap/2
+        gap = self.new_max_gap / 2
         arm_short = 2
-        bs_len = int(locus_len/2)-(gap-arm_short)
+        bs_len = int(locus_len / 2) - (gap - arm_short)
 
         template = ''.join([upstream, locus, downstream])
-        cassette = ''.join([locus[locus_len-bs_len:], insertion, locus[0:bs_len]])
+        cassette = ''.join([locus[locus_len - bs_len:], insertion, locus[0:bs_len]])
 
         g = self.build_genome(False, template)
-        c = recombine(g, cassette, bs_len-arm_short)
+        c = recombine(g, cassette, bs_len - arm_short)
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
@@ -849,14 +861,14 @@ class SingleCrossoverTest(TestCase):
         downstream = "gttaaggcgcgaacat"
         insertion = "aaaaaaaaaaaaaaaaaaa"
         locus_len = len(locus)
-        bs_len = int(locus_len/2)
+        bs_len = int(locus_len / 2)
 
         template = ''.join([upstream, locus, downstream])
-        cassette = ''.join([locus[locus_len-bs_len:], insertion, locus[0:bs_len]])
+        cassette = ''.join([locus[locus_len - bs_len:], insertion, locus[0:bs_len]])
         cassette = str(Seq(cassette).reverse_complement())
 
         g = self.build_genome(False, template)
-        c = recombine(g, cassette, bs_len-2)
+        c = recombine(g, cassette, bs_len - 2)
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
@@ -868,16 +880,16 @@ class SingleCrossoverTest(TestCase):
         downstream = "gttaaggcgcgaacat"
         insertion = "aaaaaaaaaaaaaaaaaaa"
         locus_len = len(locus)
-        gap = self.new_max_gap/2
+        gap = self.new_max_gap / 2
         arm_short = 2
-        bs_len = int(locus_len/2)-(gap-arm_short)
+        bs_len = int(locus_len / 2) - (gap - arm_short)
 
         template = ''.join([upstream, locus, downstream])
-        cassette = ''.join([locus[locus_len-bs_len:], insertion, locus[0:bs_len]])
+        cassette = ''.join([locus[locus_len - bs_len:], insertion, locus[0:bs_len]])
         cassette = str(Seq(cassette).reverse_complement())
 
         g = self.build_genome(False, template)
-        c = recombine(g, cassette, bs_len-arm_short)
+        c = recombine(g, cassette, bs_len - arm_short)
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,

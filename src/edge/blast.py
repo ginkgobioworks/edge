@@ -1,5 +1,4 @@
 import os
-import re
 import tempfile
 import subprocess
 from django.conf import settings
@@ -68,7 +67,7 @@ class Blast_Result(object):
         return identities
 
     def identity_ratio(self):
-        return self.identities()*1.0/self.alignment_length()
+        return self.identities() * 1.0 / self.alignment_length()
 
 
 def inverse_match(m):

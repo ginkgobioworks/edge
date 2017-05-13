@@ -1,7 +1,12 @@
 from django.test import TestCase
-from edge.models import *
+from django.db import IntegrityError
+
 from edge.management.commands.remove_fragment import remove_fragment
 from edge.management.commands.remove_genome import remove_genome
+from edge.models import (
+    Genome,
+    Fragment,
+)
 
 
 class RemoveTest(TestCase):
@@ -32,7 +37,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             import_gff('TestGenome', f.name)
             self.genome = Genome.objects.get(name='TestGenome')
             os.unlink(f.name)
-        self.assertItemsEqual([f.name for f in self.genome.fragments.all()], ['chrI', 'chrII'])
+        self.assertItemsEqual([fr.name for fr in self.genome.fragments.all()], ['chrI', 'chrII'])
 
     def test_remove_fragment_works(self):
         self.assertItemsEqual([f.name for f in self.genome.fragments.all()], ['chrI', 'chrII'])
@@ -45,7 +50,6 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         self.assertItemsEqual([f.name for f in Fragment.objects.all()], ['chrII'])
 
     def test_cannot_remove_fragment_if_it_has_derived_fragment(self):
-        from django.db import IntegrityError
 
         chrI = [f.indexed_fragment() for f in self.genome.fragments.all() if f.name == 'chrI'][0]
 
@@ -66,7 +70,6 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         self.assertEquals(list(Genome.objects.all()), [])
 
     def test_cannot_remove_genome_if_it_has_derived_genome(self):
-        from django.db import IntegrityError
 
         u = self.genome.update()
         with u.update_fragment_by_name('chrI') as f:

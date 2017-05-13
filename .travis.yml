@@ -1,0 +1,45 @@
+language: python
+python: 2.7
+env:
+  global:
+    - DB_HOST=localhost
+    - DB_NAME=edge_dev
+    - DB_USER=root
+    - DB_PASSWORD=''
+    - NCBI_BIN_DIR=/usr/bin
+    - PRIMER3_BIN=/usr/bin/primer3_core
+    - PRIMER3_CONFIG_DIR=/etc/primer3_config/
+  matrix:
+    - TARGET=test-ci
+    - TARGET=flake8
+
+addons:
+  apt:
+    packages:
+      - ncbi-blast+
+      - primer3
+
+services: mysql
+
+cache:
+  pip: true
+
+before_install:
+  - npm install --global bower
+  - mysql -e "CREATE DATABASE $DB_NAME;"
+install:
+  - pip install --requirement requirements.txt
+  - pip install --editable .
+
+script:
+  - make $TARGET
+
+deploy:
+  provider: pypi
+  user: ginkgodev
+  distributions: sdist bdist_wheel
+  password:
+    secure: Ct+mkoLqk+PhOM5NRnXKeAjEa13hzO0gBvX3DNfUu2GJ50XhjzQeIqpqKGj1Nnxo8zb2t3iiX04HjUwdT5TSOzL6vwp1/JSJ8zu8fQCD9lko+oW+fTwzdGxU9eT9WFiTD6iu9ZrLoji0GxO/9sSIStoN5aUAWPi0VnMvYVPCQqq027BZtgSeRA8cCTwuHav0SeSeCCmO7EWGW/DmaUoLuH44PPplp39ubtYDqTs1LO2hcslzUdeDHWxKEHkYqC3A/H60S5Zx6zUzoD/pRnLJhMbwHrx0aSgtS5Idn8W/2pfh5uu7v06Gke1RKK0V3C5qtZRUzy64vGK0DsZZS3wvCPCfwyeiW4+NdlVFw7JUn2ipUiSnNNRaq3qoIALkrLRpw1C0DDVW/xAbvKifQC9VBZ63nh7pSD1xAfcokY8VBCVhzPbVMPUaBs0ePYHT7Niu/5N/EdoC9ZmiLWJ2n9iq6yzJ4h/ETg3hQpjl/vuy+5k5wygpDWVQg/JpqwXhK7EboKSNAluVJBLVxJUMGAafYAev1hvhE58SGVqjhXwUR7kmSB6rdld1tsJVe1Je6F5x/c2ceAzXUTkSXjTykEJBje2BHvhwepLbTT0Pldsx7LsMg4Kae4wYMKeKqFJL+05Cplwavb/SuOUU1ABcYM3KOlflgjB9nKzHz/JogkJmpmg=
+  on:
+    tags: true
+    repo: ginkgobioworks/edge

@@ -1,7 +1,12 @@
 from django.utils import timezone
 from django.db import models
 from django.db.models import Q
-from edge.models.chunk import *
+
+from edge.models.chunk import (
+    Annotation,
+    Chunk_Feature,
+    Fragment_Chunk_Location,
+)
 from edge.models.fragment_writer import Fragment_Writer
 from edge.models.fragment_annotator import Fragment_Annotator
 from edge.models.fragment_updater import Fragment_Updater
@@ -45,7 +50,7 @@ class Fragment(models.Model):
             new_fragment.insert_bases(None, sequence)
         else:
             for i in range(0, len(sequence), initial_chunk_size):
-                new_fragment.insert_bases(None, sequence[i:i+initial_chunk_size])
+                new_fragment.insert_bases(None, sequence[i:i + initial_chunk_size])
         return new_fragment
 
     def predecessors(self):
@@ -95,7 +100,7 @@ class Fragment(models.Model):
                 entries.append(Fragment_Chunk_Location(fragment_id=self.id,
                                                        chunk_id=chunk.id,
                                                        base_first=i,
-                                                       base_last=i+len(chunk.sequence)-1))
+                                                       base_last=i + len(chunk.sequence) - 1))
 
                 i += len(chunk.sequence)
         Fragment_Chunk_Location.bulk_create(entries)
@@ -168,7 +173,7 @@ class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_U
 
     def circ_bp(self, bp):
         if self.circular is True:
-            return ((bp-1) % self.length)+1
+            return ((bp - 1) % self.length) + 1
         return bp
 
     @property
@@ -196,13 +201,13 @@ class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_U
 
         for fcl in q:
             s = fcl.chunk.sequence
-            if last_chunk_base_last is not None and fcl.base_first != last_chunk_base_last+1:
+            if last_chunk_base_last is not None and fcl.base_first != last_chunk_base_last + 1:
                 raise Exception('Fragment chunk location table missing chunks before %s'
                                 % (fcl.base_first,))
             if bp_lo is not None and fcl.base_first < bp_lo:
-                s = s[bp_lo-fcl.base_first:]
+                s = s[bp_lo - fcl.base_first:]
             if bp_hi is not None and fcl.base_last > bp_hi:
-                s = s[:bp_hi-fcl.base_last]
+                s = s[:bp_hi - fcl.base_last]
             sequence.append(s)
             last_chunk_base_last = fcl.base_last
 
@@ -224,7 +229,7 @@ class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_U
             assert self.circular is True
             s1 = self.__get_linear_sequence(bp_lo=bp_lo)
             s2 = self.__get_linear_sequence(bp_hi=bp_hi)
-            return s1+s2
+            return s1 + s2
 
     @property
     def sequence(self):

@@ -56,10 +56,10 @@ def primer3_run(opts):
         fn = f.name
         for k in opts:
             f.write('%s=%s\n' % (k, opts[k]))
-        f.write('PRIMER_THERMODYNAMIC_PARAMETERS_PATH=%s/primer3_config/\n' % settings.PRIMER3_DIR)
+        f.write('PRIMER_THERMODYNAMIC_PARAMETERS_PATH=%s\n' % settings.PRIMER3_CONFIG_DIR)
         f.write('=')
 
-    cmd = "%s/primer3_core %s" % (settings.PRIMER3_DIR, fn)
+    cmd = "%s %s" % (settings.PRIMER3_BIN, fn)
     out = subprocess.check_output(cmd.split(' '))
     os.unlink(fn)
     r = {}
@@ -73,7 +73,7 @@ def primer3_run(opts):
 
 def design_primers_from_template(template, roi_start, roi_len, junctions, primer3_opts):
     primer3_opts = {} if primer3_opts is None else primer3_opts
-    min_primer_product_size = min(PRIMER3_MIN_PRIMER*2+roi_len, len(template))
+    min_primer_product_size = min(PRIMER3_MIN_PRIMER * 2 + roi_len, len(template))
     max_primer_product_size = len(template)
 
     opts = {}
@@ -99,8 +99,8 @@ def design_primers_from_template(template, roi_start, roi_len, junctions, primer
             p2_rc = str(Seq(p2).reverse_complement())
             p1_i = template.lower().index(p1.lower())
             p2_i = template.lower().index(p2_rc.lower())
-            primer['PRIMER_LEFT_SEQUENCE_DISTANCE_TO_JUNCTION'] = junctions[0]-(p1_i+len(p1))
-            primer['PRIMER_RIGHT_SEQUENCE_DISTANCE_TO_JUNCTION'] = p2_i-junctions[-1]
+            primer['PRIMER_LEFT_SEQUENCE_DISTANCE_TO_JUNCTION'] = junctions[0] - (p1_i + len(p1))
+            primer['PRIMER_RIGHT_SEQUENCE_DISTANCE_TO_JUNCTION'] = p2_i - junctions[-1]
 
     return primers
 
@@ -113,11 +113,11 @@ def design_primers(fragment, roi_start_bp, roi_len, upstream_window, downstream_
     opts = {} if opts is None else opts
     fragment = fragment.indexed_fragment()
 
-    roi = fragment.get_sequence(bp_lo=roi_start_bp, bp_hi=roi_start_bp+roi_len-1)
-    bp_lo = roi_start_bp-upstream_window
-    bp_hi = roi_start_bp+roi_len-1+downstream_window
+    roi = fragment.get_sequence(bp_lo=roi_start_bp, bp_hi=roi_start_bp + roi_len - 1)
+    bp_lo = roi_start_bp - upstream_window
+    bp_hi = roi_start_bp + roi_len - 1 + downstream_window
     template = fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
 
-    roi_start = template.index(roi)+1
+    roi_start = template.index(roi) + 1
     return design_primers_from_template(template, roi_start, len(roi),
-                                        [upstream_window, upstream_window+len(roi)-1], opts)
+                                        [upstream_window, upstream_window + len(roi) - 1], opts)

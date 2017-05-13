@@ -4,7 +4,7 @@ gff = []
 fasta = []
 
 for fn in sys.argv[1:]:
-  f = open(fn+'.gff', 'r')
+  f = open(fn + '.gff', 'r')
   g = []
   s = []
   fasta_mode = False

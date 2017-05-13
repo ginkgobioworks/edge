@@ -1,8 +1,8 @@
-import os
 import json
 import re
-import tempfile
 from django.test import TestCase
+
+from edge.models import Genome, Fragment, Genome_Fragment
 
 
 class GenomeListTest(TestCase):
@@ -38,8 +38,6 @@ class GenomeListTest(TestCase):
         self.assertEquals(json.loads(res.content), json.loads(re2.content))
 
     def test_finds_genomes_with_specified_fragment_ids(self):
-        from edge.models import Genome, Fragment, Genome_Fragment
-
         g1 = Genome(name='Foo')
         g1.save()
         g2 = Genome(name='Bar')
@@ -198,7 +196,7 @@ class GenomeTest(TestCase):
 
     def test_add_non_circular_fragment(self):
         data = dict(name='chrI', sequence='AGCTAGCTTCGATCGA')
-        res = self.client.post(self.genome_uri+'fragments/', data=json.dumps(data),
+        res = self.client.post(self.genome_uri + 'fragments/', data=json.dumps(data),
                                content_type='application/json')
         self.assertEquals(res.status_code, 201)
         uri = json.loads(res.content)['uri']
@@ -215,7 +213,7 @@ class GenomeTest(TestCase):
 
     def test_add_circular_fragment(self):
         data = dict(name='chrI', sequence='AGCTAGCTTCGATCGA', circular=True)
-        res = self.client.post(self.genome_uri+'fragments/', data=json.dumps(data),
+        res = self.client.post(self.genome_uri + 'fragments/', data=json.dumps(data),
                                content_type='application/json')
         self.assertEquals(res.status_code, 201)
         uri = json.loads(res.content)['uri']
@@ -232,7 +230,7 @@ class GenomeTest(TestCase):
 
     def test_get_genome_returns_fragments(self):
         data = dict(name='chrI', sequence='AGCTAGCTTCGATCGA', circular=True)
-        res = self.client.post(self.genome_uri+'fragments/',
+        res = self.client.post(self.genome_uri + 'fragments/',
                                data=json.dumps(data), content_type='application/json')
         uri = json.loads(res.content)['uri']
         m = re.match(r'^/edge/fragments/(\d+)/$', uri)
@@ -249,7 +247,7 @@ class GenomeTest(TestCase):
 
     def test_can_use_uri_from_add_fragment_to_fetch_fragment(self):
         data = dict(name='chrI', sequence='AGCTAGCTTCGATCGA')
-        res = self.client.post(self.genome_uri+'fragments/', data=json.dumps(data),
+        res = self.client.post(self.genome_uri + 'fragments/', data=json.dumps(data),
                                content_type='application/json')
         re2 = self.client.get(json.loads(res.content)['uri'])
         self.assertEquals(re2.status_code, 200)
@@ -324,7 +322,7 @@ class FragmentTest(TestCase):
         })
 
     def test_get_fragment_sequence(self):
-        res = self.client.get(self.uri+'sequence/')
+        res = self.client.get(self.uri + 'sequence/')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), {
             'sequence': self.sequence,
@@ -333,7 +331,7 @@ class FragmentTest(TestCase):
         })
 
     def test_get_fragment_sequence_by_position(self):
-        res = self.client.get(self.uri+'sequence/?f=3&l=10')
+        res = self.client.get(self.uri + 'sequence/?f=3&l=10')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), {
             'sequence': self.sequence[2:10],
@@ -347,11 +345,11 @@ class FragmentTest(TestCase):
 
     def test_add_annotation_on_forward_strand(self):
         data = dict(base_first=2, base_last=9, name='proC', type='promoter', strand=1)
-        res = self.client.post(self.uri+'annotations/', data=json.dumps(data),
+        res = self.client.post(self.uri + 'annotations/', data=json.dumps(data),
                                content_type='application/json')
         self.assertEquals(res.status_code, 201)
         self.assertEquals(json.loads(res.content), {})
-        res = self.client.get(self.uri+'annotations/')
+        res = self.client.get(self.uri + 'annotations/')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), [{
             "base_first": 2,
@@ -367,11 +365,11 @@ class FragmentTest(TestCase):
 
     def test_add_annotation_on_reverse_strand(self):
         data = dict(base_first=3, base_last=10, name='proC', type='promoter', strand=-1)
-        res = self.client.post(self.uri+'annotations/', data=json.dumps(data),
+        res = self.client.post(self.uri + 'annotations/', data=json.dumps(data),
                                content_type='application/json')
         self.assertEquals(res.status_code, 201)
         self.assertEquals(json.loads(res.content), {})
-        res = self.client.get(self.uri+'annotations/')
+        res = self.client.get(self.uri + 'annotations/')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), [{
             "base_first": 3,
@@ -387,12 +385,12 @@ class FragmentTest(TestCase):
 
     def test_get_multiple_annotations(self):
         data = dict(base_first=2, base_last=9, name='proC', type='promoter', strand=1)
-        res = self.client.post(self.uri+'annotations/', data=json.dumps(data),
+        res = self.client.post(self.uri + 'annotations/', data=json.dumps(data),
                                content_type='application/json')
         data = dict(base_first=3, base_last=10, name='proD', type='promoter', strand=-1)
-        res = self.client.post(self.uri+'annotations/', data=json.dumps(data),
+        res = self.client.post(self.uri + 'annotations/', data=json.dumps(data),
                                content_type='application/json')
-        res = self.client.get(self.uri+'annotations/')
+        res = self.client.get(self.uri + 'annotations/')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), [{
             "base_first": 2,
@@ -418,12 +416,12 @@ class FragmentTest(TestCase):
 
     def test_get_annotations_by_region(self):
         data = dict(base_first=2, base_last=8, name='proC', type='promoter', strand=1)
-        res = self.client.post(self.uri+'annotations/', data=json.dumps(data),
+        res = self.client.post(self.uri + 'annotations/', data=json.dumps(data),
                                content_type='application/json')
         data = dict(base_first=10, base_last=13, name='proD', type='promoter', strand=-1)
-        res = self.client.post(self.uri+'annotations/', data=json.dumps(data),
+        res = self.client.post(self.uri + 'annotations/', data=json.dumps(data),
                                content_type='application/json')
-        res = self.client.get(self.uri+'annotations/')
+        res = self.client.get(self.uri + 'annotations/')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), [{
             "base_first": 2,
@@ -446,7 +444,7 @@ class FragmentTest(TestCase):
             "feature_base_first": 1,
             "feature_base_last": 4,
         }])
-        res = self.client.get(self.uri+'annotations/?f=8&l=14')
+        res = self.client.get(self.uri + 'annotations/?f=8&l=14')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), [{
             "base_first": 2,
@@ -469,7 +467,7 @@ class FragmentTest(TestCase):
             "feature_base_first": 1,
             "feature_base_last": 4,
         }])
-        res = self.client.get(self.uri+'annotations/?f=9&l=14')
+        res = self.client.get(self.uri + 'annotations/?f=9&l=14')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), [{
             "base_first": 10,
@@ -498,20 +496,20 @@ class FragmentTest(TestCase):
             bl = random.randint(bf, flen)
             fragment.annotate(bf, bl, 'Feature %s' % (n,), 'Feature', 1)
 
-        res = self.client.get(self.uri+'annotations/')
+        res = self.client.get(self.uri + 'annotations/')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(len(json.loads(res.content)), nannotations)
 
         # limit number of annotations
-        res = self.client.get(self.uri+'annotations/?m=1')
+        res = self.client.get(self.uri + 'annotations/?m=1')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(len(json.loads(res.content)), 1)
 
-        res = self.client.get(self.uri+'annotations/?m=%s' % (nannotations,))
+        res = self.client.get(self.uri + 'annotations/?m=%s' % (nannotations,))
         self.assertEquals(res.status_code, 200)
         self.assertEquals(len(json.loads(res.content)), nannotations)
 
-        res = self.client.get(self.uri+'annotations/?m=0')
+        res = self.client.get(self.uri + 'annotations/?m=0')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(len(json.loads(res.content)), 0)
 
@@ -524,17 +522,17 @@ class GenomeAnnotationsTest(TestCase):
         self.genome_uri = json.loads(res.content)['uri']
 
         data = dict(name='chrI', sequence='AGCTAGCTTCGATCGA')
-        res = self.client.post(self.genome_uri+'fragments/', data=json.dumps(data),
+        res = self.client.post(self.genome_uri + 'fragments/', data=json.dumps(data),
                                content_type='application/json')
         self.fragment_uri = json.loads(res.content)['uri']
 
         self.fragment_data = json.loads(res.content)
         data = dict(base_first=2, base_last=9, name='proC', type='promoter', strand=1)
-        res = self.client.post(self.fragment_uri+'annotations/', data=json.dumps(data),
+        res = self.client.post(self.fragment_uri + 'annotations/', data=json.dumps(data),
                                content_type='application/json')
 
     def test_find_annotation(self):
-        res = self.client.get(self.genome_uri+'annotations/?q=proC')
+        res = self.client.get(self.genome_uri + 'annotations/?q=proC')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), [[
             self.fragment_data, [

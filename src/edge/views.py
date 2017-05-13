@@ -1,23 +1,19 @@
 import json
 import random
-import os
-import mimetypes
 
-from contextlib import contextmanager
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, StreamingHttpResponse
+from django.http import HttpResponse
 from django.views.generic.base import View
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.db import transaction
-from django.core.servers.basehttp import FileWrapper
 
-from edge.models import *
-from edge.io import *
+from edge.models import Fragment, Genome, Operation
+from edge.io import IO
 
 
 def genome_export(request, genome_id):
-    genome = get_genome_or_404(genome_id)
+    get_genome_or_404(genome_id)
     io = IO(Genome.objects.get(pk=genome_id))
 
     response = HttpResponse(content_type='text/plain')
@@ -140,7 +136,7 @@ class FragmentSequenceView(ViewBase):
         if f is None:
             f = 1
         if l is None:
-            l = f+len(s)-1
+            l = f + len(s) - 1
         return {'sequence': s, 'base_first': f, 'base_last': l}
 
 
@@ -172,9 +168,9 @@ class FragmentAnnotationsView(ViewBase):
         if m is not None and len(annotations) > m:
             to_return = []
             while len(to_return) < m:
-                i = random.randint(0, len(annotations)-1)
+                i = random.randint(0, len(annotations) - 1)
                 to_return.append(annotations[i])
-                new_a = annotations[0:i]+annotations[i+1:]
+                new_a = annotations[0:i] + annotations[i + 1:]
                 annotations = new_a
             annotations = to_return
         return [FragmentAnnotationsView.to_dict(annotation) for annotation in annotations]
@@ -212,9 +208,9 @@ class FragmentListView(ViewBase):
         q = args['q']
         p = 200 if p > 200 else p
         if q is not None and q.strip() != '':
-            fragments = Fragment.user_defined_fragments(Q(name__icontains=q), s, s+p)
+            fragments = Fragment.user_defined_fragments(Q(name__icontains=q), s, s + p)
         else:
-            fragments = Fragment.user_defined_fragments(None, s, s+p)
+            fragments = Fragment.user_defined_fragments(None, s, s + p)
         return [FragmentView.to_dict(fragment) for fragment in fragments]
 
     @transaction.atomic()
@@ -371,16 +367,16 @@ class GenomeListView(ViewBase):
             if q is not None and q.strip() != '':
                 where = Q(name__icontains=q)
                 try:
-                    id = int(q)
+                    int(q)  # See if q can be converted to an int
                 except:
                     pass
                 else:
                     where = where | Q(id=q)
                 genomes = Genome.objects.filter(active=True)\
                                         .filter(where)\
-                                        .order_by('-id')[s:s+p]
+                                        .order_by('-id')[s:s + p]
             else:
-                genomes = Genome.objects.filter(active=True).order_by('-id')[s:s+p]
+                genomes = Genome.objects.filter(active=True).order_by('-id')[s:s + p]
         return [GenomeView.to_dict(genome,
                                    compute_length=False,
                                    include_fragments=False,

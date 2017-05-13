@@ -17,5 +17,6 @@ def main(gb_file):
     with open(out_file, "w") as out_handle:
         GFF.write(SeqIO.parse(gb_file, "genbank"), out_handle, include_fasta=True)
 
+
 if __name__ == "__main__":
     main(*sys.argv[1:])

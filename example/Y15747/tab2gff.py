@@ -1,7 +1,7 @@
 import re
 import sys
 
-f = open(sys.argv[1],"r")
+f = open(sys.argv[1], "r")
 lines = f.readlines()
 f.close()
 
@@ -31,7 +31,7 @@ for line in lines:
 
   print "chr%s\tAmyris\t%s\t%s\t%s\t.\t%s\t0\tID=%s;Name=%s;%sNote=%s" % (chr, type, start, end, strand, name, alias, gene, notes)
 
-f = open(sys.argv[2],"r")
+f = open(sys.argv[2], "r")
 lines = f.readlines()
 f.close()
 

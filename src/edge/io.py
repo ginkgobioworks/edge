@@ -38,7 +38,7 @@ class IO(object):
 
             for annotation in fragment.annotations():
                 # FeatureLocation first bp is AfterPosition, so -1
-                loc = FeatureLocation(annotation.base_first-1, annotation.base_last)
+                loc = FeatureLocation(annotation.base_first - 1, annotation.base_last)
                 qualifiers = {'name': annotation.feature.name}
                 feature = SeqFeature(loc,
                                      type=annotation.feature.type,

@@ -63,8 +63,8 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
         return None
 
     # get sequence between primers
-    bp_lo = fwd_primer_res.subject_end+1
-    bp_hi = rev_primer_res.subject_end-1
+    bp_lo = fwd_primer_res.subject_end + 1
+    bp_hi = rev_primer_res.subject_end - 1
 
     product_mid = fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi)
     if len(product_mid) > MAX_PCR_SIZE:
@@ -72,10 +72,10 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
 
     product = '%s%s%s' % (fwd_primer, product_mid, str(Seq(rev_primer).reverse_complement()))
 
-    bs_start = (fwd_primer_res.subject_end+1) -\
-               (fwd_primer_res.query_end-fwd_primer_res.query_start+1)
-    bs_end = (rev_primer_res.subject_end-1) +\
-             (rev_primer_res.query_end-rev_primer_res.query_start+1)
+    bs_start = (fwd_primer_res.subject_end + 1) -\
+               (fwd_primer_res.query_end - fwd_primer_res.query_start + 1)
+    bs_end = (rev_primer_res.subject_end - 1) +\
+             (rev_primer_res.query_end - rev_primer_res.query_start + 1)
 
     bs_start = fragment.circ_bp(bs_start)
     bs_end = fragment.circ_bp(bs_end)

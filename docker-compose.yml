@@ -1,0 +1,32 @@
+version: '2.1'
+
+services:
+  edge:
+    build:
+      context: .
+    image: edge
+    depends_on:
+      - edge-db
+    volumes:
+      - .:${EDGE_HOME:-/usr/src/edge}
+      - ncbi:${EDGE_HOME:-/usr/src/edge}/ncbi
+    ports:
+      - 9000:8000
+    environment:
+      DB_HOST: edge-db
+      DB_NAME: edge_dev
+      DB_USER: root
+      DB_PASSWORD: edge-dev-pw
+    tty: true
+
+  edge-db:
+    image: mysql:5.5
+    environment:
+      MYSQL_ROOT_PASSWORD: edge-dev-pw
+      MYSQL_DATABASE: edge_dev
+    volumes:
+      - edge-db-data:/var/lib/mysql
+
+volumes:
+  edge-db-data:
+  ncbi:
