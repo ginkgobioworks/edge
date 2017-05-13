@@ -138,6 +138,7 @@ bump the version number with the appropriate severity of the changes (major, min
 push the resulting tagged commits to the GitHub remote repo:
 
 ::
+
     you@localhost:edge$ make bump/patch-ext # Or bump/major, or bmp/minor
     you@localhost:edge$ git push --tags origin master
 
