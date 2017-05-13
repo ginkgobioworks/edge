@@ -75,6 +75,7 @@ To start a server, first update ``src/server/settings.py`` to use either sqlite 
 create the appropriate databse. Then,
 
 ::
+
     make migrate
     (cd example; gunzip ecoli-mg1655.gff.gz; gunzip yeast.gff.gz)
     python src/manage.py import_gff 'E. coli MG1655' example/ecoli-mg1655.gff
