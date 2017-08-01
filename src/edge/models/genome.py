@@ -15,7 +15,7 @@ class Genome(models.Model, Genome_Updater):
     class Meta:
         app_label = "edge"
 
-    name = models.CharField(max_length=256)
+    name = models.TextField()
     parent = models.ForeignKey('self', null=True, on_delete=models.PROTECT,
                                related_name='children')
     notes = models.TextField(null=True, blank=True)
