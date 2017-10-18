@@ -98,6 +98,7 @@ migrate: syncdb
 	${MANAGE} migrate
 
 syncdb:
+	sleep 5
 	${MANAGE} syncdb --noinput
 
 watch: install_bower
