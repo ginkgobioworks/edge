@@ -17,6 +17,7 @@ services:
       DB_NAME: edge_dev
       DB_USER: root
       DB_PASSWORD: edge-dev-pw
+      AMQP_URL: 'amqp://guest@rabbit:5672//'
     tty: true
 
   edge-db:
@@ -26,6 +27,10 @@ services:
       MYSQL_DATABASE: edge_dev
     volumes:
       - edge-db-data:/var/lib/mysql
+  
+  rabbit:
+    image: rabbitmq
+
 
 volumes:
   edge-db-data:
