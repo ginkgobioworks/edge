@@ -32,15 +32,29 @@ the UI is primitive compared to other specialized applications.
 
 Try it using Docker
 -------------------
+* Use ``docker-compose``:
 
+To start edge server:
+::
+    
+    docker-compose up
+Then check it out in your browser: http://localhost:9000/edge/#/genomes
+To import an genome using:
+::
+    docker-compose run edge python src/manage.py import_gff 'Saccharomyces cerevisiae' example/sc_s288c.gff
+To run a shell inside the edge container
+::
+    docker-compose run --rm edge bash
+
+* Alternatively, you can use the ``Makefile``:
+
+To start edge server:
 ::
 
     make start-ext
 
-Then check it out in your browser: http://localhost:9000/edge/#/genomes
 
-Example: to import an genome, try
-
+To import an genome as an example:
 ::
 
     make add-s288c-ext
