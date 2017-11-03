@@ -13,7 +13,7 @@ help:
 	@echo "clean - remove both build and Python artifacts"
 	@echo "install_bower - install JS dependencies with bower"
 	@echo "build_assets - build the static assets"
-	@echo "migrate, syncdb - set up the db"
+	@echo "migrate - set up the db"
 	@echo "add-s288c - load example data into the db"
 	@echo "dbshell, shell - run a sql or python shell with the app & db loaded"
 	@echo "test - run base python tests"
@@ -94,12 +94,9 @@ start: clean migrate run
 run: install_bower build_assets
 	${MANAGE} runserver ${EDGE_IP}:${EDGE_PORT}
 
-migrate: syncdb
-	${MANAGE} migrate
-
-syncdb:
+migrate:
 	sleep 5
-	${MANAGE} syncdb --noinput
+	${MANAGE} migrate --run-syncdb --noinput
 
 watch: install_bower
 	${MANAGE} assets watch
