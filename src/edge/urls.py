@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.views.generic.base import TemplateView
 
 from edge.views import (
@@ -17,8 +17,7 @@ from edge.views import (
     genome_export,
 )
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
 
     # UI: previously we set / to redirect to a static page, permanently. That
     # was a bad idea. First, we really want to use a template to take advantage
@@ -49,4 +48,4 @@ urlpatterns = patterns(
     url('^genomes/(?P<genome_id>\d+)/crispr/dsb/$', GenomeCrisprDSBView.as_view()),
 
     url('^genomes/(?P<genome_id>\d+)/export/$', genome_export),
-)
+]

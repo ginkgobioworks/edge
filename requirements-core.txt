@@ -1,11 +1,9 @@
 # django
 pytz == 2017.2
-Django == 1.6.11
-South == 1.0.2
+Django == 1.11.6
 
 # Celery
 celery == 3.1.25
-django-celery == 3.1.1
 flower==0.9.1
 
 # gff parsing

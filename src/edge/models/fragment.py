@@ -153,7 +153,7 @@ class Fragment_Index(models.Model):
     updated_on = models.DateTimeField('Updated', null=True)
 
 
-class Indexed_Fragment(Fragment, Fragment_Writer, Fragment_Annotator, Fragment_Updater):
+class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fragment):
     """
     An Indexed_Fragment is a Fragment with chunk location index. You need chunk
     location index to efficiently find annotations and bp positions.

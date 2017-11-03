@@ -32,12 +32,11 @@ TESTING = sys.argv[1:2] == ['test']
 
 BROKER_URL = os.environ.get('AMQP_URL', 'amqp://guest@localhost:5672//')
 
-import djcelery
-djcelery.setup_loader()
-CELERY_SEND_TASK_SENT_EVENT = True
 
 if TESTING:
   CELERY_ALWAYS_EAGER = True  # skip the daemon
+else:
+  CELERY_SEND_TASK_SENT_EVENT = True
 
 # Application definition
 
@@ -49,15 +48,12 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_assets',
-    'south',
     'edge',
-    'djcelery',
 )
 
 if TESTING:
     INSTALLED_APPS += ('django_nose',)
     TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-    SOUTH_TESTS_MIGRATE = False
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
