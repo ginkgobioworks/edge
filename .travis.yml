@@ -6,6 +6,7 @@ env:
     - DB_NAME=edge_dev
     - DB_USER=root
     - DB_PASSWORD=''
+    - CELERY_CONFIG_MODULE=server.settings
     - NCBI_BIN_DIR=/usr/bin
     - PRIMER3_BIN=/usr/bin/primer3_core
     - PRIMER3_CONFIG_DIR=/etc/primer3_config/
