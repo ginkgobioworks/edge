@@ -32,11 +32,10 @@ TESTING = sys.argv[1:2] == ['test']
 
 BROKER_URL = os.environ.get('AMQP_URL', 'amqp://guest@localhost:5672//')
 
+CELERY_SEND_TASK_SENT_EVENT = True
 
 if TESTING:
   CELERY_ALWAYS_EAGER = True  # skip the daemon
-else:
-  CELERY_SEND_TASK_SENT_EVENT = True
 
 # Application definition
 
