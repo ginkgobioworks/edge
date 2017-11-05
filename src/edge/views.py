@@ -226,7 +226,7 @@ class GenomeView(ViewBase):
 
     @staticmethod
     def op_to_dict(genome, op):
-        choices = Operation._meta.get_field_by_name('type')[0].choices
+        choices = Operation._meta.get_field('type').choices
         type_str = [t[1] for t in choices if t[0] == op.type]
         if len(type_str) > 0:
             type_str = type_str[0]

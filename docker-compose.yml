@@ -7,6 +7,7 @@ services:
     image: edge
     depends_on:
       - edge-db
+      - rabbit
     volumes:
       - .:${EDGE_HOME:-/usr/src/edge}
       - ncbi:${EDGE_HOME:-/usr/src/edge}/ncbi
@@ -17,6 +18,7 @@ services:
       DB_NAME: edge_dev
       DB_USER: root
       DB_PASSWORD: edge-dev-pw
+      CELERY_CONFIG_MODULE: server.settings
       AMQP_URL: 'amqp://guest@rabbit:5672//'
     tty: true
 

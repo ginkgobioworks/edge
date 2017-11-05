@@ -1,7 +1,7 @@
 from edge.models.chunk import Feature
 
 
-class Fragment_Annotator:
+class Fragment_Annotator(object):
     """
     Mixin for annotating a fragment.
     """
