@@ -29,7 +29,6 @@ help:
 	@echo "build_edge_blastdb, build_genome_blastdb - custom manage.py django commands"
 	@echo "export_gff, import_gff - custom manage.py django commands"
 	@echo "remove_fragment, remove_genome - custom manage.py django commands"
-	@echo "push - push the image to the docker registry"
 	@echo "NB: add '-ext' to any target to run it inside the image from the host machine; will"
 	@echo "    rebuild the image."
 	@echo "    add '-ext_fast' to any target to run it from the host machine in the image"
