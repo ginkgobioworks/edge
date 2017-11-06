@@ -1,7 +1,4 @@
 db.sqlite3*
 test.db*
 .webassets-cache
-edge/static/edge/edge.css
-edge/static/edge/edge.js
-edge/static/edge/edge.min.js
-edge/static/edge/edge_jst.js
+edge/static/edge/assets/
