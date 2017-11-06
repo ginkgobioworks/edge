@@ -62,3 +62,6 @@ test.db*
 
 # don't check in NCBI data
 ncbi/
+
+# compiled static files
+static/

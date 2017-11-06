@@ -10,7 +10,7 @@ flower==0.9.1
 bcbio-gff == 0.4
 
 # Web assets
-django_assets == 0.8
+django_assets == 0.12
 jsmin == 2.0.9
 
 numpy == 1.12.1

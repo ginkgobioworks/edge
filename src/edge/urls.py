@@ -26,7 +26,7 @@ urlpatterns = [
     # we have to add a redirect from the static page to the /ui/ URL, for any
     # browser that have the redirect memorized.
 
-    url(r'^/?$', TemplateView.as_view(template_name='edge/edge.html'), name='edge-ui'),
+    url(r'^$', TemplateView.as_view(template_name='edge/edge.html'), name='edge-ui'),
     url(r'^ui/?$', TemplateView.as_view(template_name='edge/edge.html')),
 
     # APIs

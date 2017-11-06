@@ -8,8 +8,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+import sys
 import os
+
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # Quick-start development settings - unsuitable for production
@@ -21,11 +23,9 @@ SECRET_KEY = 't9+m%qyni5%=__s8brz#tf#lv^1wy6)zj#m_2re&(_c(!_pixl'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-import sys
 TESTING = sys.argv[1:2] == ['test']
 
 # for Django Celery
@@ -35,7 +35,25 @@ BROKER_URL = os.environ.get('AMQP_URL', 'amqp://guest@localhost:5672//')
 CELERY_SEND_TASK_SENT_EVENT = True
 
 if TESTING:
-  CELERY_ALWAYS_EAGER = True  # skip the daemon
+    CELERY_ALWAYS_EAGER = True  # skip the daemon
+
+# Tempalte loaders
+TEMPLATES = [{
+    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'APP_DIRS': True,
+    'OPTIONS': {
+        'debug': DEBUG,
+        'context_processors': [
+            'django.contrib.auth.context_processors.auth',
+            'django.template.context_processors.debug',
+            'django.template.context_processors.media',
+            'django.template.context_processors.static',
+            'django.template.context_processors.tz',
+            'django.template.context_processors.request',
+            'django.contrib.messages.context_processors.messages',
+        ],
+    },
+}]
 
 # Application definition
 
@@ -57,7 +75,7 @@ if TESTING:
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -78,12 +96,14 @@ DATABASES = {
     },
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
-        'OPTIONS': { "init_command": "SET storage_engine=INNODB;" },
-        'HOST': os.getenv("DB_HOST", ""),
-        'PORT': "",
-        'NAME': os.getenv("DB_NAME", ""),
-        'USER': os.getenv("DB_USER", ""),
-        'PASSWORD': os.getenv('DB_PASSWORD', ""),
+        'OPTIONS': {
+            'init_command': "SET storage_engine=INNODB; SET sql_mode='STRICT_TRANS_TABLES';"
+        },
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': '',
+        'NAME': os.getenv('DB_NAME', ''),
+        'USER': os.getenv('DB_USER', ''),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'ATOMIC_REQUESTS': True,
     }
 }
@@ -111,9 +131,22 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.6/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Files compiled with django's assets go in the static directory in the project root
+STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static')
+
+STATICFILES_FINDERS = (
+   'django.contrib.staticfiles.finders.FileSystemFinder',
+   'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+   # XXX We do not automatically use django-assets finder here, as it is buggy.
+   # Instead, we use staticfiles for everything, and manually manage compilation of webassests
+   # via `setup.py build_assets`, or the `manage.py assets build`
+)
+
+# All django-assets paths in apps' assets.py files are relative to BASE_DIR
+ASSETS_ROOT = BASE_DIR
 
 LOGGING = {
     'version': 1,
@@ -130,7 +163,7 @@ LOGGING = {
         }
     },
     'loggers': {
-        #'django.db.backends': { 'level': 'DEBUG', 'handlers': ['console'], },
+        # 'django.db.backends': { 'level': 'DEBUG', 'handlers': ['console'], },
     },
 }
 
@@ -146,6 +179,6 @@ PRIMER3_CONFIG_DIR = os.getenv('PRIMER3_CONFIG_DIR', BASE_DIR + '/../primer3/pri
 
 
 NOSE_ARGS = [
-  '--with-coverage',
-  '--cover-package=edge',
+    '--with-coverage',
+    '--cover-package=edge',
 ]

@@ -2,13 +2,28 @@
 from __future__ import print_function
 
 import os
-from subprocess import check_output, STDOUT
+import sys
+from subprocess import (
+    CalledProcessError,
+    STDOUT,
+    check_output,
+)
 
 from setuptools import setup, find_packages, Command
 from setuptools.command.sdist import sdist
 
 
-class BowerInstallCommand(Command):
+class SubproccessCommand(Command):
+    def _run_with_output(self, *args, **kwargs):
+        try:
+            print(check_output(*args, **kwargs))
+        except CalledProcessError as e:
+            print(e.output, file=sys.stderr)
+
+            raise e
+
+
+class BowerInstallCommand(SubproccessCommand):
     description = 'run bower commands [install by default]'
     user_options = [
         ('bower-command=', 'c', 'Bower command to run. Defaults to "install".'),
@@ -35,10 +50,10 @@ class BowerInstallCommand(Command):
             cmd.append('-p')
         if self.allow_root:
             cmd.append('--allow-root')
-        print(check_output(cmd, stderr=STDOUT))
+        self._run_with_output(cmd, stderr=STDOUT)
 
 
-class BuildAssetsCommand(Command):
+class BuildAssetsCommand(SubproccessCommand):
     description = 'build django assets'
     user_options = []
 
@@ -50,7 +65,8 @@ class BuildAssetsCommand(Command):
 
     def run(self):
         src_dir = os.path.join(os.path.dirname(__file__), 'src')
-        print(check_output(['python', 'manage.py', 'assets', 'build'], cwd=src_dir, stderr=STDOUT))
+        self._run_with_output(['python', 'manage.py', 'assets', 'build'],
+                              cwd=src_dir, stderr=STDOUT)
 
 
 class SdistCommandWithJS(sdist):
@@ -109,7 +125,7 @@ setup(
     zip_safe=True,
 
     setup_requires=[
-        'django_assets',
+        'django_assets >= 0.12',
     ],
     install_requires=[
         'django ~= 1.11.6',

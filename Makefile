@@ -68,7 +68,7 @@ clean-pyc:
 
 clean-js:
 	rm -rf src/edge/static/edge/lib/*
-	rm -vf src/edge/static/edge/edge{.css,.html,.js,.min.js,_jst.js}
+	rm -rvf src/edge/static/edge/assets/*
 
 
 # Testing

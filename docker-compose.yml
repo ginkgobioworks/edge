@@ -29,7 +29,7 @@ services:
       MYSQL_DATABASE: edge_dev
     volumes:
       - edge-db-data:/var/lib/mysql
-  
+
   rabbit:
     image: rabbitmq
 
