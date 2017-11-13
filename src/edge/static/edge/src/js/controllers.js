@@ -88,6 +88,49 @@ function PaginateController($scope, $http, $timeout) {
 
 }
 
+function ImportController($scope, $http, $injector) {
+    $scope.getBaseURL = function() { return '/edge/'; }
+    $scope.add_genome_error = undefined;
+    // function to submit the form after all validation has occurred            
+    $scope.submitForm = function(isValid) {
+
+        // check to make sure the form is completely valid
+        if (isValid) {
+        }
+
+    };
+    $scope.addGenome = function(){
+        var file = $scope.gffFile;
+        $scope.add_genome_error = undefined;
+        $scope.add_genome_pending = undefined;
+        $scope.add_genome_result = undefined;
+        if (!file) {
+            $scope.add_genome_error = {};
+            $scope.add_genome_error.message = "Need to choose GFF File";
+            return
+        }
+        $scope.add_genome_pending = "Importing Genome:" + $scope.genome.name + '. It may take a few minutes for large gff file. Please wait.'
+        var fd = new FormData();
+        var gff_name = $scope.genome.name
+        fd.append(gff_name.toString(), file);
+        $http.post('/edge/import_genome/', fd, {
+            transformRequest: angular.identity,
+            headers: {'Content-Type': undefined}
+        }).
+            success(function(data) {
+                $scope.add_genome_error = undefined;
+                $scope.add_genome_pending = undefined;
+                $scope.add_genome_result = data;
+                console.log("return", data);
+                console.log("add_genome_result", $scope.add_genome_result);
+            }).
+            error(function(data, status, headers, config) {
+                $scope.add_genome_error = data;
+                $scope.add_genome_pending = undefined;
+                $scope.add_genome_result = undefined;
+            });
+    };
+}
 
 function GenomeListController($scope, $injector) {
     $injector.invoke(PaginateController, this, { $scope: $scope });

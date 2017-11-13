@@ -1,16 +1,22 @@
 import json
+import os
 import random
 
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.views.generic.base import View
-from django.shortcuts import get_object_or_404
+from django.views.generic.edit import FormView
+from django.shortcuts import get_object_or_404, redirect
 from django.db.models import Q
 from django.db import transaction
+from django import forms
 
 from edge.models import Fragment, Genome, Operation
 from edge.io import IO
+from edge import import_gff
+from edge.tasks import build_genome_blastdb
 
+from pdb import set_trace as bp
 
 def genome_export(request, genome_id):
     get_genome_or_404(genome_id)
@@ -21,9 +27,28 @@ def genome_export(request, genome_id):
     io.to_gff_file(response)
     return response
 
+def genome_import(request):
+  import tempfile
+  res = {
+    "imported_genomes": [],
+  }
+  for name in request.FILES:
+      with tempfile.NamedTemporaryFile(mode='rw+b', delete=False) as gff:
+           gff.write(request.FILES.get(name).read())
+           gff.close()
+
+      g = import_gff(name, gff.name)
+      os.unlink(gff.name)
+      res["imported_genomes"].append({
+          "id": g.id,
+          "name": g.name,
+      })
+      build_genome_blastdb.delay(g.id)
+
+  return HttpResponse(json.dumps(res), content_type='application/json')
+
 
 def schedule_building_blast_db(genome_id, countdown=None):
-    from edge.tasks import build_genome_blastdb
     # scheduling building genome DB in the future, so a) our transaction has a
     # chance to commit and b) we avoid an immediate followup operation building
     # db on demand at the same time as this delayed building of database
@@ -51,7 +76,6 @@ class ViewBase(View):
     def post(self, request, *args, **kwargs):
         res, status = self.on_post(request, *args, **kwargs)
         return HttpResponse(json.dumps(res), status=status, content_type='application/json')
-
 
 class RequestParser(object):
 
