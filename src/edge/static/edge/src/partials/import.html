@@ -17,12 +17,11 @@
     Success: Added in Edge as <a ng-href="#/genomes/{{ genome.id }}">Genome {{ genome.id }}: {{ genome.name }}</a></span>
 </div>
 
-<form name="userForm" ng-submit="submitForm(userForm.$valid)" novalidate>
+<form name="userForm" novalidate>
 
     <div class="form-group">
         <label for="genome_name">Genome Name:</label>
         <input id="genome_name", name=name, type="text" ng-model="genome.name" required />
-        <p ng-show="userForm.name.$invalid && !userForm.name.$pristine" class="help-block">You name is required.</p>
     </div>
     <div class="form-group">
         <label for="gff_file">GFF File (GFF3 format):</label><br/>

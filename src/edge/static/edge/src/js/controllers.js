@@ -91,14 +91,6 @@ function PaginateController($scope, $http, $timeout) {
 function ImportController($scope, $http, $injector) {
     $scope.getBaseURL = function() { return '/edge/'; }
     $scope.add_genome_error = undefined;
-    // function to submit the form after all validation has occurred            
-    $scope.submitForm = function(isValid) {
-
-        // check to make sure the form is completely valid
-        if (isValid) {
-        }
-
-    };
     $scope.addGenome = function(){
         var file = $scope.gffFile;
         $scope.add_genome_error = undefined;
