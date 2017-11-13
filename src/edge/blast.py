@@ -74,7 +74,7 @@ def inverse_match(m):
     return ''.join([' ' if x == '|' else 'X' for x in m])
 
 
-def blast(dbname, blast_program, query, evalue_threshold=0.001):
+def blast(dbname, blast_program, query, evalue_threshold=0.5):
 
     infile = None
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -137,7 +137,7 @@ def blast(dbname, blast_program, query, evalue_threshold=0.001):
     return results
 
 
-def blast_genome(genome, blast_program, query, evalue_threshold=0.001):
+def blast_genome(genome, blast_program, query, evalue_threshold=0.5):
     dbname = genome.blastdb
     if not dbname:
         return []
