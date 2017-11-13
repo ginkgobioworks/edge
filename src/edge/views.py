@@ -5,47 +5,42 @@ import random
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.views.generic.base import View
-from django.views.generic.edit import FormView
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.db import transaction
-from django import forms
 
 from edge.models import Fragment, Genome, Operation
 from edge.io import IO
 from edge import import_gff
 from edge.tasks import build_genome_blastdb
 
-from pdb import set_trace as bp
 
 def genome_export(request, genome_id):
     get_genome_or_404(genome_id)
     io = IO(Genome.objects.get(pk=genome_id))
-
     response = HttpResponse(content_type='text/plain')
     response['Content-Disposition'] = "attachment; filename=\"g%s.gff\"" % genome_id
     io.to_gff_file(response)
     return response
 
+
 def genome_import(request):
-  import tempfile
-  res = {
-    "imported_genomes": [],
-  }
-  for name in request.FILES:
-      with tempfile.NamedTemporaryFile(mode='rw+b', delete=False) as gff:
-           gff.write(request.FILES.get(name).read())
-           gff.close()
-
-      g = import_gff(name, gff.name)
-      os.unlink(gff.name)
-      res["imported_genomes"].append({
-          "id": g.id,
-          "name": g.name,
-      })
-      build_genome_blastdb.delay(g.id)
-
-  return HttpResponse(json.dumps(res), content_type='application/json')
+    import tempfile
+    res = {
+      "imported_genomes": [],
+    }
+    for name in request.FILES:
+        with tempfile.NamedTemporaryFile(mode='rw+b', delete=False) as gff:
+            gff.write(request.FILES.get(name).read())
+            gff.close()
+        g = import_gff(name, gff.name)
+        os.unlink(gff.name)
+        res["imported_genomes"].append({
+            "id": g.id,
+            "name": g.name,
+        })
+        build_genome_blastdb.delay(g.id)
+    return HttpResponse(json.dumps(res), content_type='application/json')
 
 
 def schedule_building_blast_db(genome_id, countdown=None):
@@ -76,6 +71,7 @@ class ViewBase(View):
     def post(self, request, *args, **kwargs):
         res, status = self.on_post(request, *args, **kwargs)
         return HttpResponse(json.dumps(res), status=status, content_type='application/json')
+
 
 class RequestParser(object):
 
