@@ -64,4 +64,6 @@ test.db*
 ncbi/
 
 # compiled static files
-static/
+src/edge/static/edge/assets
+src/edge/static/edge/lib
+src/edge/static/edge/edge.css

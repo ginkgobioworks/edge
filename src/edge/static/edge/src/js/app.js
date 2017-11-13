@@ -30,6 +30,7 @@ var app = angular.module('edge', ['ngRoute', 'ngSanitize']).
                   controller: FragmentController}).
             otherwise({redirectTo: '/genomes'});
     }]);
+
 app.directive('partial', function($compile) {
     var linker = function(scope, element, attrs) {
         element.html(JST[attrs.template]());
