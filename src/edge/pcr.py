@@ -1,15 +1,17 @@
 from edge.blast import blast_genome
 from Bio.Seq import Seq
 
+MIN_BINDING_LENGTH = 15
+BINDING_LENGTH_HI = 20
 
-def compute_pcr_product(primer_a_sequence, primer_a_blastres,
-                        primer_b_sequence, primer_b_blastres):
+
+def compute_pcr_product(primer_a_sequence, primer_a_binding_check_len, primer_a_blastres,
+                        primer_b_sequence, primer_b_binding_check_len, primer_b_blastres):
     """
     Computes a PCR product based on two blast results.
     """
 
     MIN_IDENTITIES = 0.90
-    MIN_BINDING_LENGTH = 10
     # probably an over-estimation, for misdirected primers on circular genome
     MAX_PCR_SIZE = 50000
 
@@ -34,17 +36,21 @@ def compute_pcr_product(primer_a_sequence, primer_a_blastres,
 
     if primer_a_strand == 1:
         fwd_primer = primer_a_sequence
+        fwd_primer_binding_check_len = primer_a_binding_check_len
         fwd_primer_res = primer_a_blastres
         rev_primer = primer_b_sequence
         rev_primer_res = primer_b_blastres
+        rev_primer_binding_check_len = primer_b_binding_check_len
     else:
         fwd_primer = primer_b_sequence
         fwd_primer_res = primer_b_blastres
+        fwd_primer_binding_check_len = primer_b_binding_check_len
         rev_primer = primer_a_sequence
         rev_primer_res = primer_a_blastres
+        rev_primer_binding_check_len = primer_a_binding_check_len
 
-    if fwd_primer_res.query_end != len(fwd_primer) or\
-       rev_primer_res.query_end != len(rev_primer):
+    if fwd_primer_res.query_end != fwd_primer_binding_check_len or\
+       rev_primer_res.query_end != rev_primer_binding_check_len:
         return None
 
     # primers must align well
@@ -95,15 +101,43 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     respectively, and non-overlapping in their sense strand binding positions
     """
 
-    primer_a_results = blast_genome(genome, 'blastn', primer_a_sequence)
-    primer_b_results = blast_genome(genome, 'blastn', primer_b_sequence)
+    primer_a_results = []
+    primer_a_binding_check_len = []
+    primer_b_results = []
+    primer_b_binding_check_len = []
+
+    res = blast_genome(genome, 'blastn', primer_a_sequence)
+    for r in res:
+        primer_a_results.append(r)
+        primer_a_binding_check_len.append(len(primer_a_sequence))
+
+    res = blast_genome(genome, 'blastn', primer_b_sequence)
+    for r in res:
+        primer_b_results.append(r)
+        primer_b_binding_check_len.append(len(primer_b_sequence))
+
+    # checking various binding length
+    for i in range(MIN_BINDING_LENGTH, BINDING_LENGTH_HI):
+        p = primer_a_sequence[-i:]
+        res = blast_genome(genome, 'blastn', p)
+        for r in res:
+            primer_a_results.append(r)
+            primer_a_binding_check_len.append(len(p))
+
+    # checking various binding length
+    for i in range(MIN_BINDING_LENGTH, BINDING_LENGTH_HI):
+        p = primer_b_sequence[-i:]
+        res = blast_genome(genome, 'blastn', p)
+        for r in res:
+            primer_b_results.append(r)
+            primer_b_binding_check_len.append(len(p))
 
     pcr_products = []
     uniq_products = {}
-    for a_res in primer_a_results:
-        for b_res in primer_b_results:
-            product = compute_pcr_product(primer_a_sequence, a_res,
-                                          primer_b_sequence, b_res)
+    for a_len, a_res in zip(primer_a_binding_check_len, primer_a_results):
+        for b_len, b_res in zip(primer_b_binding_check_len, primer_b_results):
+            product = compute_pcr_product(primer_a_sequence, a_len, a_res,
+                                          primer_b_sequence, b_len, b_res)
             if product is not None:
                 k = (product[0], a_res.fragment_id)
                 if k not in uniq_products:
