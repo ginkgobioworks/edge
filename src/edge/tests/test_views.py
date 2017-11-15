@@ -551,6 +551,6 @@ class GenomeAnnotationsTest(TestCase):
 class GenomeImportTest(TestCase):
 
     def test_import_works(self):
-        with open('/usr/src/edge/src/edge/tests/fixtures/ecoli-mg1655-simple.gff') as fp:
+        with open('edge/tests/fixtures/ecoli-mg1655-simple.gff') as fp:
             res = self.client.post('/edge/import_genome/', {'name': 'ecoli', 'attachment': fp})
             self.assertEquals(len(json.loads(res.content)['imported_genomes']), 1)
