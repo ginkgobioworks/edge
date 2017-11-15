@@ -4,16 +4,16 @@
 
 <p class="lead">Genomes Import</p>
 
-<div class="well" ng-show="add_genome_error">
-    <span class="text-danger">Error: {{ add_genome_error.message }}</span>
+<div class="well" ng-show="addGenomeError">
+    <span class="text-danger">Error: {{ addGenomeError.message }}</span>
 </div>
 
-<div class="well" ng-show="add_genome_pending">
-    <span class="text-info">Pending: {{ add_genome_pending }}</span> 
+<div class="well" ng-show="addGenomePending">
+    <span class="text-info">Pending: {{ addGenomePending }}</span> 
 </div>
 
-<div class="well" ng-show="add_genome_result">
-    <span class="text-success" ng-repeat='genome in add_genome_result.imported_genomes'>
+<div class="well" ng-show="addGenomeResult">
+    <span class="text-success" ng-repeat='genome in addGenomeResult.imported_genomes'>
     Success: Added in Edge as <a ng-href="#/genomes/{{ genome.id }}">Genome {{ genome.id }}: {{ genome.name }}</a></span>
 </div>
 
