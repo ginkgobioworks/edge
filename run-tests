@@ -1,2 +1,0 @@
-docker-compose run --rm edge make test-ci
-docker-compose run --rm edge make flake8
