@@ -62,8 +62,3 @@ test.db*
 
 # don't check in NCBI data
 ncbi/
-
-# compiled static files
-src/edge/static/edge/assets
-src/edge/static/edge/lib
-src/edge/static/edge/edge.css
