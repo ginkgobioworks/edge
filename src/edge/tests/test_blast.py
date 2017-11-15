@@ -147,8 +147,8 @@ class GenomeBlastTest(TestCase):
         res = blast_genome(g1, 'blastn', query)
 
         for r in res:
-            self.assertEquals(r.subject_start > 0 and r.subject_start < len(s1), True)
-            self.assertEquals(r.subject_end > 0 and r.subject_end < len(s1), True)
+            self.assertEquals(r.subject_start > 0 and r.subject_start <= len(s1), True)
+            self.assertEquals(r.subject_end > 0 and r.subject_end <= len(s1), True)
 
 
 class GenomeBlastAPITest(TestCase):

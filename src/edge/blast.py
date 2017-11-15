@@ -93,7 +93,6 @@ def blast(dbname, blast_program, query, evalue_threshold=0.001):
 
     cl = str(blast_cl)
     cl = "%s/%s" % (settings.NCBI_BIN_DIR, cl)
-    # print cl
     r = subprocess.call(cl.split(" "))
     os.unlink(infile)
 
@@ -137,11 +136,10 @@ def blast(dbname, blast_program, query, evalue_threshold=0.001):
     return results
 
 
-def blast_genome(genome, blast_program, query, evalue_threshold=0.001):
+def blast_genome(genome, blast_program, query, evalue_threshold=0.01):
     dbname = genome.blastdb
     if not dbname:
         return []
-    results = blast(dbname, blast_program, query,
-                    evalue_threshold=evalue_threshold)
+    results = blast(dbname, blast_program, query, evalue_threshold=evalue_threshold)
     genome_fragment_ids = [f.id for f in genome.fragments.all()]
     return [r for r in results if r.fragment_id in genome_fragment_ids]
