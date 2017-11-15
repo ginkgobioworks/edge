@@ -1,3 +1,4 @@
+====
 Edge
 ====
 
@@ -34,6 +35,9 @@ Try it using Docker
 -------------------
 * Use ``docker-compose``:
 
+The Docker environment is defined in ``docker-compose.yml``. Use the ``edge`` service for your
+commands.
+
 To start the edge server:
 
 ::
@@ -56,11 +60,32 @@ To run a shell inside the Edge container:
 
 * Alternatively, you can use the ``Makefile``:
 
-To start edge server:
+The ``Makefile`` holds all the commands necessary for managing the server and database, both in
+usage and development. Run ``make`` without arguments to see a list of commmands.
+
+Any of these ``make`` targets can be run directly from a shell inside a container:
+
+::
+
+    you@localhost:edge$ docker-compose run --rm edge bash
+    # Now you're inside the Docker container
+    root@docker-image:/usr/src/edge# make test
+
+Furthermore, any target can have ``-ext`` added to it. Commands that end in ``-ext`` are meant to be
+run *externally* to the image, *i.e.*, from the host system.
+
+For example, to start the edge server:
 
 ::
 
     make start-ext
+
+
+To run a shell:
+
+::
+
+    make bash-ext
 
 
 To import a genome as an example:
@@ -70,22 +95,9 @@ To import a genome as an example:
     make add-s288c-ext
 
 
-Or, if your app is already running, ``make add-s288c-ext_fast``, which will run the job without
+If the edge app is already running in a container, or you don't want to rebuild the image yet, you
+can change ``-ext`` to ``-ext_fast``, which will run the make target in a new container without
 trying to rebuild the image.
-
-The ``Makefile`` holds all the commands necessary for managing the server and
-database, both in usage and development. Run ``make`` without arguments to see a list of commmands.
-
-The Docker environment is defined in ``docker-compose.yml``. Use the ``edge`` service for your
-commands.
-
-Any of these ``make`` targets can be run directly from a shell inside a container:
-
-::
-
-    you@localhost:edge$ docker-compose run --rm edge bash
-    # Now you're inside the Docker container
-    root@docker-image:/usr/src/edge# make test
 
 
 Try it without Docker
@@ -153,21 +165,33 @@ it already contains all of the javascript assets compiled in their final state.
 Development, testing, and package release
 -----------------------------------------
 
+Running tests
+~~~~~~~~~~~~~
+
 When developing locally, you can run tests in the controlled environment of the docker container
-from your local machine with ``make test-ext.``
+from your local machine with ``make test-all-ext``. Make sure you've run the migrations at least once
+before doing this. If your server is already running, and you want to run tests from the host
+machine in a separate container, use ``make test-all-ext_fast``. Or just keep a container up and run
+the tests from inside it.
+
+Static files
+~~~~~~~~~~~~
 
 Note that edge uses webassets_ for compilation of static assets. These assets are not automatically
 compiled (because the integration of that with Django is flaky). Instead, compile assets after
-cahnging them with ``make build_assets``.
+cahnging them with ``make build_assets``. To constantly recompile them, see ``make watch``.
 
 Static dependencies are managed with Bower_. (Eventually to be replaced with npm_/webpack_).
-Dependencies are downloaded before the python package is built so python package consumers already
-have all required javascript.
+Dependencies are downloaded before the python package is built so Python package consumers already
+have all required JavaScript.
 
-Edge is versioned semantically. Continuous integration is done automatically on all branches through
-Travis CI, and tagged commits to master are automatically released to PyPI. To release a new version,
-bump the version number with the appropriate severity of the changes (major, minor, or patch), and
-push the resulting tagged commits to the GitHub remote repo:
+Versioning
+~~~~~~~~~~
+
+Edge is versioned semantically. Continuous integration builds are done automatically on all branches
+through Travis CI, and tagged commits to master are automatically released to PyPI. To release a new
+version, bump the version number with the appropriate severity of the changes (major, minor, or
+patch), and push the resulting tagged commits to the GitHub remote repo:
 
 ::
 

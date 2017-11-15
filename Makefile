@@ -125,14 +125,15 @@ add-s288c:
 
 # Generically execute make targets from outside the Docker container
 
-MAKE_EXT = docker-compose run --rm --service-ports ${PROJECT_NAME} make -C ${EDGE_HOME}
+MAKE_EXT = docker-compose run --rm ${DOCKER_COMPOSE_ARGS} ${PROJECT_NAME} make -C ${EDGE_HOME}
 
-%-ext : image
+%-ext: DOCKER_COMPOSE_ARGS =--service-ports
+%-ext: image
 	${MAKE_EXT} $*
 
 # Run a command from outside the image without rebuilding the image; useful when you already have
-# a version of the image running
-%-ext_fast :
+# a container running and don't want to rebuild
+%-ext_fast:
 	${MAKE_EXT} $*
 
 # Build the image
