@@ -90,36 +90,34 @@ function PaginateController($scope, $http, $timeout) {
 
 function ImportController($scope, $http, $injector) {
     $scope.getBaseURL = function() { return '/edge/'; }
-    $scope.addGenomeError = undefined;
     $scope.addGenome = function(){
         var file = $scope.gffFile;
-        $scope.addGenomeError = undefined;
-        $scope.addGenomePending = undefined;
-        $scope.addGenomeResult = undefined;
-        if (!file) {
-            $scope.addGenomeError = {};
-            $scope.addGenomeError.message = "Need to choose GFF File";
-            return
+        $scope.addGenomeStatus = {
+            "error": null,
+            "pending": null,
+            "results": null,
         }
-        $scope.addGenomePending = "Importing Genome:" + $scope.genome.name + '. It may take a few minutes for large gff file. Please wait.'
+        if (!file) {
+            $scope.addGenomeStatus.error = "Need to choose GFF File";
+            return;
+        }
+        $scope.addGenomeStatus.pending = true;
         var fd = new FormData();
         var gff_name = $scope.genome.name;
         fd.append(gff_name.toString(), file);
         $http.post('/edge/import_genome/', fd, {
             transformRequest: angular.identity,
-            headers: {'Content-Type': undefined},
+            headers: { 'Content-Type': undefined },
         }).
             success(function(data) {
-                $scope.addGenomeError = undefined;
-                $scope.addGenomePending = undefined;
-                $scope.addGenomeResult = data;
-                console.log("return", data);
-                console.log("addGenomeResult", $scope.addGenomeResult);
+                $scope.addGenomeStatus.pending = null;
+                $scope.addGenomeStatus.results = data;
+                console.log('data is', data);
             }).
             error(function(data, status, headers, config) {
-                $scope.addGenomeError = data;
-                $scope.addGenomePending = undefined;
-                $scope.addGenomeResult = undefined;
+                $scope.addGenomeStatus.error = data;
+                $scope.addGenomeStatus.pending = null;
+                $scope.addGenomeStatus.results = null;
             });
     };
 }
