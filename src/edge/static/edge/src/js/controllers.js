@@ -103,11 +103,11 @@ function ImportController($scope, $http, $injector) {
         }
         $scope.addGenomePending = "Importing Genome:" + $scope.genome.name + '. It may take a few minutes for large gff file. Please wait.'
         var fd = new FormData();
-        var gff_name = $scope.genome.name
+        var gff_name = $scope.genome.name;
         fd.append(gff_name.toString(), file);
         $http.post('/edge/import_genome/', fd, {
             transformRequest: angular.identity,
-            headers: {'Content-Type': undefined}
+            headers: {'Content-Type': undefined},
         }).
             success(function(data) {
                 $scope.addGenomeError = undefined;

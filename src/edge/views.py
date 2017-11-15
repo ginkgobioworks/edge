@@ -1,10 +1,12 @@
 import json
 import os
 import random
+import tempfile
 
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse
+from django.http import JsonResponse
 from django.views.generic.base import View
+from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.db import transaction
@@ -23,16 +25,14 @@ def genome_export(request, genome_id):
     io.to_gff_file(response)
     return response
 
-
+@require_http_methods(["POST"])
 def genome_import(request):
-    import tempfile
     res = {
       "imported_genomes": [],
     }
     for name in request.FILES:
         with tempfile.NamedTemporaryFile(mode='rw+b', delete=False) as gff:
             gff.write(request.FILES.get(name).read())
-            gff.close()
         g = import_gff(name, gff.name)
         os.unlink(gff.name)
         res["imported_genomes"].append({
@@ -40,7 +40,7 @@ def genome_import(request):
             "name": g.name,
         })
         build_genome_blastdb.delay(g.id)
-    return HttpResponse(json.dumps(res), content_type='application/json')
+    return JsonResponse(res)
 
 
 def schedule_building_blast_db(genome_id, countdown=None):
