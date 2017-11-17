@@ -15,6 +15,7 @@ from edge.views import (
     GenomeRecombinationView,
     GenomeCrisprDSBView,
     genome_export,
+    genome_import,
 )
 
 urlpatterns = [
@@ -30,6 +31,8 @@ urlpatterns = [
     url(r'^ui/?$', TemplateView.as_view(template_name='edge/edge.html')),
 
     # APIs
+
+    url('^import_genome/$', genome_import, name='import'),
 
     url('^genomes/$', GenomeListView.as_view(), name='genome_list'),
     url('^genomes/(?P<genome_id>\d+)/$', GenomeView.as_view(), name='genome'),

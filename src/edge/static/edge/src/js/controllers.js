@@ -88,6 +88,39 @@ function PaginateController($scope, $http, $timeout) {
 
 }
 
+function ImportController($scope, $http, $injector) {
+    $scope.getBaseURL = function() { return '/edge/'; }
+    $scope.addGenome = function(){
+        var file = $scope.gffFile;
+        $scope.addGenomeStatus = {
+            "error": null,
+            "pending": null,
+            "results": null,
+        }
+        if (!file) {
+            $scope.addGenomeStatus.error = "Need to choose GFF File";
+            return;
+        }
+        $scope.addGenomeStatus.pending = true;
+        var fd = new FormData();
+        var gffName = $scope.genome.name;
+        fd.append(gffName.toString(), file);
+        $http.post('/edge/import_genome/', fd, {
+            transformRequest: angular.identity,
+            headers: { 'Content-Type': undefined },
+        }).
+            success(function(data) {
+                $scope.addGenomeStatus.pending = null;
+                $scope.addGenomeStatus.results = data;
+                console.log('data is', data);
+            }).
+            error(function(data, status, headers, config) {
+                $scope.addGenomeStatus.error = data;
+                $scope.addGenomeStatus.pending = null;
+                $scope.addGenomeStatus.results = null;
+            });
+    };
+}
 
 function GenomeListController($scope, $injector) {
     $injector.invoke(PaginateController, this, { $scope: $scope });

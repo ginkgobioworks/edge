@@ -1,6 +1,9 @@
 var app = angular.module('edge', ['ngRoute', 'ngSanitize']).
     config(['$routeProvider', function($routeProvider) {
         $routeProvider.
+            when('/import',
+                 {template: JST['import'],
+                  controller: ImportController}).
             when('/genomes',
                  {template: JST['genome-list'],
                   controller: GenomeListController}).
@@ -27,6 +30,7 @@ var app = angular.module('edge', ['ngRoute', 'ngSanitize']).
                   controller: FragmentController}).
             otherwise({redirectTo: '/genomes'});
     }]);
+
 app.directive('partial', function($compile) {
     var linker = function(scope, element, attrs) {
         element.html(JST[attrs.template]());
@@ -37,3 +41,19 @@ app.directive('partial', function($compile) {
         restrict: 'E'
     }
 });
+
+app.directive('fileModel', ['$parse', function ($parse) {
+    return {
+        restrict: 'A',
+        link: function(scope, element, attrs) {
+            var model = $parse(attrs.fileModel);
+            var modelSetter = model.assign;
+            element.bind('change', function() {
+                scope.$apply(function() {
+                    modelSetter(scope, element[0].files[0]);
+                });
+            });
+        }
+    };
+}]);
+

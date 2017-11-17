@@ -1,29 +1,56 @@
 import json
+import os
 import random
+import tempfile
 
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.generic.base import View
+from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.db import transaction
 
 from edge.models import Fragment, Genome, Operation
 from edge.io import IO
+from edge import import_gff
+from edge.tasks import build_genome_blastdb
 
 
 def genome_export(request, genome_id):
     get_genome_or_404(genome_id)
     io = IO(Genome.objects.get(pk=genome_id))
-
     response = HttpResponse(content_type='text/plain')
     response['Content-Disposition'] = "attachment; filename=\"g%s.gff\"" % genome_id
     io.to_gff_file(response)
     return response
 
 
+@require_http_methods(['POST'])
+def genome_import(request):
+    res = {
+      'imported_genomes': [],
+    }
+
+    for name in request.FILES:
+        with tempfile.NamedTemporaryFile(mode='rw+b', delete=False) as gff:
+            for chuck in request.FILES.get(name).chunks():
+                gff.write(chuck)
+        g = import_gff(name, gff.name)
+        os.unlink(gff.name)
+
+        blastdb_task = build_genome_blastdb.delay(g.id)
+
+        res['imported_genomes'].append({
+            'id': g.id,
+            'name': g.name,
+            'blastdb_task_id': blastdb_task.id,
+        })
+
+    return JsonResponse(res)
+
+
 def schedule_building_blast_db(genome_id, countdown=None):
-    from edge.tasks import build_genome_blastdb
     # scheduling building genome DB in the future, so a) our transaction has a
     # chance to commit and b) we avoid an immediate followup operation building
     # db on demand at the same time as this delayed building of database

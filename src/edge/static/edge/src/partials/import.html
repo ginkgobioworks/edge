@@ -1,0 +1,38 @@
+<partial template="header"></partial>
+
+<div class="container">
+
+<p class="lead">Genomes Import</p>
+
+<div class="well" ng-show="addGenomeStatus.error">
+    <span class="text-danger">
+        Error: {{ addGenomeStatus.error }}
+    </span>
+</div>
+
+<div class="well" ng-show="addGenomeStatus.pending">
+    <span class="text-info">
+        Pending: Importing Genome: {{ $scope.genome.name }}. It may take a few minutes for large gff file. Please wait.
+    </span> 
+</div>
+
+<div class="well" ng-show="addGenomeStatus.results">
+    <span class="text-success" ng-repeat='genome in addGenomeStatus.results.imported_genomes'>
+        Success: Added in Edge as <a ng-href="#/genomes/{{ genome.id }}">Genome {{ genome.id }}: {{ genome.name }}</a>
+    </span>
+</div>
+
+<form name="userForm" novalidate>
+
+    <div class="form-group">
+        <label for="genomeName">Genome Name:</label>
+        <input id="genomeName" name="name" type="text" ng-model="genome.name" required />
+    </div>
+    <div class="form-group">
+        <label for="gffFile">GFF File (GFF3 format):</label><br/>
+        <input id="gffFile" type="file" file-model="gffFile"/>
+    </div>
+    <button class="btn btn-primary" type="submit" ng-disabled="userForm.$invalid" ng-click="addGenome()">Import</button>
+</form>
+
+</div> <!-- container -->
