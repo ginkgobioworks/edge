@@ -103,8 +103,8 @@ function ImportController($scope, $http, $injector) {
         }
         $scope.addGenomeStatus.pending = true;
         var fd = new FormData();
-        var gff_name = $scope.genome.name;
-        fd.append(gff_name.toString(), file);
+        var gffName = $scope.genome.name;
+        fd.append(gffName.toString(), file);
         $http.post('/edge/import_genome/', fd, {
             transformRequest: angular.identity,
             headers: { 'Content-Type': undefined },

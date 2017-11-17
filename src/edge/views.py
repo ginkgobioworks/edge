@@ -26,22 +26,27 @@ def genome_export(request, genome_id):
     return response
 
 
-@require_http_methods(["POST"])
+@require_http_methods(['POST'])
 def genome_import(request):
     res = {
       'imported_genomes': [],
     }
+
     for name in request.FILES:
         with tempfile.NamedTemporaryFile(mode='rw+b', delete=False) as gff:
-            gff.write(request.FILES.get(name).read())
+            for chuck in request.FILES.get(name).chunks():
+                gff.write(chuck)
         g = import_gff(name, gff.name)
         os.unlink(gff.name)
+
         blastdb_task = build_genome_blastdb.delay(g.id)
+
         res['imported_genomes'].append({
             'id': g.id,
             'name': g.name,
             'blastdb_task_id': blastdb_task.id,
         })
+
     return JsonResponse(res)
 
 
