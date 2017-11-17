@@ -26,13 +26,13 @@
 
     <div class="form-group">
         <label for="genomeName">Genome Name:</label>
-        <input id="genomeName", name="name", type="text", ng-model="genome.name" required />
+        <input id="genomeName" name="name" type="text" ng-model="genome.name" required />
     </div>
     <div class="form-group">
         <label for="gffFile">GFF File (GFF3 format):</label><br/>
-        <input id="gffFile", type="file", file-model="gffFile"/>
+        <input id="gffFile" type="file" file-model="gffFile"/>
     </div>
-    <button class="btn btn-primary", type="submit", ng-disabled="userForm.$invalid", ng-click="addGenome()">Import</button>
+    <button class="btn btn-primary" type="submit" ng-disabled="userForm.$invalid" ng-click="addGenome()">Import</button>
 </form>
 
 </div> <!-- container -->
