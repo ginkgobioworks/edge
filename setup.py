@@ -78,7 +78,7 @@ class SdistCommandWithJS(sdist):
 
 setup(
     name='edge-genome',
-    version='1.0.1',
+    version='1.1.0',
 
     author='Ginkgo Bioworks',
     author_email='devs@ginkgobioworks.com',
