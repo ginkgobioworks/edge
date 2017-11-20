@@ -3,8 +3,8 @@ pytz == 2017.2
 Django == 1.11.6
 
 # Celery
-celery == 3.1.25
-flower==0.9.1
+celery == 4.1.0 
+flower==0.9.2
 
 # gff parsing
 bcbio-gff == 0.4
