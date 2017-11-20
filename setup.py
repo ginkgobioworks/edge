@@ -130,7 +130,7 @@ setup(
     install_requires=[
         'django ~= 1.11.6',
         'jsmin',
-        'celery < 4.0',
+        'celery >= 4.0',
         'bcbio-gff',
         'pytz >= 1023b',
     ],
