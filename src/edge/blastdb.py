@@ -31,7 +31,7 @@ def build_fragment_fasta(fragment, refresh=False):
     fn = fragment_fasta_fn(fragment)
     make_required_dirs(fn)
 
-    if not os.path.isfile(fn) or refresh is True:  # have not built this fasta
+    if not os.path.isfile(fn) or refresh:  # have not built this fasta or need refresh
         print 'building %s' % fn
         # this may take awhile, so do this first, so user interrupt does
         # not create an empty file
