@@ -5,7 +5,7 @@ from edge.recombine import annotate_integration
 from django.db import transaction
 
 
-@shared_task(name='build_genome_blastdb')
+@shared_task
 def build_genome_blastdb(genome_id):
     genome = Genome.objects.get(pk=genome_id)
     build_genome_db(genome, refresh=True)
@@ -18,7 +18,7 @@ def annotate_integration_on_genome(genome, new_genome,
     annotate_integration(genome, new_genome, regions_before, regions_after, cassette_name, op)
 
 
-@shared_task(name="annotate_integration")
+@shared_task
 def annotate_integration_task(genome_id, new_genome_id,
                               regions_before, regions_after,
                               cassette_name, op_id):
