@@ -1,6 +1,6 @@
 from django.db.backends.signals import connection_created
 
-__version__ = '1.5.0'
+__version__ = '1.6.0'
 
 
 def import_gff(name, fn):
