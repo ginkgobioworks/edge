@@ -525,13 +525,13 @@ class GenomeAnnotationsTest(TestCase):
         res = self.client.post(self.genome_uri + 'fragments/', data=json.dumps(data),
                                content_type='application/json')
         self.fragment_uri = json.loads(res.content)['uri']
-
         self.fragment_data = json.loads(res.content)
-        data = dict(base_first=2, base_last=9, name='proC', type='promoter', strand=1)
+
+        data = dict(base_first=2, base_last=9, name='proC', type='promoter', strand=1, qualifiers=dict(alias="C promoter"))
         res = self.client.post(self.fragment_uri + 'annotations/', data=json.dumps(data),
                                content_type='application/json')
 
-    def test_find_annotation(self):
+    def test_find_annotation_by_name(self):
         res = self.client.get(self.genome_uri + 'annotations/?q=proC')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), [[
@@ -541,7 +541,23 @@ class GenomeAnnotationsTest(TestCase):
                  "name": 'proC',
                  "type": 'promoter',
                  "strand": 1,
-                 "qualifiers": {},
+                 "qualifiers": { "alias": "C promoter" }},
+                 "feature_full_length": 8,
+                 "feature_base_first": 1,
+                 "feature_base_last": 8}]
+        ]])
+
+    def test_find_annotation_by_qualifier(self):
+        res = self.client.get(self.genome_uri + 'annotations/?q=promoter')
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(json.loads(res.content), [[
+            self.fragment_data, [
+                {"base_first": 2,
+                 "base_last": 9,
+                 "name": 'proC',
+                 "type": 'promoter',
+                 "strand": 1,
+                 "qualifiers": { "alias": "C promoter" }},
                  "feature_full_length": 8,
                  "feature_base_first": 1,
                  "feature_base_last": 8}]

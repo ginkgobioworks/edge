@@ -210,15 +210,23 @@ class FragmentAnnotationsView(ViewBase):
         annotation_parser.add_argument('name', field_type=str, required=True, location='json')
         annotation_parser.add_argument('type', field_type=str, required=True, location='json')
         annotation_parser.add_argument('strand', field_type=int, required=True, location='json')
+        annotation_parser.add_argument('qualifiers', field_type=dict, default=False, location='json')
 
         args = annotation_parser.parse_args(request)
         fragment = get_fragment_or_404(fragment_id)
         fragment = fragment.indexed_fragment()
+
+        if "qualifiers" in args:
+            qualifiers = args["qualifiers"]
+        else:
+            qualifiers = None
+
         fragment.annotate(first_base1=args['base_first'],
                           last_base1=args['base_last'],
                           name=args['name'],
                           type=args['type'],
-                          strand=args['strand'])
+                          strand=args['strand'],
+                          qualifiers=qualifiers)
         return {}, 201
 
 
@@ -326,6 +334,8 @@ class GenomeAnnotationsView(ViewBase):
 
         res = []
         fragment_annotations = genome.indexed_genome().find_annotation_by_name(args['q'])
+        fragment_annotations.extend(genome.indexed_genome().find_annotation_by_qualifier(args['q']))
+
         for fragment_id in fragment_annotations:
             fragment = get_fragment_or_404(fragment_id)
             annotations = fragment_annotations[fragment_id]
