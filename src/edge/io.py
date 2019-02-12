@@ -40,9 +40,10 @@ class IO(object):
                 # FeatureLocation first bp is AfterPosition, so -1
                 loc = FeatureLocation(annotation.base_first - 1, annotation.base_last)
                 qualifiers = {'name': annotation.feature.name}
+                strand = annotation.feature.strand
                 feature = SeqFeature(loc,
                                      type=annotation.feature.type,
-                                     strand=1,
+                                     strand=0 if strand is None else strand,
                                      qualifiers=qualifiers)
                 features.append(feature)
 
