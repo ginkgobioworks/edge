@@ -18,7 +18,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
             Genome_Fragment(genome=g, fragment=f, inherited=False).save()
             try:
                 os.unlink(fragment_fasta_fn(f))
-            except:
+            except OSError:
                 pass
         build_all_genome_dbs(refresh=True)
         return Genome.objects.get(pk=g.id)

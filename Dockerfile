@@ -1,7 +1,7 @@
 # Development Dockerfile to make testing easier under a standardized environment.
 # XXX Do not use for production as-is
 
-FROM python:2.7-stretch
+FROM python:3.6-buster
 LABEL maintainer Ginkgo Bioworks <devs@ginkgobioworks.com>
 
 ARG GIT_USER_NAME="Curious Default"
@@ -14,6 +14,7 @@ RUN git config --global user.name "$GIT_USER_NAME" \
 ARG DEBIAN_FRONTEND=noninteractive
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
 RUN apt-get update
+RUN apt-get upgrade --assume-yes
 RUN apt-get install --assume-yes --verbose-versions \
   apt-utils \
   default-mysql-client \

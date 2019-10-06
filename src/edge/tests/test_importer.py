@@ -50,7 +50,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
-        self.assertItemsEqual([fr.name for fr in genome.fragments.all()], ['chrI', 'chrII'])
+        self.assertCountEqual([fr.name for fr in genome.fragments.all()], ['chrI', 'chrII'])
         chrI = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == 'chrI'][0]
         self.assertEquals(len(chrI.sequence), 160)
         self.assertEquals(len(chrI.annotations()), 2)
@@ -83,7 +83,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
-        self.assertItemsEqual([fr.name for fr in genome.fragments.all()], ['chrI', 'chrII'])
+        self.assertCountEqual([fr.name for fr in genome.fragments.all()], ['chrI', 'chrII'])
 
         # verify chrI fragment
         chrI = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == 'chrI'][0]

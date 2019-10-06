@@ -128,10 +128,10 @@ setup(
     # force install Django2+ in setup
     setup_requires=[
         'django_assets >= 0.12',
-        'Django ~= 1.11.25',
+        'Django ~= 2.2.6',
     ],
     install_requires=[
-        'django ~= 1.11.25',
+        'django ~= 2.2.6',
         'jsmin',
         'celery >= 4.0',
         'bcbio-gff',

@@ -10,7 +10,7 @@ class Command(BaseCommand):
             raise Exception('Expecting integer genome ID and filename as arguments')
         try:
             genome_id = int(args[0])
-        except:
+        except BaseException:
             raise Exception('Expecting integer genome ID and filename as arguments')
 
         io = IO(Genome.objects.get(pk=genome_id))

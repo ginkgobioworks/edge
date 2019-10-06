@@ -41,10 +41,10 @@ class GFFFragmentImporter(object):
         self.parse_gff()
         t0 = time.time()
         f = self.build_fragment()
-        print 'build fragment: %.4f' % (time.time() - t0,)
+        print('build fragment: %.4f' % (time.time() - t0,))
         t0 = time.time()
         self.annotate(f)
-        print 'annotate: %.4f' % (time.time() - t0,)
+        print('annotate: %.4f' % (time.time() - t0,))
         return f
 
     def parse_gff(self):
@@ -52,7 +52,7 @@ class GFFFragmentImporter(object):
 
         self.__sequence = str(self.__rec.seq)
         seqlen = len(self.__sequence)
-        print '%s: %s' % (self.__rec.id, seqlen)
+        print('%s: %s' % (self.__rec.id, seqlen))
 
         features = []
         for feature in self.__rec.features:
@@ -88,8 +88,8 @@ class GFFFragmentImporter(object):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
         break_points = list(set(
-            [f[0] for f in self.__features] +
-            [f[1] + 1 for f in self.__features]))
+            [f[0] for f in self.__features]
+            + [f[1] + 1 for f in self.__features]))
         break_points = sorted(break_points)
         chunk_sizes = []
         for i, bp in enumerate(break_points):
@@ -98,7 +98,7 @@ class GFFFragmentImporter(object):
                     chunk_sizes.append(break_points[i] - 1)
             else:
                 chunk_sizes.append(break_points[i] - break_points[i - 1])
-        print '%d chunks' % (len(chunk_sizes),)
+        print('%d chunks' % (len(chunk_sizes),))
 
         new_fragment = Fragment(name=self.__rec.id, circular=False, parent=None, start_chunk=None)
         new_fragment.save()
@@ -111,7 +111,7 @@ class GFFFragmentImporter(object):
             prev = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:flen + sz])
             flen += sz
         if flen < seqlen:
-            f = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:seqlen])
+            new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:seqlen])
 
         return new_fragment
 
@@ -123,7 +123,7 @@ class GFFFragmentImporter(object):
 
         for feature in self.__features:
             f_start, f_end, f_name, f_type, f_strand, f_qualifiers = feature
-            # print '  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand)
+            # print('  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand))
             self._annotate_feature(fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers)
 
     def _annotate_feature(self, fragment, first_base1, last_base1, name, type, strand, qualifiers):

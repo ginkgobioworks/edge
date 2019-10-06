@@ -97,7 +97,7 @@ def blast(dbname, blast_program, query, evalue_threshold=0.001):
     os.unlink(infile)
 
     if r != 0:
-        print "Blast failed: %s" % cl
+        print("Blast failed: %s" % cl)
         return []
 
     results = []

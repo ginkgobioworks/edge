@@ -39,13 +39,13 @@ def parse_primer3_output(d):
     primers = {}
 
     for k in d:
-        m = re.search('\d+', k)
+        m = re.search(br'\d+', k)
         if m:
             i = int(m.group(0))
             if i not in primers:
                 primers[i] = {}
-            k2 = re.sub('_%s_' % i, '_', k)
-            primers[i][k2] = d[k]
+            k2 = re.sub(b'_%d_' % i, b'_', k)
+            primers[i][k2.decode()] = d[k].decode()
 
     return [primers[k] for k in sorted(primers.keys())]
 
@@ -63,10 +63,10 @@ def primer3_run(opts):
     out = subprocess.check_output(cmd.split(' '))
     os.unlink(fn)
     r = {}
-    for l in out.split('\n'):
-        if '=' in l:
-            l = l.split('=')
-            r[l[0]] = '='.join(l[1:])
+    for ll in out.split(b'\n'):
+        if b'=' in ll:
+            ll = ll.split(b'=')
+            r[ll[0]] = b'='.join(ll[1:])
 
     return parse_primer3_output(r)
 
@@ -79,7 +79,7 @@ def design_primers_from_template(template, roi_start, roi_len, junctions, primer
     opts = {}
     opts.update(PRIMER3_INT_DEFAULTS)
     opts.update(PRIMER3_FLOAT_DEFAULTS)
-    for k, v in primer3_opts.iteritems():
+    for k, v in primer3_opts.items():
         if k in PRIMER3_INT_DEFAULTS:
             opts[k] = int(v)
         elif k in PRIMER3_FLOAT_DEFAULTS:

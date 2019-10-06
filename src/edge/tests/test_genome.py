@@ -30,7 +30,7 @@ class GenomeTest(TestCase):
 
         child = u
         # created a child genome
-        self.assertItemsEqual([g.id for g in Genome.objects.all()], [parent.id, child.id])
+        self.assertCountEqual([g.id for g in Genome.objects.all()], [parent.id, child.id])
         # child genome points to parent genome
         self.assertEquals(child.parent.id, parent.id)
         # child genome has changes, parent does not
@@ -151,7 +151,7 @@ class GenomeTest(TestCase):
 
         changes = g.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
-        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s) + 6)])
+        self.assertCountEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s) + 6)])
 
     def test_update_fragment_by_id(self):
         genome = Genome.create('Foo')
@@ -169,26 +169,26 @@ class GenomeTest(TestCase):
     def test_can_update_fragment_by_name_and_assign_new_name(self):
         genome = Genome.create('Foo')
         genome.add_fragment('chrI', 'atggcatattcgcagct')
-        self.assertItemsEqual([f.name for f in genome.fragments.all()], ['chrI'])
+        self.assertCountEqual([f.name for f in genome.fragments.all()], ['chrI'])
 
         # insert
         g = genome.update()
         with g.update_fragment_by_name('chrI', 'foobar') as f:
             f.insert_bases(3, 'gataca')
 
-        self.assertItemsEqual([fr.name for fr in g.fragments.all()], ['foobar'])
+        self.assertCountEqual([fr.name for fr in g.fragments.all()], ['foobar'])
 
     def test_can_update_fragment_by_id_and_assign_new_name(self):
         genome = Genome.create('Foo')
         f0 = genome.add_fragment('chrI', 'atggcatattcgcagct')
-        self.assertItemsEqual([f.name for f in genome.fragments.all()], ['chrI'])
+        self.assertCountEqual([f.name for f in genome.fragments.all()], ['chrI'])
 
         # insert
         g = genome.update()
         with g.update_fragment_by_fragment_id(f0.id, 'foobar') as f:
             f.insert_bases(3, 'gataca')
 
-        self.assertItemsEqual([fr.name for fr in g.fragments.all()], ['foobar'])
+        self.assertCountEqual([fr.name for fr in g.fragments.all()], ['foobar'])
 
     def test_can_insert_then_insert_and_get_second_insert_only_as_changes(self):
         genome = Genome.create('Foo')
@@ -213,11 +213,11 @@ class GenomeTest(TestCase):
 
         changes = g2.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
-        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s) + 6)])
+        self.assertCountEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s) + 6)])
 
         changes = g3.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
-        self.assertItemsEqual([c.location for c in changes], [
+        self.assertCountEqual([c.location for c in changes], [
                               (3, 8), (9, 14), (15, len(s) + 6 + 6)])
 
     def test_only_get_changes_from_changed_fragment(self):
@@ -238,7 +238,7 @@ class GenomeTest(TestCase):
 
         changes = g2.indexed_genome().changes()
         self.assertEquals(len(changes), 3)
-        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s) + 6)])
+        self.assertCountEqual([c.location for c in changes], [(1, 2), (3, 8), (9, len(s) + 6)])
 
     def test_can_remove_and_get_changes_back(self):
         genome = Genome.create('Foo')
@@ -257,7 +257,7 @@ class GenomeTest(TestCase):
 
         changes = g.indexed_genome().changes()
         self.assertEquals(len(changes), 2)
-        self.assertItemsEqual([c.location for c in changes], [(1, 2), (3, len(s) - 4)])
+        self.assertCountEqual([c.location for c in changes], [(1, 2), (3, len(s) - 4)])
 
     def test_can_insert_and_remove_and_get_all_changes_back(self):
         genome = Genome.create('Foo')
@@ -277,7 +277,7 @@ class GenomeTest(TestCase):
 
         changes = g.indexed_genome().changes()
         self.assertEquals(len(changes), 4)
-        self.assertItemsEqual([c.location for c in changes],
+        self.assertCountEqual([c.location for c in changes],
                               [(1, 2), (3, 8), (9, 9), (10, len(s) + 6 - 4)])
 
     def test_can_add_notes_on_update(self):

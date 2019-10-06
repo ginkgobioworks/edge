@@ -17,15 +17,15 @@ class DesignPrimerTest(TestCase):
             Genome_Fragment(genome=g, fragment=f, inherited=False).save()
             try:
                 os.unlink(fragment_fasta_fn(f))
-            except:
+            except OSError:
                 pass
         build_all_genome_dbs(refresh=True)
         return Genome.objects.get(pk=g.id)
 
     def test_primer3_finds_primers_when_given_range_to_find_primers(self):
-        upstream = "cagtacgatcgttggtatgctgactactagcgtagctagcacgtcgtgtccaggcttgagcgacgt"
-        product = "cagctggtaatcgtactcgtactagcatcgtacgtgtctgatcatctgacgtatcatctga"
-        downstream = "agtgacgtcgtgtgtagcgtactgtatcgtgtgtcgcgcgtagtcatctgatcgtacgtactgaat"
+        upstream = 'cagtacgatcgttggtatgctgactactagcgtagctagcacgtcgtgtccaggcttgagcgacgt'
+        product = 'cagctggtaatcgtactcgtactagcatcgtacgtgtctgatcatctgacgtatcatctga'
+        downstream = 'agtgacgtcgtgtgtagcgtactgtatcgtgtgtcgcgcgtagtcatctgatcgtacgtactgaat'
         template = ''.join([upstream, product, downstream])
 
         g = self.build_genome(False, 'a' * 40 + template + 'a' * 40)
@@ -40,9 +40,9 @@ class DesignPrimerTest(TestCase):
             self.assertEquals(p[0].index(product) >= 0, True)
 
     def test_computes_primer_distance_to_junction(self):
-        upstream = "cagtacgatcgttggtatgctgactactagcgtagctagcacgtcgtgtccaggcttgagcgacgt"
-        product = "cagctggtaatcgtactcgtactagcatcgtacgtgtctgatcatctgacgtatcatctga"
-        downstream = "agtgacgtcgtgtgtagcgtactgtatcgtgtgtcgcgcgtagtcatctgatcgtacgtactgaat"
+        upstream = 'cagtacgatcgttggtatgctgactactagcgtagctagcacgtcgtgtccaggcttgagcgacgt'
+        product = 'cagctggtaatcgtactcgtactagcatcgtacgtgtctgatcatctgacgtatcatctga'
+        downstream = 'agtgacgtcgtgtgtagcgtactgtatcgtgtgtcgcgcgtagtcatctgatcgtacgtactgaat'
         template = ''.join([upstream, product, downstream])
 
         WIN = 10
@@ -53,10 +53,12 @@ class DesignPrimerTest(TestCase):
         for r in res:
             left = r['PRIMER_LEFT_SEQUENCE']
             self.assertEquals(r['PRIMER_LEFT_SEQUENCE_DISTANCE_TO_JUNCTION'] >= WIN, True)
-            self.assertEquals(template.lower().index(left.lower()) +
-                              len(left) +
-                              r['PRIMER_LEFT_SEQUENCE_DISTANCE_TO_JUNCTION'], junctions[0])
+            self.assertEquals(template.lower().index(left.lower())
+                              + len(left)
+                              + r['PRIMER_LEFT_SEQUENCE_DISTANCE_TO_JUNCTION'],
+                              junctions[0])
             right = str(Seq(r['PRIMER_RIGHT_SEQUENCE']).reverse_complement())
             self.assertEquals(r['PRIMER_RIGHT_SEQUENCE_DISTANCE_TO_JUNCTION'] >= WIN, True)
-            self.assertEquals(template.lower().index(right.lower()) -
-                              r['PRIMER_RIGHT_SEQUENCE_DISTANCE_TO_JUNCTION'], junctions[1])
+            self.assertEquals(template.lower().index(right.lower())
+                              - r['PRIMER_RIGHT_SEQUENCE_DISTANCE_TO_JUNCTION'],
+                              junctions[1])
