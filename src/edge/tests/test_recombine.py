@@ -62,7 +62,7 @@ class GenomeRecombinationTest(TestCase):
             Genome_Fragment(genome=g, fragment=f, inherited=False).save()
             try:
                 os.unlink(fragment_fasta_fn(f))
-            except:
+            except OSError:
                 pass
         build_all_genome_dbs(refresh=True)
         return Genome.objects.get(pk=g.id)
@@ -296,7 +296,7 @@ class GenomeRecombinationTest(TestCase):
         template = ''.join([upstream, front_bs, middle, back_bs, downstream])
         cassette = ''.join(['c' * 6 + front_bs, replaced, back_bs + 'c' * 6])
 
-        arm_len = min(len(front_bs), len(back_bs)) / 2
+        arm_len = int(min(len(front_bs), len(back_bs)) / 2)
         g = self.build_genome(False, template)
         c = recombine(g, cassette, arm_len)
 
@@ -551,11 +551,11 @@ class GenomeRecombinationTest(TestCase):
         sequences = sorted(sequences, key=lambda s: len(s))
 
         self.assertEquals(sequences[0],
-                          't' * 20 + upstream + cassette + downstream +
-                          'c' * 20 + upstream + cassette + downstream + 'c' * 30)
+                          't' * 20 + upstream + cassette + downstream
+                          + 'c' * 20 + upstream + cassette + downstream + 'c' * 30)
         self.assertEquals(sequences[1],
-                          't' * 40 + upstream + cassette + downstream +
-                          'c' * 15 + upstream + cassette + downstream + 'c' * 20)
+                          't' * 40 + upstream + cassette + downstream
+                          + 'c' * 15 + upstream + cassette + downstream + 'c' * 20)
 
     def test_recombines_multiple_times_on_circular_fragment(self):
         upstream = "gagattgtccgcgtttt"
@@ -583,8 +583,8 @@ class GenomeRecombinationTest(TestCase):
         g = self.build_genome(True, f)
         c = recombine(g, cassette, arm_len)
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
-                          downstream + 't' * 20 + upstream + cassette + downstream +
-                          'c' * 20 + upstream + cassette)
+                          downstream + 't' * 20 + upstream + cassette + downstream
+                          + 'c' * 20 + upstream + cassette)
 
     def test_multiple_recombines_return_same_child(self):
         upstream = "gagattgtccgcgtttt"
@@ -693,7 +693,7 @@ class GenomeRecombinationTest(TestCase):
         for f in c.fragments.all():
             try:
                 os.unlink(fragment_fasta_fn(f))
-            except:
+            except OSError:
                 pass
         build_all_genome_dbs(refresh=True)
         # reload to get blastdb
@@ -812,16 +812,16 @@ class SingleCrossoverTest(TestCase):
             Genome_Fragment(genome=g, fragment=f, inherited=False).save()
             try:
                 os.unlink(fragment_fasta_fn(f))
-            except:
+            except OSError:
                 pass
         build_all_genome_dbs(refresh=True)
         return Genome.objects.get(pk=g.id)
 
     def test_single_crossover_integrates_correctly(self):
-        upstream = "gagattgtccgcgtttt"
-        locus = "catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc"
-        downstream = "gttaaggcgcgaacat"
-        insertion = "aaaaaaaaaaaaaaaaaaa"
+        upstream = 'gagattgtccgcgtttt'
+        locus = 'catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc'
+        downstream = 'gttaaggcgcgaacat'
+        insertion = 'aaaaaaaaaaaaaaaaaaa'
         locus_len = len(locus)
         bs_len = int(locus_len / 2)
 
@@ -836,12 +836,12 @@ class SingleCrossoverTest(TestCase):
                           ''.join([upstream, locus, insertion, locus, downstream]))
 
     def test_single_crossover_integrates_correctly_with_gap_in_homology(self):
-        upstream = "gagattgtccgcgtttt"
-        locus = "catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc"
-        downstream = "gttaaggcgcgaacat"
-        insertion = "aaaaaaaaaaaaaaaaaaa"
+        upstream = 'gagattgtccgcgtttt'
+        locus = 'catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc'
+        downstream = 'gttaaggcgcgaacat'
+        insertion = 'aaaaaaaaaaaaaaaaaaa'
         locus_len = len(locus)
-        gap = self.new_max_gap / 2
+        gap = int(self.new_max_gap / 2)
         arm_short = 2
         bs_len = int(locus_len / 2) - (gap - arm_short)
 
@@ -856,10 +856,10 @@ class SingleCrossoverTest(TestCase):
                           ''.join([upstream, locus, insertion, locus, downstream]))
 
     def test_single_crossover_integrates_correctly_with_reverse_complement_of_locus(self):
-        upstream = "gagattgtccgcgtttt"
-        locus = "catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc"
-        downstream = "gttaaggcgcgaacat"
-        insertion = "aaaaaaaaaaaaaaaaaaa"
+        upstream = 'gagattgtccgcgtttt'
+        locus = 'catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc'
+        downstream = 'gttaaggcgcgaacat'
+        insertion = 'aaaaaaaaaaaaaaaaaaa'
         locus_len = len(locus)
         bs_len = int(locus_len / 2)
 
@@ -875,12 +875,12 @@ class SingleCrossoverTest(TestCase):
                           ''.join([upstream, locus, insertion, locus, downstream]))
 
     def test_single_crossover_integrates_correctly_with_reverse_complement_and_gap_in_locus(self):
-        upstream = "gagattgtccgcgtttt"
-        locus = "catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc"
-        downstream = "gttaaggcgcgaacat"
-        insertion = "aaaaaaaaaaaaaaaaaaa"
+        upstream = 'gagattgtccgcgtttt'
+        locus = 'catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc'
+        downstream = 'gttaaggcgcgaacat'
+        insertion = 'aaaaaaaaaaaaaaaaaaa'
         locus_len = len(locus)
-        gap = self.new_max_gap / 2
+        gap = int(self.new_max_gap / 2)
         arm_short = 2
         bs_len = int(locus_len / 2) - (gap - arm_short)
 

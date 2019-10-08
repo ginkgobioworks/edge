@@ -57,19 +57,19 @@ class GenomeListTest(TestCase):
         res = self.client.get('/edge/genomes/')
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertItemsEqual([g['id'] for g in d], [g1.id, g2.id])
+        self.assertCountEqual([g['id'] for g in d], [g1.id, g2.id])
 
         # looking for f1 and f2
         res = self.client.get('/edge/genomes/?f=%d&f=%d' % (f1.id, f2.id))
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertItemsEqual([g['id'] for g in d], [g1.id])
+        self.assertCountEqual([g['id'] for g in d], [g1.id])
 
         # looking for f1 and f3
         res = self.client.get('/edge/genomes/?f=%d&f=%d' % (f1.id, f3.id))
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertItemsEqual([g['id'] for g in d], [g2.id])
+        self.assertCountEqual([g['id'] for g in d], [g2.id])
 
         # looking for f2 and f3
         res = self.client.get('/edge/genomes/?f=%d&f=%d' % (f2.id, f3.id))
@@ -100,25 +100,25 @@ class GenomeListTest(TestCase):
         res = self.client.get('/edge/genomes/')
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertItemsEqual([g['name'] for g in d], ['Foo', 'Bar %s' % a.id])
+        self.assertCountEqual([g['name'] for g in d], ['Foo', 'Bar %s' % a.id])
 
         # finds genome by ID and query
         res = self.client.get('/edge/genomes/?q=%s' % a.id)
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertItemsEqual([g['name'] for g in d], ['Foo', 'Bar %s' % a.id])
+        self.assertCountEqual([g['name'] for g in d], ['Foo', 'Bar %s' % a.id])
 
         # finds one
         res = self.client.get('/edge/genomes/?q=oo')
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertItemsEqual([g['name'] for g in d], ['Foo'])
+        self.assertCountEqual([g['name'] for g in d], ['Foo'])
 
         # finds none
         res = self.client.get('/edge/genomes/?q=ooo')
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertItemsEqual([g['name'] for g in d], [])
+        self.assertCountEqual([g['name'] for g in d], [])
 
     def test_genome_list_paginates(self):
         from edge.models import Genome
@@ -160,10 +160,10 @@ class GenomeListTest(TestCase):
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
         self.assertEqual(len(d), 2)
-        self.assertEqual('Foo' in res.content, False)
-        self.assertEqual('Bar' in res.content, False)
-        self.assertEqual('Far' in res.content, True)
-        self.assertEqual('Baz' in res.content, True)
+        self.assertEqual(b'Foo' in res.content, False)
+        self.assertEqual(b'Bar' in res.content, False)
+        self.assertEqual(b'Far' in res.content, True)
+        self.assertEqual(b'Baz' in res.content, True)
 
 
 class GenomeTest(TestCase):

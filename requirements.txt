@@ -5,14 +5,14 @@ biopython == 1.63
 
 # testing
 nose==1.3.7
-django-nose==1.4.5
+django-nose==1.4.6
 coverage==4.3.4
 
 # code checking
-flake8==3.3.0
+flake8==3.7.8
 
 # when using mysql
-mysql-python==1.2.5
+mysqlclient==1.4.4
 
 # release
 bumpversion==0.5.3

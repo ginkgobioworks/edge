@@ -24,7 +24,7 @@ class Genome(Genome_Updater, models.Model):
     active = models.BooleanField(default=True)
     blastdb = models.TextField(null=True, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     @staticmethod
@@ -104,9 +104,9 @@ class Indexed_Genome(Genome):
         chunk_features = []
         for cf in q:
             qualifiers = cf.feature.qualifiers
-            for k, v in qualifiers.iteritems():
+            for k, v in qualifiers.items():
                 if fields is None or k.lower() in fields:
-                    if type(v) in (str, unicode):
+                    if type(v) in (bytes, str):
                         v = v.split(',')
                     v = [s.lower() for s in v]
                     if name.lower() in v:
@@ -148,7 +148,7 @@ class Indexed_Genome(Genome):
             else:
                 v[-1][1] = c.location[1]
 
-        changes = {Fragment.objects.get(pk=f): v for f, v in changes.iteritems()}
+        changes = {Fragment.objects.get(pk=f): v for f, v in changes.items()}
         return changes
 
 
@@ -156,6 +156,6 @@ class Genome_Fragment(models.Model):
     class Meta:
         app_label = "edge"
 
-    genome = models.ForeignKey(Genome)
-    fragment = models.ForeignKey(Fragment)
+    genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
+    fragment = models.ForeignKey(Fragment, on_delete=models.CASCADE)
     inherited = models.BooleanField()

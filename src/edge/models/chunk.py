@@ -107,7 +107,7 @@ class Feature(models.Model):
     type = models.CharField(max_length=100)
     strand = models.IntegerField(null=True)
     length = models.IntegerField()
-    operation = models.ForeignKey('Operation', null=True)
+    operation = models.ForeignKey('Operation', null=True, on_delete=models.CASCADE)
     _qualifiers = models.TextField(null=True, db_column='qualifiers')
 
     def set_qualifiers(self, qualifiers):
@@ -148,7 +148,7 @@ class Fragment_Chunk_Location(BigIntPrimaryModel):
     base_first = models.IntegerField()
     base_last = models.IntegerField()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s: %s-%s' % (self.fragment.name, self.location[0], self.location[1])
 
     @property

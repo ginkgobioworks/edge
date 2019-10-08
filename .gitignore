@@ -62,3 +62,6 @@ test.db*
 
 # don't check in NCBI data
 ncbi/
+
+# Ignore vim files
+*.swp

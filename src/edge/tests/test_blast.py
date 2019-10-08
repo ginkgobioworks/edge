@@ -34,7 +34,7 @@ class GenomeBlastTest(TestCase):
             os.unlink(fragment_fasta_fn(f1))
             os.unlink(fragment_fasta_fn(f2))
             os.unlink(fragment_fasta_fn(f3))
-        except:
+        except BaseException:
             pass
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
@@ -59,7 +59,7 @@ class GenomeBlastTest(TestCase):
 
         try:
             os.unlink(fragment_fasta_fn(f1))
-        except:
+        except BaseException:
             pass
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
@@ -83,7 +83,7 @@ class GenomeBlastTest(TestCase):
 
         try:
             os.unlink(fragment_fasta_fn(f1))
-        except:
+        except BaseException:
             pass
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
@@ -120,7 +120,7 @@ class GenomeBlastTest(TestCase):
 
         try:
             os.unlink(fragment_fasta_fn(f1))
-        except:
+        except BaseException:
             pass
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
@@ -138,7 +138,7 @@ class GenomeBlastTest(TestCase):
 
         try:
             os.unlink(fragment_fasta_fn(f1))
-        except:
+        except BaseException:
             pass
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
@@ -172,7 +172,7 @@ class GenomeBlastAPITest(TestCase):
             os.unlink(fragment_fasta_fn(f1))
             os.unlink(fragment_fasta_fn(f2))
             os.unlink(fragment_fasta_fn(f3))
-        except:
+        except BaseException:
             pass
         build_all_genome_dbs(refresh=True)
 
@@ -210,7 +210,7 @@ class GenomeBlastAPITest(TestCase):
 
         try:
             os.unlink(fragment_fasta_fn(f1))
-        except:
+        except BaseException:
             pass
         build_all_genome_dbs(refresh=True)
 

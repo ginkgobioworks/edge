@@ -20,7 +20,7 @@ class IOTest(TestCase):
         Genome_Fragment(genome=self.genome, fragment=self.fragment, inherited=False).save()
 
     def test_outputs_fasta(self):
-        with tempfile.NamedTemporaryFile(mode='rw+', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_fasta(f.name)
             h = open(f.name, 'r')
@@ -35,7 +35,7 @@ class IOTest(TestCase):
         fragment.annotate(2, 9, 'A1', 'gene', 1)
         fragment.insert_bases(3, 'gataca')
 
-        with tempfile.NamedTemporaryFile(mode='rw+', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_gff(f.name)
             h = open(f.name, 'r')
@@ -59,7 +59,7 @@ Bar\tfeature\tgene\t9\t15\t.\t+\t.\tname=A1
         fragment.annotate(2, 9, 'A1', 'gene', -1)
         fragment.insert_bases(3, 'gataca')
 
-        with tempfile.NamedTemporaryFile(mode='rw+', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_gff(f.name)
             h = open(f.name, 'r')

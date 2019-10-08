@@ -13,8 +13,8 @@ def make_required_dirs(path):
     dirn = os.path.dirname(path)
     try:
         original_umask = os.umask(0)
-        os.makedirs(dirn, 0777)
-    except:
+        os.makedirs(dirn, 0o777)
+    except OSError:
         pass
     finally:
         os.umask(original_umask)
@@ -32,7 +32,7 @@ def build_fragment_fasta(fragment, refresh=False):
     make_required_dirs(fn)
 
     if not os.path.isfile(fn) or refresh:  # have not built this fasta or need refresh
-        print 'building %s' % fn
+        print('building %s' % fn)
         # this may take awhile, so do this first, so user interrupt does
         # not create an empty file
         sequence = fragment.indexed_fragment().sequence
@@ -53,7 +53,7 @@ def build_db(fragments, dbname, refresh=True):
 
     if refresh is False and \
        (os.path.isfile(dbname + '.nal') or os.path.isfile(dbname + '.nsq')):
-        print 'already built %s' % dbname
+        print('already built %s' % dbname)
         return dbname
 
     fns = []
@@ -61,7 +61,7 @@ def build_db(fragments, dbname, refresh=True):
         fn = build_fragment_fasta(fragment, refresh)
         fns.append(fn)
 
-    print 'concat fasta files for %s' % dbname
+    print('concat fasta files for %s' % dbname)
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
         fafile = f.name
         for fn in fns:
@@ -69,14 +69,14 @@ def build_db(fragments, dbname, refresh=True):
                 for line in inf:
                     f.write(line)
 
-    print 'building blast db %s' % dbname
+    print('building blast db %s' % dbname)
     make_required_dirs(dbname)
     cmd = "%s/makeblastdb -in %s -out %s " % (settings.NCBI_BIN_DIR, fafile, dbname)
     cmd += "-title edge -dbtype nucl -parse_seqids -input_type fasta"
 
     r = subprocess.check_output(cmd.split(' '))
-    if 'Adding sequences from FASTA' not in r:
-        print r
+    if b'Adding sequences from FASTA' not in r:
+        print(r)
 
     os.unlink(fafile)
     return dbname

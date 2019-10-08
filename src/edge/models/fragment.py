@@ -25,7 +25,7 @@ class Fragment(models.Model):
     active = models.BooleanField(default=True)
 
     @staticmethod
-    def user_defined_fragments(q=None, f=None, l=None):
+    def user_defined_fragments(q=None, f=None, l=None):  # noqa: E741
         qs = Fragment.objects.filter(genome_fragment__id__isnull=True, active=True)
         if q is not None:
             qs = qs.filter(q)
@@ -113,7 +113,7 @@ class Fragment(models.Model):
 
         try:
             index = self.fragment_index
-        except:
+        except BaseException:
             index = Fragment_Index(fragment=self)
         index.fresh = True
         index.updated_on = timezone.now()
@@ -132,7 +132,7 @@ class Fragment(models.Model):
         if self.fragment_chunk_location_set.count() > 0:
             try:
                 index = self.fragment_index
-            except:
+            except BaseException:
                 return False
             return index.fresh
         return False
@@ -148,7 +148,7 @@ class Fragment_Index(models.Model):
     class Meta:
         app_label = "edge"
 
-    fragment = models.OneToOneField(Fragment)
+    fragment = models.OneToOneField(Fragment, on_delete=models.CASCADE)
     fresh = models.BooleanField()
     updated_on = models.DateTimeField('Updated', null=True)
 

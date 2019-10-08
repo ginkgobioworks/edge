@@ -3,7 +3,7 @@ import os
 import random
 import tempfile
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponse, JsonResponse
 from django.views.generic.base import View
 from django.views.decorators.http import require_http_methods
@@ -33,7 +33,7 @@ def genome_import(request):
     }
 
     for name in request.FILES:
-        with tempfile.NamedTemporaryFile(mode='rw+b', delete=False) as gff:
+        with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as gff:
             for chuck in request.FILES.get(name).chunks():
                 gff.write(chuck)
         g = import_gff(name, gff.name)
@@ -88,7 +88,7 @@ class RequestParser(object):
     def add_argument(self, name, field_type, required=False, default=None, location='get'):
         if type(field_type) not in (list, tuple):
             if field_type == str:
-                field_type = [str, unicode]
+                field_type = [bytes, str]
             else:
                 field_type = [field_type]
         self.__args.append((name, field_type, required, default, location))
@@ -156,15 +156,15 @@ class FragmentSequenceView(ViewBase):
         q_parser.add_argument('l', field_type=int, location='get')
         args = q_parser.parse_args(request)
         f = args['f']
-        l = args['l']
+        ll = args['l']
 
         fragment = get_fragment_or_404(fragment_id)
-        s = fragment.indexed_fragment().get_sequence(bp_lo=f, bp_hi=l)
+        s = fragment.indexed_fragment().get_sequence(bp_lo=f, bp_hi=ll)
         if f is None:
             f = 1
-        if l is None:
-            l = f + len(s) - 1
-        return {'sequence': s, 'base_first': f, 'base_last': l}
+        if ll is None:
+            ll = f + len(s) - 1
+        return {'sequence': s, 'base_first': f, 'base_last': ll}
 
 
 class FragmentAnnotationsView(ViewBase):
@@ -187,11 +187,11 @@ class FragmentAnnotationsView(ViewBase):
         q_parser.add_argument('m', field_type=int, location='get')
         args = q_parser.parse_args(request)
         f = args['f']
-        l = args['l']
+        ll = args['l']
         m = args['m']
 
         fragment = get_fragment_or_404(fragment_id)
-        annotations = fragment.indexed_fragment().annotations(bp_lo=f, bp_hi=l)
+        annotations = fragment.indexed_fragment().annotations(bp_lo=f, bp_hi=ll)
         if m is not None and len(annotations) > m:
             to_return = []
             while len(to_return) < m:
@@ -265,7 +265,7 @@ class GenomeView(ViewBase):
             genome = genome.indexed_genome()
             for feature in op.feature_set.all():
                 fragment_annotations = genome.find_annotation_by_feature(feature)
-                for fragment_id, fragment_annotations in fragment_annotations.iteritems():
+                for fragment_id, fragment_annotations in fragment_annotations.items():
                     if fragment_id not in annotations:
                         annotations[fragment_id] = []
                     annotations[fragment_id].extend(fragment_annotations)
@@ -395,7 +395,7 @@ class GenomeListView(ViewBase):
                 where = Q(name__icontains=q)
                 try:
                     int(q)  # See if q can be converted to an int
-                except:
+                except BaseException:
                     pass
                 else:
                     where = where | Q(id=q)

@@ -24,10 +24,10 @@ CHECK_JUNCTION_RIGHT_DN = 10
 def remove_overhangs(s):
     if s is None or len(s) == 0:
         return s
-    s = re.sub("^\([\w\-\/]*\)", "", s)
-    s = re.sub("\([\w\-\/]*\)$", "", s)
-    s = re.sub("^\<[\w\-\/]*\>", "", s)
-    s = re.sub("\<[\w\-\/]*\>$", "", s)
+    s = re.sub(r'^\([\w\-\/]*\)', '', s)
+    s = re.sub(r'\([\w\-\/]*\)$', '', s)
+    s = re.sub(r'^\<[\w\-\/]*\>', '', s)
+    s = re.sub(r'\<[\w\-\/]*\>$', '', s)
     return s
 
 
@@ -43,8 +43,8 @@ def blast_result_annotations(res):
                         feature_strand=a.feature.strand,
                         fragment_id=fragment.id)
                    for a in fragment.annotations(res.subject_start, res.subject_end)
-                   if a.feature_base_first == 1 and a.feature_base_last == a.feature.length and
-                   a.base_first >= res.subject_start and a.base_last <= res.subject_end]
+                   if a.feature_base_first == 1 and a.feature_base_last == a.feature.length
+                   and a.base_first >= res.subject_start and a.base_last <= res.subject_end]
 
     return annotations
 
@@ -127,8 +127,8 @@ def get_cassette_inherited_annotations(genome, cassette, fragment_id, region_sta
 
     # find matches inside region to be replaced
     matches = [res for res in cassette_blast_res
-               if res.fragment_id == fragment_id and
-               res.subject_start >= region_start and res.subject_end <= region_end]
+               if res.fragment_id == fragment_id
+               and res.subject_start >= region_start and res.subject_end <= region_end]
 
     inherited_annotations = []
 
@@ -218,10 +218,10 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
         return None
 
     # arms must align nicely
-    if front_arm_blastres.identity_ratio() < MIN_IDENTITIES or\
-       back_arm_blastres.identity_ratio() < MIN_IDENTITIES or\
-       front_arm_blastres.alignment_length() < len(front_arm_sequence) - MAX_MISSING_BP or\
-       back_arm_blastres.alignment_length() < len(back_arm_sequence) - MAX_MISSING_BP:
+    if front_arm_blastres.identity_ratio() < MIN_IDENTITIES \
+       or back_arm_blastres.identity_ratio() < MIN_IDENTITIES \
+       or front_arm_blastres.alignment_length() < len(front_arm_sequence) - MAX_MISSING_BP \
+       or back_arm_blastres.alignment_length() < len(back_arm_sequence) - MAX_MISSING_BP:
         return None
 
     fragment = front_arm_blastres.fragment.indexed_fragment()
@@ -237,24 +237,24 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
     if front_arm_blastres.strand() > 0:  # on +1 strand
         is_reversed = False
 
-        if (fragment.circular is False and
-            back_1 < front_0 and front_0 - back_1 <= SINGLE_CROSSOVER_MAX_GAP) or \
-           (fragment.circular is True and
-            ((back_1 < front_0 and front_0 - back_1 <= SINGLE_CROSSOVER_MAX_GAP) or
-             (back_1 < front_0 + fragment.length and
-              front_0 + fragment.length - back_1 <= SINGLE_CROSSOVER_MAX_GAP))):
+        if ((fragment.circular is False
+             and back_1 < front_0 and front_0 - back_1 <= SINGLE_CROSSOVER_MAX_GAP)
+            or (fragment.circular is True
+                and ((back_1 < front_0 and front_0 - back_1 <= SINGLE_CROSSOVER_MAX_GAP)
+                     or (back_1 < front_0 + fragment.length
+                         and front_0 + fragment.length - back_1 <= SINGLE_CROSSOVER_MAX_GAP)))):
             single_crossover = True
             region_start = back_0
             region_end = front_1
             single_crossover_front_dup_1 = front_0 - 1
             single_crossover_back_dup_0 = back_1 + 1
 
-        elif (fragment.circular is False and
-              front_1 < back_0 and back_0 - front_1 <= MAX_INTEGRATION_SIZE) or \
-             (fragment.circular is True and
-              ((front_1 < back_0 and back_0 - front_1 <= MAX_INTEGRATION_SIZE) or
-               (front_1 < back_0 + fragment.length and
-                back_0 + fragment.length - front_1 <= MAX_INTEGRATION_SIZE))):
+        elif ((fragment.circular is False
+               and front_1 < back_0 and back_0 - front_1 <= MAX_INTEGRATION_SIZE)
+              or (fragment.circular is True
+                  and ((front_1 < back_0 and back_0 - front_1 <= MAX_INTEGRATION_SIZE)
+                       or (front_1 < back_0 + fragment.length
+                           and back_0 + fragment.length - front_1 <= MAX_INTEGRATION_SIZE)))):
             single_crossover = False
             region_start = front_0
             region_end = back_1
@@ -265,24 +265,24 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
     else:  # on -1 strand
         is_reversed = True
 
-        if (fragment.circular is False and
-            back_1 > front_0 and back_1 - front_0 <= SINGLE_CROSSOVER_MAX_GAP) or \
-           (fragment.circular is True and
-            ((back_1 > front_0 and back_1 - front_0 <= SINGLE_CROSSOVER_MAX_GAP) or
-             (back_1 + fragment.length > front_0 and
-              back_1 + fragment.length - front_0 <= SINGLE_CROSSOVER_MAX_GAP))):
+        if ((fragment.circular is False
+             and back_1 > front_0 and back_1 - front_0 <= SINGLE_CROSSOVER_MAX_GAP)
+            or (fragment.circular is True
+                and ((back_1 > front_0 and back_1 - front_0 <= SINGLE_CROSSOVER_MAX_GAP)
+                     or (back_1 + fragment.length > front_0
+                         and back_1 + fragment.length - front_0 <= SINGLE_CROSSOVER_MAX_GAP)))):
             single_crossover = True
             region_start = front_1
             region_end = back_0
             single_crossover_front_dup_1 = back_1 - 1
             single_crossover_back_dup_0 = front_0 + 1
 
-        elif (fragment.circular is False and
-              front_1 > back_0 and front_1 - back_0 <= MAX_INTEGRATION_SIZE) or \
-             (fragment.circular is True and
-              ((front_1 > back_0 and front_1 - back_0 <= MAX_INTEGRATION_SIZE) or
-               (front_1 + fragment.length > back_0 and
-                front_1 + fragment.length - back_0 <= MAX_INTEGRATION_SIZE))):
+        elif ((fragment.circular is False
+               and front_1 > back_0 and front_1 - back_0 <= MAX_INTEGRATION_SIZE)
+              or (fragment.circular is True
+                  and ((front_1 > back_0 and front_1 - back_0 <= MAX_INTEGRATION_SIZE)
+                       or (front_1 + fragment.length > back_0
+                           and front_1 + fragment.length - back_0 <= MAX_INTEGRATION_SIZE)))):
             single_crossover = False
             region_start = back_1
             region_end = front_0
@@ -406,8 +406,8 @@ def get_verification_primers(genome, region, primer3_opts):
 
     # don't bother looking for primers if front part of cassette is same as
     # region to be replaced
-    if region.start + len(region.sequence) < fragment.length and\
-       front.lower() != region.sequence[-upstream_window:].lower():
+    if region.start + len(region.sequence) < fragment.length \
+       and front.lower() != region.sequence[-upstream_window:].lower():
         back = fragment.get_sequence(region.start + len(region.sequence),
                                      region.start + len(region.sequence) + downstream_window - 1)
         template = front + back
@@ -428,8 +428,8 @@ def get_verification_primers(genome, region, primer3_opts):
     if region.start > 1 and region.start + len(region.sequence) < fragment.length:
         front = fragment.get_sequence(region.start - CHECK_JUNCTION_PRIMER_WINDOW, region.start - 1)
         back = fragment.get_sequence(region.start + len(region.sequence),
-                                     region.start + len(region.sequence) +
-                                     CHECK_JUNCTION_PRIMER_WINDOW - 1)
+                                     region.start + len(region.sequence)
+                                     + CHECK_JUNCTION_PRIMER_WINDOW - 1)
         template = front + cassette + back
         junctions = [len(front), len(front + cassette) - 1]
         roi_start = template.index(cassette)
