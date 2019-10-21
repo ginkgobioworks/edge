@@ -5,7 +5,7 @@ from Bio.Seq import Seq
 from django.test import TestCase
 
 import edge.recombine
-from edge.recombine import find_swap_region, recombine, remove_overhangs
+from edge.recombine import find_swap_region, find_root_genome, recombine, remove_overhangs
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 from edge.models import Genome, Fragment, Genome_Fragment, Operation
 
@@ -66,6 +66,18 @@ class GenomeRecombinationTest(TestCase):
                 pass
         build_all_genome_dbs(refresh=True)
         return Genome.objects.get(pk=g.id)
+
+    def build_genome_and_ancestors(self, names):
+        # build a genome of name in names with each as its subsquent genome's parent
+        g_parent = Genome(name=names[0])
+        g_parent.save()
+        g_child = g_parent
+        for name in names[:-1]:
+            g_child = Genome(name=name)
+            g_child.parent = g_parent
+            g_child.save()
+            g_parent = g_child
+        return g_child
 
     def test_finds_correct_region_for_swapping(self):
         upstream = "gagattgtccgcgtttt"
@@ -215,6 +227,11 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(r[0].cassette_reversed, True)
         self.assertEquals(r[0].front_arm, str(Seq(back_bs[-arm_len:]).reverse_complement()))
         self.assertEquals(r[0].back_arm, str(Seq(front_bs[0:arm_len]).reverse_complement()))
+
+    def test_find_root_genome(self):
+        genome = self.build_genome_and_ancestors(['Foo', 'Bar', 'Foobar'])
+        root_genome = find_root_genome(genome)
+        self.assertEqual(root_genome.name, 'Foo')
 
     def test_finding_reverse_complement_region_when_front_arm_is_across_circular_boundary(self):
         upstream = "gagattgtccgcgtttt"
