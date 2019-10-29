@@ -52,6 +52,7 @@ TEMPLATES = [{
             'django.template.context_processors.tz',
             'django.template.context_processors.request',
             'django.contrib.messages.context_processors.messages',
+            'edge.context_processors.export_envs',
         ],
     },
 }]

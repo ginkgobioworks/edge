@@ -20,6 +20,7 @@ services:
       DB_PASSWORD: edge-dev-pw
       CELERY_CONFIG_MODULE: server.settings
       AMQP_URL: 'amqp://guest@rabbit:5672//'
+      FULLSTORY_ORG_ID: 'your_fullstory_org_id'
     tty: true
 
   edge-db:
