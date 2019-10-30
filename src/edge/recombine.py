@@ -489,6 +489,14 @@ def find_root_genome(genome):
     return root_genome
 
 
+def lock_genome(genome):
+    genomes = Genome.objects.select_for_update().filter(pk=find_root_genome(genome).id)
+    # Lock only happens when querset is evaluated, therefore need to do at least genomes[0]
+    genome = genomes[0]
+    print(f'Lock genome {genome.id}')
+    return genome
+
+
 def recombine_region(genome, region, min_homology_arm_length, op, need_new_fragment):
     """
     Recombines on a given region. Returns recombination cassette location, how
@@ -561,7 +569,7 @@ def recombine_sequence(genome, cassette, homology_arm_length,
         return None
 
     # lock root genome to prevent other genomes of touching same fragment or chunk
-    Genome.objects.select_for_update().filter(pk=find_root_genome(genome).id)
+    lock_genome(find_root_genome(genome))
 
     if genome_name is None or genome_name.strip() == "":
         genome_name = "%s recombined with %d bps integration cassette" % (genome.name,
@@ -620,7 +628,7 @@ def annotate_integration(genome, new_genome, regions_before, regions_after, cass
         before_and_after_with_annotations.append((before, after, annotations))
 
     # lock root genome to prevent other genomes of touching same fragment or chunk
-    Genome.objects.select_for_update().filter(pk=find_root_genome(genome).id)
+    lock_genome(find_root_genome(genome))
 
     for before, after, annotations in before_and_after_with_annotations:
         with new_genome.annotate_fragment_by_fragment_id(after['fragment_id']) as f:
