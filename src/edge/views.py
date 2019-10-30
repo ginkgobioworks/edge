@@ -499,6 +499,7 @@ class GenomeOperationViewBase(ViewBase):
             if child is None:
                 child = op_class.perform(genome, **args)
                 if child:
+                    print(f'Generated child genome {child.id} from parent genome {genome_id}')
                     schedule_building_blast_db(child.id)
                     return GenomeView.to_dict(child), 201
             else:  # found existing child, update genome name and set to active
