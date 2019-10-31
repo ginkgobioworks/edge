@@ -3,7 +3,7 @@
     <ol class="breadcrumb">
         <li> Edge </li>
         <li> <a href="#/genomes">Genomes</a> </li>
-        <li> <a href="#/genomes/{{ genome.id }}"><span ng-bind-html='genome.name'></span></a> </li>
+        <li> <a href="#/genomes/{{ genome.id }}"><span class="fs-block" ng-bind-html='genome.name'></span></a> </li>
         <li> Recombination </li>
     </ol>
   </div>
@@ -11,7 +11,7 @@
 
 <div class="container">
 
-<h3>Recombination on Genome {{ genome.id }}: <span ng-bind-html='genome.name'></span></h3>
+<h3>Recombination on Genome {{ genome.id }}: <span class="fs-block" ng-bind-html='genome.name'></span></h3>
 
 <form role="form" class="space-top" id="recombine-inputs">
     <div class="form-inline">
@@ -21,12 +21,12 @@
         </div>
         New genome name
         <div class="form-group">
-            <input required class="form-control" type="text" ng-model="new_genome_name" size="20" />
+            <input required class="form-control fs-block" type="text" ng-model="new_genome_name" size="20" />
         </div>
     </div>
     Cassette (including homology arms)
     <br/>
-    <textarea class="form-control sequence" ng-model="cassette"></textarea>
+    <textarea class="form-control sequence fs-block" ng-model="cassette"></textarea>
     <button class="btn btn-primary" ng-click="FindRegions()">Preview</button>
 </form>
 
@@ -83,7 +83,7 @@
         <div ng-repeat="region in regions" class="recombine-candidate">
             <h5>
                 Found integration region on fragment
-                <a href="#/genomes/{{ genome.id }}/fragments/{{ region.fragment_id }}?bp={{ region.start }},{{ region.end }}"
+                <a class="fs-block" href="#/genomes/{{ genome.id }}/fragments/{{ region.fragment_id }}?bp={{ region.start }},{{ region.end }}"
                  >{{ region.fragment_name }}: {{ region.start }}-{{ region.end }}</a>
                 Post integration region length: {{ region.cassette.length }} bps
                 <span ng-if="region.cassette_reversed">
@@ -126,7 +126,7 @@
                     Inherited and new annotations on cassette
                 </p>
                 <ul>
-                    <li ng-repeat='a in region.cassette_annotations'>
+                    <li class="fs-block" ng-repeat='a in region.cassette_annotations'>
                       {{ a.base_first }}-{{a.base_last }} bps on cassette,
                       {{ a.feature_name }} ({{ a.feature_type }})
                       <span ng-if="a.feature_strand === -1">reversed</span>

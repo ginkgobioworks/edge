@@ -3,7 +3,7 @@
     <ol class="breadcrumb">
         <li> Edge </li>
         <li> <a href="#/genomes">Genomes</a> </li>
-        <li ng-bind-html='genome.name'></li>
+        <li class="fs-block" ng-bind-html='genome.name'></li>
     </ol>
   </div>
 </header>
@@ -23,11 +23,11 @@
     </ul>
   </div>
 
-  Genome {{ genome.id }}: <span ng-bind-html='genome.name'></span>
+  Genome {{ genome.id }}: <span class="fs-block" ng-bind-html='genome.name'></span>
 </h3>
 
 <div class="lead space-top">
-  <p>Parent: <span ng-bind-html="parent"></span></p>
+  <p>Parent: <span class="fs-block" ng-bind-html="parent"></span></p>
   <p ng-if="genome.notes">Notes: {{ genome.notes }} </p>
 </div>
 
@@ -36,14 +36,14 @@
   <div ng-repeat='op in genome.operations'>
     <p>
       {{ op.type }} on
-      <a href="#/genomes/{{genome.parent_id}}">Genome {{ genome.parent_id }}: {{ genome.parent_name }}</a>
+      <a class="fs-block" href="#/genomes/{{genome.parent_id}}">Genome {{ genome.parent_id }}: {{ genome.parent_name }}</a>
     </p>
     <ul>
       <li ng-repeat="a in op.annotations">
         <a href="#/genomes/{{genome.id}}/fragments/{{a.fragment_id}}"
          >{{ a.fragment_name }}: {{ a.name }} [{{ a.base_first }}, {{ a.base_last }}]</a>
       </li>
-      <li ng-repeat='(k,v) in op.params' class="op-params">
+      <li ng-repeat='(k,v) in op.params' class="op-params fs-block">
         {{ k }}: {{ v }}
       </li>
     </ul>
@@ -55,7 +55,7 @@
     <th>Fragment</th><th>Length (bps)</th><th>Changes</th>
 </tr></thead>
 <tr ng-repeat="fragment in genome.fragments | orderBy:id">
-    <td> <a href="#/genomes/{{genome.id}}/fragments/{{fragment.id}}"
+    <td> <a class="fs-block" href="#/genomes/{{genome.id}}/fragments/{{fragment.id}}"
           ng-bind-html='fragment.name'></a> </td>
     <td>
       <span ng-if='fragment.length'>{{fragment.length | number}}</span>

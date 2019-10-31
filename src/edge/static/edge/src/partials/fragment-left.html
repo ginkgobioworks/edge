@@ -1,13 +1,13 @@
 <div ng-show="display_summary">
     <span ng-repeat="annotation in summary_annotations | orderBy:base_first"
-          class="pull-left {{ annotation.display_css }}"
+          class="pull-left {{ annotation.display_css }} fs-block"
           ng-click="zoomAt(annotation)" title="bp {{ annotation.base_first | number }}">
         {{ annotation.display_name }}
     </span>
     <div class="clearfix"></div>
     <div ng-if="fragment.length < 10000">
       <button class="btn btn-primary" ng-click="fetchAllSequence()">Show Sequence</button>
-      <textarea class="sequence" readonly ng-if="sequence">{{ sequence.sequence }}</textarea>
+      <textarea class="sequence fs-block" readonly ng-if="sequence">{{ sequence.sequence }}</textarea>
     </div>
 </div>
 
@@ -46,7 +46,7 @@
 
     <div class="zoom-container">
         <span ng-repeat="display in zoom.display"
-              class="{{ display.css }}"
+              class="{{ display.css }} fs-block"
               style="left:{{ display.left }}; top:{{ display.top }}; width:{{ display.width }};"
               ng-click="zoomAtExact(display.annotation)" title="{{ display.formatted_qualifiers }}">
             {{ display.title }}
@@ -57,7 +57,7 @@
 
     <div class="sequence-container">
         <button class="btn btn-primary" ng-click="fetchSequence()">Show Sequence</button>
-        <div ng-show="zoom.has_sequence">
+        <div class="fs-block" ng-show="zoom.has_sequence">
             <div id="sequence-viewer"></div>
         </div>
     </div>

@@ -17,7 +17,7 @@
 </div>
 
 <div class="well" ng-show="addGenomeStatus.results">
-    <span class="text-success" ng-repeat='genome in addGenomeStatus.results.imported_genomes'>
+    <span class="fs-block" class="text-success" ng-repeat='genome in addGenomeStatus.results.imported_genomes'>
         Success: Added in Edge as <a ng-href="#/genomes/{{ genome.id }}">Genome {{ genome.id }}: {{ genome.name }}</a>
     </span>
 </div>
@@ -26,7 +26,7 @@
 
     <div class="form-group">
         <label for="genomeName">Genome Name:</label>
-        <input id="genomeName" name="name" type="text" ng-model="genome.name" required />
+        <input class="fs-block" id="genomeName" name="name" type="text" ng-model="genome.name" required />
     </div>
     <div class="form-group">
         <label for="gffFile">GFF File (GFF3 format):</label><br/>

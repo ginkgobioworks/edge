@@ -23,8 +23,8 @@
 <thead> <tr> <th>ID</th> <th>Name</th> <th>Parent</th></tr> </thead>
 <tr ng-repeat="genome in genomes">
     <td> <a href="#/genomes/{{genome.id}}">{{ genome.id }}</a> </td>
-    <td> <a href="#/genomes/{{genome.id}}" ng-bind-html="genome.name"></a> </td>
-    <td> <a href="#/genomes/{{genome.parent_id}}" ng-bind-html='genome.parent_name'></a> </td>
+    <td> <a class="fs-block" href="#/genomes/{{genome.id}}" ng-bind-html="genome.name"></a> </td>
+    <td> <a class="fs-block" href="#/genomes/{{genome.parent_id}}" ng-bind-html='genome.parent_name'></a> </td>
 </tr>
 </table>
 
