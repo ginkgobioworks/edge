@@ -3,7 +3,7 @@
     <ol class="breadcrumb">
         <li> Edge </li>
         <li> <a href="#/fragments">Fragments</a> </li>
-        <li ng-bind-html='fragment.name'></li>
+        <li class="fs-block" ng-bind-html='fragment.name'></li>
     </ol>
   </div>
 </header>
@@ -19,12 +19,12 @@
     </ul>
   </div>
 
-  Fragment {{ fragment.id }}: <span ng-bind-html='fragment.name'></span>, {{ fragment.length | number }} bps
+  Fragment {{ fragment.id }}: <span class="fs-block" ng-bind-html='fragment.name'></span>, {{ fragment.length | number }} bps
 </h3>
 
 <p ng-if='genomes' class="lead space-top">
   <span ng-repeat='genome in genomes'>
-    Genome: <a href="#/genomes/{{ genome.id }}" ng-bind-html='genome.name'></a>
+    Genome: <a class="fs-block" href="#/genomes/{{ genome.id }}" ng-bind-html='genome.name'></a>
     <br/>
   </span>
 </p>

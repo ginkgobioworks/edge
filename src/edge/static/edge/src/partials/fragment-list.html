@@ -28,7 +28,7 @@
 <thead> <tr> <th>ID</th> <th>Name</th> <th>Length</th></tr> </thead>
 <tr ng-repeat="fragment in fragments">
     <td> <a href="#/fragments/{{fragment.id}}">{{ fragment.id }}</a> </td>
-    <td> <a href="#/fragments/{{fragment.id}}">{{ fragment.name }}</a> </td>
+    <td> <a class="fs-block" href="#/fragments/{{fragment.id}}">{{ fragment.name }}</a> </td>
     <td> {{ fragment.length }} </td>
 </tr>
 </table>
@@ -44,7 +44,7 @@ Add new fragment
 <form role="form">
     <div class="form-group">
         <label for="fragment_name">Name:</label>
-        <input id="fragment_name" type="text" ng-model="fragment.name" />
+        <input class="fs-block" id="fragment_name" type="text" ng-model="fragment.name" />
     </div>
     <div class="form-group">
         <label for="fragment_sequence">Sequence:</label><br/>
