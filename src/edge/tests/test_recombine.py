@@ -102,6 +102,7 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(r[0].cassette_reversed, False)
         self.assertEquals(r[0].front_arm, front_bs[0:arm_len])
         self.assertEquals(r[0].back_arm, back_bs[-arm_len:])
+        self.assertEquals(r[0].is_double_crossover, True)
 
     def test_finding_swap_region_across_circular_boundary(self):
         upstream = "gagattgtccgcgtttt"
@@ -833,6 +834,27 @@ class SingleCrossoverTest(TestCase):
                 pass
         build_all_genome_dbs(refresh=True)
         return Genome.objects.get(pk=g.id)
+
+    def test_finds_single_crossover_region(self):
+        upstream = 'gagattgtccgcgtttt'
+        locus = 'catagcgcacaggacgcggagtaggcgtagtcggttgatctgatgtc'
+        downstream = 'gttaaggcgcgaacat'
+        insertion = 'aaaaaaaaaaaaaaaaaaa'
+        locus_len = len(locus)
+        bs_len = int(locus_len / 2)
+
+        template = ''.join([upstream, locus, downstream])
+        cassette = ''.join([locus[locus_len - bs_len:], insertion, locus[0:bs_len]])
+
+        g = self.build_genome(False, template)
+        arm_len = bs_len - 2
+        r = find_swap_region(g, cassette, arm_len)
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0].fragment_id, g.fragments.all()[0].id)
+        self.assertEquals(r[0].fragment_name, g.fragments.all()[0].name)
+        self.assertEquals(r[0].is_double_crossover, False)
+        self.assertEquals(r[0].start, 20)
+        self.assertEquals(r[0].end, 62)
 
     def test_single_crossover_integrates_correctly(self):
         upstream = 'gagattgtccgcgtttt'

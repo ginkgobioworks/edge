@@ -169,7 +169,7 @@ class RecombinationRegion(object):
 
     def __init__(self, fragment_id, fragment_name,
                  start, end, sequence,
-                 original_cassette, cassette_reversed,
+                 is_double_crossover, original_cassette, cassette_reversed,
                  front_arm, back_arm):
 
         self.fragment_id = fragment_id
@@ -177,6 +177,7 @@ class RecombinationRegion(object):
         self.start = start
         self.end = end
         self.sequence = sequence
+        self.is_double_crossover = is_double_crossover
         self.original_cassette = original_cassette
         self.cassette_reversed = cassette_reversed
 
@@ -317,6 +318,7 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
                                region_start,
                                region_end,
                                region,
+                               single_crossover is False,
                                cassette,
                                is_reversed,
                                front_arm_sequence,
