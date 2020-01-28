@@ -313,12 +313,13 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
         region_end = fragment.circ_bp(region_end)
         region = fragment.get_sequence(bp_lo=region_start, bp_hi=region_end)
 
+    is_double_crossover = not single_crossover
     return RecombinationRegion(fragment.id,
                                fragment.name,
                                region_start,
                                region_end,
                                region,
-                               single_crossover is False,
+                               is_double_crossover,
                                cassette,
                                is_reversed,
                                front_arm_sequence,
