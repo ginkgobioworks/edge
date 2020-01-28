@@ -1,6 +1,7 @@
 import os
 import tempfile
 import subprocess
+from functools import lru_cache
 from django.conf import settings
 from edge.models import Fragment
 from Bio.Blast.Applications import NcbiblastnCommandline
@@ -74,6 +75,7 @@ def inverse_match(m):
     return ''.join([' ' if x == '|' else 'X' for x in m])
 
 
+@lru_cache(maxsize=200)
 def blast(dbname, blast_program, query, evalue_threshold=0.001):
 
     infile = None
