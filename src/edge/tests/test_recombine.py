@@ -594,10 +594,9 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(g.fragments.count(), 2)
 
         # first recombination on g, producing first child c
-
-        c = recombine(g, cassette, arm_len)
-        self.assertEquals(c.fragments.count(), 2)
-        sequences = [f.indexed_fragment().sequence for f in c.fragments.all()]
+        c1 = recombine(g, cassette, arm_len)
+        self.assertEquals(c1.fragments.count(), 2)
+        sequences = [f.indexed_fragment().sequence for f in c1.fragments.all()]
         sequences = sorted(sequences, key=lambda s: len(s))
         self.assertEquals(sequences[0],
                           't' * 20 + upstream + cassette + downstream
@@ -607,18 +606,14 @@ class GenomeRecombinationTest(TestCase):
                           + 'c' * 15 + upstream + cassette + downstream + 'c' * 20)
 
         # check original genome sequences are correct
-
-        g2 = Genome.objects.get(pk=g.id)
-        self.assertEquals(g2.fragments.count(), 2)
-        sequences = [f.indexed_fragment().sequence for f in g2.fragments.all()]
+        g = Genome.objects.get(pk=g.id)
+        self.assertEquals(g.fragments.count(), 2)
+        sequences = [f.indexed_fragment().sequence for f in g.fragments.all()]
         sequences = sorted(sequences, key=lambda s: len(s))
-        self.assertEquals(sequences[0],
-                          't' * 20 + template + 'c' * 20 + template + 'c' * 30)
-        self.assertEquals(sequences[1],
-                          't' * 40 + template + 'c' * 15 + template + 'c' * 20)
+        self.assertEquals(sequences[0], f1)
+        self.assertEquals(sequences[1], f2)
 
         # second recombination on g, producing second child c2
-
         c2 = recombine(g, cassette, arm_len)
         self.assertEquals(c2.fragments.count(), 2)
         sequences = [f.indexed_fragment().sequence for f in c2.fragments.all()]
@@ -630,12 +625,10 @@ class GenomeRecombinationTest(TestCase):
                           't' * 40 + upstream + cassette + downstream
                           + 'c' * 15 + upstream + cassette + downstream + 'c' * 20)
 
-
         # check second recombination has not affected the results of the first recombination
-
-        c = Genome.objects.get(pk=c.id)
-        self.assertEquals(c.fragments.count(), 2)
-        sequences = [f.indexed_fragment().sequence for f in c.fragments.all()]
+        c1 = Genome.objects.get(pk=c1.id)
+        self.assertEquals(c1.fragments.count(), 2)
+        sequences = [f.indexed_fragment().sequence for f in c1.fragments.all()]
         sequences = sorted(sequences, key=lambda s: len(s))
         self.assertEquals(sequences[0],
                           't' * 20 + upstream + cassette + downstream
@@ -643,7 +636,6 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(sequences[1],
                           't' * 40 + upstream + cassette + downstream
                           + 'c' * 15 + upstream + cassette + downstream + 'c' * 20)
-
 
     def test_recombines_multiple_times_on_circular_fragment(self):
         upstream = "gagattgtccgcgtttt"

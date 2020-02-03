@@ -500,11 +500,11 @@ def lock_genome(genome):
     return genome
 
 
-def recombine_region(genome, region, min_homology_arm_length, op, is_new_fragment):
+def recombine_region(genome, region, min_homology_arm_length, op, new_fragment_dict):
     """
     Recombines on a given region. Returns recombination cassette location, how
     many base pairs removed, how many base pairs added, new fragment id.
-    is_new_fragment is a dictionary that indicates if the region.fragment_id is already
+    new_fragment_dict is a dictionary that indicates if the region.fragment_id is already
     a newly created fragment.
     """
 
@@ -513,9 +513,11 @@ def recombine_region(genome, region, min_homology_arm_length, op, is_new_fragmen
     cassette = region.cassette
 
     new_fragment_id = None
+    is_new_fragment = region.fragment_id not in new_fragment_dict
+
     with genome.update_fragment_by_fragment_id(region.fragment_id,
-                                               new_fragment=region.fragment_id not in is_new_fragment) as f:
-        is_new_fragment[f.id] = 1
+                                               new_fragment=is_new_fragment) as f:
+        new_fragment_dict[f.id] = 1
 
         replaced = 0
         if region_start < region_end:
@@ -603,15 +605,15 @@ def recombine_sequence(genome, cassette, homology_arm_length,
                            cassette=region.cassette) for region in regions]
     regions_after = []
 
-    is_new_fragment = {}
+    new_fragment_dict = {}
 
     while len(regions) > 0:
         region = regions[0]
 
-	# passing is_new_fragment to recombine_region, so we can remember which
+	# passing new_fragment_dict to recombine_region, so we can remember which
 	# fragment is already newly created
         start, replaced, added, new_fragment_id =\
-            recombine_region(new_genome, region, homology_arm_length, op, is_new_fragment)
+            recombine_region(new_genome, region, homology_arm_length, op, new_fragment_dict)
 
         regions_after.append(dict(fragment_id=region.fragment_id, start=start))
 
