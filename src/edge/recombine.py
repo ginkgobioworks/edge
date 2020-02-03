@@ -500,10 +500,12 @@ def lock_genome(genome):
     return genome
 
 
-def recombine_region(genome, region, min_homology_arm_length, op, need_new_fragment):
+def recombine_region(genome, region, min_homology_arm_length, op, is_new_fragment):
     """
     Recombines on a given region. Returns recombination cassette location, how
     many base pairs removed, how many base pairs added, new fragment id.
+    is_new_fragment is a dictionary that indicates if the region.fragment_id is already
+    a newly created fragment.
     """
 
     region_start = region.start
@@ -512,7 +514,9 @@ def recombine_region(genome, region, min_homology_arm_length, op, need_new_fragm
 
     new_fragment_id = None
     with genome.update_fragment_by_fragment_id(region.fragment_id,
-                                               new_fragment=need_new_fragment) as f:
+                                               new_fragment=region.fragment_id not in is_new_fragment) as f:
+        is_new_fragment[f.id] = 1
+
         replaced = 0
         if region_start < region_end:
             f.replace_bases(region_start, region_end - region_start + 1, cassette)
@@ -599,17 +603,20 @@ def recombine_sequence(genome, cassette, homology_arm_length,
                            cassette=region.cassette) for region in regions]
     regions_after = []
 
-    need_new_fragment = True
+    is_new_fragment = {}
+
     while len(regions) > 0:
         region = regions[0]
 
+	# passing is_new_fragment to recombine_region, so we can remember which
+	# fragment is already newly created
         start, replaced, added, new_fragment_id =\
-            recombine_region(new_genome, region, homology_arm_length, op, need_new_fragment)
+            recombine_region(new_genome, region, homology_arm_length, op, is_new_fragment)
 
         regions_after.append(dict(fragment_id=region.fragment_id, start=start))
 
-        # use the same fragment after the first new fragment
-        need_new_fragment = False
+	# after first integration, we need to adjust computed coordinates for
+	# other loci by effects of the first integration
         regions = shift_regions(regions[1:],
                                 region.fragment_id, start, replaced, added, new_fragment_id)
         for r in regions_after:
