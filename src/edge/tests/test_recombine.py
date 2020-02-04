@@ -575,7 +575,7 @@ class GenomeRecombinationTest(TestCase):
                           't' * 40 + upstream + cassette + downstream
                           + 'c' * 15 + upstream + cassette + downstream + 'c' * 20)
 
-    def test_recombines_multiple_recombinations_each_with_multiple_fragments_on_same_parent_genome(self):
+    def test_multiple_recombinations_on_multiple_fragments(self):
         upstream = "gagattgtccgcgtttt"
         front_bs = "catagcgcacaggacgcggag"
         middle = "cggcacctgtgagccg"

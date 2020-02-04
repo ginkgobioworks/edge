@@ -610,15 +610,15 @@ def recombine_sequence(genome, cassette, homology_arm_length,
     while len(regions) > 0:
         region = regions[0]
 
-	# passing new_fragment_dict to recombine_region, so we can remember which
-	# fragment is already newly created
+        # passing new_fragment_dict to recombine_region, so we can remember which
+        # fragment is already newly created
         start, replaced, added, new_fragment_id =\
             recombine_region(new_genome, region, homology_arm_length, op, new_fragment_dict)
 
         regions_after.append(dict(fragment_id=region.fragment_id, start=start))
 
-	# after first integration, we need to adjust computed coordinates for
-	# other loci by effects of the first integration
+        # after first integration, we need to adjust computed coordinates for
+        # other loci by effects of the first integration
         regions = shift_regions(regions[1:],
                                 region.fragment_id, start, replaced, added, new_fragment_id)
         for r in regions_after:
