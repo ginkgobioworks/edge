@@ -1,2 +1,2 @@
 #!/bin/bash
-docker-compose -f docker-compose.yml run --rm edge scripts/_run $@
+docker-compose -f docker-compose.yml run --rm edge $@
