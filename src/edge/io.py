@@ -39,7 +39,12 @@ class IO(object):
             for annotation in fragment.annotations():
                 # FeatureLocation first bp is AfterPosition, so -1
                 loc = FeatureLocation(annotation.base_first - 1, annotation.base_last)
-                qualifiers = {'name': annotation.feature.name}
+                qualifiers = annotation.feature.qualifiers
+                if "phase" in qualifiers and qualifiers["phase"] is None:
+                    qualifiers["phase"] = 0
+                elif "Phase" in qualifiers and qualifiers["Phase"] is None:
+                    qualifiers["Phase"] = 0
+                qualifiers.update({'name': annotation.feature_name})
                 strand = annotation.feature.strand
                 feature = SeqFeature(loc,
                                      type=annotation.feature.type,
