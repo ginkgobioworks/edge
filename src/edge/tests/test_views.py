@@ -363,6 +363,27 @@ class FragmentTest(TestCase):
             "feature_base_last": 8,
         }])
 
+    def test_add_annotation_with_qualifiers(self):
+        data = dict(base_first=2, base_last=9, name='proC', type='promoter', strand=1,
+                    qualifiers=dict(gene="PROC"))
+        res = self.client.post(self.uri + 'annotations/', data=json.dumps(data),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 201)
+        self.assertEquals(json.loads(res.content), {})
+        res = self.client.get(self.uri + 'annotations/')
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(json.loads(res.content), [{
+            "base_first": 2,
+            "base_last": 9,
+            "name": 'proC',
+            "type": 'promoter',
+            "strand": 1,
+            "qualifiers": {"gene": "PROC"},
+            "feature_full_length": 8,
+            "feature_base_first": 1,
+            "feature_base_last": 8,
+        }])
+
     def test_add_annotation_on_reverse_strand(self):
         data = dict(base_first=3, base_last=10, name='proC', type='promoter', strand=-1)
         res = self.client.post(self.uri + 'annotations/', data=json.dumps(data),

@@ -210,6 +210,8 @@ class FragmentAnnotationsView(ViewBase):
         annotation_parser.add_argument('name', field_type=str, required=True, location='json')
         annotation_parser.add_argument('type', field_type=str, required=True, location='json')
         annotation_parser.add_argument('strand', field_type=int, required=True, location='json')
+        annotation_parser.add_argument('qualifiers', field_type=dict, required=False,
+                                       default=None, location='json')
 
         args = annotation_parser.parse_args(request)
         fragment = get_fragment_or_404(fragment_id)
@@ -218,7 +220,8 @@ class FragmentAnnotationsView(ViewBase):
                           last_base1=args['base_last'],
                           name=args['name'],
                           type=args['type'],
-                          strand=args['strand'])
+                          strand=args['strand'],
+                          qualifiers=args['qualifiers'])
         return {}, 201
 
 
