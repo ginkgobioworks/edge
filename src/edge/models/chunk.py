@@ -16,14 +16,18 @@ class Annotation(object):
         self.feature_base_last = chunk_feature.feature_base_last
         self.fragment = fragment
 
+    @property
+    def feature_name(self):
+        if self.feature_base_first != 1 or self.feature_base_last != self.feature.length:
+            return '%s[%s:%s]' % (self.feature.name,
+                                  self.feature_base_first,
+                                  self.feature_base_last)
+        else:
+            return self.feature.name
+
     def __str__(self):
         s = []
-        if self.feature_base_first != 1 or self.feature_base_last != self.feature.length:
-            s.append('%s (%s-%s)' % (self.feature.name,
-                                     self.feature_base_first,
-                                     self.feature_base_last))
-        else:
-            s.append(self.feature.name)
+        s.append(self.feature_name)
         s.append(self.feature.type)
         if self.feature.strand == 1:
             s.append('+')
