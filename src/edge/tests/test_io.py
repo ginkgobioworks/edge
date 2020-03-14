@@ -23,9 +23,9 @@ class IOTest(TestCase):
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_fasta(f.name)
-            h = open(f.name, 'r')
-            fasta = h.read()
-            h.close()
+            filehandle = open(f.name, 'r')
+            fasta = filehandle.read()
+            filehandle.close()
             os.unlink(f.name)
 
         self.assertEquals(fasta, '>Bar\nagttcgaggctga\n')
@@ -37,9 +37,9 @@ class IOTest(TestCase):
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_gff(f.name)
-            h = open(f.name, 'r')
-            gff = h.read()
-            h.close()
+            filehandle = open(f.name, 'r')
+            gff = filehandle.read()
+            filehandle.close()
             os.unlink(f.name)
 
         # be aware of the tabs in the string below
@@ -59,9 +59,9 @@ Bar\tfeature\tgene\t2\t9\t.\t+\t.\tname=A1
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_gff(f.name)
-            h = open(f.name, 'r')
-            gff = h.read()
-            h.close()
+            filehandle = open(f.name, 'r')
+            gff = filehandle.read()
+            filehandle.close()
             os.unlink(f.name)
 
         # be aware of the tabs in the string below
@@ -82,9 +82,9 @@ Bar\tfeature\tgene\t2\t9\t.\t-\t.\tname=A1
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_gff(f.name)
-            h = open(f.name, 'r')
-            gff = h.read()
-            h.close()
+            filehandle = open(f.name, 'r')
+            gff = filehandle.read()
+            filehandle.close()
             os.unlink(f.name)
 
         # be aware of the tabs in the string below
@@ -107,9 +107,9 @@ Bar\tfeature\tgene\t9\t15\t.\t+\t.\tname=A1%%5B2:8%%5D
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_gff(f.name)
-            h = open(f.name, 'r')
-            gff = h.read()
-            h.close()
+            filehandle = open(f.name, 'r')
+            gff = filehandle.read()
+            filehandle.close()
             os.unlink(f.name)
 
         # be aware of the tabs in the string below
@@ -131,9 +131,9 @@ Bar\tfeature\tCDS\t2\t9\t.\t+\t0\tname=A1
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_gff(f.name)
-            h = open(f.name, 'r')
-            gff = h.read()
-            h.close()
+            filehandle = open(f.name, 'r')
+            gff = filehandle.read()
+            filehandle.close()
             os.unlink(f.name)
 
         # be aware of the tabs in the string below
@@ -153,9 +153,9 @@ Bar\tfeature\tCDS\t2\t9\t.\t+\t0\tname=A1
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_gff(f.name)
-            h = open(f.name, 'r')
-            gff = h.read()
-            h.close()
+            filehandle = open(f.name, 'r')
+            gff = filehandle.read()
+            filehandle.close()
             os.unlink(f.name)
 
         # be aware of the tabs in the string below
@@ -175,9 +175,9 @@ Bar\tfeature\tCDS\t2\t9\t.\t+\t2\tname=A1
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_gff(f.name)
-            h = open(f.name, 'r')
-            gff = h.read()
-            h.close()
+            filehandle = open(f.name, 'r')
+            gff = filehandle.read()
+            filehandle.close()
             os.unlink(f.name)
 
         # be aware of the tabs in the string below
@@ -200,9 +200,9 @@ Bar\tfeature\tCDS\t2\t9\t.\t+\t2\tname=A1
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as f:
             f.close()
             IO(self.genome).to_gff(f.name)
-            h = open(f.name, 'r')
-            gff = h.read()
-            h.close()
+            filehandle = open(f.name, 'r')
+            gff = filehandle.read()
+            filehandle.close()
             os.unlink(f.name)
 
         # be aware of the tabs in the string below
