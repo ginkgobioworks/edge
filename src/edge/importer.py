@@ -13,15 +13,20 @@ class GFFImporter(object):
         self.__gff_fasta_fn = gff_fasta_fn
 
     def do_import(self):
+        print("do_import")
         in_file = self.__gff_fasta_fn
         in_handle = open(in_file)
+        print("do_import, open")
 
         # In DEBUG=True mode, Django keeps list of queries and blows up memory
         # usage when doing a big import. The following line disables this
         # logging.
         connection.use_debug_cursor = False
 
+        print("do_import, parsing")
+        t0 = time.time()
         for rec in GFF.parse(in_handle):
+            print('record: %.4f' % (time.time() - t0,))
             f = GFFFragmentImporter(rec).do_import()
             self.__genome.genome_fragment_set.create(fragment=f, inherited=False)
 
@@ -108,8 +113,10 @@ class GFFFragmentImporter(object):
         flen = 0
         seqlen = len(self.__sequence)
         for sz in chunk_sizes:
+            t0 = time.time()
             prev = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:flen + sz])
             flen += sz
+            print('add chunk to fragment: %.4f' % (time.time() - t0,))
         if flen < seqlen:
             new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:seqlen])
 
@@ -122,9 +129,11 @@ class GFFFragmentImporter(object):
                                                          .filter(fragment=fragment)}
 
         for feature in self.__features:
+            t0 = time.time()
             f_start, f_end, f_name, f_type, f_strand, f_qualifiers = feature
             # print('  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand))
             self._annotate_feature(fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers)
+            print('annotate feature: %.4f' % (time.time() - t0,))
 
     def _annotate_feature(self, fragment, first_base1, last_base1, name, type, strand, qualifiers):
         if fragment.circular and last_base1 < first_base1:
