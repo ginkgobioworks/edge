@@ -13,20 +13,15 @@ class GFFImporter(object):
         self.__gff_fasta_fn = gff_fasta_fn
 
     def do_import(self):
-        print("do_import")
         in_file = self.__gff_fasta_fn
         in_handle = open(in_file)
-        print("do_import, open")
 
         # In DEBUG=True mode, Django keeps list of queries and blows up memory
         # usage when doing a big import. The following line disables this
         # logging.
         connection.use_debug_cursor = False
 
-        print("do_import, parsing")
-        t0 = time.time()
         for rec in GFF.parse(in_handle):
-            print('record: %.4f' % (time.time() - t0,))
             f = GFFFragmentImporter(rec).do_import()
             self.__genome.genome_fragment_set.create(fragment=f, inherited=False)
 
@@ -112,11 +107,28 @@ class GFFFragmentImporter(object):
         prev = None
         flen = 0
         seqlen = len(self.__sequence)
+
+        cs_limit = 1000000
+        new_chunk_sizes = []
+        for big_cs in chunk_sizes:
+            if big_cs < cs_limit:
+                new_chunk_sizes.append(big_cs)
+            else:
+                divided_chunks = []
+                while big_cs > 0:
+                    divided_chunks.append(min(big_cs, cs_limit))
+                    big_cs -= cs_limit
+                new_chunk_sizes.extend(divided_chunks)
+        chunk_sizes = new_chunk_sizes
+
         for sz in chunk_sizes:
             t0 = time.time()
             prev = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:flen + sz])
             flen += sz
-            print('add chunk to fragment: %.4f' % (time.time() - t0,))
+            nn = new_fragment.fragment_chunk_location_set.count()
+            print('add chunk to fragment (total %s): %.4f\r' % (nn, time.time() - t0,), end="")
+
+        print("\nfinished adding chunks")
         if flen < seqlen:
             new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:seqlen])
 
@@ -133,7 +145,8 @@ class GFFFragmentImporter(object):
             f_start, f_end, f_name, f_type, f_strand, f_qualifiers = feature
             # print('  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand))
             self._annotate_feature(fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers)
-            print('annotate feature: %.4f' % (time.time() - t0,))
+            print('annotate feature: %.4f\r' % (time.time() - t0,), end="")
+        print("\nfinished annotating feature")
 
     def _annotate_feature(self, fragment, first_base1, last_base1, name, type, strand, qualifiers):
         if fragment.circular and last_base1 < first_base1:
