@@ -114,23 +114,23 @@ class GFFFragmentImporter(object):
 	# divide chunks bigger than a certain threshold to smaller chunks, to
 	# allow insertion of sequence into database. e.g. MySQL has a packet
 	# size that prevents chunks that are too large from being inserted.
-        cs_limit = 1000000
+        chunk_size_limit = 1000000
         new_chunk_sizes = []
         for original_chunk_size in chunk_sizes:
-            if original_chunk_size < cs_limit:
+            if original_chunk_size < chunk_size_limit:
                 new_chunk_sizes.append(original_chunk_size)
             else:
                 divided_chunks = []
                 while original_chunk_size > 0:
-                    divided_chunks.append(min(original_chunk_size, cs_limit))
-                    original_chunk_size -= cs_limit
+                    divided_chunks.append(min(original_chunk_size, chunk_size_limit))
+                    original_chunk_size -= chunk_size_limit
                 new_chunk_sizes.extend(divided_chunks)
         chunk_sizes = new_chunk_sizes
 
-        for sz in chunk_sizes:
+        for chunk_size in chunk_sizes:
             t0 = time.time()
-            prev = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:flen + sz])
-            flen += sz
+            prev = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:flen + chunk_size])
+            flen += chunk_size
             print('add chunk to fragment: %.4f\r' % (time.time() - t0,), end="")
 
         print("\nfinished adding chunks")
