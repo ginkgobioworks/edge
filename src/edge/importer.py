@@ -22,8 +22,11 @@ class GFFImporter(object):
         connection.use_debug_cursor = False
 
         for rec in GFF.parse(in_handle):
-            f = GFFFragmentImporter(rec).do_import()
-            self.__genome.genome_fragment_set.create(fragment=f, inherited=False)
+            if self.__genome.fragments.filter(name=rec.id).count() > 0:
+                print("skipping %s, already imported" % rec.id)
+            else:
+                f = GFFFragmentImporter(rec).do_import()
+                self.__genome.genome_fragment_set.create(fragment=f, inherited=False)
 
         # Be nice and turn debug cursor back on
         connection.use_debug_cursor = True
@@ -107,9 +110,30 @@ class GFFFragmentImporter(object):
         prev = None
         flen = 0
         seqlen = len(self.__sequence)
-        for sz in chunk_sizes:
-            prev = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:flen + sz])
-            flen += sz
+
+	# divide chunks bigger than a certain threshold to smaller chunks, to
+	# allow insertion of sequence into database. e.g. MySQL has a packet
+	# size that prevents chunks that are too large from being inserted.
+        chunk_size_limit = 1000000
+        new_chunk_sizes = []
+        for original_chunk_size in chunk_sizes:
+            if original_chunk_size < chunk_size_limit:
+                new_chunk_sizes.append(original_chunk_size)
+            else:
+                divided_chunks = []
+                while original_chunk_size > 0:
+                    divided_chunks.append(min(original_chunk_size, chunk_size_limit))
+                    original_chunk_size -= chunk_size_limit
+                new_chunk_sizes.extend(divided_chunks)
+        chunk_sizes = new_chunk_sizes
+
+        for chunk_size in chunk_sizes:
+            t0 = time.time()
+            prev = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:flen + chunk_size])
+            flen += chunk_size
+            print('add chunk to fragment: %.4f\r' % (time.time() - t0,), end="")
+
+        print("\nfinished adding chunks")
         if flen < seqlen:
             new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:seqlen])
 
@@ -122,9 +146,12 @@ class GFFFragmentImporter(object):
                                                          .filter(fragment=fragment)}
 
         for feature in self.__features:
+            t0 = time.time()
             f_start, f_end, f_name, f_type, f_strand, f_qualifiers = feature
             # print('  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand))
             self._annotate_feature(fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers)
+            print('annotate feature: %.4f\r' % (time.time() - t0,), end="")
+        print("\nfinished annotating feature")
 
     def _annotate_feature(self, fragment, first_base1, last_base1, name, type, strand, qualifiers):
         if fragment.circular and last_base1 < first_base1:
@@ -142,10 +169,13 @@ class GFFFragmentImporter(object):
                 (name, first_base1, last_base1))
 
         annotation_start = self.__fclocs[first_base1]
-        if last_base1 != len(self.__sequence):
+        if last_base1 < len(self.__sequence):
             annotation_end = self.__fclocs[last_base1 + 1]
-        else:
+        elif last_base1 == len(self.__sequence):
             annotation_end = self.__fclocs[1]
+        else:
+            # bad annotation, beyond end of sequence
+            return
 
         new_feature = fragment._add_feature(name, type, length, strand, qualifiers)
 
