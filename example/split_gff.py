@@ -50,7 +50,10 @@ for line in fh.readlines():
     if len(tokens) < 1:
       continue
     seqid = tokens[0][1:]
-    assert seqid in gffs
+    seqid = seqid.strip()
+    if seqid not in gffs:
+      print("%s not in GFF file" % seqid)
+      continue
 
     if cur_seqid is None or seqid != cur_seqid: 
       if cur_seqid:

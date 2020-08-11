@@ -94,22 +94,25 @@ class GFFFragmentImporter(object):
             [f[0] for f in self.__features]
             + [f[1] + 1 for f in self.__features]))
         break_points = sorted(break_points)
+
+        cur_len = 0
         chunk_sizes = []
+        seqlen = len(self.__sequence)
         for i, bp in enumerate(break_points):
             if i == 0:
                 if bp > 1:
                     chunk_sizes.append(break_points[i] - 1)
+                    cur_len += chunk_sizes[-1]
             else:
                 chunk_sizes.append(break_points[i] - break_points[i - 1])
-        print('%d chunks' % (len(chunk_sizes),))
+                cur_len += chunk_sizes[-1]
+
+        if cur_len < seqlen:
+            chunk_sizes.append(seqlen-cur_len)
 
         new_fragment = Fragment(name=self.__rec.id, circular=False, parent=None, start_chunk=None)
         new_fragment.save()
         new_fragment = new_fragment.indexed_fragment()
-
-        prev = None
-        flen = 0
-        seqlen = len(self.__sequence)
 
 	# divide chunks bigger than a certain threshold to smaller chunks, to
 	# allow insertion of sequence into database. e.g. MySQL has a packet
@@ -126,16 +129,15 @@ class GFFFragmentImporter(object):
                     original_chunk_size -= chunk_size_limit
                 new_chunk_sizes.extend(divided_chunks)
         chunk_sizes = new_chunk_sizes
+        print('%d chunks' % (len(chunk_sizes),))
 
+        prev = None
+        flen = 0
         for chunk_size in chunk_sizes:
             t0 = time.time()
             prev = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:flen + chunk_size])
             flen += chunk_size
             print('add chunk to fragment: %.4f\r' % (time.time() - t0,), end="")
-
-        print("\nfinished adding chunks")
-        if flen < seqlen:
-            new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:seqlen])
 
         return new_fragment
 
