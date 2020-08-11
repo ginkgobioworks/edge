@@ -13,10 +13,15 @@ from edge.importer import GFFImporter
 name = sys.argv[1]
 fns = sys.argv[2:]
 
+"""
 if Genome.objects.filter(name=name).count() > 0:
   raise Exception('There is already a genome named "%s"' % (name,))
+"""
 
-genome = Genome.create(name)
+if Genome.objects.filter(name=name).count() > 0:
+  genome = Genome.objects.get(name=name)
+else:
+  genome = Genome.create(name)
 
 for gff_fasta_fn in fns:
   print(gff_fasta_fn)
