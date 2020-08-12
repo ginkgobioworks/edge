@@ -97,7 +97,7 @@ class GFFFragmentImporter(object):
 
         cur_len = 0
         chunk_sizes = []
-        seqlen = len(self.__sequence)
+        seq_len = len(self.__sequence)
         for i, bp in enumerate(break_points):
             if i == 0:
                 if bp > 1:
@@ -107,8 +107,8 @@ class GFFFragmentImporter(object):
                 chunk_sizes.append(break_points[i] - break_points[i - 1])
                 cur_len += chunk_sizes[-1]
 
-        if cur_len < seqlen:
-            chunk_sizes.append(seqlen-cur_len)
+        if cur_len < seq_len:
+            chunk_sizes.append(seq_len-cur_len)
 
         new_fragment = Fragment(name=self.__rec.id, circular=False, parent=None, start_chunk=None)
         new_fragment.save()
@@ -132,11 +132,12 @@ class GFFFragmentImporter(object):
         print('%d chunks' % (len(chunk_sizes),))
 
         prev = None
-        flen = 0
+        fragment_len = 0
         for chunk_size in chunk_sizes:
             t0 = time.time()
-            prev = new_fragment._append_to_fragment(prev, flen, self.__sequence[flen:flen + chunk_size])
-            flen += chunk_size
+            prev = new_fragment._append_to_fragment(prev, fragment_len,
+                                                    self.__sequence[fragment_len:fragment_len + chunk_size])
+            fragment_len += chunk_size
             print('add chunk to fragment: %.4f\r' % (time.time() - t0,), end="")
 
         return new_fragment
