@@ -3,6 +3,12 @@ from django.db.backends.signals import connection_created
 __version__ = '2.10.0'
 
 
+import random
+
+def get_random_sequence(n):
+    return "".join(["agct"[random.randint(0, 3)] for i in range(n)])
+
+
 def import_gff(name, fn):
     """
     Creates a new genome using the specified GFF file.

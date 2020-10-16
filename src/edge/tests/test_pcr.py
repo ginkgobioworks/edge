@@ -1,15 +1,19 @@
 import os
 import json
+import random
 
 from Bio.Seq import Seq
 from django.test import TestCase
 
+from edge import get_random_sequence
 from edge.pcr import pcr_from_genome
 from edge.models import Genome, Fragment, Genome_Fragment
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 
 
 class GenomePcrTest(TestCase):
+    def setUp(self):
+        random.seed(0)
 
     def build_genome(self, circular, *templates):
         g = Genome(name='Foo')
@@ -25,14 +29,14 @@ class GenomePcrTest(TestCase):
         return Genome.objects.get(pk=g.id)
 
     def test_pcr_produces_expected_product(self):
-        upstream = "gagattgtccgcgtttt"
+        upstream = get_random_sequence(200)
         p1_bs = "catagcgcacaggacgcggag"
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
-        downstream = "gttaaggcgcgaacat"
+        downstream = get_random_sequence(200)
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
         p1 = 'aaaaaaaaaa' + p1_bs
-        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
+        p2 = 'aaaaaaaaaa' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template)
         r = pcr_from_genome(g, p1, p2)
@@ -47,13 +51,13 @@ class GenomePcrTest(TestCase):
             (len(upstream) + 1, len(upstream + p1_bs + middle + p2_bs)))
 
     def test_finds_pcr_product_across_circular_boundary(self):
-        upstream = "gagattgtccgcgtttt"
+        upstream = get_random_sequence(200)
         p1_bs = "catagcgcacaggacgcggag"
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
-        downstream = "gttaaggcgcgaacat"
+        downstream = get_random_sequence(200)
         p1 = 'aaaaaaaaaa' + p1_bs
-        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
+        p2 = 'aaaaaaaaaa' + str(Seq(p2_bs).reverse_complement())
 
         template = ''.join([middle[10:], p2_bs, downstream, upstream, p1_bs, middle[0:10]])
         g = self.build_genome(True, template)
@@ -65,13 +69,13 @@ class GenomePcrTest(TestCase):
                           (len(template) - 10 - len(p1_bs) + 1, len(middle) - 10 + len(p2_bs)))
 
     def test_finds_pcr_product_when_fwd_primer_is_across_circular_boundary(self):
-        upstream = "gagattgtccgcgtttt"
+        upstream = get_random_sequence(200)
         p1_bs = "catagcgcacaggacgcggag"
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
-        downstream = "gttaaggcgcgaacat"
+        downstream = get_random_sequence(200)
         p1 = 'aaaaaaaaaa' + p1_bs
-        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
+        p2 = 'aaaaaaaaaa' + str(Seq(p2_bs).reverse_complement())
 
         template = ''.join([p1_bs[5:], middle, p2_bs, downstream, upstream, p1_bs[0:5]])
         g = self.build_genome(True, template)
@@ -84,13 +88,13 @@ class GenomePcrTest(TestCase):
             (len(template) - 5 + 1, len(p1_bs) - 5 + len(middle + p2_bs)))
 
     def test_finds_pcr_product_when_rev_primer_is_across_circular_boundary(self):
-        upstream = "gagattgtccgcgtttt"
+        upstream = get_random_sequence(200)
         p1_bs = "catagcgcacaggacgcggag"
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
-        downstream = "gttaaggcgcgaacat"
+        downstream = get_random_sequence(200)
         p1 = 'aaaaaaaaaa' + p1_bs
-        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
+        p2 = 'aaaaaaaaaa' + str(Seq(p2_bs).reverse_complement())
 
         template = ''.join([p2_bs[5:], downstream, upstream, p1_bs, middle, p2_bs[0:5]])
         g = self.build_genome(True, template)
@@ -104,13 +108,13 @@ class GenomePcrTest(TestCase):
 
     def test_pcr_produces_product_with_multiple_binding_sites_but_one_overlapping_region(self):
         p1_bs = "catagcgcacaggacgcggag"
-        upstream = "gagattgtccgcgtttt" + str(Seq(p1_bs).reverse_complement())
+        upstream = get_random_sequence(200) + str(Seq(p1_bs).reverse_complement())
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
-        downstream = "gttaaggcgcgaacat"
+        downstream = get_random_sequence(200)
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
         p1 = 'aaaaaaaaaa' + p1_bs
-        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
+        p2 = 'aaaaaaaaaa' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template)
         r = pcr_from_genome(g, p1, p2)
@@ -127,13 +131,13 @@ class GenomePcrTest(TestCase):
 
     def test_pcr_does_not_produce_product_with_multiple_overlapping_regions(self):
         p1_bs = "catagcgcacaggacgcggag"
-        upstream = "gagattgtccgcgtttt" + str(Seq(p1_bs).reverse_complement())
+        upstream = get_random_sequence(200) + str(Seq(p1_bs).reverse_complement())
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
-        downstream = "gttaaggc" + p2_bs + "gcgaacat"
+        downstream = get_random_sequence(200) + p2_bs + get_random_sequence(200)
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
         p1 = 'aaaaaaaaaa' + p1_bs
-        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
+        p2 = 'aaaaaaaaaa' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template)
         r = pcr_from_genome(g, p1, p2)
@@ -143,14 +147,14 @@ class GenomePcrTest(TestCase):
         self.assertEquals(len(r[2]), 12)  # two binding sites for each primer
 
     def test_pcr_does_not_produce_product_when_primer_binding_site_is_too_small(self):
+        upstream = get_random_sequence(200)
         p1_bs = "catagcgcacaggacgcggag"
-        upstream = "gagattgtccgcgtttt"
         middle = "cggcacctgtgagccg"
         p2_bs = "gctagcatca"
-        downstream = "gttaaggcgcgaacat"
+        downstream = get_random_sequence(200)
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
         p1 = 'aaaaaaaaaa' + p1_bs
-        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
+        p2 = 'aaaaaaaaaa' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template)
         r = pcr_from_genome(g, p1, p2)
@@ -172,15 +176,15 @@ class GenomePcrTest(TestCase):
                 c = 'a'
             return s[0:n] + c + s[n + 1:]
 
+        upstream = get_random_sequence(200)
         p1_bs = "catagcgcacaggacgcggag"
-        upstream = "gagattgtccgcgtttt"
         middle = "cggcacctgtgagccg"
         p2_bs = "gctagcatcagtacgta"
-        downstream = "gttaaggcgcgaacat"
+        downstream = get_random_sequence(200)
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
         p1 = 'aaaaaaaaaa' + mutate(mutate(mutate(p1_bs, 5), 9), 11)
         p1_good = 'aaaaaaaaaa' + p1_bs
-        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
+        p2 = 'aaaaaaaaaa' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template)
         r = pcr_from_genome(g, p1, p2)
@@ -197,15 +201,15 @@ class GenomePcrTest(TestCase):
         self.assertEquals(len(r[2]), 6)
 
     def test_pcr_does_not_produce_product_when_primer_binds_to_different_fragments(self):
+        upstream = get_random_sequence(200)
         p1_bs = "catagcgcacaggacgcggag"
-        upstream = "gagattgtccgcgtttt"
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
-        downstream = "gttaaggcgcgaacat"
+        downstream = get_random_sequence(200)
         template1 = ''.join([upstream, p1_bs, middle])
         template2 = ''.join([middle, p2_bs, downstream])
         p1 = 'aaaaaaaaaa' + p1_bs
-        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
+        p2 = 'aaaaaaaaaa' + str(Seq(p2_bs).reverse_complement())
 
         g = self.build_genome(False, template1, template2)
         r = pcr_from_genome(g, p1, p2)
@@ -215,14 +219,14 @@ class GenomePcrTest(TestCase):
         self.assertEquals(len(r[2]), 6)
 
     def test_pcr_does_produce_product_when_duplicate_regions_on_different_genome(self):
+        upstream = get_random_sequence(200)
         p1_bs = "catagcgcacaggacgcggag"
-        upstream = "gagattgtccgcgtttt"
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
-        downstream = "gttaaggcgcgaacat"
+        downstream = get_random_sequence(200)
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
         p1 = 'aaaaaaaaaa' + p1_bs
-        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
+        p2 = 'aaaaaaaaaa' + str(Seq(p2_bs).reverse_complement())
 
         g1 = self.build_genome(False, template, template)
         g2 = self.build_genome(False, template)
@@ -240,14 +244,14 @@ class GenomePcrTest(TestCase):
         self.assertEquals(len(r[2]), 6)
 
     def test_pcr_api(self):
-        upstream = "gagattgtccgcgtttt"
+        upstream = get_random_sequence(200)
         p1_bs = "catagcgcacaggacgcggag"
         middle = "cggcacctgtgagccg"
         p2_bs = "taatgaccccgaagcagg"
-        downstream = "gttaaggcgcgaacat"
+        downstream = get_random_sequence(200)
         template = ''.join([upstream, p1_bs, middle, p2_bs, downstream])
         p1 = 'aaaaaaaaaa' + p1_bs
-        p2 = 'tttttttttt' + str(Seq(p2_bs).reverse_complement())
+        p2 = 'aaaaaaaaaa' + str(Seq(p2_bs).reverse_complement())
         g = self.build_genome(False, template)
 
         res = self.client.post('/edge/genomes/%s/pcr/' % g.id,

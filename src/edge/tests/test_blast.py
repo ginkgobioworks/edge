@@ -1,9 +1,11 @@
 import os
 import json
+import random
 
 from Bio.Seq import Seq
 from django.test import TestCase
 
+from edge import get_random_sequence
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 from edge.blast import blast_genome
 from edge.models import (
@@ -14,10 +16,12 @@ from edge.models import (
 
 
 class GenomeBlastTest(TestCase):
+    def setUp(self):
+        random.seed(0)
 
     def test_finds_sequence_on_specified_genome(self):
-        s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
-        s2 = 'agcgtcgatgcatgagtcgatcggcagtcgtgtagtcgtcgtatgcgtta'
+        s1 = get_random_sequence(200)
+        s2 = get_random_sequence(200)
         g1 = Genome(name='Foo')
         g1.save()
         f1 = Fragment.create_with_sequence('Bar', s1)
@@ -51,7 +55,7 @@ class GenomeBlastTest(TestCase):
         self.assertEquals(r[0].strand(), 1)
 
     def test_aligns_sequence_to_antisense_strand(self):
-        s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
+        s1 = get_random_sequence(200)
         g1 = Genome(name='Foo')
         g1.save()
         f1 = Fragment.create_with_sequence('Bar', s1)
@@ -75,7 +79,7 @@ class GenomeBlastTest(TestCase):
         self.assertEquals(r[0].strand(), -1)
 
     def test_aligns_sequence_across_boundry_for_circular_fragment(self):
-        s1 = 'atcggtatctactatgcgtatgcgtcatgattatatatattagcggcatg'
+        s1 = get_random_sequence(200)
         g1 = Genome(name='Foo')
         g1.save()
         f1 = Fragment.create_with_sequence('Bar', s1, circular=True)
@@ -112,7 +116,7 @@ class GenomeBlastTest(TestCase):
         self.assertEquals(found, True)
 
     def test_does_not_return_duplicate_hits_for_circular_fragments(self):
-        s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
+        s1 = get_random_sequence(200)
         g1 = Genome(name='Foo')
         g1.save()
         f1 = Fragment.create_with_sequence('Bar', s1, circular=True)
@@ -130,7 +134,7 @@ class GenomeBlastTest(TestCase):
         self.assertEquals(len(r), 1)
 
     def test_does_not_align_sequence_across_boundry_for_non_circular_fragment(self):
-        s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
+        s1 = get_random_sequence(200)
         g1 = Genome(name='Foo')
         g1.save()
         f1 = Fragment.create_with_sequence('Bar', s1, circular=False)
@@ -152,10 +156,12 @@ class GenomeBlastTest(TestCase):
 
 
 class GenomeBlastAPITest(TestCase):
+    def setUp(self):
+        random.seed(0)
 
     def test_blast_finds_sequence_on_specified_genome(self):
-        s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
-        s2 = 'agcgtcgatgcatgagtcgatcggcagtcgtgtagtcgtcgtatgcgtta'
+        s1 = get_random_sequence(200)
+        s2 = get_random_sequence(200)
         g1 = Genome(name='Foo')
         g1.save()
         f1 = Fragment.create_with_sequence('Bar', s1)
@@ -202,7 +208,7 @@ class GenomeBlastAPITest(TestCase):
         self.assertEquals(d[0]['fragment_id'], f3.id)
 
     def test_blast_aligns_sequence_to_antisense_strand(self):
-        s1 = 'atcggtatcttctatgcgtatgcgtcatgattatatatattagcggcatg'
+        s1 = get_random_sequence(200)
         g1 = Genome(name='Foo')
         g1.save()
         f1 = Fragment.create_with_sequence('Bar', s1)
