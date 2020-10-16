@@ -76,7 +76,7 @@ def inverse_match(m):
 
 
 @lru_cache(maxsize=200)
-def blast(dbname, blast_program, query, evalue_threshold=0.1):
+def blast(dbname, blast_program, query, evalue_threshold=1):
 
     infile = None
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -138,7 +138,7 @@ def blast(dbname, blast_program, query, evalue_threshold=0.1):
     return results
 
 
-def blast_genome(genome, blast_program, query, evalue_threshold=0.1):
+def blast_genome(genome, blast_program, query, evalue_threshold=1):
     dbname = genome.blastdb
     if not dbname:
         return []
