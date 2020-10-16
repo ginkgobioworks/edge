@@ -76,7 +76,7 @@ def inverse_match(m):
 
 
 @lru_cache(maxsize=200)
-def blast(dbname, blast_program, query, evalue_threshold=0.001):
+def blast(dbname, blast_program, query, evalue_threshold=0.1):
 
     infile = None
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -138,10 +138,11 @@ def blast(dbname, blast_program, query, evalue_threshold=0.001):
     return results
 
 
-def blast_genome(genome, blast_program, query, evalue_threshold=0.01):
+def blast_genome(genome, blast_program, query, evalue_threshold=0.1):
     dbname = genome.blastdb
     if not dbname:
         return []
     results = blast(dbname, blast_program, query, evalue_threshold=evalue_threshold)
+
     genome_fragment_ids = [f.id for f in genome.fragments.all()]
     return [r for r in results if r.fragment_id in genome_fragment_ids]

@@ -11,7 +11,7 @@ def compute_pcr_product(primer_a_sequence, primer_a_binding_check_len, primer_a_
     Computes a PCR product based on two blast results.
     """
 
-    MIN_IDENTITIES = 0.90
+    MIN_IDENTITIES = 0.95
     # probably an over-estimation, for misdirected primers on circular genome
     MAX_PCR_SIZE = 50000
 

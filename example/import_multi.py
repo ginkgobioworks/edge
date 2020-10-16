@@ -2,6 +2,12 @@
 #
 # python import_multi.py genome_name <file names...>
 #
+#
+# Example:
+# python split_gff.py GRCh38 GRCh38_latest_genomic.gff GRCh38_latest_genomic.fna
+# in docker, run
+# time scripts/_python example/import_multi.py 'GRCh38.2' example/GRCh38/*combined.gff
+# time scripts/_python example/import_multi.py GCA_003668045.2 example/GCA_003668045.2/*combined.gff
 
 import django
 django.setup()
