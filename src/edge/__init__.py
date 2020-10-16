@@ -5,6 +5,7 @@ __version__ = '2.10.0'
 
 import random
 
+
 def get_random_sequence(n):
     return "".join(["agct"[random.randint(0, 3)] for i in range(n)])
 
