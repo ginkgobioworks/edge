@@ -76,7 +76,7 @@ def inverse_match(m):
 
 
 @lru_cache(maxsize=200)
-def blast(dbname, blast_program, query, evalue_threshold=1):
+def blast(dbname, blast_program, query):
 
     infile = None
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -86,11 +86,9 @@ def blast(dbname, blast_program, query, evalue_threshold=1):
     outfile = "%s.out.xml" % infile
     if blast_program == 'tblastn':
         blast_cl = NcbitblastnCommandline(query=infile, db=dbname,
-                                          evalue=evalue_threshold,
                                           word_size=6, outfmt=5, out=outfile)
     else:
         blast_cl = NcbiblastnCommandline(query=infile, db=dbname,
-                                         evalue=evalue_threshold,
                                          word_size=6, outfmt=5, out=outfile)
 
     cl = str(blast_cl)
@@ -138,11 +136,11 @@ def blast(dbname, blast_program, query, evalue_threshold=1):
     return results
 
 
-def blast_genome(genome, blast_program, query, evalue_threshold=1):
+def blast_genome(genome, blast_program, query):
     dbname = genome.blastdb
     if not dbname:
         return []
-    results = blast(dbname, blast_program, query, evalue_threshold=evalue_threshold)
+    results = blast(dbname, blast_program, query)
 
     genome_fragment_ids = [f.id for f in genome.fragments.all()]
     return [r for r in results if r.fragment_id in genome_fragment_ids]
