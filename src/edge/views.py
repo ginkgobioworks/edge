@@ -325,10 +325,16 @@ class GenomeAnnotationsView(ViewBase):
         genome = get_genome_or_404(genome_id)
         q_parser = RequestParser()
         q_parser.add_argument('q', field_type=str, required=True)
+        q_parser.add_argument('field', field_type=str, required=False, default=None)
         args = q_parser.parse_args(request)
+        field = args['field']
 
         res = []
-        fragment_annotations = genome.indexed_genome().find_annotation_by_name(args['q'])
+        if field is None:
+            fragment_annotations = genome.indexed_genome().find_annotation_by_name(args['q'])
+        else:
+            fragment_annotations = genome.indexed_genome().find_annotation_by_qualifier(
+                args['q'], fields=[field])
         for fragment_id in fragment_annotations:
             fragment = get_fragment_or_404(fragment_id)
             annotations = fragment_annotations[fragment_id]
