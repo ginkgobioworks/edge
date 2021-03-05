@@ -546,13 +546,13 @@ class GenomeAnnotationsTest(TestCase):
         res = self.client.post(self.genome_uri + 'fragments/', data=json.dumps(data),
                                content_type='application/json')
         self.fragment_uri = json.loads(res.content)['uri']
-
         self.fragment_data = json.loads(res.content)
+
+    def test_find_annotation(self):
         data = dict(base_first=2, base_last=9, name='proC', type='promoter', strand=1)
         res = self.client.post(self.fragment_uri + 'annotations/', data=json.dumps(data),
                                content_type='application/json')
 
-    def test_find_annotation(self):
         res = self.client.get(self.genome_uri + 'annotations/?q=proC')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(json.loads(res.content), [[
@@ -566,6 +566,33 @@ class GenomeAnnotationsTest(TestCase):
                  "feature_full_length": 8,
                  "feature_base_first": 1,
                  "feature_base_last": 8}]
+        ]])
+
+    def test_find_annotation_by_qualifier_field(self):
+        data = dict(base_first=2, base_last=4, name='Some annotation', type='promoter', strand=1,
+                    qualifiers=dict(product=["Foobar"]))
+        res = self.client.post(self.fragment_uri + 'annotations/', data=json.dumps(data),
+                               content_type='application/json')
+
+        data = dict(base_first=5, base_last=7, name='Another annotation', type='promoter', strand=1,
+                    qualifiers=dict(product=["Atg20p"]))
+        res = self.client.post(self.fragment_uri + 'annotations/', data=json.dumps(data),
+                               content_type='application/json')
+
+        res = self.client.get(self.genome_uri + 'annotations/?q=Atg20p&field=product')
+        self.assertEquals(res.status_code, 200)
+        print(json.loads(res.content))
+        self.assertEquals(json.loads(res.content), [[
+            self.fragment_data, [
+                {"base_first": 5,
+                 "base_last": 7,
+                 "name": 'Another annotation',
+                 "type": 'promoter',
+                 "strand": 1,
+                 "qualifiers": {'product': ['Atg20p']},
+                 "feature_full_length": 3,
+                 "feature_base_first": 1,
+                 "feature_base_last": 3}]
         ]])
 
 
