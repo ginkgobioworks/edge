@@ -1,4 +1,5 @@
 import os
+import json
 
 from Bio.Seq import Seq
 from django.test import TestCase
@@ -287,19 +288,187 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         self.assertEquals(a.base_last, len(self.upstream) + len(self.front_bs) + len(self.middle))
 
     def test_preserves_annotations_on_homology_arm_fwd_that_have_not_changed(self):
-        self.assertEquals(True, False)
+        cassette = ''.join([self.front_bs, self.back_bs])
+
+        # add annotaiton on upstream arm
+        self.fragment.annotate(len(self.upstream) + 2,
+                               len(self.upstream) + len(self.front_bs),
+                               "Up arm", "feature", 1)
+
+        c = recombine(self.genome, cassette, self.arm_len)
+        f = c.fragments.all()[0].indexed_fragment()
+
+        annotations = f.annotations()
+        self.assertEquals(len(annotations), 2)
+
+        a = annotations[0]
+        self.assertEquals(a.feature.type, 'operation')
+
+        a = annotations[1]
+        self.assertEquals(a.feature.name, 'Up arm')
+        self.assertEquals(a.feature.type, 'feature')
+        self.assertEquals(a.feature.strand, 1)
+        self.assertEquals(a.base_first, len(self.upstream) + 2)
+        self.assertEquals(a.base_last, len(self.upstream) + len(self.front_bs))
 
     def test_preserves_annotations_on_homology_arm_rev_that_have_not_changed(self):
-        self.assertEquals(True, False)
+        cassette = ''.join([self.front_bs, self.back_bs])
 
-    def test_annotates_orf_in_reverse_cassette(self):
-        self.assertEquals(True, False)
+        # add annotaiton on reverse strand of downstream arm
+        self.fragment.annotate(
+            len(self.upstream) + len(self.front_bs) + len(self.middle) + 1,
+            len(self.upstream) + len(self.front_bs) + len(self.middle) + len(self.back_bs),
+            "Down arm", "feature", -1)
 
-    def test_inherit_annotations_on_reverse_strand(self):
-        self.assertEquals(True, False)
+        c = recombine(self.genome, cassette, self.arm_len)
+        f = c.fragments.all()[0].indexed_fragment()
+
+        annotations = f.annotations()
+        self.assertEquals(len(annotations), 2)
+
+        a = annotations[0]
+        self.assertEquals(a.feature.type, 'operation')
+
+        a = annotations[1]
+        self.assertEquals(a.feature.name, 'Down arm')
+        self.assertEquals(a.feature.type, 'feature')
+        self.assertEquals(a.feature.strand, -1)
+        self.assertEquals(a.base_first, len(self.upstream) + len(self.front_bs) + 1)
+        self.assertEquals(a.base_last, len(self.upstream) + len(self.front_bs) + len(self.back_bs))
 
     def test_adds_annotations_on_fwd_strand(self):
-        self.assertEquals(True, False)
+        donor = "a" * 100 + "g" * 100 + "c" * 50 + "t" * 50 + "g" * 100 + "c" * 100
+        cassette = ''.join([self.front_bs, donor, self.back_bs])
+        flen = len(self.front_bs)
 
-    def test_adds_annotations_on_rev_strand(self):
-        self.assertEquals(True, False)
+        annotations = [
+          dict(base_first=flen + 1,   base_last=flen + 100, name="pFavorite", type="promoter",
+               strand=1, qualifiers=None),
+          dict(base_first=flen + 101, base_last=flen + 200, name="Favorite", type="gene",
+               strand=1, qualifiers=dict(locus="Favorite", product="Favoritep")),
+          dict(base_first=flen + 201, base_last=flen + 250, name="tFavorite", type="terminator",
+               strand=1, qualifiers=None),
+          dict(base_first=flen + 251, base_last=flen + 300, name="tBest", type="terminator",
+               strand=-1, qualifiers=None),
+          dict(base_first=flen + 301, base_last=flen + 400, name="Best", type="gene",
+               strand=-1, qualifiers=dict(locus="Best", product="Bestp")),
+          dict(base_first=flen + 401, base_last=flen + 500, name="pBest", type="promoter",
+               strand=-1, qualifiers=None)
+        ]
+
+        c = recombine(self.genome, cassette, self.arm_len, annotations=annotations)
+        f = c.fragments.all()[0].indexed_fragment()
+        fragment_sequence = f.sequence
+
+        ans = f.annotations()
+        self.assertEquals(len(ans), 7)
+
+        ans = sorted(ans, key=lambda a: (a.base_first, -a.base_last))
+
+        self.assertEquals(ans[0].feature.type, 'operation')
+
+        self.assertEquals(ans[1].feature.type, 'promoter')
+        self.assertEquals(ans[1].feature.name, 'pFavorite')
+        self.assertEquals(ans[1].feature.strand, 1)
+        self.assertEquals(ans[1].base_first, len(self.upstream) + len(self.front_bs) + 1)
+        self.assertEquals(ans[1].base_last, len(self.upstream) + len(self.front_bs) + 100)
+        self.assertEquals(fragment_sequence[ans[1].base_first - 1:ans[1].base_last], "a" * 100)
+
+        self.assertEquals(ans[2].feature.type, 'gene')
+        self.assertEquals(ans[2].feature.name, 'Favorite')
+        self.assertEquals(ans[2].feature.strand, 1)
+        self.assertEquals(ans[2].base_first, len(self.upstream) + len(self.front_bs) + 100 + 1)
+        self.assertEquals(ans[2].base_last, len(self.upstream) + len(self.front_bs) + 100 + 100)
+        self.assertEquals(fragment_sequence[ans[2].base_first - 1:ans[2].base_last], "g" * 100)
+
+        self.assertEquals(ans[3].feature.type, 'terminator')
+        self.assertEquals(ans[3].feature.name, 'tFavorite')
+        self.assertEquals(ans[3].feature.strand, 1)
+        self.assertEquals(ans[3].base_first, len(self.upstream) + len(self.front_bs) + 200 + 1)
+        self.assertEquals(ans[3].base_last, len(self.upstream) + len(self.front_bs) + 200 + 50)
+        self.assertEquals(fragment_sequence[ans[3].base_first - 1:ans[3].base_last], "c" * 50)
+
+        self.assertEquals(ans[4].feature.type, 'terminator')
+        self.assertEquals(ans[4].feature.name, 'tBest')
+        self.assertEquals(ans[4].feature.strand, -1)
+        self.assertEquals(ans[4].base_first, len(self.upstream) + len(self.front_bs) + 250 + 1)
+        self.assertEquals(ans[4].base_last, len(self.upstream) + len(self.front_bs) + 250 + 50)
+        self.assertEquals(fragment_sequence[ans[4].base_first - 1:ans[4].base_last], "t" * 50)
+
+        self.assertEquals(ans[5].feature.type, 'gene')
+        self.assertEquals(ans[5].feature.name, 'Best')
+        self.assertEquals(ans[5].feature.strand, -1)
+        self.assertEquals(ans[5].base_first, len(self.upstream) + len(self.front_bs) + 300 + 1)
+        self.assertEquals(ans[5].base_last, len(self.upstream) + len(self.front_bs) + 300 + 100)
+        self.assertEquals(fragment_sequence[ans[5].base_first - 1:ans[5].base_last], "g" * 100)
+
+        self.assertEquals(ans[6].feature.type, 'promoter')
+        self.assertEquals(ans[6].feature.name, 'pBest')
+        self.assertEquals(ans[6].feature.strand, -1)
+        self.assertEquals(ans[6].base_first, len(self.upstream) + len(self.front_bs) + 400 + 1)
+        self.assertEquals(ans[6].base_last, len(self.upstream) + len(self.front_bs) + 400 + 100)
+        self.assertEquals(fragment_sequence[ans[6].base_first - 1:ans[6].base_last], "c" * 100)
+
+    def test_passes_annotations_through_api(self):
+        donor = "a" * 100 + "g" * 100 + "c" * 50 + "t" * 50 + "g" * 100 + "c" * 100
+        cassette = ''.join([self.front_bs, donor, self.back_bs])
+        flen = len(self.front_bs)
+
+        annotations = [
+          dict(base_first=flen + 1,   base_last=flen + 100, name="pFavorite", type="promoter",
+               strand=1, qualifiers=None),
+          dict(base_first=flen + 101, base_last=flen + 200, name="Favorite", type="gene",
+               strand=1, qualifiers=dict(locus="Favorite", product="Favoritep")),
+          dict(base_first=flen + 201, base_last=flen + 250, name="tFavorite", type="terminator",
+               strand=1, qualifiers=None),
+          dict(base_first=flen + 251, base_last=flen + 300, name="tBest", type="terminator",
+               strand=-1, qualifiers=None),
+          dict(base_first=flen + 301, base_last=flen + 400, name="Best", type="gene",
+               strand=-1, qualifiers=dict(locus="Best", product="Bestp")),
+          dict(base_first=flen + 401, base_last=flen + 500, name="pBest", type="promoter",
+               strand=-1, qualifiers=None)
+        ]
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % self.genome.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=self.arm_len,
+                                                    create=True,
+                                                    annotations=annotations,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 201)
+        r = json.loads(res.content)
+
+        c = Genome.objects.get(pk=r['id'])
+        f = c.fragments.all()[0].indexed_fragment()
+        annotations = f.annotations()
+        self.assertEquals(len(annotations), 7)
+
+    def test_does_not_annotate_if_donor_has_overhangs(self):
+        donor = "a" * 500
+        cassette = ''.join(["(gg/)", self.front_bs, donor, self.back_bs])
+        flen = len(self.front_bs)
+
+        annotations = [
+          dict(base_first=flen + 1,   base_last=flen + 100, name="pFavorite", type="promoter",
+               strand=1, qualifiers=None),
+          dict(base_first=flen + 101, base_last=flen + 200, name="Favorite", type="gene",
+               strand=1, qualifiers=dict(locus="Favorite", product="Favoritep")),
+          dict(base_first=flen + 201, base_last=flen + 250, name="tFavorite", type="terminator",
+               strand=1, qualifiers=None),
+          dict(base_first=flen + 251, base_last=flen + 300, name="tBest", type="terminator",
+               strand=-1, qualifiers=None),
+          dict(base_first=flen + 301, base_last=flen + 400, name="Best", type="gene",
+               strand=-1, qualifiers=dict(locus="Best", product="Bestp")),
+          dict(base_first=flen + 401, base_last=flen + 500, name="pBest", type="promoter",
+               strand=-1, qualifiers=None)
+        ]
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % self.genome.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=self.arm_len,
+                                                    create=True,
+                                                    annotations=annotations,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 400)

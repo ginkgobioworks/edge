@@ -160,12 +160,12 @@ def get_cassette_new_annotations(cassette, new_annotations):
     if new_annotations:
         for annotation in new_annotations:
             annotations.append(
-                dict(base_first=annotation['start'], base_last=annotation['end'],
+                dict(base_first=annotation['base_first'], base_last=annotation['base_last'],
                      feature_name=annotation['name'],
                      feature_type=annotation['type'],
                      feature_strand=annotation['strand'],
-                     feature_qualifiers=annotation['qualifiers'] \
-                         if 'qualifiers' in annotation else None))
+                     feature_qualifiers=annotation['qualifiers']
+                     if 'qualifiers' in annotation else None))
 
     return annotations
 
@@ -208,7 +208,8 @@ class RecombinationRegion(object):
 
     def update_annotations(self, genome):
         self.cassette_annotations = \
-            get_cassette_annotations(genome, self.cassette, self.fragment_id, self.start, self.end, None)
+            get_cassette_annotations(genome, self.cassette, self.fragment_id,
+                                     self.start, self.end, None)
 
 
 def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
@@ -649,8 +650,8 @@ def annotate_integration(genome, new_genome, regions_before, regions_after,
     before_and_after_with_annotations = []
     for before, after in zip(regions_before, regions_after):
         if before['cassette'].lower() != cassette.lower():
-           # opps, annotations no longer match, ignore them for now
-           new_annotations = []
+            # opps, annotations no longer match, ignore them for now
+            new_annotations = []
         annotations = get_cassette_annotations(genome, before['cassette'], before['fragment_id'],
                                                before['start'], before['end'], new_annotations)
         before_and_after_with_annotations.append((before, after, annotations))
@@ -680,8 +681,8 @@ def annotate_integration(genome, new_genome, regions_before, regions_after,
                            annotation['feature_name'],
                            annotation['feature_type'],
                            annotation['feature_strand'],
-                           qualifiers=annotation['feature_qualifiers'] \
-                               if 'feature_qualifiers' in annotation else None)
+                           qualifiers=annotation['feature_qualifiers']
+                           if 'feature_qualifiers' in annotation else None)
 
 
 def recombine(genome, cassette, homology_arm_length,
@@ -718,7 +719,7 @@ class RecombineOp(object):
     @staticmethod
     def get_operation(cassette, homology_arm_length,
                       genome_name=None, cassette_name=None, notes=None,
-                      design_primers=False, primer3_opts=None):
+                      design_primers=False, primer3_opts=None, annotations=None):
         cassette = remove_overhangs(cassette)
         params = dict(cassette=cassette, homology_arm_length=homology_arm_length)
         op = Operation(type=Operation.RECOMBINATION[0], params=json.dumps(params))

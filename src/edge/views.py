@@ -487,8 +487,11 @@ class GenomeOperationViewBase(ViewBase):
         args = parser.parse_args(request)
         create = args['create']
 
-        args, op_class = self.parse_arguments(request)
+        parsed = self.parse_arguments(request)
+        if parsed is None:
+            return None, 400
 
+        args, op_class = parsed
         if create is False:
             r = op_class.check(genome, **args)
             if r is None:
@@ -553,24 +556,25 @@ class GenomeRecombinationView(GenomeOperationViewBase):
 
     @staticmethod
     def validate_annotations(cassette, annotations):
-	"""
-	If user supplied annotations for the donor sequence, to make sure we
-	can precisely use the annotation and not leave any ambiguity, we
-	require the donor dna to not contain overhangs and backbone
-	modifications. This method returns True if that's the case, and
+        """
+        If user supplied annotations for the donor sequence, to make sure we
+        can precisely use the annotation and not leave any ambiguity, we
+        require the donor dna to not contain overhangs and backbone
+        modifications. This method returns True if that's the case, and
         required fields for annotations exist.
         """
 
-        if re.match(r'^[A-Za-z]$', cassette) and \
-           len([a for a in annotations if "base_first" not in a or \
-                                          "base_last" not in a or \
-                                          "name" not in a or \
-                                          "type" not in a or \
-                                          "strand" not in a]) == 0:
+        if re.match(r'^[A-Za-z]+$', cassette) and \
+           len([a for a in annotations
+                if "base_first" not in a
+                or "base_last" not in a
+                or "name" not in a
+                or "type" not in a
+                or "strand" not in a]) == 0:
             return True
 
-	# if there are no supplied annotations, we don't care what format the
-	# donor sequence is
+        # if there are no supplied annotations, we don't care what format the
+        # donor sequence is
         return len(annotations) == 0
 
     def parse_arguments(self, request):
@@ -601,10 +605,13 @@ class GenomeRecombinationView(GenomeOperationViewBase):
         design_primers = args['design_primers']
         primer3_opts = args['primer3_opts']
         annotations = args['annotations']
+
         if primer3_opts is None:
             primer3_opts = {}
         if annotations is None:
             annotations = []
+        elif GenomeRecombinationView.validate_annotations(cassette, annotations) is False:
+            return None
 
         if homology_arm_length is None:
             homology_arm_length = GenomeRecombinationView.DEFAULT_HA_LENGTH
