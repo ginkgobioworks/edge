@@ -146,7 +146,7 @@ def get_cassette_inherited_annotations(genome, cassette, fragment_id, region_sta
     return inherited_annotations
 
 
-def get_cassette_new_annotations(cassette):
+def get_cassette_new_annotations(cassette, new_annotations):
     # detect ORF on cassette
 
     annotations = []
@@ -154,15 +154,27 @@ def get_cassette_new_annotations(cassette):
         annotations.append(dict(base_first=orf['start'], base_last=orf['end'],
                                 feature_name=orf['name'],
                                 feature_type='ORF',
-                                feature_strand=orf['strand']))
+                                feature_strand=orf['strand'],
+                                feature_qualifiers=None))
+
+    if new_annotations:
+        for annotation in new_annotations:
+            annotations.append(
+                dict(base_first=annotation['start'], base_last=annotation['end'],
+                     feature_name=annotation['name'],
+                     feature_type=annotation['type'],
+                     feature_strand=annotation['strand'],
+                     feature_qualifiers=annotation['qualifiers'] \
+                         if 'qualifiers' in annotation else None))
 
     return annotations
 
 
-def get_cassette_annotations(genome, cassette, fragment_id, region_start, region_end):
+def get_cassette_annotations(genome, cassette, fragment_id, region_start, region_end,
+                             new_annotations):
     return get_cassette_inherited_annotations(
         genome, cassette, fragment_id, region_start, region_end) + get_cassette_new_annotations(
-        cassette)
+        cassette, new_annotations)
 
 
 class RecombinationRegion(object):
@@ -196,7 +208,7 @@ class RecombinationRegion(object):
 
     def update_annotations(self, genome):
         self.cassette_annotations = \
-            get_cassette_annotations(genome, self.cassette, self.fragment_id, self.start, self.end)
+            get_cassette_annotations(genome, self.cassette, self.fragment_id, self.start, self.end, None)
 
 
 def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
@@ -631,12 +643,16 @@ def recombine_sequence(genome, cassette, homology_arm_length,
                 operation=op)
 
 
-def annotate_integration(genome, new_genome, regions_before, regions_after, cassette_name, op):
+def annotate_integration(genome, new_genome, regions_before, regions_after,
+                         cassette_name, op, cassette, new_annotations):
 
     before_and_after_with_annotations = []
     for before, after in zip(regions_before, regions_after):
+        if before['cassette'].lower() != cassette.lower():
+           # opps, annotations no longer match, ignore them for now
+           new_annotations = []
         annotations = get_cassette_annotations(genome, before['cassette'], before['fragment_id'],
-                                               before['start'], before['end'])
+                                               before['start'], before['end'], new_annotations)
         before_and_after_with_annotations.append((before, after, annotations))
 
     # lock root genome to prevent other genomes of touching same fragment or chunk
@@ -663,14 +679,18 @@ def annotate_integration(genome, new_genome, regions_before, regions_after, cass
                            after['start'] + annotation['base_last'] - 1,
                            annotation['feature_name'],
                            annotation['feature_type'],
-                           annotation['feature_strand'])
+                           annotation['feature_strand'],
+                           qualifiers=annotation['feature_qualifiers'] \
+                               if 'feature_qualifiers' in annotation else None)
 
 
 def recombine(genome, cassette, homology_arm_length,
-              genome_name=None, cassette_name=None, notes=None):
+              genome_name=None, cassette_name=None,
+              notes=None, annotations=None):
 
     x = recombine_sequence(genome, cassette, homology_arm_length,
-                           genome_name=genome_name, cassette_name=cassette_name, notes=notes)
+                           genome_name=genome_name,
+                           cassette_name=cassette_name, notes=notes)
 
     if x is None:
         return x
@@ -680,7 +700,7 @@ def recombine(genome, cassette, homology_arm_length,
     annotate_integration_task.apply_async(
         (genome.id, x['new_genome'].id,
          x['regions']['before'], x['regions']['after'],
-         x['cassette_name'], x['operation'].id), countdown=10)
+         x['cassette_name'], x['operation'].id, cassette, annotations), countdown=10)
 
     return x['new_genome']
 
@@ -690,7 +710,7 @@ class RecombineOp(object):
     @staticmethod
     def check(genome, cassette, homology_arm_length,
               genome_name=None, cassette_name=None, notes=None,
-              design_primers=False, primer3_opts=None):
+              design_primers=False, primer3_opts=None, annotations=None):
         return find_swap_region_with_annotations(genome, cassette, homology_arm_length,
                                                  design_primers=design_primers,
                                                  primer3_opts=primer3_opts)
@@ -706,6 +726,7 @@ class RecombineOp(object):
 
     @staticmethod
     def perform(genome, cassette, homology_arm_length, genome_name, cassette_name, notes,
-                design_primers=False, primer3_opts=None):
+                design_primers=False, primer3_opts=None, annotations=None):
         return recombine(genome, cassette, homology_arm_length,
-                         genome_name=genome_name, cassette_name=cassette_name, notes=notes)
+                         genome_name=genome_name, cassette_name=cassette_name,
+                         notes=notes, annotations=annotations)

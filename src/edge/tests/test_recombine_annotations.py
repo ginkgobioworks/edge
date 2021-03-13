@@ -285,3 +285,21 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         self.assertEquals(a.feature.strand, 1)
         self.assertEquals(a.base_first, len(self.upstream) + len(self.front_bs) + 1)
         self.assertEquals(a.base_last, len(self.upstream) + len(self.front_bs) + len(self.middle))
+
+    def test_preserves_annotations_on_homology_arm_fwd_that_have_not_changed(self):
+        self.assertEquals(True, False)
+
+    def test_preserves_annotations_on_homology_arm_rev_that_have_not_changed(self):
+        self.assertEquals(True, False)
+
+    def test_annotates_orf_in_reverse_cassette(self):
+        self.assertEquals(True, False)
+
+    def test_inherit_annotations_on_reverse_strand(self):
+        self.assertEquals(True, False)
+
+    def test_adds_annotations_on_fwd_strand(self):
+        self.assertEquals(True, False)
+
+    def test_adds_annotations_on_rev_strand(self):
+        self.assertEquals(True, False)
