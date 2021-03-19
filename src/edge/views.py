@@ -487,9 +487,10 @@ class GenomeOperationViewBase(ViewBase):
         args = parser.parse_args(request)
         create = args['create']
 
-        parsed = self.parse_arguments(request)
+        errors = []
+        parsed = self.parse_arguments(request, errors)
         if parsed is None:
-            return None, 400
+            return dict(errors=" ".join(errors)), 400
 
         args, op_class = parsed
         if create is False:
@@ -529,7 +530,7 @@ class GenomeOperationViewBase(ViewBase):
 
 class GenomeCrisprDSBView(GenomeOperationViewBase):
 
-    def parse_arguments(self, request):
+    def parse_arguments(self, request, errors):
         from edge.crispr import CrisprOp
 
         parser = RequestParser()
@@ -577,7 +578,7 @@ class GenomeRecombinationView(GenomeOperationViewBase):
         # donor sequence is
         return len(annotations) == 0
 
-    def parse_arguments(self, request):
+    def parse_arguments(self, request, errors):
         from edge.recombine import RecombineOp
 
         parser = RequestParser()
@@ -611,6 +612,11 @@ class GenomeRecombinationView(GenomeOperationViewBase):
         if annotations is None:
             annotations = []
         elif GenomeRecombinationView.validate_annotations(cassette, annotations) is False:
+            errors.append(
+                "Annotations failed validation: \
+please make sure donor sequence does not have overhangs \
+and annotation array elements have all the required fields"
+            )
             return None
 
         if homology_arm_length is None:

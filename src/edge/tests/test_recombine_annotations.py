@@ -472,3 +472,116 @@ class GenomeRecombinationAnnotationsTest(TestCase):
                                                     genome_name='FooBar')),
                                content_type='application/json')
         self.assertEquals(res.status_code, 400)
+        r = json.loads(res.content)
+        self.assertEquals("errors" in r, True)
+        self.assertEquals("does not have overhangs" in r["errors"], True)
+
+    def test_does_not_annotate_if_annotation_is_missing_field(self):
+        donor = "a" * 500
+        cassette = ''.join([self.front_bs, donor, self.back_bs])
+        flen = len(self.front_bs)
+
+        annotations = [
+          # missing base_first
+          dict(base_last=flen + 100, name="pFavorite", type="promoter",
+               strand=1, qualifiers=None),
+        ]
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % self.genome.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=self.arm_len,
+                                                    create=True,
+                                                    annotations=annotations,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 400)
+        r = json.loads(res.content)
+        self.assertEquals("errors" in r, True)
+        self.assertEquals("have all the required field" in r["errors"], True)
+
+        annotations = [
+          # missing base_last
+          dict(base_first=flen + 1, name="pFavorite", type="promoter",
+               strand=1, qualifiers=None),
+        ]
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % self.genome.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=self.arm_len,
+                                                    create=True,
+                                                    annotations=annotations,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 400)
+        r = json.loads(res.content)
+        self.assertEquals("errors" in r, True)
+        self.assertEquals("have all the required field" in r["errors"], True)
+
+        annotations = [
+          # missing name
+          dict(base_first=flen + 1, base_last=flen + 100, type="promoter",
+               strand=1, qualifiers=None),
+        ]
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % self.genome.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=self.arm_len,
+                                                    create=True,
+                                                    annotations=annotations,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 400)
+        r = json.loads(res.content)
+        self.assertEquals("errors" in r, True)
+        self.assertEquals("have all the required field" in r["errors"], True)
+
+        annotations = [
+          # missing type
+          dict(base_first=flen + 1, base_last=flen + 100, name="pFavorite",
+               strand=1, qualifiers=None),
+        ]
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % self.genome.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=self.arm_len,
+                                                    create=True,
+                                                    annotations=annotations,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 400)
+        r = json.loads(res.content)
+        self.assertEquals("errors" in r, True)
+        self.assertEquals("have all the required field" in r["errors"], True)
+
+        annotations = [
+          # missing strand
+          dict(base_first=flen + 1, base_last=flen + 100, name="pFavorite", type="promoter",
+               qualifiers=None),
+        ]
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % self.genome.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=self.arm_len,
+                                                    create=True,
+                                                    annotations=annotations,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 400)
+        r = json.loads(res.content)
+        self.assertEquals("errors" in r, True)
+        self.assertEquals("have all the required field" in r["errors"], True)
+
+        annotations = [
+          # not missing anything
+          dict(base_first=flen + 1, base_last=flen + 100, name="pFavorite", type="promoter",
+               strand=1, qualifiers=None),
+        ]
+
+        res = self.client.post('/edge/genomes/%s/recombination/' % self.genome.id,
+                               data=json.dumps(dict(cassette=cassette,
+                                                    homology_arm_length=self.arm_len,
+                                                    create=True,
+                                                    annotations=annotations,
+                                                    genome_name='FooBar')),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 201)

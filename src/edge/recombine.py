@@ -681,8 +681,7 @@ def annotate_integration(genome, new_genome, regions_before, regions_after,
                            annotation['feature_name'],
                            annotation['feature_type'],
                            annotation['feature_strand'],
-                           qualifiers=annotation['feature_qualifiers']
-                           if 'feature_qualifiers' in annotation else None)
+                           qualifiers=annotation.get('feature_qualifiers'))
 
 
 def recombine(genome, cassette, homology_arm_length,
