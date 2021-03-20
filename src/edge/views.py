@@ -615,7 +615,7 @@ class GenomeRecombinationView(GenomeOperationViewBase):
             errors.append(
                 "Annotations failed validation: \
 please make sure donor sequence does not have overhangs \
-and annotation array elements have all the required fields"
+and annotation array elements have all the required fields."
             )
             return None
 
