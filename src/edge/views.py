@@ -1,5 +1,6 @@
-import json
 import os
+import re
+import json
 import random
 import tempfile
 
@@ -486,8 +487,12 @@ class GenomeOperationViewBase(ViewBase):
         args = parser.parse_args(request)
         create = args['create']
 
-        args, op_class = self.parse_arguments(request)
+        errors = []
+        parsed = self.parse_arguments(request, errors)
+        if parsed is None:
+            return dict(errors=" ".join(errors)), 400
 
+        args, op_class = parsed
         if create is False:
             r = op_class.check(genome, **args)
             if r is None:
@@ -525,7 +530,7 @@ class GenomeOperationViewBase(ViewBase):
 
 class GenomeCrisprDSBView(GenomeOperationViewBase):
 
-    def parse_arguments(self, request):
+    def parse_arguments(self, request, errors):
         from edge.crispr import CrisprOp
 
         parser = RequestParser()
@@ -550,7 +555,30 @@ class GenomeCrisprDSBView(GenomeOperationViewBase):
 class GenomeRecombinationView(GenomeOperationViewBase):
     DEFAULT_HA_LENGTH = 30
 
-    def parse_arguments(self, request):
+    @staticmethod
+    def validate_annotations(cassette, annotations):
+        """
+        If user supplied annotations for the donor sequence, to make sure we
+        can precisely use the annotation and not leave any ambiguity, we
+        require the donor dna to not contain overhangs and backbone
+        modifications. This method returns True if that's the case, and
+        required fields for annotations exist.
+        """
+
+        if re.match(r'^[A-Za-z]+$', cassette) and \
+           len([a for a in annotations
+                if "base_first" not in a
+                or "base_last" not in a
+                or "name" not in a
+                or "type" not in a
+                or "strand" not in a]) == 0:
+            return True
+
+        # if there are no supplied annotations, we don't care what format the
+        # donor sequence is
+        return len(annotations) == 0
+
+    def parse_arguments(self, request, errors):
         from edge.recombine import RecombineOp
 
         parser = RequestParser()
@@ -565,21 +593,37 @@ class GenomeRecombinationView(GenomeOperationViewBase):
         parser.add_argument('design_primers', field_type=bool, required=False,
                             default=False, location='json')
         parser.add_argument('primer3_opts', field_type=dict, required=False,
-                            default={}, location='json')
+                            default=None, location='json')
+        parser.add_argument('annotations', field_type=list, required=False,
+                            default=None, location='json')
 
         args = parser.parse_args(request)
-        cassette = args['cassette']
+        cassette = args['cassette'].strip()
         homology_arm_length = args['homology_arm_length']
         genome_name = args['genome_name']
         cassette_name = args['cassette_name']
         notes = args['notes']
         design_primers = args['design_primers']
         primer3_opts = args['primer3_opts']
+        annotations = args['annotations']
+
+        if primer3_opts is None:
+            primer3_opts = {}
+        if annotations is None:
+            annotations = []
+        elif GenomeRecombinationView.validate_annotations(cassette, annotations) is False:
+            errors.append(
+                "Annotations failed validation: \
+please make sure donor sequence does not have overhangs \
+and annotation array elements have all the required fields."
+            )
+            return None
 
         if homology_arm_length is None:
             homology_arm_length = GenomeRecombinationView.DEFAULT_HA_LENGTH
 
         return (dict(cassette=cassette, homology_arm_length=homology_arm_length,
                      genome_name=genome_name, cassette_name=cassette_name,
-                     notes=notes, design_primers=design_primers, primer3_opts=primer3_opts),
+                     notes=notes, design_primers=design_primers,
+                     primer3_opts=primer3_opts, annotations=annotations),
                 RecombineOp)
