@@ -164,7 +164,7 @@ def get_cassette_new_annotations(cassette, new_annotations):
                      feature_name=annotation['name'],
                      feature_type=annotation['type'],
                      feature_strand=annotation['strand'],
-                     feature_qualifiers=annotation.get('qualifiers'))
+                     feature_qualifiers=annotation.get('qualifiers')))
 
     return annotations
 
