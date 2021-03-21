@@ -1,6 +1,6 @@
 from django.db.backends.signals import connection_created
 
-__version__ = '2.15.0'
+__version__ = '2.16.0'
 
 
 import random
