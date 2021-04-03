@@ -303,7 +303,7 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
                           ''.join([upstream, cassette, downstream]))
 
-    def test_recombines_ignoring_extra_bases_upstream_and_downstream_of_cassette(self):
+    def test_recombines_ignoring_many_extra_bases_upstream_and_downstream_of_cassette(self):
         upstream = "gagattgtccgcgtttt"
         front_bs = "catagcgcacaggacgcggagcgacgtagtctgcatctgatgcatgcactac"
         middle = "cggcacctgtgagccg"
@@ -312,7 +312,26 @@ class GenomeRecombinationTest(TestCase):
         replaced = "a" * 100
 
         template = ''.join([upstream, front_bs, middle, back_bs, downstream])
-        cassette = ''.join(['c' * 6 + front_bs, replaced, back_bs + 'c' * 6])
+        cassette = ''.join(['cccccccc' + front_bs, replaced, back_bs + 'ccccccccc'])
+
+        arm_len = int(min(len(front_bs), len(back_bs)) / 2)
+        g = self.build_genome(False, template)
+        c = recombine(g, cassette, arm_len)
+
+        self.assertNotEqual(g.id, c.id)
+        self.assertEquals(c.fragments.all()[0].indexed_fragment().sequence,
+                          ''.join([upstream, front_bs, replaced, back_bs, downstream]))
+
+    def test_recombines_ignoring_few_extra_bases_upstream_and_downstream_of_cassette(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggagcgacgtagtctgcatctgatgcatgcactac"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagggcatcgtactactgatgcatgcacactgacgta"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "a" * 100
+
+        template = ''.join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = ''.join(['cc' + front_bs, replaced, back_bs + 'c'])
 
         arm_len = int(min(len(front_bs), len(back_bs)) / 2)
         g = self.build_genome(False, template)
