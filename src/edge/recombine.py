@@ -146,9 +146,7 @@ def get_cassette_inherited_annotations(genome, cassette, fragment_id, region_sta
     return inherited_annotations
 
 
-def get_cassette_new_annotations(cassette, new_annotations):
-    # detect ORF on cassette
-
+def get_cassette_new_annotations(cassette, cassette_reversed, specified_cassette, new_annotations):
     annotations = []
     for orf in detect_orfs(cassette):
         annotations.append(dict(base_first=orf['start'], base_last=orf['end'],
@@ -158,29 +156,49 @@ def get_cassette_new_annotations(cassette, new_annotations):
                                 feature_qualifiers=None))
 
     if new_annotations:
-        for annotation in new_annotations:
-            annotations.append(
-                dict(base_first=annotation['base_first'], base_last=annotation['base_last'],
-                     feature_name=annotation['name'],
-                     feature_type=annotation['type'],
-                     feature_strand=annotation['strand'],
-                     feature_qualifiers=annotation.get('qualifiers')))
+        if cassette_reversed is True:
+            cassette_len = len(cassette)
+            reversed_cassette = str(Seq(cassette).reverse_complement()).lower()
+            if reversed_cassette in specified_cassette.lower():
+                offset = specified_cassette.lower().index(reversed_cassette)
+                for annotation in new_annotations:
+                    if annotation['base_first'] - offset > 0:
+                        annotations.append(
+                            dict(base_first=cassette_len - (annotation['base_last'] - offset) + 1,
+                                 base_last=cassette_len - (annotation['base_first'] - offset) + 1,
+                                 feature_name=annotation['name'],
+                                 feature_type=annotation['type'],
+                                 feature_strand=-annotation['strand'],
+                                 feature_qualifiers=annotation.get('qualifiers')))
+
+        else:
+            if cassette.lower() in specified_cassette.lower():
+                offset = specified_cassette.lower().index(cassette.lower())
+                for annotation in new_annotations:
+                    if annotation['base_first'] - offset > 0:
+                        annotations.append(
+                            dict(base_first=annotation['base_first'] - offset,
+                                 base_last=annotation['base_last'] - offset,
+                                 feature_name=annotation['name'],
+                                 feature_type=annotation['type'],
+                                 feature_strand=annotation['strand'],
+                                 feature_qualifiers=annotation.get('qualifiers')))
 
     return annotations
 
 
-def get_cassette_annotations(genome, cassette, fragment_id, region_start, region_end,
-                             new_annotations):
+def get_cassette_annotations(genome, cassette, cassette_reversed,
+                             fragment_id, region_start, region_end,
+                             specified_cassette, new_annotations):
     return get_cassette_inherited_annotations(
         genome, cassette, fragment_id, region_start, region_end) + get_cassette_new_annotations(
-        cassette, new_annotations)
+        cassette, cassette_reversed, specified_cassette, new_annotations)
 
 
 class RecombinationRegion(object):
 
-    def __init__(self, fragment_id, fragment_name,
-                 start, end, sequence,
-                 is_double_crossover, original_cassette, cassette_reversed,
+    def __init__(self, fragment_id, fragment_name, start, end,
+                 sequence, is_double_crossover, integrated_cassette, cassette_reversed,
                  front_arm, back_arm):
 
         self.fragment_id = fragment_id
@@ -189,12 +207,11 @@ class RecombinationRegion(object):
         self.end = end
         self.sequence = sequence
         self.is_double_crossover = is_double_crossover
-        self.original_cassette = original_cassette
         self.cassette_reversed = cassette_reversed
-
-        self.cassette = self.original_cassette
         if self.cassette_reversed:
-            self.cassette = str(Seq(self.original_cassette).reverse_complement())
+            self.cassette = str(Seq(integrated_cassette).reverse_complement())
+        else:
+            self.cassette = integrated_cassette
 
         self.front_arm = front_arm
         self.back_arm = back_arm
@@ -207,8 +224,8 @@ class RecombinationRegion(object):
 
     def update_annotations(self, genome):
         self.cassette_annotations = \
-            get_cassette_annotations(genome, self.cassette, self.fragment_id,
-                                     self.start, self.end, None)
+            get_cassette_annotations(genome, self.cassette, self.cassette_reversed,
+                                     self.fragment_id, self.start, self.end, None, None)
 
 
 def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
@@ -245,6 +262,11 @@ def compute_swap_region_from_results(front_arm_sequence, front_arm_blastres,
     front_1 = front_arm_blastres.subject_end
     back_0 = back_arm_blastres.subject_start
     back_1 = back_arm_blastres.subject_end
+
+    if front_arm_blastres.query_start > 1:
+        cassette = cassette[front_arm_blastres.query_start - 1:]
+    if back_arm_blastres.query_end < len(back_arm_sequence):
+        cassette = cassette[:-(len(back_arm_sequence) - back_arm_blastres.query_end)]
 
     # must align in the right orientation
     if front_arm_blastres.strand() > 0:  # on +1 strand
@@ -644,15 +666,21 @@ def recombine_sequence(genome, cassette, homology_arm_length,
 
 
 def annotate_integration(genome, new_genome, regions_before, regions_after,
-                         cassette_name, op, cassette, new_annotations):
+                         cassette_name, op, specified_cassette, new_annotations):
+
+    specified_cassette = specified_cassette.lower()
+    reversed_specified_cassette = str(Seq(specified_cassette).reverse_complement()).lower()
 
     before_and_after_with_annotations = []
     for before, after in zip(regions_before, regions_after):
-        if before['cassette'].lower() != cassette.lower():
+        if before['cassette'].lower() not in specified_cassette and \
+           before['cassette'].lower() not in reversed_specified_cassette:
             # opps, annotations no longer match, ignore them for now
             new_annotations = []
-        annotations = get_cassette_annotations(genome, before['cassette'], before['fragment_id'],
-                                               before['start'], before['end'], new_annotations)
+        annotations = get_cassette_annotations(
+          genome, before['cassette'], before['cassette_reversed'],
+          before['fragment_id'], before['start'], before['end'],
+          specified_cassette, new_annotations)
         before_and_after_with_annotations.append((before, after, annotations))
 
     # lock root genome to prevent other genomes of touching same fragment or chunk
@@ -697,9 +725,14 @@ def recombine(genome, cassette, homology_arm_length,
     # schedule background job to lift over annotations, after 10 seconds
     from edge.tasks import annotate_integration_task
     annotate_integration_task.apply_async(
-        (genome.id, x['new_genome'].id,
-         x['regions']['before'], x['regions']['after'],
-         x['cassette_name'], x['operation'].id, cassette, annotations), countdown=10)
+        (genome.id,
+         x['new_genome'].id,
+         x['regions']['before'],
+         x['regions']['after'],
+         x['cassette_name'],
+         x['operation'].id,
+         cassette,
+         annotations), countdown=10)
 
     return x['new_genome']
 
