@@ -540,6 +540,7 @@ class GenomeAnnotationsTest(TestCase):
     def setUp(self):
         res = self.client.post('/edge/genomes/', data=json.dumps(dict(name='foo', notes='bar')),
                                content_type='application/json')
+        self.genome_id = json.loads(res.content)['id']
         self.genome_uri = json.loads(res.content)['uri']
 
         data = dict(name='chrI', sequence='AGCTAGCTTCGATCGA')
@@ -547,6 +548,23 @@ class GenomeAnnotationsTest(TestCase):
                                content_type='application/json')
         self.fragment_uri = json.loads(res.content)['uri']
         self.fragment_data = json.loads(res.content)
+
+    def test_returns_errors_if_genome_not_indexed_and_creates_indexed_genome(self):
+        genome = Genome.objects.get(pk=self.genome_id)
+        for fr in genome.fragments.all():
+            fr.fragment_chunk_location_set.all().delete()
+
+        # not indexed before call
+        self.assertEquals(genome.has_location_index, False)
+
+        # gets 200 with error
+        res = self.client.get(self.genome_uri + 'annotations/?q=proC')
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals("Missing genome indices" in json.loads(res.content)['error'], True)
+
+        # in test mode, the .delay call via celery is inlined
+        genome = Genome.objects.get(pk=self.genome_id)
+        self.assertEquals(genome.has_location_index, True)
 
     def test_find_annotation(self):
         data = dict(base_first=2, base_last=9, name='proC', type='promoter', strand=1)
