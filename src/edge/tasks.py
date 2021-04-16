@@ -6,6 +6,12 @@ from django.db import transaction
 
 
 @shared_task
+def build_genome_fragment_indices(genome_id):
+    genome = Genome.objects.get(pk=genome_id)
+    genome.indexed_genome()
+
+
+@shared_task
 def build_genome_blastdb(genome_id):
     genome = Genome.objects.get(pk=genome_id)
     build_genome_db(genome, refresh=True)

@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils import timezone
 from django.db import models
 from django.db.models import Q
@@ -88,6 +89,7 @@ class Fragment(models.Model):
 
             return out_edges[0].to_chunk
 
+    @transaction.atomic()
     def index_fragment_chunk_locations(self):
         # remove old index
         self.fragment_chunk_location_set.all().delete()

@@ -15,7 +15,7 @@ from django.db import transaction
 from edge.models import Fragment, Genome, Operation
 from edge.io import IO
 from edge import import_gff
-from edge.tasks import build_genome_blastdb
+from edge.tasks import build_genome_blastdb, build_genome_fragment_indices
 
 
 def genome_export(request, genome_id):
@@ -329,6 +329,10 @@ class GenomeAnnotationsView(ViewBase):
         q_parser.add_argument('field', field_type=str, required=False, default=None)
         args = q_parser.parse_args(request)
         field = args['field']
+
+        if not genome.has_location_index:
+            build_genome_fragment_indices.delay(genome.id)
+            return dict(error="Missing genome indices, building. Please check back later.")
 
         res = []
         if field is None:
