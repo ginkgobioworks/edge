@@ -78,7 +78,7 @@ class SdistCommandWithJS(sdist):
 
 setup(
     name='edge-genome',
-    version='2.18.0',
+    version='2.19.0',
 
     author='Ginkgo Bioworks',
     author_email='devs@ginkgobioworks.com',
@@ -128,10 +128,10 @@ setup(
     # force install Django2+ in setup
     setup_requires=[
         'django_assets >= 0.12',
-        'Django ~= 2.2.6',
+        'Django ~= 2.2.13',
     ],
     install_requires=[
-        'django ~= 2.2.6',
+        'django ~= 2.2.13',
         'jsmin',
         'celery >= 4.0',
         'bcbio-gff',
