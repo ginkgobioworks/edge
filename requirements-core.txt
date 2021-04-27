@@ -1,6 +1,6 @@
 # django
 pytz == 2019.2
-Django == 2.2.13
+Django == 2.2.20
 
 # Celery
 celery == 4.1.0 
