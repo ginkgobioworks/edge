@@ -22,7 +22,6 @@ services:
       AMQP_URL: 'amqp://guest@rabbit:5672//'
       FULLSTORY_ORG_ID: 'your_fullstory_org_id'
       FULLSTORY_URL: 'www.fullstory.com'
-    tty: true
 
   edge-db:
     image: mysql:5.7

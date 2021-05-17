@@ -13,12 +13,11 @@ RUN git config --global user.name "$GIT_USER_NAME" \
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
-RUN apt-get update
-RUN apt-get upgrade --assume-yes
-RUN apt-get install --assume-yes --verbose-versions \
+RUN apt-get update && apt-get install --assume-yes --verbose-versions \
   apt-utils \
   default-mysql-client \
   nodejs \
+  npm \
   ncbi-blast+ \
   primer3
 

@@ -362,6 +362,17 @@ class GenomeFragmentListView(ViewBase):
         return FragmentView.to_dict(fragment), 201
 
 
+class GenomeDeriveView(ViewBase):
+
+    @transaction.atomic()
+    def on_post(self, request, genome_id):
+        genome = get_genome_or_404(genome_id)
+        child = genome.update()
+        args = fragment_parser.parse_args(request)
+        child.add_fragment(args['name'], args['sequence'], circular=args['circular'])
+        return GenomeView.to_dict(child), 201
+
+
 class GenomeListView(ViewBase):
 
     def on_get(self, request):
