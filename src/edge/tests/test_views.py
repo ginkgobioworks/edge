@@ -73,7 +73,7 @@ class GenomeListTest(TestCase):
         g1.save()
         url = reverse('derive-genome-with-new-fragments', kwargs={'genome_id': g1.id})
         with self.assertRaises(forms.ValidationError) as exception:
-            res = self.client.post(
+            self.client.post(
                 url,
                 data=json.dumps([{
                     'name': 'valid-fragment',
