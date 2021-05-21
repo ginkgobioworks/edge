@@ -4,6 +4,7 @@ import json
 import random
 import tempfile
 
+from django import forms
 from django.urls import reverse
 from django.http import HttpResponse, JsonResponse
 from django.views.generic.base import View
@@ -12,6 +13,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.db import transaction
 
+from edge.forms import FragmentForm
 from edge.models import Fragment, Genome, Operation
 from edge.io import IO
 from edge import import_gff
@@ -360,6 +362,24 @@ class GenomeFragmentListView(ViewBase):
         fragment = genome.add_fragment(name=args['name'], sequence=args['sequence'],
                                        circular=args['circular'])
         return FragmentView.to_dict(fragment), 201
+
+
+class GenomeDeriveView(ViewBase):
+
+    @transaction.atomic()
+    def on_post(self, request, genome_id):
+        genome = get_genome_or_404(genome_id)
+        data = json.loads(request.body)
+        cleaned_data = []
+        for entry in data:
+            form = FragmentForm(data=entry)
+            if not form.is_valid():
+                raise forms.ValidationError(form.errors)
+            cleaned_data.append(form.cleaned_data)
+        child = genome.update()
+        for entry in cleaned_data:
+            child.add_fragment(entry['name'], entry['sequence'], circular=entry['circular'])
+        return GenomeView.to_dict(child), 201
 
 
 class GenomeListView(ViewBase):
