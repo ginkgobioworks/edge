@@ -1,76 +1,100 @@
 <header>
   <div class="container">
     <ol class="breadcrumb">
-        <li> Edge </li>
-        <li> <a href="#/genomes">Genomes</a> </li>
-        <li class="fs-block" ng-bind-html='genome.name'></li>
+      <li>Edge</li>
+      <li><a href="#/genomes">Genomes</a></li>
+      <li class="fs-block" ng-bind-html="genome.name"></li>
     </ol>
   </div>
 </header>
 
 <div class="container">
+  <h3>
+    <div class="dropdown pull-right">
+      <a
+        class="btn btn-default"
+        href="javascript:void(0);"
+        data-toggle="dropdown"
+        >Operations <span class="caret"></span
+      ></a>
+      <ul class="dropdown-menu">
+        <li><a href="#/genomes/{{ genome.id }}/blast">Blast</a></li>
+        <li><a href="#/genomes/{{ genome.id }}/pcr">PCR</a></li>
+        <li>
+          <a href="#/genomes/{{ genome.id }}/recombination">Recombination</a>
+        </li>
+        <li class="divider"></li>
+        <li>
+          <a href="/admin/edge/genome/{{ genome.id }}/">Edit Name, Status</a>
+        </li>
+        <li>
+          <a href="/edge/genomes/{{ genome.id }}/export">Export to GFF</a>
+        </li>
+      </ul>
+    </div>
 
-<h3>
-  <div class="dropdown pull-right">
-    <a class="btn btn-default" href="javascript:void(0);" data-toggle="dropdown">Operations <span class='caret'></span></a>
-    <ul class="dropdown-menu">
-      <li> <a href="#/genomes/{{ genome.id }}/blast">Blast</a> </li>
-      <li> <a href="#/genomes/{{ genome.id }}/pcr">PCR</a> </li>
-      <li> <a href="#/genomes/{{ genome.id }}/recombination">Recombination</a> </li>
-      <li class="divider"></li>
-      <li> <a href="/admin/edge/genome/{{ genome.id }}/">Edit Name, Status</a> </li>
-      <li> <a href="/edge/genomes/{{ genome.id }}/export">Export to GFF</a> </li>
-    </ul>
+    Genome {{ genome.id }}:
+    <span class="fs-block" ng-bind-html="genome.name"></span>
+  </h3>
+
+  <div class="lead space-top">
+    <p>Parent: <span class="fs-block" ng-bind-html="parent"></span></p>
+    <p ng-if="genome.notes">Notes: {{ genome.notes }}</p>
   </div>
 
-  Genome {{ genome.id }}: <span class="fs-block" ng-bind-html='genome.name'></span>
-</h3>
-
-<div class="lead space-top">
-  <p>Parent: <span class="fs-block" ng-bind-html="parent"></span></p>
-  <p ng-if="genome.notes">Notes: {{ genome.notes }} </p>
-</div>
-
-<div ng-if="genome.operations">
-  <p class="lead">History:</p>
-  <div ng-repeat='op in genome.operations'>
-    <p>
-      {{ op.type }} on
-      <a class="fs-block" href="#/genomes/{{genome.parent_id}}">Genome {{ genome.parent_id }}: {{ genome.parent_name }}</a>
-    </p>
-    <ul>
-      <li ng-repeat="a in op.annotations">
-        <a href="#/genomes/{{genome.id}}/fragments/{{a.fragment_id}}"
-         >{{ a.fragment_name }}: {{ a.name }} [{{ a.base_first }}, {{ a.base_last }}]</a>
-      </li>
-      <li ng-repeat='(k,v) in op.params' class="op-params fs-block">
-        {{ k }}: {{ v }}
-      </li>
-    </ul>
+  <div ng-if="genome.operations">
+    <p class="lead">History:</p>
+    <div ng-repeat="op in genome.operations">
+      <p>
+        {{ op.type }} on
+        <a class="fs-block" href="#/genomes/{{genome.parent_id}}"
+          >Genome {{ genome.parent_id }}: {{ genome.parent_name }}</a
+        >
+      </p>
+      <ul>
+        <li ng-repeat="a in op.annotations">
+          <a href="#/genomes/{{genome.id}}/fragments/{{a.fragment_id}}"
+            >{{ a.fragment_name }}: {{ a.name }} [{{ a.base_first }}, {{
+            a.base_last }}]</a
+          >
+        </li>
+        <li ng-repeat="(k,v) in op.params" class="op-params fs-block">
+          {{ k }}: {{ v }}
+        </li>
+      </ul>
+    </div>
   </div>
-</div>
 
-<table class="table table-striped table-condensed space-top">
-<thead><tr>
-    <th>Fragment</th><th>Length (bps)</th><th>Changes</th>
-</tr></thead>
-<tr ng-repeat="fragment in genome.fragments | orderBy:id">
-    <td> <a class="fs-block" href="#/genomes/{{genome.id}}/fragments/{{fragment.id}}"
-          ng-bind-html='fragment.name'></a> </td>
-    <td>
-      <span ng-if='fragment.length'>{{fragment.length | number}}</span>
-      <span ng-if='!fragment.length'><em>Not indexed</em></span>
-    </td>
-    <td>
-      <span ng-repeat="op in genome.operations">
-        <span ng-repeat="annotation in op.annotations">
-          <span ng-if="annotation.fragment_id === fragment.id">
-            {{ annotation.base_first }}-{{ annotation.base_last }}
+  <table class="table table-striped table-condensed space-top">
+    <thead>
+      <tr>
+        <th>Fragment</th>
+        <th>Length (bps)</th>
+        <th>Changes</th>
+      </tr>
+    </thead>
+    <tr ng-repeat="fragment in genome.fragments | orderBy:id">
+      <td>
+        <a
+          class="fs-block"
+          href="#/genomes/{{genome.id}}/fragments/{{fragment.id}}"
+          ng-bind-html="fragment.name"
+        ></a>
+      </td>
+      <td>
+        <span ng-if="fragment.length">{{fragment.length | number}}</span>
+        <span ng-if="!fragment.length"><em>Not indexed</em></span>
+      </td>
+      <td>
+        <span ng-repeat="op in genome.operations">
+          <span ng-repeat="annotation in op.annotations">
+            <span ng-if="annotation.fragment_id === fragment.id">
+              {{ annotation.base_first }}-{{ annotation.base_last }}
+            </span>
           </span>
         </span>
-      </span>
-    </td>
-</tr>
-</table>
-
-</div> <!-- container -->
+      </td>
+    </tr>
+  </table>
+</div>
+<!-- container -->

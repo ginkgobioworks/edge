@@ -13,9 +13,12 @@ class Fragment_Writer(object):
     """
 
     def _annotate_chunk(self, chunk, feature, feature_base_first, feature_base_last):
-        Chunk_Feature(chunk=chunk, feature=feature,
-                      feature_base_first=feature_base_first,
-                      feature_base_last=feature_base_last).save()
+        Chunk_Feature(
+            chunk=chunk,
+            feature=feature,
+            feature_base_first=feature_base_first,
+            feature_base_last=feature_base_last,
+        ).save()
 
     def _add_chunk(self, sequence, fragment):
         c = Chunk(sequence=sequence, initial_fragment=fragment)
@@ -48,13 +51,18 @@ class Fragment_Writer(object):
 
     def _split_annotations(self, annotations, bps_to_split, split1, split2):
         for a in annotations:
-            a1 = (a.feature, a.feature_base_first, a.feature_base_first + bps_to_split - 1)
+            a1 = (
+                a.feature,
+                a.feature_base_first,
+                a.feature_base_first + bps_to_split - 1,
+            )
             a2 = (a.feature, a.feature_base_first + bps_to_split, a.feature_base_last)
             self._annotate_chunk(split1, *a1)
             self._annotate_chunk(split2, *a2)
 
     def __invalidate_index_for(self, fragment_ids):
         from edge.models.fragment import Fragment_Index
+
         for f in fragment_ids:
             index = Fragment_Index.objects.filter(fragment_id=f)
             if index.count():
@@ -72,9 +80,13 @@ class Fragment_Writer(object):
         # except parent fragment and current fragment
         index_to_invalidate = []
         index_to_update = []
-        candidates = \
-            chunk.fragment_chunk_location_set.filter(fragment__fragment_index__fresh=True)\
-                                             .values_list('fragment_id').distinct()
+        candidates = (
+            chunk.fragment_chunk_location_set.filter(
+                fragment__fragment_index__fresh=True
+            )
+            .values_list("fragment_id")
+            .distinct()
+        )
         for row in candidates:
             fragment_id = row[0]
             if fragment_id not in [self.id, self.parent_id]:
@@ -94,24 +106,33 @@ class Fragment_Writer(object):
         assert chunk.out_edges.count() == 0
 
         # add edge from chunk to split2
-        self._add_edges(chunk, Edge(from_chunk=chunk,
-                                    fragment=chunk.initial_fragment, to_chunk=split2))
+        self._add_edges(
+            chunk,
+            Edge(from_chunk=chunk, fragment=chunk.initial_fragment, to_chunk=split2),
+        )
 
         # add location for new chunk - note that the following code has to
         # update the location index for each of the fragment that uses the
         # chunk. there may be a lot of fragments, potentially a big scalability
         # problem.
         entries = []
-        for fcl in chunk.fragment_chunk_location_set.filter(fragment_id__in=index_to_update):
-            entries.append(Fragment_Chunk_Location(fragment_id=fcl.fragment_id,
-                                                   chunk_id=split2.id,
-                                                   base_first=fcl.base_first + len(s1),
-                                                   base_last=fcl.base_last))
+        for fcl in chunk.fragment_chunk_location_set.filter(
+            fragment_id__in=index_to_update
+        ):
+            entries.append(
+                Fragment_Chunk_Location(
+                    fragment_id=fcl.fragment_id,
+                    chunk_id=split2.id,
+                    base_first=fcl.base_first + len(s1),
+                    base_last=fcl.base_last,
+                )
+            )
         Fragment_Chunk_Location.bulk_create(entries)
 
         # adjust chunk location index for existing chunk
-        chunk.fragment_chunk_location_set.filter(fragment_id__in=index_to_update)\
-                                         .update(base_last=F('base_first') + len(s1) - 1)
+        chunk.fragment_chunk_location_set.filter(
+            fragment_id__in=index_to_update
+        ).update(base_last=F("base_first") + len(s1) - 1)
         return split2
 
     def _find_chunk_prev_next(self, before_base1):
@@ -121,8 +142,9 @@ class Fragment_Writer(object):
         bases_visited = None
 
         if before_base1 is not None:
-            q = self.fragment_chunk_location_set.filter(base_first__lte=before_base1,
-                                                        base_last__gte=before_base1)
+            q = self.fragment_chunk_location_set.filter(
+                base_first__lte=before_base1, base_last__gte=before_base1
+            )
             q = list(q)
             if len(q) > 0:
                 fc = q[0]
@@ -139,7 +161,9 @@ class Fragment_Writer(object):
         if chunk is None:  # after all sequence ended, need last chunk and total bases
             total_bases = self.length
             if total_bases > 0:
-                prev_chunk = self.fragment_chunk_location_set.get(base_last=total_bases).chunk
+                prev_chunk = self.fragment_chunk_location_set.get(
+                    base_last=total_bases
+                ).chunk
             bases_visited = total_bases
 
         return prev_chunk, chunk, next_chunk, bases_visited
@@ -147,14 +171,16 @@ class Fragment_Writer(object):
     def _find_and_split_before(self, before_base1):
 
         if before_base1 is not None and before_base1 <= 0:
-            raise Exception('chunk index should be 1-based')
+            raise Exception("chunk index should be 1-based")
 
         chunk = None
         prev_chunk = None
         next_chunk = None
         bases_visited = 0
 
-        prev_chunk, chunk, next_chunk, bases_visited = self._find_chunk_prev_next(before_base1)
+        prev_chunk, chunk, next_chunk, bases_visited = self._find_chunk_prev_next(
+            before_base1
+        )
 
         # found the bp we are looking for
         if before_base1 is not None and bases_visited >= before_base1:

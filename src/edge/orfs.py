@@ -1,7 +1,7 @@
 import math
 from Bio.Seq import Seq
 
-trans_table = 1       # standard translation table
+trans_table = 1  # standard translation table
 min_protein_len = 100
 
 
@@ -33,13 +33,13 @@ def detect_orfs(seq):
                 # original sequence
                 if aa_start < aa_end - aa_len + 1:
                     aa_start = aa_end - aa_len + 1
-                start_codon = trans.find('M', aa_start, aa_end)
+                start_codon = trans.find("M", aa_start, aa_end)
 
                 # is there a start codon? and is it before end of sequence
                 # (remember we doubled up the sequence earlier to detect orfs
                 # crossing boundaries)
                 if start_codon == -1 or start_codon >= aa_len:
-                    assert(aa_end != -1)
+                    assert aa_end != -1
                     aa_start = aa_end + 1
                     continue
 
@@ -57,8 +57,12 @@ def detect_orfs(seq):
                         if start < 0:
                             start = seq_len + start
 
-                    f = dict(name='ORF frame ' + str(frame + 1),
-                             start=start, end=end, strand=strand)
+                    f = dict(
+                        name="ORF frame " + str(frame + 1),
+                        start=start,
+                        end=end,
+                        strand=strand,
+                    )
                     orf_list.append(f)
 
                 aa_start = aa_end + 1

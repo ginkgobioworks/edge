@@ -1,37 +1,51 @@
 <header>
   <div class="container container-wide">
     <ol class="breadcrumb">
-        <li> Edge </li>
-        <li> <a href="#/genomes">Genomes</a> </li>
-        <li> <a class="fs-block" href="#/genomes/{{ genome.id }}" ng-bind-html='genome.name'></a> </li>
-        <li class="fs-block" ng-bind-html='fragment.name'></li>
+      <li>Edge</li>
+      <li><a href="#/genomes">Genomes</a></li>
+      <li>
+        <a
+          class="fs-block"
+          href="#/genomes/{{ genome.id }}"
+          ng-bind-html="genome.name"
+        ></a>
+      </li>
+      <li class="fs-block" ng-bind-html="fragment.name"></li>
     </ol>
   </div>
 </header>
 
 <div class="container container-wide">
+  <h3>
+    Fragment {{ fragment.id }}:
+    <span class="fs-block" ng-bind-html="fragment.name"></span>, {{
+    fragment.length | number }} bps
+  </h3>
 
-<h3>
-  Fragment {{ fragment.id }}:
-  <span class="fs-block" ng-bind-html='fragment.name'></span>, {{ fragment.length | number }} bps
-</h3>
-
-<div class="lead space-top">
-    <p>Genome: <a class="fs-block" href="#/genomes/{{ genome.id }}" ng-bind-html='genome.name'></a> </p>
+  <div class="lead space-top">
+    <p>
+      Genome:
+      <a
+        class="fs-block"
+        href="#/genomes/{{ genome.id }}"
+        ng-bind-html="genome.name"
+      ></a>
+    </p>
     <p>
       Changes:
       <span ng-repeat="op in genome.operations">
         <span ng-repeat="annotation in op.annotations">
           <span ng-if="annotation.fragment_id === fragment.id">
-            <a href="javascript:void(0);"
-               ng-click="zoomAt(annotation)"
-             >{{ annotation.name }} ({{ annotation.base_first }}-{{ annotation.base_last }})</a>
+            <a href="javascript:void(0);" ng-click="zoomAt(annotation)"
+              >{{ annotation.name }} ({{ annotation.base_first }}-{{
+              annotation.base_last }})</a
+            >
           </span>
         </span>
       </span>
     </p>
+  </div>
+
+  <partial template="genome-fragment-layout"></partial>
 </div>
-
-<partial template="genome-fragment-layout"></partial>
-
-</div> <!-- container -->
+<!-- container -->

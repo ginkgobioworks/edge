@@ -14,171 +14,312 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Chunk',
+            name="Chunk",
             fields=[
-                ('id', models.BigIntegerField(primary_key=True, serialize=False)),
-                ('sequence', models.TextField(null=True)),
+                ("id", models.BigIntegerField(primary_key=True, serialize=False)),
+                ("sequence", models.TextField(null=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Chunk_Feature',
+            name="Chunk_Feature",
             fields=[
-                ('id', models.BigIntegerField(primary_key=True, serialize=False)),
-                ('feature_base_first', models.IntegerField()),
-                ('feature_base_last', models.IntegerField()),
-                ('chunk', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='edge.Chunk')),
+                ("id", models.BigIntegerField(primary_key=True, serialize=False)),
+                ("feature_base_first", models.IntegerField()),
+                ("feature_base_last", models.IntegerField()),
+                (
+                    "chunk",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="edge.Chunk"
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Edge',
+            name="Edge",
+            fields=[("id", models.BigIntegerField(primary_key=True, serialize=False)),],
+        ),
+        migrations.CreateModel(
+            name="Feature",
             fields=[
-                ('id', models.BigIntegerField(primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
+                ("type", models.CharField(max_length=100)),
+                ("strand", models.IntegerField(null=True)),
+                ("length", models.IntegerField()),
+                ("_qualifiers", models.TextField(db_column="qualifiers", null=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Feature',
+            name="Fragment",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100)),
-                ('type', models.CharField(max_length=100)),
-                ('strand', models.IntegerField(null=True)),
-                ('length', models.IntegerField()),
-                ('_qualifiers', models.TextField(db_column='qualifiers', null=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("circular", models.BooleanField()),
+                ("name", models.CharField(max_length=256)),
+                (
+                    "est_length",
+                    models.IntegerField(
+                        blank=True, null=True, verbose_name="Estimated length"
+                    ),
+                ),
+                (
+                    "created_on",
+                    models.DateTimeField(
+                        auto_now_add=True, null=True, verbose_name="Created"
+                    ),
+                ),
+                ("active", models.BooleanField(default=True)),
+                (
+                    "parent",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="edge.Fragment",
+                    ),
+                ),
+                (
+                    "start_chunk",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="edge.Chunk",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Fragment',
+            name="Fragment_Chunk_Location",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('circular', models.BooleanField()),
-                ('name', models.CharField(max_length=256)),
-                ('est_length', models.IntegerField(blank=True, null=True, verbose_name='Estimated length')),
-                ('created_on', models.DateTimeField(auto_now_add=True, null=True, verbose_name='Created')),
-                ('active', models.BooleanField(default=True)),
-                ('parent', models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to='edge.Fragment')),
-                ('start_chunk', models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to='edge.Chunk')),
+                ("id", models.BigIntegerField(primary_key=True, serialize=False)),
+                ("base_first", models.IntegerField()),
+                ("base_last", models.IntegerField()),
+                (
+                    "chunk",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="edge.Chunk"
+                    ),
+                ),
+                (
+                    "fragment",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="edge.Fragment"
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Fragment_Chunk_Location',
+            name="Fragment_Index",
             fields=[
-                ('id', models.BigIntegerField(primary_key=True, serialize=False)),
-                ('base_first', models.IntegerField()),
-                ('base_last', models.IntegerField()),
-                ('chunk', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='edge.Chunk')),
-                ('fragment', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='edge.Fragment')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("fresh", models.BooleanField()),
+                ("updated_on", models.DateTimeField(null=True, verbose_name="Updated")),
+                (
+                    "fragment",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE, to="edge.Fragment"
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Fragment_Index',
+            name="Genome",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fresh', models.BooleanField()),
-                ('updated_on', models.DateTimeField(null=True, verbose_name='Updated')),
-                ('fragment', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='edge.Fragment')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Genome',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.TextField()),
-                ('notes', models.TextField(blank=True, null=True)),
-                ('created_on', models.DateTimeField(auto_now_add=True, null=True, verbose_name='Created')),
-                ('active', models.BooleanField(default=True)),
-                ('blastdb', models.TextField(blank=True, null=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.TextField()),
+                ("notes", models.TextField(blank=True, null=True)),
+                (
+                    "created_on",
+                    models.DateTimeField(
+                        auto_now_add=True, null=True, verbose_name="Created"
+                    ),
+                ),
+                ("active", models.BooleanField(default=True)),
+                ("blastdb", models.TextField(blank=True, null=True)),
             ],
             bases=(edge.models.genome_updater.Genome_Updater, models.Model),
         ),
         migrations.CreateModel(
-            name='Genome_Fragment',
+            name="Genome_Fragment",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('inherited', models.BooleanField()),
-                ('fragment', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='edge.Fragment')),
-                ('genome', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='edge.Genome')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("inherited", models.BooleanField()),
+                (
+                    "fragment",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="edge.Fragment"
+                    ),
+                ),
+                (
+                    "genome",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="edge.Genome"
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Operation',
+            name="Operation",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('type', models.IntegerField(choices=[(1, 'Homologous Recombination'), (2, 'CRISPR-Cas9 WT (Double Stranded Break)'), (3, 'PCR Product Sequence Verification')])),
-                ('params', models.TextField(blank=True, null=True)),
-                ('genome', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='edge.Genome')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "type",
+                    models.IntegerField(
+                        choices=[
+                            (1, "Homologous Recombination"),
+                            (2, "CRISPR-Cas9 WT (Double Stranded Break)"),
+                            (3, "PCR Product Sequence Verification"),
+                        ]
+                    ),
+                ),
+                ("params", models.TextField(blank=True, null=True)),
+                (
+                    "genome",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="edge.Genome"
+                    ),
+                ),
             ],
         ),
         migrations.AddField(
-            model_name='genome',
-            name='fragments',
-            field=models.ManyToManyField(through='edge.Genome_Fragment', to='edge.Fragment'),
+            model_name="genome",
+            name="fragments",
+            field=models.ManyToManyField(
+                through="edge.Genome_Fragment", to="edge.Fragment"
+            ),
         ),
         migrations.AddField(
-            model_name='genome',
-            name='parent',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, related_name='children', to='edge.Genome'),
+            model_name="genome",
+            name="parent",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="children",
+                to="edge.Genome",
+            ),
         ),
         migrations.AddField(
-            model_name='feature',
-            name='operation',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='edge.Operation'),
+            model_name="feature",
+            name="operation",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="edge.Operation",
+            ),
         ),
         migrations.AddField(
-            model_name='edge',
-            name='fragment',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='edge.Fragment'),
+            model_name="edge",
+            name="fragment",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT, to="edge.Fragment"
+            ),
         ),
         migrations.AddField(
-            model_name='edge',
-            name='from_chunk',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='out_edges', to='edge.Chunk'),
+            model_name="edge",
+            name="from_chunk",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="out_edges",
+                to="edge.Chunk",
+            ),
         ),
         migrations.AddField(
-            model_name='edge',
-            name='to_chunk',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, related_name='in_edges', to='edge.Chunk'),
+            model_name="edge",
+            name="to_chunk",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="in_edges",
+                to="edge.Chunk",
+            ),
         ),
         migrations.AddField(
-            model_name='chunk_feature',
-            name='feature',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='edge.Feature'),
+            model_name="chunk_feature",
+            name="feature",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT, to="edge.Feature"
+            ),
         ),
         migrations.AddField(
-            model_name='chunk',
-            name='initial_fragment',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='edge.Fragment'),
+            model_name="chunk",
+            name="initial_fragment",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT, to="edge.Fragment"
+            ),
         ),
         migrations.CreateModel(
-            name='Indexed_Fragment',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-                'indexes': [],
-            },
-            bases=(edge.models.fragment_annotator.Fragment_Annotator, edge.models.fragment_updater.Fragment_Updater, edge.models.fragment_writer.Fragment_Writer, 'edge.fragment'),
+            name="Indexed_Fragment",
+            fields=[],
+            options={"proxy": True, "indexes": [],},
+            bases=(
+                edge.models.fragment_annotator.Fragment_Annotator,
+                edge.models.fragment_updater.Fragment_Updater,
+                edge.models.fragment_writer.Fragment_Writer,
+                "edge.fragment",
+            ),
         ),
         migrations.CreateModel(
-            name='Indexed_Genome',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-                'indexes': [],
-            },
-            bases=('edge.genome',),
+            name="Indexed_Genome",
+            fields=[],
+            options={"proxy": True, "indexes": [],},
+            bases=("edge.genome",),
         ),
         migrations.AlterUniqueTogether(
-            name='fragment_chunk_location',
-            unique_together=set([('fragment', 'chunk')]),
+            name="fragment_chunk_location",
+            unique_together=set([("fragment", "chunk")]),
         ),
         migrations.AlterIndexTogether(
-            name='fragment_chunk_location',
-            index_together=set([('fragment', 'base_first'), ('fragment', 'base_last')]),
+            name="fragment_chunk_location",
+            index_together=set([("fragment", "base_first"), ("fragment", "base_last")]),
         ),
     ]

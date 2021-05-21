@@ -1,53 +1,82 @@
 <header>
   <div class="container">
     <ol class="breadcrumb">
-        <li> Edge </li>
-        <li> <a href="#/genomes">Genomes</a> </li>
-        <li> <a href="#/genomes/{{ genome.id }}"><span class="fs-block" ng-bind-html='genome.name'></span></a> </li>
-        <li> PCR </li>
+      <li>Edge</li>
+      <li><a href="#/genomes">Genomes</a></li>
+      <li>
+        <a href="#/genomes/{{ genome.id }}"
+          ><span class="fs-block" ng-bind-html="genome.name"></span
+        ></a>
+      </li>
+      <li>PCR</li>
     </ol>
   </div>
 </header>
 
 <div class="container">
+  <h3>
+    PCR on Genome {{ genome.id }}:
+    <span class="fs-block" ng-bind-html="genome.name"></span>
+  </h3>
 
-<h3>PCR on Genome {{ genome.id }}: <span class="fs-block" ng-bind-html='genome.name'></span></h3>
-
-<form role="form" class="space-top">
+  <form role="form" class="space-top">
     <div class="form-inline">
-        Primers
-        <div class="form-group">
-            <input required class="form-control" type="text" ng-model="primer_a" size="40" />
-        </div>
-        and
-        <div class="form-group">
-            <input required class="form-control" type="text" ng-model="primer_b" size="40" />
-        </div>
-        <button class="btn btn-primary" ng-click="Pcr(primer_a, primer_b)">PCR</button>
+      Primers
+      <div class="form-group">
+        <input
+          required
+          class="form-control"
+          type="text"
+          ng-model="primer_a"
+          size="40"
+        />
+      </div>
+      and
+      <div class="form-group">
+        <input
+          required
+          class="form-control"
+          type="text"
+          ng-model="primer_b"
+          size="40"
+        />
+      </div>
+      <button class="btn btn-primary" ng-click="Pcr(primer_a, primer_b)">
+        PCR
+      </button>
     </div>
-</form>
+  </form>
 
-<div ng-if="results" class="space-top">
+  <div ng-if="results" class="space-top">
     <div ng-if="results[0]">
-        <p>
-            <span class="label label-success">PCR Product: {{ results[0].length }} bps</span>
-        </p>
-        <div class="sequence sequence-break">{{ results[0] }}</div>
-        <p>
-            Genomic region amplified:
-            <a class="fs-block" href="#/genomes/{{ genome.id }}/fragments/{{ results[3].fragment_id }}?bp={{ results[3].region[0] }},{{ results[3].region[1] }}"
-             >{{ results[3].fragment_name }} {{ results[3].region[0] }}-{{ results[3].region[1] }}</a>
-        </p>
+      <p>
+        <span class="label label-success"
+          >PCR Product: {{ results[0].length }} bps</span
+        >
+      </p>
+      <div class="sequence sequence-break">{{ results[0] }}</div>
+      <p>
+        Genomic region amplified:
+        <a
+          class="fs-block"
+          href="#/genomes/{{ genome.id }}/fragments/{{ results[3].fragment_id }}?bp={{ results[3].region[0] }},{{ results[3].region[1] }}"
+          >{{ results[3].fragment_name }} {{ results[3].region[0] }}-{{
+          results[3].region[1] }}</a
+        >
+      </p>
     </div>
-    
+
     <div ng-if="!results[0]">
-        <p>
-            <span class="label label-danger">Cannot compute PCR product. Too many or too few binding sites.</span>
-        </p>
+      <p>
+        <span class="label label-danger"
+          >Cannot compute PCR product. Too many or too few binding sites.</span
+        >
+      </p>
     </div>
 
-    <partial template="blast-results" ng-init="blast_results=results[1].concat(results[2])"></partial>
-
-</div>
-
+    <partial
+      template="blast-results"
+      ng-init="blast_results=results[1].concat(results[2])"
+    ></partial>
+  </div>
 </div>

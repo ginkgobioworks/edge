@@ -18,10 +18,15 @@ class Annotation(object):
 
     @property
     def feature_name(self):
-        if self.feature_base_first != 1 or self.feature_base_last != self.feature.length:
-            return '%s[%s:%s]' % (self.feature.name,
-                                  self.feature_base_first,
-                                  self.feature_base_last)
+        if (
+            self.feature_base_first != 1
+            or self.feature_base_last != self.feature.length
+        ):
+            return "%s[%s:%s]" % (
+                self.feature.name,
+                self.feature_base_first,
+                self.feature_base_last,
+            )
         else:
             return self.feature.name
 
@@ -30,10 +35,10 @@ class Annotation(object):
         s.append(self.feature_name)
         s.append(self.feature.type)
         if self.feature.strand == 1:
-            s.append('+')
+            s.append("+")
         else:
-            s.append('-')
-        return ', '.join(s)
+            s.append("-")
+        return ", ".join(s)
 
     @staticmethod
     def from_chunk_feature_and_location_array(chunk_feature_locs):
@@ -41,23 +46,30 @@ class Annotation(object):
         chunk_feature_locs: an array of (Chunk_Feature, Fragment_Chunk_Location) tuples.
         """
 
-        chunk_feature_locs = sorted(chunk_feature_locs,
-                                    key=lambda t: (t[0].feature.id, t[1].base_first))
+        chunk_feature_locs = sorted(
+            chunk_feature_locs, key=lambda t: (t[0].feature.id, t[1].base_first)
+        )
 
         annotations = []
         for cf, fcl in chunk_feature_locs:
-            if len(annotations) > 0 and\
-               annotations[-1].feature.id == cf.feature_id and\
-               annotations[-1].feature_base_last == cf.feature_base_first - 1 and\
-               annotations[-1].base_last == fcl.base_first - 1:
+            if (
+                len(annotations) > 0
+                and annotations[-1].feature.id == cf.feature_id
+                and annotations[-1].feature_base_last == cf.feature_base_first - 1
+                and annotations[-1].base_last == fcl.base_first - 1
+            ):
                 # merge annotation
                 annotations[-1].base_last = fcl.base_last
                 annotations[-1].feature_base_last = cf.feature_base_last
             else:
-                annotations.append(Annotation(base_first=fcl.base_first,
-                                              base_last=fcl.base_last,
-                                              chunk_feature=cf,
-                                              fragment=fcl.fragment))
+                annotations.append(
+                    Annotation(
+                        base_first=fcl.base_first,
+                        base_last=fcl.base_last,
+                        chunk_feature=cf,
+                        fragment=fcl.fragment,
+                    )
+                )
         return sorted(annotations, key=lambda a: a.base_first)
 
 
@@ -74,8 +86,12 @@ class BigIntPrimaryModel(models.Model):
         if self.id is None:
             klass = type(self)
             try:
-                self.id = klass.objects.select_for_update().order_by(
-                    '-id').values('id')[0]['id'] + 1
+                self.id = (
+                    klass.objects.select_for_update()
+                    .order_by("-id")
+                    .values("id")[0]["id"]
+                    + 1
+                )
             except IndexError:
                 self.id = 1
         return super(BigIntPrimaryModel, self).save(*args, **kwargs)
@@ -85,7 +101,7 @@ class Chunk(BigIntPrimaryModel):
     class Meta:
         app_label = "edge"
 
-    initial_fragment = models.ForeignKey('Fragment', on_delete=models.PROTECT)
+    initial_fragment = models.ForeignKey("Fragment", on_delete=models.PROTECT)
     sequence = models.TextField(null=True)
 
     def reload(self):
@@ -96,11 +112,14 @@ class Edge(BigIntPrimaryModel):
     class Meta:
         app_label = "edge"
 
-    from_chunk = models.ForeignKey(Chunk, related_name='out_edges', on_delete=models.PROTECT)
-    fragment = models.ForeignKey('Fragment', on_delete=models.PROTECT)
+    from_chunk = models.ForeignKey(
+        Chunk, related_name="out_edges", on_delete=models.PROTECT
+    )
+    fragment = models.ForeignKey("Fragment", on_delete=models.PROTECT)
     # can be null, so we can supersede an edge from a child fragment
-    to_chunk = models.ForeignKey(Chunk, null=True, related_name='in_edges',
-                                 on_delete=models.PROTECT)
+    to_chunk = models.ForeignKey(
+        Chunk, null=True, related_name="in_edges", on_delete=models.PROTECT
+    )
 
 
 class Feature(models.Model):
@@ -111,8 +130,8 @@ class Feature(models.Model):
     type = models.CharField(max_length=100)
     strand = models.IntegerField(null=True)
     length = models.IntegerField()
-    operation = models.ForeignKey('Operation', null=True, on_delete=models.CASCADE)
-    _qualifiers = models.TextField(null=True, db_column='qualifiers')
+    operation = models.ForeignKey("Operation", null=True, on_delete=models.CASCADE)
+    _qualifiers = models.TextField(null=True, db_column="qualifiers")
 
     def set_qualifiers(self, qualifiers):
         self._qualifiers = json.dumps(qualifiers)
@@ -127,7 +146,11 @@ class Feature(models.Model):
 
 class Chunk_Feature_Manager(models.Manager):
     def get_query_set(self):
-        return super(Chunk_Feature_Manager, self).get_query_set().select_related('chunk', 'feature')
+        return (
+            super(Chunk_Feature_Manager, self)
+            .get_query_set()
+            .select_related("chunk", "feature")
+        )
 
 
 class Chunk_Feature(BigIntPrimaryModel):
@@ -144,22 +167,22 @@ class Chunk_Feature(BigIntPrimaryModel):
 class Fragment_Chunk_Location(BigIntPrimaryModel):
     class Meta:
         app_label = "edge"
-        unique_together = (('fragment', 'chunk'),)
-        index_together = (('fragment', 'base_last'), ('fragment', 'base_first'))
+        unique_together = (("fragment", "chunk"),)
+        index_together = (("fragment", "base_last"), ("fragment", "base_first"))
 
-    fragment = models.ForeignKey('Fragment', on_delete=models.PROTECT)
+    fragment = models.ForeignKey("Fragment", on_delete=models.PROTECT)
     chunk = models.ForeignKey(Chunk, on_delete=models.PROTECT)
     base_first = models.IntegerField()
     base_last = models.IntegerField()
 
     def __str__(self):
-        return '%s: %s-%s' % (self.fragment.name, self.location[0], self.location[1])
+        return "%s: %s-%s" % (self.fragment.name, self.location[0], self.location[1])
 
     @property
     def next_chunk(self):
-        for fcl in self.fragment.fragment_chunk_location_set\
-                                .select_related('chunk')\
-                                .filter(base_first=self.base_last + 1):
+        for fcl in self.fragment.fragment_chunk_location_set.select_related(
+            "chunk"
+        ).filter(base_first=self.base_last + 1):
             return fcl.chunk
         return None
 
@@ -172,12 +195,18 @@ class Fragment_Chunk_Location(BigIntPrimaryModel):
         loc = self.location
         if loc[0] == 1:
             return None
-        fc = Fragment_Chunk_Location.objects.get(fragment=self.fragment, base_last=loc[0] - 1)
+        fc = Fragment_Chunk_Location.objects.get(
+            fragment=self.fragment, base_last=loc[0] - 1
+        )
         return fc
 
     def annotations(self):
-        return [Annotation(base_first=self.base_first, base_last=self.base_last, chunk_feature=cf)
-                for cf in self.chunk.chunk_feature_set.all()]
+        return [
+            Annotation(
+                base_first=self.base_first, base_last=self.base_last, chunk_feature=cf
+            )
+            for cf in self.chunk.chunk_feature_set.all()
+        ]
 
     @staticmethod
     @transaction.atomic()  # this method has to be in a transaction, see below
@@ -187,10 +216,12 @@ class Fragment_Chunk_Location(BigIntPrimaryModel):
 
         cur_id = 1
         try:
-            cur_id = Fragment_Chunk_Location.objects\
-                                            .select_for_update()\
-                                            .order_by('-id')\
-                                            .values('id')[0]['id'] + 1
+            cur_id = (
+                Fragment_Chunk_Location.objects.select_for_update()
+                .order_by("-id")
+                .values("id")[0]["id"]
+                + 1
+            )
         except IndexError:
             pass
 

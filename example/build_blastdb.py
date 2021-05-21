@@ -1,4 +1,6 @@
+# flake8: noqa
 import django
+
 django.setup()
 
 import sys

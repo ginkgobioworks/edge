@@ -1,4 +1,6 @@
+# flake8: noqa
 import django
+
 django.setup()
 
 import sys
@@ -11,17 +13,17 @@ print(genome.fragments.count())
 
 res = blast_genome(genome, "blastn", "ctcacgttactgtggggtggaggggaca")
 for r in res:
-  print("p: %s" % r.evalue)
+    print("p: %s" % r.evalue)
 
 primer_fwd = "aggaagtgccattccgcctgacctcgtctcactgaccgtctctctcctgagtccgga"
 primer_rev = "aaagtgtcaaggtctcacgttactgtggggtggaggggaca"
 
 res = blast_genome(genome, "blastn", primer_fwd)
 for r in res:
-  print("fwd: %s" % r.evalue)
+    print("fwd: %s" % r.evalue)
 
 res = blast_genome(genome, "blastn", primer_rev)
 for r in res:
-  print("rev: %s" % r.evalue)
+    print("rev: %s" % r.evalue)
 
 print(pcr_from_genome(genome, primer_fwd, primer_rev))

@@ -1,35 +1,48 @@
 <header>
   <div class="container">
     <ol class="breadcrumb">
-        <li> Edge </li>
-        <li> <a href="#/fragments">Fragments</a> </li>
-        <li class="fs-block" ng-bind-html='fragment.name'></li>
+      <li>Edge</li>
+      <li><a href="#/fragments">Fragments</a></li>
+      <li class="fs-block" ng-bind-html="fragment.name"></li>
     </ol>
   </div>
 </header>
 
 <div class="container container-wide">
+  <h3>
+    <div class="dropdown pull-right" ng-if="!genomes">
+      <a
+        class="btn btn-default"
+        href="javascript:void(0);"
+        data-toggle="dropdown"
+        >Operations <span class="caret"></span
+      ></a>
+      <ul class="dropdown-menu">
+        <li>
+          <a href="/admin/edge/fragment/{{ fragment.id }}/"
+            >Edit Name, Status</a
+          >
+        </li>
+      </ul>
+    </div>
 
-<h3>
-  <div class="dropdown pull-right" ng-if="!genomes">
-    <a class="btn btn-default" href="javascript:void(0);"
-       data-toggle="dropdown">Operations <span class='caret'></span></a>
-    <ul class="dropdown-menu">
-      <li> <a href="/admin/edge/fragment/{{ fragment.id }}/">Edit Name, Status</a> </li>
-    </ul>
-  </div>
+    Fragment {{ fragment.id }}:
+    <span class="fs-block" ng-bind-html="fragment.name"></span>, {{
+    fragment.length | number }} bps
+  </h3>
 
-  Fragment {{ fragment.id }}: <span class="fs-block" ng-bind-html='fragment.name'></span>, {{ fragment.length | number }} bps
-</h3>
+  <p ng-if="genomes" class="lead space-top">
+    <span ng-repeat="genome in genomes">
+      Genome:
+      <a
+        class="fs-block"
+        href="#/genomes/{{ genome.id }}"
+        ng-bind-html="genome.name"
+      ></a>
+      <br />
+    </span>
+  </p>
 
-<p ng-if='genomes' class="lead space-top">
-  <span ng-repeat='genome in genomes'>
-    Genome: <a class="fs-block" href="#/genomes/{{ genome.id }}" ng-bind-html='genome.name'></a>
-    <br/>
-  </span>
-</p>
-
-<partial template="fragment-layout"></partial>
-
-</div> <!-- container -->
-
+  <partial template="fragment-layout"></partial>
+</div>
+<!-- container -->

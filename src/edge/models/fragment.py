@@ -19,10 +19,10 @@ class Fragment(models.Model):
 
     circular = models.BooleanField()
     name = models.CharField(max_length=256)
-    parent = models.ForeignKey('self', null=True, on_delete=models.PROTECT)
-    start_chunk = models.ForeignKey('Chunk', null=True, on_delete=models.PROTECT)
-    est_length = models.IntegerField('Estimated length', null=True, blank=True)
-    created_on = models.DateTimeField('Created', auto_now_add=True, null=True)
+    parent = models.ForeignKey("self", null=True, on_delete=models.PROTECT)
+    start_chunk = models.ForeignKey("Chunk", null=True, on_delete=models.PROTECT)
+    est_length = models.IntegerField("Estimated length", null=True, blank=True)
+    created_on = models.DateTimeField("Created", auto_now_add=True, null=True)
     active = models.BooleanField(default=True)
 
     @staticmethod
@@ -44,14 +44,16 @@ class Fragment(models.Model):
     # chunks, you copy/slice less sequence data.
     @staticmethod
     def create_with_sequence(name, sequence, circular=False, initial_chunk_size=20000):
-        new_fragment = Fragment(name=name, circular=circular, parent=None, start_chunk=None)
+        new_fragment = Fragment(
+            name=name, circular=circular, parent=None, start_chunk=None
+        )
         new_fragment.save()
         new_fragment = new_fragment.indexed_fragment()
         if initial_chunk_size is None or initial_chunk_size == 0:
             new_fragment.insert_bases(None, sequence)
         else:
             for i in range(0, len(sequence), initial_chunk_size):
-                new_fragment.insert_bases(None, sequence[i:i + initial_chunk_size])
+                new_fragment.insert_bases(None, sequence[i : i + initial_chunk_size])
         return new_fragment
 
     def predecessors(self):
@@ -99,10 +101,14 @@ class Fragment(models.Model):
         entries = []
         for chunk in self.chunks_by_walking():
             if len(chunk.sequence) > 0:
-                entries.append(Fragment_Chunk_Location(fragment_id=self.id,
-                                                       chunk_id=chunk.id,
-                                                       base_first=i,
-                                                       base_last=i + len(chunk.sequence) - 1))
+                entries.append(
+                    Fragment_Chunk_Location(
+                        fragment_id=self.id,
+                        chunk_id=chunk.id,
+                        base_first=i,
+                        base_last=i + len(chunk.sequence) - 1,
+                    )
+                )
 
                 i += len(chunk.sequence)
         Fragment_Chunk_Location.bulk_create(entries)
@@ -152,7 +158,7 @@ class Fragment_Index(models.Model):
 
     fragment = models.OneToOneField(Fragment, on_delete=models.CASCADE)
     fresh = models.BooleanField()
-    updated_on = models.DateTimeField('Updated', null=True)
+    updated_on = models.DateTimeField("Updated", null=True)
 
 
 class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fragment):
@@ -169,7 +175,9 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         proxy = True
 
     def chunks(self):
-        q = self.fragment_chunk_location_set.select_related('chunk').order_by('base_first')
+        q = self.fragment_chunk_location_set.select_related("chunk").order_by(
+            "base_first"
+        )
         for fcl in q:
             yield fcl.chunk
 
@@ -180,7 +188,7 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
 
     @property
     def length(self):
-        q = self.fragment_chunk_location_set.order_by('-base_last')[:1]
+        q = self.fragment_chunk_location_set.order_by("-base_last")[:1]
         q = list(q)
         if len(q) == 0:
             return 0
@@ -191,29 +199,34 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         return self.fragment_chunk_location_set.filter(chunk=chunk)[0]
 
     def __get_linear_sequence(self, bp_lo=None, bp_hi=None):
-        q = self.fragment_chunk_location_set.select_related('chunk')
+        q = self.fragment_chunk_location_set.select_related("chunk")
         if bp_lo is not None:
             q = q.filter(base_last__gte=bp_lo)
         if bp_hi is not None:
             q = q.filter(base_first__lte=bp_hi)
-        q = q.order_by('base_first')
+        q = q.order_by("base_first")
 
         sequence = []
         last_chunk_base_last = None
 
         for fcl in q:
             s = fcl.chunk.sequence
-            if last_chunk_base_last is not None and fcl.base_first != last_chunk_base_last + 1:
-                raise Exception('Fragment chunk location table missing chunks before %s'
-                                % (fcl.base_first,))
+            if (
+                last_chunk_base_last is not None
+                and fcl.base_first != last_chunk_base_last + 1
+            ):
+                raise Exception(
+                    "Fragment chunk location table missing chunks before %s"
+                    % (fcl.base_first,)
+                )
             if bp_lo is not None and fcl.base_first < bp_lo:
-                s = s[bp_lo - fcl.base_first:]
+                s = s[bp_lo - fcl.base_first :]
             if bp_hi is not None and fcl.base_last > bp_hi:
-                s = s[:bp_hi - fcl.base_last]
+                s = s[: bp_hi - fcl.base_last]
             sequence.append(s)
             last_chunk_base_last = fcl.base_last
 
-        return ''.join(sequence)
+        return "".join(sequence)
 
     def get_sequence(self, bp_lo=None, bp_hi=None):
         if bp_lo is not None:
@@ -253,35 +266,60 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
             rules.append(Q(chunk__fragment_chunk_location__base_first__lte=bp_hi))
 
         fcl_tb = Fragment_Chunk_Location._meta.db_table
-        bf = [f.column for f in Fragment_Chunk_Location._meta.fields if f.name == 'base_first'][0]
-        bl = [f.column for f in Fragment_Chunk_Location._meta.fields if f.name == 'base_last'][0]
-        q = Chunk_Feature.objects.filter(*rules)\
-                                 .extra(select=dict(fcl_base_first='%s.%s' % (fcl_tb, bf),
-                                                    fcl_base_last='%s.%s' % (fcl_tb, bl)))
+        bf = [
+            f.column
+            for f in Fragment_Chunk_Location._meta.fields
+            if f.name == "base_first"
+        ][0]
+        bl = [
+            f.column
+            for f in Fragment_Chunk_Location._meta.fields
+            if f.name == "base_last"
+        ][0]
+        q = Chunk_Feature.objects.filter(*rules).extra(
+            select=dict(
+                fcl_base_first="%s.%s" % (fcl_tb, bf),
+                fcl_base_last="%s.%s" % (fcl_tb, bl),
+            )
+        )
 
         # using fcl_base_first and fcl_base_last fields to create a fake,
         # unsaved Fragment_Chunk_Location object
-        chunk_features = [(cf, Fragment_Chunk_Location(fragment=self, chunk=cf.chunk,
-                                                       base_first=int(cf.fcl_base_first),
-                                                       base_last=int(cf.fcl_base_last)))
-                          for cf in q]
+        chunk_features = [
+            (
+                cf,
+                Fragment_Chunk_Location(
+                    fragment=self,
+                    chunk=cf.chunk,
+                    base_first=int(cf.fcl_base_first),
+                    base_last=int(cf.fcl_base_last),
+                ),
+            )
+            for cf in q
+        ]
 
         chunk_features = sorted(chunk_features, key=lambda t: t[1].base_first)
         return Annotation.from_chunk_feature_and_location_array(chunk_features)
 
     def update(self, name):
-        new_fragment = \
-            Fragment(name=name, circular=self.circular, parent=self, start_chunk=self.start_chunk)
+        new_fragment = Fragment(
+            name=name, circular=self.circular, parent=self, start_chunk=self.start_chunk
+        )
         new_fragment.save()
 
         # copy over location index
         entries = []
         for fc in self.fragment_chunk_location_set.all():
-            entries.append(Fragment_Chunk_Location(fragment_id=new_fragment.id,
-                                                   chunk_id=fc.chunk_id,
-                                                   base_first=fc.base_first,
-                                                   base_last=fc.base_last))
+            entries.append(
+                Fragment_Chunk_Location(
+                    fragment_id=new_fragment.id,
+                    chunk_id=fc.chunk_id,
+                    base_first=fc.base_first,
+                    base_last=fc.base_last,
+                )
+            )
         Fragment_Chunk_Location.bulk_create(entries)
-        Fragment_Index(fragment=new_fragment, fresh=True,
-                       updated_on=self.fragment_index.updated_on).save()
+        Fragment_Index(
+            fragment=new_fragment, fresh=True, updated_on=self.fragment_index.updated_on
+        ).save()
         return new_fragment.indexed_fragment()

@@ -5,8 +5,14 @@ MIN_BINDING_LENGTH = 15
 BINDING_LENGTH_HI = 20
 
 
-def compute_pcr_product(primer_a_sequence, primer_a_binding_check_len, primer_a_blastres,
-                        primer_b_sequence, primer_b_binding_check_len, primer_b_blastres):
+def compute_pcr_product(
+    primer_a_sequence,
+    primer_a_binding_check_len,
+    primer_a_blastres,
+    primer_b_sequence,
+    primer_b_binding_check_len,
+    primer_b_blastres,
+):
     """
     Computes a PCR product based on two blast results.
     """
@@ -49,23 +55,29 @@ def compute_pcr_product(primer_a_sequence, primer_a_binding_check_len, primer_a_
         rev_primer_res = primer_a_blastres
         rev_primer_binding_check_len = primer_a_binding_check_len
 
-    if fwd_primer_res.query_end != fwd_primer_binding_check_len or\
-       rev_primer_res.query_end != rev_primer_binding_check_len:
+    if (
+        fwd_primer_res.query_end != fwd_primer_binding_check_len
+        or rev_primer_res.query_end != rev_primer_binding_check_len
+    ):
         return None
 
     # primers must align well
-    if primer_a_blastres.identity_ratio() < MIN_IDENTITIES or\
-       primer_b_blastres.identity_ratio() < MIN_IDENTITIES or\
-       primer_a_blastres.alignment_length() < MIN_BINDING_LENGTH or\
-       primer_b_blastres.alignment_length() < MIN_BINDING_LENGTH:
+    if (
+        primer_a_blastres.identity_ratio() < MIN_IDENTITIES
+        or primer_b_blastres.identity_ratio() < MIN_IDENTITIES
+        or primer_a_blastres.alignment_length() < MIN_BINDING_LENGTH
+        or primer_b_blastres.alignment_length() < MIN_BINDING_LENGTH
+    ):
         return None
 
     fragment = primer_a_blastres.fragment.indexed_fragment()
 
     # cannot produce product if elongated regions do not overlap. if we are on
     # a circular fragment, there will always be overlaps.
-    if fwd_primer_res.subject_end >= rev_primer_res.subject_end and \
-       fragment.circular is False:
+    if (
+        fwd_primer_res.subject_end >= rev_primer_res.subject_end
+        and fragment.circular is False
+    ):
         return None
 
     # get sequence between primers
@@ -76,12 +88,18 @@ def compute_pcr_product(primer_a_sequence, primer_a_binding_check_len, primer_a_
     if len(product_mid) > MAX_PCR_SIZE:
         return None
 
-    product = '%s%s%s' % (fwd_primer, product_mid, str(Seq(rev_primer).reverse_complement()))
+    product = "%s%s%s" % (
+        fwd_primer,
+        product_mid,
+        str(Seq(rev_primer).reverse_complement()),
+    )
 
-    bs_start = (fwd_primer_res.subject_end + 1) -\
-               (fwd_primer_res.query_end - fwd_primer_res.query_start + 1)
-    bs_end = (rev_primer_res.subject_end - 1) +\
-             (rev_primer_res.query_end - rev_primer_res.query_start + 1)
+    bs_start = (fwd_primer_res.subject_end + 1) - (
+        fwd_primer_res.query_end - fwd_primer_res.query_start + 1
+    )
+    bs_end = (rev_primer_res.subject_end - 1) + (
+        rev_primer_res.query_end - rev_primer_res.query_start + 1
+    )
 
     bs_start = fragment.circ_bp(bs_start)
     bs_end = fragment.circ_bp(bs_end)
@@ -106,12 +124,12 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     primer_b_results = []
     primer_b_binding_check_len = []
 
-    res = blast_genome(genome, 'blastn', primer_a_sequence)
+    res = blast_genome(genome, "blastn", primer_a_sequence)
     for r in res:
         primer_a_results.append(r)
         primer_a_binding_check_len.append(len(primer_a_sequence))
 
-    res = blast_genome(genome, 'blastn', primer_b_sequence)
+    res = blast_genome(genome, "blastn", primer_b_sequence)
     for r in res:
         primer_b_results.append(r)
         primer_b_binding_check_len.append(len(primer_b_sequence))
@@ -119,7 +137,7 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     # checking various binding length
     for i in range(MIN_BINDING_LENGTH, BINDING_LENGTH_HI):
         p = primer_a_sequence[-i:]
-        res = blast_genome(genome, 'blastn', p)
+        res = blast_genome(genome, "blastn", p)
         for r in res:
             primer_a_results.append(r)
             primer_a_binding_check_len.append(len(p))
@@ -127,7 +145,7 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     # checking various binding length
     for i in range(MIN_BINDING_LENGTH, BINDING_LENGTH_HI):
         p = primer_b_sequence[-i:]
-        res = blast_genome(genome, 'blastn', p)
+        res = blast_genome(genome, "blastn", p)
         for r in res:
             primer_b_results.append(r)
             primer_b_binding_check_len.append(len(p))
@@ -136,8 +154,9 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     uniq_products = {}
     for a_len, a_res in zip(primer_a_binding_check_len, primer_a_results):
         for b_len, b_res in zip(primer_b_binding_check_len, primer_b_results):
-            product = compute_pcr_product(primer_a_sequence, a_len, a_res,
-                                          primer_b_sequence, b_len, b_res)
+            product = compute_pcr_product(
+                primer_a_sequence, a_len, a_res, primer_b_sequence, b_len, b_res
+            )
             if product is not None:
                 k = (product[0], a_res.fragment_id)
                 if k not in uniq_products:
@@ -147,9 +166,15 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     if len(pcr_products) == 1:
         product = pcr_products[0][0]
         region = pcr_products[0][1]
-        return (product, primer_a_results, primer_b_results,
-                dict(region=region['region'],
-                     fragment_name=region['fragment'].name,
-                     fragment_id=region['fragment'].id))
+        return (
+            product,
+            primer_a_results,
+            primer_b_results,
+            dict(
+                region=region["region"],
+                fragment_name=region["fragment"].name,
+                fragment_id=region["fragment"].id,
+            ),
+        )
     else:
         return (None, primer_a_results, primer_b_results, None)

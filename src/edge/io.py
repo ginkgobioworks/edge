@@ -16,12 +16,12 @@ class IO(object):
         """
         Export to FASTA format, saving to the specified filename.
         """
-        outf = open(filename, 'w')
+        outf = open(filename, "w")
         for fragment in self.__genome.fragments.all():
             fragment = fragment.indexed_fragment()
-            outf.write('>%s\n' % (fragment.name,))
+            outf.write(">%s\n" % (fragment.name,))
             outf.write(fragment.sequence)
-            outf.write('\n')
+            outf.write("\n")
         outf.close()
 
     def to_gff_file(self, file):
@@ -52,12 +52,14 @@ class IO(object):
                 elif "Phase" in qualifiers and qualifiers["Phase"] is None:
                     qualifiers["Phase"] = 0
 
-                qualifiers.update({'name': annotation.feature_name})
+                qualifiers.update({"name": annotation.feature_name})
                 strand = annotation.feature.strand
-                feature = SeqFeature(loc,
-                                     type=annotation.feature.type,
-                                     strand=0 if strand is None else strand,
-                                     qualifiers=qualifiers)
+                feature = SeqFeature(
+                    loc,
+                    type=annotation.feature.type,
+                    strand=0 if strand is None else strand,
+                    qualifiers=qualifiers,
+                )
                 features.append(feature)
 
             rec.features = features

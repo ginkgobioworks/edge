@@ -16,11 +16,12 @@ class Genome(Genome_Updater, models.Model):
         app_label = "edge"
 
     name = models.TextField()
-    parent = models.ForeignKey('self', null=True, on_delete=models.PROTECT,
-                               related_name='children')
+    parent = models.ForeignKey(
+        "self", null=True, on_delete=models.PROTECT, related_name="children"
+    )
     notes = models.TextField(null=True, blank=True)
-    fragments = models.ManyToManyField(Fragment, through='Genome_Fragment')
-    created_on = models.DateTimeField('Created', auto_now_add=True, null=True)
+    fragments = models.ManyToManyField(Fragment, through="Genome_Fragment")
+    created_on = models.DateTimeField("Created", auto_now_add=True, null=True)
     active = models.BooleanField(default=True)
     blastdb = models.TextField(null=True, blank=True)
 
@@ -74,8 +75,9 @@ class Indexed_Genome(Genome):
         cf_fcl = []
         for cf in chunk_features:
             # get fragment chunk location
-            for fcl in Fragment_Chunk_Location.objects.filter(chunk=cf.chunk,
-                                                              fragment__genome=self):
+            for fcl in Fragment_Chunk_Location.objects.filter(
+                chunk=cf.chunk, fragment__genome=self
+            ):
                 cf_fcl.append((cf, fcl))
         annotations = Annotation.from_chunk_feature_and_location_array(cf_fcl)
 
@@ -87,27 +89,31 @@ class Indexed_Genome(Genome):
         return by_f
 
     def find_annotation_by_feature(self, feature):
-        q = Chunk_Feature.objects.filter(chunk__fragment_chunk_location__fragment__genome=self,
-                                         feature=feature)
+        q = Chunk_Feature.objects.filter(
+            chunk__fragment_chunk_location__fragment__genome=self, feature=feature
+        )
         return self.__annotations_from_chunk_features(list(q))
 
     def find_annotation_by_name(self, name):
-        q = Chunk_Feature.objects.filter(chunk__fragment_chunk_location__fragment__genome=self,
-                                         feature__name=name)
+        q = Chunk_Feature.objects.filter(
+            chunk__fragment_chunk_location__fragment__genome=self, feature__name=name
+        )
         return self.__annotations_from_chunk_features(list(q))
 
     def find_annotation_by_qualifier(self, name, fields=None):
         fields = None if fields is None else [f.lower() for f in fields]
 
-        q = Chunk_Feature.objects.filter(chunk__fragment_chunk_location__fragment__genome=self,
-                                         feature___qualifiers__icontains=name)
+        q = Chunk_Feature.objects.filter(
+            chunk__fragment_chunk_location__fragment__genome=self,
+            feature___qualifiers__icontains=name,
+        )
         chunk_features = []
         for cf in q:
             qualifiers = cf.feature.qualifiers
             for k, v in qualifiers.items():
                 if fields is None or k.lower() in fields:
                     if type(v) in (bytes, str):
-                        v = v.split(',')
+                        v = v.split(",")
                     v = [s.lower() for s in v]
                     if name.lower() in v:
                         chunk_features.append(cf)
@@ -120,7 +126,7 @@ class Indexed_Genome(Genome):
 
         edges = Edge.objects.filter(
             fragment__genome_fragment__genome=self,
-            fragment__genome_fragment__inherited=False
+            fragment__genome_fragment__inherited=False,
         )
 
         fcs = []
@@ -128,11 +134,15 @@ class Indexed_Genome(Genome):
         for edge in edges:
             if edge.from_chunk:
                 if edge.from_chunk.id not in added:
-                    fcs.append(edge.fragment.indexed_fragment().fragment_chunk(edge.from_chunk))
+                    fcs.append(
+                        edge.fragment.indexed_fragment().fragment_chunk(edge.from_chunk)
+                    )
                     added.append(edge.from_chunk.id)
             if edge.to_chunk:
                 if edge.to_chunk.id not in added:
-                    fcs.append(edge.fragment.indexed_fragment().fragment_chunk(edge.to_chunk))
+                    fcs.append(
+                        edge.fragment.indexed_fragment().fragment_chunk(edge.to_chunk)
+                    )
                     added.append(edge.to_chunk.id)
         return fcs
 

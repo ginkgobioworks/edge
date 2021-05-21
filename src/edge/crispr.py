@@ -5,8 +5,9 @@ from Bio.Seq import Seq
 
 
 class CrisprTarget(object):
-
-    def __init__(self, fragment_id, fragment_name, strand, subject_start, subject_end, pam):
+    def __init__(
+        self, fragment_id, fragment_name, strand, subject_start, subject_end, pam
+    ):
         self.fragment_id = fragment_id
         self.fragment_name = fragment_name
         self.strand = strand
@@ -22,7 +23,7 @@ def match_pam(pam, query):
     if len(query) != len(pam):
         return False
     for p, q in zip(pam.lower(), query.lower()):
-        if p != 'n' and p != q:
+        if p != "n" and p != q:
             return False
     return True
 
@@ -47,8 +48,14 @@ def target_followed_by_pam(blast_res, pam):
         subject_start = fragment.circ_bp(subject_start)
         subject_end = fragment.circ_bp(subject_end)
 
-        return CrisprTarget(blast_res.fragment_id, blast_res.fragment.name,
-                            blast_res.strand(), subject_start, subject_end, pam)
+        return CrisprTarget(
+            blast_res.fragment_id,
+            blast_res.fragment.name,
+            blast_res.strand(),
+            subject_start,
+            subject_end,
+            pam,
+        )
     return None
 
 
@@ -58,7 +65,7 @@ def find_crispr_target(genome, guide, pam):
     sequence.
     """
 
-    guide_matches = blast_genome(genome, 'blastn', guide)
+    guide_matches = blast_genome(genome, "blastn", guide)
     targets = []
 
     for res in guide_matches:
@@ -78,8 +85,10 @@ def crispr_dsb(genome, guide, pam, genome_name=None, notes=None):
         return None
 
     if genome_name is None or genome_name.strip() == "":
-        genome_name = "%s after CRISPR-Cas9 wt (double stranded break) using guide %s"\
-                      % (genome.name, guide)
+        genome_name = (
+            "%s after CRISPR-Cas9 wt (double stranded break) using guide %s"
+            % (genome.name, guide)
+        )
 
     new_genome = genome.update()
     new_genome.name = genome_name
@@ -103,15 +112,20 @@ def crispr_dsb(genome, guide, pam, genome_name=None, notes=None):
             new_fragment_id = f.id
 
         with new_genome.annotate_fragment_by_fragment_id(new_fragment_id) as f:
-            feature = 'CRISPR-Cas9 (pam %s) target' % pam
-            f.annotate(annotation_start, annotation_end, feature,
-                       'event', target.strand, operation=op)
+            feature = "CRISPR-Cas9 (pam %s) target" % pam
+            f.annotate(
+                annotation_start,
+                annotation_end,
+                feature,
+                "event",
+                target.strand,
+                operation=op,
+            )
 
     return new_genome
 
 
 class CrisprOp(object):
-
     @staticmethod
     def check(genome, guide, pam, genome_name=None, notes=None):
         return find_crispr_target(genome, guide, pam)
