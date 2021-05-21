@@ -1,5 +1,7 @@
 import json
 import re
+
+from django import forms
 from django.test import TestCase
 from django.urls import reverse
 
@@ -31,6 +33,101 @@ class GenomeListTest(TestCase):
             "parent_id": None,
             "parent_name": '',
             "uri": uri
+        })
+
+    def test_derives_new_genome_after_adding_fragment(self):
+        g1 = Genome(name='Foo')
+        g1.save()
+        url = reverse('derive-genome-with-new-fragments', kwargs={'genome_id': g1.id})
+        res = self.client.post(
+            url,
+            data=json.dumps([{
+                'name': 'test-fragment',
+                'sequence': 'AGCTAGCTTCGATCGA'
+            }]),
+            content_type='application/json',
+        )
+        self.assertEquals(res.status_code, 201)
+
+        child = Genome.objects.get(parent=g1.id)
+        self.assertNotEquals(child.id, g1.id)
+
+        fragment = child.fragments.first()
+        self.assertEquals(json.loads(res.content), {
+            "fragments": [{
+                'id': fragment.id,
+                'uri': '/edge/fragments/{}/'.format(fragment.id),
+                'name': fragment.name,
+                'circular': fragment.circular,
+                'parent_id': None,
+                'length': 16,
+            }],
+            "id": child.id,
+            "name": child.name,
+            "notes": None,
+            "parent_id": g1.id,
+            "parent_name": g1.name,
+            "uri": '/edge/genomes/{}/'.format(child.id)
+        })
+
+    def test_doesnt_derives_new_genome_on_invalid_fragment(self):
+        g1 = Genome(name='Foo')
+        g1.save()
+        url = reverse('derive-genome-with-new-fragments', kwargs={'genome_id': g1.id})
+        with self.assertRaises(forms.ValidationError) as exception:
+            self.client.post(
+                url,
+                data=json.dumps([{
+                    'name': 'valid-fragment',
+                    'sequence': 'AGCTAGCTTCGATCGA'
+                }, {
+                    'name': 'invalid-fragment',
+                }]),
+                content_type='application/json',
+            )
+            self.assertIn('sequence', exception.exception.error_dict)
+
+        # Ensure that when an error is hit, no child genome was derived from the initially
+        # valid fragments
+        self.assertEqual(Genome.objects.filter(parent=g1.id).count(), 0)
+
+    def test_derives_new_genome_with_multiple_fragments(self):
+        g1 = Genome(name='Foo')
+        g1.save()
+        url = reverse('derive-genome-with-new-fragments', kwargs={'genome_id': g1.id})
+        res = self.client.post(
+            url,
+            data=json.dumps([{
+                'name': 'test-fragment',
+                'sequence': 'AGCTAGCTTCGATCGA'
+            }, {
+                'name': 'circular-fragment',
+                'sequence': 'AGCTAGCTTCGATCGAAGCTATTATATCGATA',
+                'circular': True
+            }]),
+            content_type='application/json',
+        )
+        self.assertEquals(res.status_code, 201)
+
+        child = Genome.objects.get(parent=g1.id)
+        self.assertNotEquals(child.id, g1.id)
+
+        fragments = [{
+                'id': fragment.id,
+                'uri': '/edge/fragments/{}/'.format(fragment.id),
+                'name': fragment.name,
+                'circular': fragment.circular,
+                'parent_id': None,
+                'length': fragment.indexed_fragment().length,
+            } for fragment in child.fragments.all()]
+        self.assertEquals(json.loads(res.content), {
+            "fragments": fragments,
+            "id": child.id,
+            "name": child.name,
+            "notes": None,
+            "parent_id": g1.id,
+            "parent_name": g1.name,
+            "uri": '/edge/genomes/{}/'.format(child.id)
         })
 
     def test_can_use_uri_from_add_genome_to_fetch_genome(self):

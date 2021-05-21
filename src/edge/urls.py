@@ -7,6 +7,7 @@ from edge.views import (
     FragmentSequenceView,
     FragmentAnnotationsView,
     FragmentAnnotateChunksView,
+    GenomeDeriveView,
     GenomeView,
     GenomeListView,
     GenomeAnnotationsView,
@@ -60,6 +61,12 @@ urlpatterns = [
         name="genome_recombination"),
     url(r'^genomes/(?P<genome_id>\d+)/crispr/dsb/$', GenomeCrisprDSBView.as_view(),
         name="genome_crispr"),
+
+    url(
+        r'^genomes/(?P<genome_id>\d+)/derive-genome-with-new-fragments/$',
+        GenomeDeriveView.as_view(),
+        name='derive-genome-with-new-fragments',
+    ),
 
     url(r'^genomes/(?P<genome_id>\d+)/export/$', genome_export),
 ]
