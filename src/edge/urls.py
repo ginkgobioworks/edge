@@ -6,6 +6,7 @@ from edge.views import (
     FragmentListView,
     FragmentSequenceView,
     FragmentAnnotationsView,
+    FragmentAnnotateChunksView,
     GenomeView,
     GenomeListView,
     GenomeAnnotationsView,
@@ -42,6 +43,7 @@ urlpatterns = [
 
     url(r'^fragments/(?P<fragment_id>\d+)/sequence/$', FragmentSequenceView.as_view()),
     url(r'^fragments/(?P<fragment_id>\d+)/annotations/$', FragmentAnnotationsView.as_view()),
+    url(r'^fragments/(?P<fragment_id>\d+)/annotate-chunks/$', FragmentAnnotateChunksView.as_view()),
 
     url(r'^genomes/(?P<genome_id>\d+)/annotations/$', GenomeAnnotationsView.as_view()),
     url(r'^genomes/(?P<genome_id>\d+)/fragments/$', GenomeFragmentListView.as_view()),

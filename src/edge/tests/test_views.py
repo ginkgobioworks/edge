@@ -404,6 +404,40 @@ class FragmentTest(TestCase):
             "feature_base_last": 8,
         }])
 
+    def test_annotate_multiple_chunks_with_qualifiers(self):
+        data = dict(bases=((2, 4), (6, 9)),
+                    name='proC', type='promoter', strand=1, qualifiers=dict(gene="PROC"))
+        res = self.client.post(self.uri + 'annotate-chunks/', data=json.dumps(data),
+                               content_type='application/json')
+        self.assertEquals(res.status_code, 201)
+        self.assertEquals(json.loads(res.content), {})
+        res = self.client.get(self.uri + 'annotations/')
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(json.loads(res.content), [
+          {
+            "base_first": 2,
+            "base_last": 4,
+            "name": 'proC',
+            "type": 'promoter',
+            "strand": 1,
+            "qualifiers": {"gene": "PROC"},
+            "feature_full_length": 7,
+            "feature_base_first": 1,
+            "feature_base_last": 3,
+          },
+          {
+            "base_first": 6,
+            "base_last": 9,
+            "name": 'proC',
+            "type": 'promoter',
+            "strand": 1,
+            "qualifiers": {"gene": "PROC"},
+            "feature_full_length": 7,
+            "feature_base_first": 4,
+            "feature_base_last": 7,
+          }
+        ])
+
     def test_get_multiple_annotations(self):
         data = dict(base_first=2, base_last=9, name='proC', type='promoter', strand=1)
         res = self.client.post(self.uri + 'annotations/', data=json.dumps(data),
