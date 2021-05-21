@@ -21,10 +21,12 @@ def make_required_dirs(path):
 
 
 def fragment_fasta_fn(fragment):
-    return '%s/fragment/%s/%s/edge-fragment-%s-nucl.fa' % (settings.NCBI_DATA_DIR,
-                                                           fragment.id % 1024,
-                                                           (fragment.id >> 10) % 1024,
-                                                           fragment.id)
+    return "%s/fragment/%s/%s/edge-fragment-%s-nucl.fa" % (
+        settings.NCBI_DATA_DIR,
+        fragment.id % 1024,
+        (fragment.id >> 10) % 1024,
+        fragment.id,
+    )
 
 
 def build_fragment_fasta(fragment, refresh=False):
@@ -32,17 +34,19 @@ def build_fragment_fasta(fragment, refresh=False):
     make_required_dirs(fn)
 
     if not os.path.isfile(fn) or refresh:  # have not built this fasta or need refresh
-        print('building %s' % fn)
+        print("building %s" % fn)
         # this may take awhile, so do this first, so user interrupt does
         # not create an empty file
         sequence = fragment.indexed_fragment().sequence
         # be really lenient, convert any unknown bp to N
-        sequence = re.sub(r'[^agctnAGCTN]', 'n', sequence)
+        sequence = re.sub(r"[^agctnAGCTN]", "n", sequence)
         if fragment.circular is True:
             sequence = sequence + sequence
-        f = open(fn, 'w')
-        f.write(">gnl|edge|%s %s\n%s\n" %
-                (Blast_Accession.make(fragment), fragment.name, sequence))
+        f = open(fn, "w")
+        f.write(
+            ">gnl|edge|%s %s\n%s\n"
+            % (Blast_Accession.make(fragment), fragment.name, sequence)
+        )
         f.close()
     return fn
 
@@ -51,9 +55,10 @@ def build_db(fragments, dbname, refresh=True):
     if len(fragments) == 0:
         return None
 
-    if refresh is False and \
-       (os.path.isfile(dbname + '.nal') or os.path.isfile(dbname + '.nsq')):
-        print('already built %s' % dbname)
+    if refresh is False and (
+        os.path.isfile(dbname + ".nal") or os.path.isfile(dbname + ".nsq")
+    ):
+        print("already built %s" % dbname)
         return dbname
 
     fns = []
@@ -61,21 +66,21 @@ def build_db(fragments, dbname, refresh=True):
         fn = build_fragment_fasta(fragment, refresh)
         fns.append(fn)
 
-    print('concat fasta files for %s' % dbname)
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+    print("concat fasta files for %s" % dbname)
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
         fafile = f.name
         for fn in fns:
             with open(fn) as inf:
                 for line in inf:
                     f.write(line)
 
-    print('building blast db %s' % dbname)
+    print("building blast db %s" % dbname)
     make_required_dirs(dbname)
     cmd = "%s/makeblastdb -in %s -out %s " % (settings.NCBI_BIN_DIR, fafile, dbname)
     cmd += "-title edge -dbtype nucl -parse_seqids -input_type fasta"
 
-    r = subprocess.check_output(cmd.split(' '))
-    if b'Adding sequences from FASTA' not in r:
+    r = subprocess.check_output(cmd.split(" "))
+    if b"Adding sequences from FASTA" not in r:
         print(r)
 
     os.unlink(fafile)

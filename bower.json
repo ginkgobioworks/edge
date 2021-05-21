@@ -1,7 +1,7 @@
 {
   "name": "edge",
   "description": "For build only: not for release",
-  "ignore": [ "**/**" ],
+  "ignore": ["**/**"],
   "main": [
     "./src/edge/static/edge/src/edge.js",
     "./src/edge/static/edge/edge.css"

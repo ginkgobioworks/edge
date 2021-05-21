@@ -1,6 +1,6 @@
 from django.db.backends.signals import connection_created
 
-__version__ = '2.18.0'
+__version__ = "2.18.0"
 
 
 import random
@@ -19,6 +19,7 @@ def import_gff(name, fn):
     """
 
     from edge.models import Genome
+
     if Genome.objects.filter(name=name).count() > 0:
         raise Exception('There is already a genome named "%s"' % (name,))
     g = Genome.import_gff(name, fn)
@@ -30,10 +31,10 @@ def _setup_sqlite3(sender, connection, **kwargs):
     Setup SQLite to allow FKs and use in-memory journals
     """
 
-    if connection.vendor == 'sqlite':
+    if connection.vendor == "sqlite":
         cursor = connection.cursor()
-        cursor.execute('PRAGMA foreign_keys = ON;')
-        cursor.execute('PRAGMA journal_mode = MEMORY;')
+        cursor.execute("PRAGMA foreign_keys = ON;")
+        cursor.execute("PRAGMA journal_mode = MEMORY;")
 
 
 connection_created.connect(_setup_sqlite3)

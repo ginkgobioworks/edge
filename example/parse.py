@@ -1,5 +1,7 @@
+# flake8: noqa
 import sys
 from BCBio import GFF
+
 
 def parse(fn):
     in_handle = open(fn)

@@ -1,3 +1,4 @@
+# flake8: noqa
 # takes two sequences, strips whitespaces away, computes reverse
 # complement sequence of second primer
 
@@ -8,8 +9,8 @@ b = "T A C A A A C A C C T T G C C A T C A T T G G T C A A G G G G G C C A A C A
 import re
 from Bio.Seq import Seq
 
-a = re.sub(r'\s', '', a)
-b = re.sub(r'\s', '', b)
+a = re.sub(r"\s", "", a)
+b = re.sub(r"\s", "", b)
 
 print a
 print str(Seq(b).reverse_complement())

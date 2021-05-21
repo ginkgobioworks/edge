@@ -1,4 +1,4 @@
-version: '2.1'
+version: "2.1"
 
 services:
   edge:
@@ -19,9 +19,9 @@ services:
       DB_USER: root
       DB_PASSWORD: edge-dev-pw
       CELERY_CONFIG_MODULE: server.settings
-      AMQP_URL: 'amqp://guest@rabbit:5672//'
-      FULLSTORY_ORG_ID: 'your_fullstory_org_id'
-      FULLSTORY_URL: 'www.fullstory.com'
+      AMQP_URL: "amqp://guest@rabbit:5672//"
+      FULLSTORY_ORG_ID: "your_fullstory_org_id"
+      FULLSTORY_URL: "www.fullstory.com"
 
   edge-db:
     image: mysql:5.7
@@ -33,7 +33,6 @@ services:
 
   rabbit:
     image: rabbitmq
-
 
 volumes:
   edge-db-data:

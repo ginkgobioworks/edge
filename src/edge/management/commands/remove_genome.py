@@ -14,8 +14,7 @@ def remove_genome(genome_id):
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
         if len(args) != 1:
-            raise Exception('Expecting genome ID as argument')
+            raise Exception("Expecting genome ID as argument")
         remove_genome(args[0])

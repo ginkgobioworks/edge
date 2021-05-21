@@ -1,143 +1,174 @@
 <header>
   <div class="container">
     <ol class="breadcrumb">
-        <li> Edge </li>
-        <li> <a href="#/genomes">Genomes</a> </li>
-        <li> <a href="#/genomes/{{ genome.id }}"><span class="fs-block" ng-bind-html='genome.name'></span></a> </li>
-        <li> Recombination </li>
+      <li>Edge</li>
+      <li><a href="#/genomes">Genomes</a></li>
+      <li>
+        <a href="#/genomes/{{ genome.id }}"
+          ><span class="fs-block" ng-bind-html="genome.name"></span
+        ></a>
+      </li>
+      <li>Recombination</li>
     </ol>
   </div>
 </header>
 
 <div class="container">
+  <h3>
+    Recombination on Genome {{ genome.id }}:
+    <span class="fs-block" ng-bind-html="genome.name"></span>
+  </h3>
 
-<h3>Recombination on Genome {{ genome.id }}: <span class="fs-block" ng-bind-html='genome.name'></span></h3>
-
-<form role="form" class="space-top" id="recombine-inputs">
+  <form role="form" class="space-top" id="recombine-inputs">
     <div class="form-inline">
-        Homology arm length
-        <div class="form-group">
-            <input required class="form-control" type="text" ng-model="homology_arm_length" size="5" />
-        </div>
-        New genome name
-        <div class="form-group">
-            <input required class="form-control fs-block" type="text" ng-model="new_genome_name" size="20" />
-        </div>
+      Homology arm length
+      <div class="form-group">
+        <input
+          required
+          class="form-control"
+          type="text"
+          ng-model="homology_arm_length"
+          size="5"
+        />
+      </div>
+      New genome name
+      <div class="form-group">
+        <input
+          required
+          class="form-control fs-block"
+          type="text"
+          ng-model="new_genome_name"
+          size="20"
+        />
+      </div>
     </div>
     Cassette (including homology arms)
-    <br/>
-    <textarea class="form-control sequence fs-block" ng-model="cassette"></textarea>
+    <br />
+    <textarea
+      class="form-control sequence fs-block"
+      ng-model="cassette"
+    ></textarea>
     <button class="btn btn-primary" ng-click="FindRegions()">Preview</button>
-</form>
+  </form>
 
-<div id="recombine-primer3-opts" class="space-top">
-  <p>
-    Primer3 params (for verification primers)
-  </p>
+  <div id="recombine-primer3-opts" class="space-top">
+    <p>
+      Primer3 params (for verification primers)
+    </p>
 
-  <table class="table table-condensed">
-    <tr>
-      <td>OPT_SIZE:</td>
-      <td><input ng-model="primer3_opts.PRIMER_OPT_SIZE" /></td>
-      <td>MIN_SIZE:</td>
-      <td><input ng-model="primer3_opts.PRIMER_MIN_SIZE" /></td>
-      <td>MAX_SIZE:</td>
-      <td><input ng-model="primer3_opts.PRIMER_MAX_SIZE" /></td>
-    </tr>
-    <tr>
-      <td>OPT_TM:</td>
-      <td><input ng-model="primer3_opts.PRIMER_OPT_TM" /></td>
-      <td>MIN_TM:</td>
-      <td><input ng-model="primer3_opts.PRIMER_MIN_TM" /></td>
-      <td>MAX_TM:</td>
-      <td><input ng-model="primer3_opts.PRIMER_MAX_TM" /></td>
-    </tr>
-    <tr>
-      <td>MIN_GC:</td>
-      <td><input ng-model="primer3_opts.PRIMER_MIN_GC" /></td>
-      <td>MAX_GC:</td>
-      <td><input ng-model="primer3_opts.PRIMER_MAX_GC" /></td>
-    </tr>
-    <tr>
-      <td>SALT_MONOVALENT:</td>
-      <td><input ng-model="primer3_opts.PRIMER_SALT_MONOVALENT" /></td>
-      <td>DNA_CONC nM:</td>
-      <td><input ng-model="primer3_opts.PRIMER_DNA_CONC" /></td>
-    </tr>
-  </table>
-</div>
+    <table class="table table-condensed">
+      <tr>
+        <td>OPT_SIZE:</td>
+        <td><input ng-model="primer3_opts.PRIMER_OPT_SIZE" /></td>
+        <td>MIN_SIZE:</td>
+        <td><input ng-model="primer3_opts.PRIMER_MIN_SIZE" /></td>
+        <td>MAX_SIZE:</td>
+        <td><input ng-model="primer3_opts.PRIMER_MAX_SIZE" /></td>
+      </tr>
+      <tr>
+        <td>OPT_TM:</td>
+        <td><input ng-model="primer3_opts.PRIMER_OPT_TM" /></td>
+        <td>MIN_TM:</td>
+        <td><input ng-model="primer3_opts.PRIMER_MIN_TM" /></td>
+        <td>MAX_TM:</td>
+        <td><input ng-model="primer3_opts.PRIMER_MAX_TM" /></td>
+      </tr>
+      <tr>
+        <td>MIN_GC:</td>
+        <td><input ng-model="primer3_opts.PRIMER_MIN_GC" /></td>
+        <td>MAX_GC:</td>
+        <td><input ng-model="primer3_opts.PRIMER_MAX_GC" /></td>
+      </tr>
+      <tr>
+        <td>SALT_MONOVALENT:</td>
+        <td><input ng-model="primer3_opts.PRIMER_SALT_MONOVALENT" /></td>
+        <td>DNA_CONC nM:</td>
+        <td><input ng-model="primer3_opts.PRIMER_DNA_CONC" /></td>
+      </tr>
+    </table>
+  </div>
 
-<div class="clearfix"></div>
+  <div class="clearfix"></div>
 
-<div ng-if="waiting === true">
-  <p>
-    <br/>
-    <em>Waiting for server to respond ...</em>
-    <br/>
-  </p>
-</div>
+  <div ng-if="waiting === true">
+    <p>
+      <br />
+      <em>Waiting for server to respond ...</em>
+      <br />
+    </p>
+  </div>
 
-<div ng-if="regions !== undefined" class="results">
+  <div ng-if="regions !== undefined" class="results">
     <p ng-if="regions.length === 0"><em>No matching region</em></p>
     <div ng-if="regions.length > 0">
-        <div ng-repeat="region in regions" class="recombine-candidate">
-            <h5>
-                Found integration region on fragment
-                <a class="fs-block" href="#/genomes/{{ genome.id }}/fragments/{{ region.fragment_id }}?bp={{ region.start }},{{ region.end }}"
-                 >{{ region.fragment_name }}: {{ region.start }}-{{ region.end }}</a>
-                Post integration region length: {{ region.cassette.length }} bps
-                <span ng-if="region.cassette_reversed">
-                  (cassette will be integrated in reverse direction)
-                </span>
-            </h5>
+      <div ng-repeat="region in regions" class="recombine-candidate">
+        <h5>
+          Found integration region on fragment
+          <a
+            class="fs-block"
+            href="#/genomes/{{ genome.id }}/fragments/{{ region.fragment_id }}?bp={{ region.start }},{{ region.end }}"
+            >{{ region.fragment_name }}: {{ region.start }}-{{ region.end }}</a
+          >
+          Post integration region length: {{ region.cassette.length }} bps
+          <span ng-if="region.cassette_reversed">
+            (cassette will be integrated in reverse direction)
+          </span>
+        </h5>
 
-            <div ng-if="region.verification_front.length > 0" class="primers">
-                <p>
-                    PCR primers to verify 5' junction
-                    <br/>
-                    (product on modified genome only, no product on WT)
-                </p>
-                <ul>
-                    <li ng-repeat='primer in region.verification_front'><partial template='primer' /></li>
-                </ul>
-            </div>
-            <div ng-if="region.verification_back.length > 0" class="primers">
-                <p>
-                    PCR primers to verify 3' junction
-                    <br/>
-                    (product on modified genome only, no product on WT)
-                </p>
-                <ul>
-                    <li ng-repeat='primer in region.verification_back'><partial template='primer' /></li>
-                </ul>
-            </div>
-            <div ng-if="region.verification_cassette.length > 0" class="primers">
-                <p>
-                    PCR primers to verify whole cassette
-                    <br/>
-                    (product on modified genome and WT)
-                </p>
-                <ul>
-                    <li ng-repeat='primer in region.verification_cassette'><partial template='primer' /></li>
-                </ul>
-            </div>
-            <div ng-if="region.cassette_annotations.length > 0">
-                <p>
-                    Inherited and new annotations on cassette
-                </p>
-                <ul>
-                    <li class="fs-block" ng-repeat='a in region.cassette_annotations'>
-                      {{ a.base_first }}-{{a.base_last }} bps on cassette,
-                      {{ a.feature_name }} ({{ a.feature_type }})
-                      <span ng-if="a.feature_strand === -1">reversed</span>
-                    </li>
-                </ul>
-            </div>
+        <div ng-if="region.verification_front.length > 0" class="primers">
+          <p>
+            PCR primers to verify 5' junction
+            <br />
+            (product on modified genome only, no product on WT)
+          </p>
+          <ul>
+            <li ng-repeat="primer in region.verification_front">
+              <partial template="primer" />
+            </li>
+          </ul>
         </div>
+        <div ng-if="region.verification_back.length > 0" class="primers">
+          <p>
+            PCR primers to verify 3' junction
+            <br />
+            (product on modified genome only, no product on WT)
+          </p>
+          <ul>
+            <li ng-repeat="primer in region.verification_back">
+              <partial template="primer" />
+            </li>
+          </ul>
+        </div>
+        <div ng-if="region.verification_cassette.length > 0" class="primers">
+          <p>
+            PCR primers to verify whole cassette
+            <br />
+            (product on modified genome and WT)
+          </p>
+          <ul>
+            <li ng-repeat="primer in region.verification_cassette">
+              <partial template="primer" />
+            </li>
+          </ul>
+        </div>
+        <div ng-if="region.cassette_annotations.length > 0">
+          <p>
+            Inherited and new annotations on cassette
+          </p>
+          <ul>
+            <li class="fs-block" ng-repeat="a in region.cassette_annotations">
+              {{ a.base_first }}-{{a.base_last }} bps on cassette, {{
+              a.feature_name }} ({{ a.feature_type }})
+              <span ng-if="a.feature_strand === -1">reversed</span>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
     <p ng-if="regions.length === 1">
-      <button class="btn btn-primary" ng-click="Recombine()">Create post-recombination genome</button>
+      <button class="btn btn-primary" ng-click="Recombine()">
+        Create post-recombination genome
+      </button>
     </p>
-</div>
-
+  </div>
 </div>

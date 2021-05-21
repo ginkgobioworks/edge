@@ -1,3 +1,4 @@
+# flake8: noqa
 # imports multiple GFF+FASTA files
 #
 # python import_multi.py genome_name <file names...>
@@ -10,6 +11,7 @@
 # time scripts/_python example/import_multi.py GCA_003668045.2 example/GCA_003668045.2/*combined.gff
 
 import django
+
 django.setup()
 
 import sys
@@ -25,10 +27,10 @@ if Genome.objects.filter(name=name).count() > 0:
 """
 
 if Genome.objects.filter(name=name).count() > 0:
-  genome = Genome.objects.get(name=name)
+    genome = Genome.objects.get(name=name)
 else:
-  genome = Genome.create(name)
+    genome = Genome.create(name)
 
 for gff_fasta_fn in fns:
-  print(gff_fasta_fn)
-  GFFImporter(genome, gff_fasta_fn).do_import()
+    print(gff_fasta_fn)
+    GFFImporter(genome, gff_fasta_fn).do_import()

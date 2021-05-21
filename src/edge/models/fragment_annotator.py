@@ -8,9 +8,11 @@ class Fragment_Annotator(object):
 
     def _add_feature(self, name, type, length, strand, qualifiers=None, operation=None):
         if strand not in (1, -1, None):
-            raise Exception('Strand must be 1, -1, or None')
+            raise Exception("Strand must be 1, -1, or None")
         qualifiers = {} if qualifiers is None else qualifiers
-        f = Feature(name=name, type=type, length=length, strand=strand, operation=operation)
+        f = Feature(
+            name=name, type=type, length=length, strand=strand, operation=operation
+        )
         f.set_qualifiers(qualifiers)
         f.save()
         return f
@@ -33,7 +35,7 @@ class Fragment_Annotator(object):
                 chunk,
                 feature,
                 feature_base_first + a_i,
-                feature_base_first + a_i + len(chunk.sequence) - 1
+                feature_base_first + a_i + len(chunk.sequence) - 1,
             )
             a_i += len(chunk.sequence)
             if chunk.id == annotation_end.id:
@@ -49,30 +51,44 @@ class Fragment_Annotator(object):
         else:
             length = last_base1 - first_base1 + 1
             if length <= 0:
-                raise Exception('Annotation must have length one or more')
+                raise Exception("Annotation must have length one or more")
         return length
 
-    def annotate_chunks(self, bases, name, type, strand, qualifiers=None, operation=None):
+    def annotate_chunks(
+        self, bases, name, type, strand, qualifiers=None, operation=None
+    ):
         length = 0
         for first_base1, last_base1 in bases:
             length += self.bp_covered_length(first_base1, last_base1)
 
-        new_feature = self._add_feature(name, type, length, strand, qualifiers, operation)
+        new_feature = self._add_feature(
+            name, type, length, strand, qualifiers, operation
+        )
         feature_base_first = 1
         for first_base1, last_base1 in bases:
             region_length = self.bp_covered_length(first_base1, last_base1)
-            self.annotate_chunk(new_feature, feature_base_first, first_base1, last_base1)
+            self.annotate_chunk(
+                new_feature, feature_base_first, first_base1, last_base1
+            )
             feature_base_first += region_length
 
         return new_feature
 
-    def annotate(self, first_base1, last_base1, name, type, strand,
-                 qualifiers=None, operation=None):
+    def annotate(
+        self,
+        first_base1,
+        last_base1,
+        name,
+        type,
+        strand,
+        qualifiers=None,
+        operation=None,
+    ):
         return self.annotate_chunks(
-          [(first_base1, last_base1)],
-          name,
-          type,
-          strand,
-          qualifiers=qualifiers,
-          operation=operation
+            [(first_base1, last_base1)],
+            name,
+            type,
+            strand,
+            qualifiers=qualifiers,
+            operation=operation,
         )

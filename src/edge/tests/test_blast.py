@@ -22,16 +22,16 @@ class GenomeBlastTest(TestCase):
     def test_finds_sequence_on_specified_genome(self):
         s1 = get_random_sequence(200)
         s2 = get_random_sequence(200)
-        g1 = Genome(name='Foo')
+        g1 = Genome(name="Foo")
         g1.save()
-        f1 = Fragment.create_with_sequence('Bar', s1)
-        f2 = Fragment.create_with_sequence('Baz', s2)
+        f1 = Fragment.create_with_sequence("Bar", s1)
+        f2 = Fragment.create_with_sequence("Baz", s2)
         Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
         Genome_Fragment(genome=g1, fragment=f2, inherited=False).save()
 
-        g2 = Genome(name='Far')
+        g2 = Genome(name="Far")
         g2.save()
-        f3 = Fragment.create_with_sequence('Bar', s1)
+        f3 = Fragment.create_with_sequence("Bar", s1)
         Genome_Fragment(genome=g2, fragment=f3, inherited=False).save()
 
         try:
@@ -43,8 +43,8 @@ class GenomeBlastTest(TestCase):
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
 
-        query = s1[6:20] + 'aaaaaaaaa'
-        r = blast_genome(g1, 'blastn', query)
+        query = s1[6:20] + "aaaaaaaaa"
+        r = blast_genome(g1, "blastn", query)
         # only returns hit from genome
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, f1.id)
@@ -56,9 +56,9 @@ class GenomeBlastTest(TestCase):
 
     def test_aligns_sequence_to_antisense_strand(self):
         s1 = get_random_sequence(200)
-        g1 = Genome(name='Foo')
+        g1 = Genome(name="Foo")
         g1.save()
-        f1 = Fragment.create_with_sequence('Bar', s1)
+        f1 = Fragment.create_with_sequence("Bar", s1)
         Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
 
         try:
@@ -68,8 +68,8 @@ class GenomeBlastTest(TestCase):
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
 
-        query = str(Seq(s1[6:20]).reverse_complement()) + 'tttttttttt'
-        r = blast_genome(g1, 'blastn', query)
+        query = str(Seq(s1[6:20]).reverse_complement()) + "tttttttttt"
+        r = blast_genome(g1, "blastn", query)
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0].fragment_id, f1.id)
         self.assertEquals(r[0].query_start, 1)
@@ -80,9 +80,9 @@ class GenomeBlastTest(TestCase):
 
     def test_aligns_sequence_across_boundry_for_circular_fragment(self):
         s1 = get_random_sequence(200)
-        g1 = Genome(name='Foo')
+        g1 = Genome(name="Foo")
         g1.save()
-        f1 = Fragment.create_with_sequence('Bar', s1, circular=True)
+        f1 = Fragment.create_with_sequence("Bar", s1, circular=True)
         Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
 
         try:
@@ -92,8 +92,8 @@ class GenomeBlastTest(TestCase):
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
 
-        query = (s1[-10:] + s1[0:10]) + 'ttttttttttt'
-        res = blast_genome(g1, 'blastn', query)
+        query = (s1[-10:] + s1[0:10]) + "ttttttttttt"
+        res = blast_genome(g1, "blastn", query)
 
         # we are not removing redundant matches when matching across circular
         # boundaries, since blasting across circular boundary of a genome is a
@@ -117,9 +117,9 @@ class GenomeBlastTest(TestCase):
 
     def test_does_not_return_duplicate_hits_for_circular_fragments(self):
         s1 = get_random_sequence(200)
-        g1 = Genome(name='Foo')
+        g1 = Genome(name="Foo")
         g1.save()
-        f1 = Fragment.create_with_sequence('Bar', s1, circular=True)
+        f1 = Fragment.create_with_sequence("Bar", s1, circular=True)
         Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
 
         try:
@@ -129,15 +129,15 @@ class GenomeBlastTest(TestCase):
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
 
-        query = s1[5:20] + 'tttttttttt'
-        r = blast_genome(g1, 'blastn', query)
+        query = s1[5:20] + "tttttttttt"
+        r = blast_genome(g1, "blastn", query)
         self.assertEquals(len(r), 1)
 
     def test_does_not_align_sequence_across_boundry_for_non_circular_fragment(self):
         s1 = get_random_sequence(200)
-        g1 = Genome(name='Foo')
+        g1 = Genome(name="Foo")
         g1.save()
-        f1 = Fragment.create_with_sequence('Bar', s1, circular=False)
+        f1 = Fragment.create_with_sequence("Bar", s1, circular=False)
         Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
 
         try:
@@ -147,8 +147,8 @@ class GenomeBlastTest(TestCase):
         build_all_genome_dbs(refresh=True)
         g1 = Genome.objects.get(pk=g1.id)
 
-        query = (s1[-10:] + s1[0:10]) + 'tttttttttt'
-        res = blast_genome(g1, 'blastn', query)
+        query = (s1[-10:] + s1[0:10]) + "tttttttttt"
+        res = blast_genome(g1, "blastn", query)
 
         for r in res:
             self.assertEquals(r.subject_start > 0 and r.subject_start <= len(s1), True)
@@ -162,16 +162,16 @@ class GenomeBlastAPITest(TestCase):
     def test_blast_finds_sequence_on_specified_genome(self):
         s1 = get_random_sequence(200)
         s2 = get_random_sequence(200)
-        g1 = Genome(name='Foo')
+        g1 = Genome(name="Foo")
         g1.save()
-        f1 = Fragment.create_with_sequence('Bar', s1)
-        f2 = Fragment.create_with_sequence('Baz', s2)
+        f1 = Fragment.create_with_sequence("Bar", s1)
+        f2 = Fragment.create_with_sequence("Baz", s2)
         Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
         Genome_Fragment(genome=g1, fragment=f2, inherited=False).save()
 
-        g2 = Genome(name='Far')
+        g2 = Genome(name="Far")
         g2.save()
-        f3 = Fragment.create_with_sequence('Bar', s1)
+        f3 = Fragment.create_with_sequence("Bar", s1)
         Genome_Fragment(genome=g2, fragment=f3, inherited=False).save()
 
         try:
@@ -182,36 +182,40 @@ class GenomeBlastAPITest(TestCase):
             pass
         build_all_genome_dbs(refresh=True)
 
-        query = s1[6:20] + 'aaaaaaaaa'
+        query = s1[6:20] + "aaaaaaaaa"
 
-        res = self.client.post('/edge/genomes/%s/blast/' % g1.id,
-                               data=json.dumps(dict(program='blastn', query=query)),
-                               content_type='application/json')
+        res = self.client.post(
+            "/edge/genomes/%s/blast/" % g1.id,
+            data=json.dumps(dict(program="blastn", query=query)),
+            content_type="application/json",
+        )
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
 
         # only returns hit from genome
         self.assertEquals(len(d), 1)
-        self.assertEquals(d[0]['fragment_id'], f1.id)
-        self.assertEquals(d[0]['query_start'], 1)
-        self.assertEquals(d[0]['query_end'], 14)
-        self.assertEquals(d[0]['subject_start'], 7)
-        self.assertEquals(d[0]['subject_end'], 20)
+        self.assertEquals(d[0]["fragment_id"], f1.id)
+        self.assertEquals(d[0]["query_start"], 1)
+        self.assertEquals(d[0]["query_end"], 14)
+        self.assertEquals(d[0]["subject_start"], 7)
+        self.assertEquals(d[0]["subject_end"], 20)
 
         # blast in other genome works too
-        res = self.client.post('/edge/genomes/%s/blast/' % g2.id,
-                               data=json.dumps(dict(program='blastn', query=query)),
-                               content_type='application/json')
+        res = self.client.post(
+            "/edge/genomes/%s/blast/" % g2.id,
+            data=json.dumps(dict(program="blastn", query=query)),
+            content_type="application/json",
+        )
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
         self.assertEquals(len(d), 1)
-        self.assertEquals(d[0]['fragment_id'], f3.id)
+        self.assertEquals(d[0]["fragment_id"], f3.id)
 
     def test_blast_aligns_sequence_to_antisense_strand(self):
         s1 = get_random_sequence(200)
-        g1 = Genome(name='Foo')
+        g1 = Genome(name="Foo")
         g1.save()
-        f1 = Fragment.create_with_sequence('Bar', s1)
+        f1 = Fragment.create_with_sequence("Bar", s1)
         Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
 
         try:
@@ -220,17 +224,19 @@ class GenomeBlastAPITest(TestCase):
             pass
         build_all_genome_dbs(refresh=True)
 
-        query = str(Seq(s1[6:20]).reverse_complement()) + 'tttttttttt'
+        query = str(Seq(s1[6:20]).reverse_complement()) + "tttttttttt"
 
-        res = self.client.post('/edge/genomes/%s/blast/' % g1.id,
-                               data=json.dumps(dict(program='blastn', query=query)),
-                               content_type='application/json')
+        res = self.client.post(
+            "/edge/genomes/%s/blast/" % g1.id,
+            data=json.dumps(dict(program="blastn", query=query)),
+            content_type="application/json",
+        )
         self.assertEquals(res.status_code, 200)
         d = json.loads(res.content)
 
         self.assertEquals(len(d), 1)
-        self.assertEquals(d[0]['fragment_id'], f1.id)
-        self.assertEquals(d[0]['query_start'], 1)
-        self.assertEquals(d[0]['query_end'], 14)
-        self.assertEquals(d[0]['subject_start'], 20)
-        self.assertEquals(d[0]['subject_end'], 7)
+        self.assertEquals(d[0]["fragment_id"], f1.id)
+        self.assertEquals(d[0]["query_start"], 1)
+        self.assertEquals(d[0]["query_end"], 14)
+        self.assertEquals(d[0]["subject_start"], 20)
+        self.assertEquals(d[0]["subject_end"], 7)

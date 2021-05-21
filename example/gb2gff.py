@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# flake8: noqa
 """Convert a GenBank file into GFF format.
 
 Usage:
@@ -11,6 +12,7 @@ from Bio import SeqIO
 from Bio import Seq
 
 from BCBio import GFF
+
 
 def main(gb_file):
     out_file = "%s.gff" % os.path.splitext(gb_file)[0]
