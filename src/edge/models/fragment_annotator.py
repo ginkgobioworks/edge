@@ -53,7 +53,6 @@ class Fragment_Annotator(object):
         return length
 
     def annotate_chunks(self, bases, name, type, strand, qualifiers=None, operation=None):
-        bases = sorted(bases, key=lambda t: t[0])
         length = 0
         for first_base1, last_base1 in bases:
             length += self.bp_covered_length(first_base1, last_base1)
