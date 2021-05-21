@@ -23,6 +23,12 @@ class AnnotationsTest(TestCase):
         self.assertEquals(self.root.annotations()[0].feature_base_first, 1)
         self.assertEquals(self.root.annotations()[0].feature_base_last, len(self.root_sequence))
 
+    def test_computing_lengths_between_bps(self):
+        f = Fragment.create_with_sequence('Foo', self.root_sequence, circular=True)
+        self.assertEquals(f.bp_covered_length(2, 5), 4)
+        # across circular boundary
+        self.assertEquals(f.bp_covered_length(9, 3), (len(self.root_sequence) - 9 + 1) + 3)
+
     def test_annotate_part_of_chunk(self):
         self.root.annotate(1, 3, 'A1', 'gene', 1)
         self.root.annotate(7, 9, 'A2', 'gene', 1)
@@ -359,3 +365,52 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations()[0].feature.name, 'X1')
         self.assertEquals(f.annotations()[0].feature_base_first, 1)
         self.assertEquals(f.annotations()[0].feature_base_last, 3)
+
+    def test_annotate_multiple_chunks_with_same_annotation(self):
+        self.root.annotate_chunks(((1, 3), (7, 9)), 'A1', 'gene', 1)
+        annotations = self.root.annotations()
+        self.assertEquals(len(annotations), 2)
+        self.assertEquals(annotations[0].base_first, 1)
+        self.assertEquals(annotations[0].base_last, 3)
+        self.assertEquals(annotations[0].feature.name, 'A1')
+        self.assertEquals(annotations[0].feature_base_first, 1)
+        self.assertEquals(annotations[0].feature_base_last, 3)
+        self.assertEquals(annotations[1].base_first, 7)
+        self.assertEquals(annotations[1].base_last, 9)
+        self.assertEquals(annotations[1].feature.name, 'A1')
+        self.assertEquals(annotations[1].feature_base_first, 4)
+        self.assertEquals(annotations[1].feature_base_last, 6)
+        self.assertEquals(annotations[0].feature.id, annotations[1].feature.id)
+
+    def test_annotate_multiple_chunks_with_same_annotation_user_specified_order(self):
+        self.root.annotate_chunks(((5, 8), (1, 3)), 'A1', 'gene', 1)
+        annotations = self.root.annotations()
+        self.assertEquals(len(annotations), 2)
+        annotations = sorted(annotations, key=lambda a: a.base_first)
+        self.assertEquals(annotations[0].base_first, 1)
+        self.assertEquals(annotations[0].base_last, 3)
+        self.assertEquals(annotations[0].feature.name, 'A1')
+        self.assertEquals(annotations[0].feature_base_first, 5)
+        self.assertEquals(annotations[0].feature_base_last, 7)
+        self.assertEquals(annotations[1].base_first, 5)
+        self.assertEquals(annotations[1].base_last, 8)
+        self.assertEquals(annotations[1].feature.name, 'A1')
+        self.assertEquals(annotations[1].feature_base_first, 1)
+        self.assertEquals(annotations[1].feature_base_last, 4)
+        self.assertEquals(annotations[0].feature.id, annotations[1].feature.id)
+
+    def test_supports_annotating_translational_slippage(self):
+        self.root.annotate_chunks(((1, 4), (3, 9)), 'A1', 'gene', 1)
+        annotations = self.root.annotations()
+        self.assertEquals(len(annotations), 2)
+        self.assertEquals(annotations[0].base_first, 1)
+        self.assertEquals(annotations[0].base_last, 4)
+        self.assertEquals(annotations[0].feature.name, 'A1')
+        self.assertEquals(annotations[0].feature_base_first, 1)
+        self.assertEquals(annotations[0].feature_base_last, 4)
+        self.assertEquals(annotations[1].base_first, 3)
+        self.assertEquals(annotations[1].base_last, 9)
+        self.assertEquals(annotations[1].feature.name, 'A1')
+        self.assertEquals(annotations[1].feature_base_first, 5)
+        self.assertEquals(annotations[1].feature_base_last, 11)
+        self.assertEquals(annotations[0].feature.id, annotations[1].feature.id)

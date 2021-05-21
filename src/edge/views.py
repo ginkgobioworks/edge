@@ -228,6 +228,29 @@ class FragmentAnnotationsView(ViewBase):
         return {}, 201
 
 
+class FragmentAnnotateChunksView(ViewBase):
+
+    @transaction.atomic()
+    def on_post(self, request, fragment_id):
+        annotation_parser = RequestParser()
+        annotation_parser.add_argument('bases', field_type=list, required=True, location='json')
+        annotation_parser.add_argument('name', field_type=str, required=True, location='json')
+        annotation_parser.add_argument('type', field_type=str, required=True, location='json')
+        annotation_parser.add_argument('strand', field_type=int, required=True, location='json')
+        annotation_parser.add_argument('qualifiers', field_type=dict, required=False,
+                                       default=None, location='json')
+
+        args = annotation_parser.parse_args(request)
+        fragment = get_fragment_or_404(fragment_id)
+        fragment = fragment.indexed_fragment()
+        fragment.annotate_chunks(bases=args['bases'],
+                                 name=args['name'],
+                                 type=args['type'],
+                                 strand=args['strand'],
+                                 qualifiers=args['qualifiers'])
+        return {}, 201
+
+
 class FragmentListView(ViewBase):
 
     def on_get(self, request):
