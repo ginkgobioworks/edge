@@ -27,7 +27,7 @@ class AnnotationsTest(TestCase):
         f = Fragment.create_with_sequence('Foo', self.root_sequence, circular=True)
         self.assertEquals(f.bp_covered_length(2, 5), 4)
         # across circular boundary
-        self.assertEquals(f.bp_covered_length(9, 3), (len(self.root_sequence)-9+1)+3)
+        self.assertEquals(f.bp_covered_length(9, 3), (len(self.root_sequence) - 9 + 1) + 3)
 
     def test_annotate_part_of_chunk(self):
         self.root.annotate(1, 3, 'A1', 'gene', 1)
