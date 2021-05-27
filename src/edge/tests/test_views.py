@@ -4,7 +4,7 @@ import re
 from django import forms
 from django.test import TestCase
 from django.urls import reverse
-
+import unittest.mock as mock
 from edge.models import Genome, Fragment, Genome_Fragment
 
 
@@ -532,13 +532,20 @@ class FragmentTest(TestCase):
                 {
                     "base_first": 2,
                     "base_last": 9,
-                    "name": "proC",
-                    "type": "promoter",
                     "strand": 1,
-                    "qualifiers": {},
-                    "feature_full_length": 8,
                     "feature_base_first": 1,
                     "feature_base_last": 8,
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 8,
+                        "name": "proC",
+                        "type": "promoter",
+                        "qualifiers": {}
+                    },
+                    "name": "proC",
+                    "type": "promoter",
+                    "feature_full_length": 8,
+                    "qualifiers": {},
                 }
             ],
         )
@@ -566,13 +573,20 @@ class FragmentTest(TestCase):
                 {
                     "base_first": 2,
                     "base_last": 9,
-                    "name": "proC",
-                    "type": "promoter",
                     "strand": 1,
-                    "qualifiers": {"gene": "PROC"},
-                    "feature_full_length": 8,
                     "feature_base_first": 1,
                     "feature_base_last": 8,
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 8,
+                        "name": "proC",
+                        "type": "promoter",
+                        "qualifiers": {"gene": "PROC"}
+                    },
+                    "name": "proC",
+                    "type": "promoter",
+                    "qualifiers": {"gene": "PROC"},
+                    "feature_full_length": 8,
                 }
             ],
         )
@@ -593,13 +607,20 @@ class FragmentTest(TestCase):
                 {
                     "base_first": 3,
                     "base_last": 10,
-                    "name": "proC",
-                    "type": "promoter",
                     "strand": -1,
-                    "qualifiers": {},
-                    "feature_full_length": 8,
                     "feature_base_first": 1,
                     "feature_base_last": 8,
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 8,
+                        "name": "proC",
+                        "type": "promoter",
+                        "qualifiers": {}
+                    },
+                    "name": "proC",
+                    "type": "promoter",
+                    "qualifiers": {},
+                    "feature_full_length": 8,
                 }
             ],
         )
@@ -628,24 +649,38 @@ class FragmentTest(TestCase):
                 {
                     "base_first": 2,
                     "base_last": 4,
-                    "name": "proC",
-                    "type": "promoter",
                     "strand": 1,
-                    "qualifiers": {"gene": "PROC"},
-                    "feature_full_length": 7,
                     "feature_base_first": 1,
                     "feature_base_last": 3,
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 7,
+                        "name": "proC",
+                        "type": "promoter",
+                        "qualifiers": {"gene": "PROC"}
+                    },
+                    "name": "proC",
+                    "type": "promoter",
+                    "qualifiers": {"gene": "PROC"},
+                    "feature_full_length": 7,
                 },
                 {
                     "base_first": 6,
                     "base_last": 9,
-                    "name": "proC",
-                    "type": "promoter",
                     "strand": 1,
-                    "qualifiers": {"gene": "PROC"},
-                    "feature_full_length": 7,
                     "feature_base_first": 4,
                     "feature_base_last": 7,
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 7,
+                        "name": "proC",
+                        "type": "promoter",
+                        "qualifiers": {"gene": "PROC"}
+                    },
+                    "name": "proC",
+                    "type": "promoter",
+                    "qualifiers": {"gene": "PROC"},
+                    "feature_full_length": 7,
                 },
             ],
         )
@@ -668,24 +703,38 @@ class FragmentTest(TestCase):
                 {
                     "base_first": 2,
                     "base_last": 9,
-                    "name": "proC",
-                    "type": "promoter",
                     "strand": 1,
-                    "qualifiers": {},
-                    "feature_full_length": 8,
                     "feature_base_first": 1,
                     "feature_base_last": 8,
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 8,
+                        "name": "proC",
+                        "type": "promoter",
+                        "qualifiers": {}
+                    },
+                    "name": "proC",
+                    "type": "promoter",
+                    "qualifiers": {},
+                    "feature_full_length": 8,
                 },
                 {
                     "base_first": 3,
                     "base_last": 10,
-                    "name": "proD",
-                    "type": "promoter",
                     "strand": -1,
-                    "qualifiers": {},
-                    "feature_full_length": 8,
                     "feature_base_first": 1,
                     "feature_base_last": 8,
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 8,
+                        "name": "proD",
+                        "type": "promoter",
+                        "qualifiers": {}
+                    },
+                    "name": "proD",
+                    "type": "promoter",
+                    "qualifiers": {},
+                    "feature_full_length": 8,
                 },
             ],
         )
@@ -710,24 +759,38 @@ class FragmentTest(TestCase):
                 {
                     "base_first": 2,
                     "base_last": 8,
-                    "name": "proC",
-                    "type": "promoter",
                     "strand": 1,
-                    "qualifiers": {},
-                    "feature_full_length": 7,
                     "feature_base_first": 1,
                     "feature_base_last": 7,
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 7,
+                        "name": "proC",
+                        "type": "promoter",
+                        "qualifiers": {}
+                    },
+                    "name": "proC",
+                    "type": "promoter",
+                    "qualifiers": {},
+                    "feature_full_length": 7,
                 },
                 {
                     "base_first": 10,
                     "base_last": 13,
-                    "name": "proD",
-                    "type": "promoter",
                     "strand": -1,
-                    "qualifiers": {},
-                    "feature_full_length": 4,
                     "feature_base_first": 1,
                     "feature_base_last": 4,
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 4,
+                        "name": "proD",
+                        "type": "promoter",
+                        "qualifiers": {}
+                    },
+                    "name": "proD",
+                    "type": "promoter",
+                    "qualifiers": {},
+                    "feature_full_length": 4,
                 },
             ],
         )
@@ -739,24 +802,38 @@ class FragmentTest(TestCase):
                 {
                     "base_first": 2,
                     "base_last": 8,
-                    "name": "proC",
-                    "type": "promoter",
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 7,
+                        "name": "proC",
+                        "type": "promoter",
+                        "qualifiers": {}
+                    },
                     "strand": 1,
-                    "qualifiers": {},
-                    "feature_full_length": 7,
                     "feature_base_first": 1,
                     "feature_base_last": 7,
+                    "name": "proC",
+                    "type": "promoter",
+                    "qualifiers": {},
+                    "feature_full_length": 7,
                 },
                 {
                     "base_first": 10,
                     "base_last": 13,
-                    "name": "proD",
-                    "type": "promoter",
                     "strand": -1,
-                    "qualifiers": {},
-                    "feature_full_length": 4,
                     "feature_base_first": 1,
                     "feature_base_last": 4,
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 4,
+                        "name": "proD",
+                        "type": "promoter",
+                        "qualifiers": {}
+                    },
+                    "name": "proD",
+                    "type": "promoter",
+                    "qualifiers": {},
+                    "feature_full_length": 4,
                 },
             ],
         )
@@ -768,13 +845,20 @@ class FragmentTest(TestCase):
                 {
                     "base_first": 10,
                     "base_last": 13,
-                    "name": "proD",
-                    "type": "promoter",
                     "strand": -1,
-                    "qualifiers": {},
-                    "feature_full_length": 4,
                     "feature_base_first": 1,
                     "feature_base_last": 4,
+                    "feature": {
+                        "id": mock.ANY,
+                        "length": 4,
+                        "name": "proD",
+                        "type": "promoter",
+                        "qualifiers": {}
+                    },
+                    "name": "proD",
+                    "type": "promoter",
+                    "qualifiers": {},
+                    "feature_full_length": 4,
                 }
             ],
         )
@@ -873,13 +957,20 @@ class GenomeAnnotationsTest(TestCase):
                         {
                             "base_first": 2,
                             "base_last": 9,
-                            "name": "proC",
-                            "type": "promoter",
+                            "feature": {
+                                "id": mock.ANY,
+                                "length": 8,
+                                "name": "proC",
+                                "type": "promoter",
+                                "qualifiers": {}
+                            },
                             "strand": 1,
-                            "qualifiers": {},
-                            "feature_full_length": 8,
                             "feature_base_first": 1,
                             "feature_base_last": 8,
+                            "name": "proC",
+                            "type": "promoter",
+                            "qualifiers": {},
+                            "feature_full_length": 8,
                         }
                     ],
                 ]
@@ -915,7 +1006,7 @@ class GenomeAnnotationsTest(TestCase):
         url = reverse("genome_annotations", kwargs=dict(genome_id=self.genome_id))
         res = self.client.get("%s?q=Atg20p&field=product" % url)
         self.assertEquals(res.status_code, 200)
-        print(json.loads(res.content))
+        print(json.loads(res.content)[0])
         self.assertEquals(
             json.loads(res.content),
             [
@@ -925,13 +1016,20 @@ class GenomeAnnotationsTest(TestCase):
                         {
                             "base_first": 5,
                             "base_last": 7,
-                            "name": "Another annotation",
-                            "type": "promoter",
+                            "feature": {
+                                "id": mock.ANY,
+                                "length": 3,
+                                "name": "Another annotation",
+                                "type": "promoter",
+                                "qualifiers": {"product": ["Atg20p"]}
+                            },
                             "strand": 1,
-                            "qualifiers": {"product": ["Atg20p"]},
-                            "feature_full_length": 3,
                             "feature_base_first": 1,
                             "feature_base_last": 3,
+                            "name": "Another annotation",
+                            "type": "promoter",
+                            "qualifiers": {"product": ["Atg20p"]},
+                            "feature_full_length": 3,
                         }
                     ],
                 ]

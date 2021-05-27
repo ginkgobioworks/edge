@@ -145,6 +145,7 @@ class FragmentView(ViewBase):
         length = fragment.est_length
         if compute_length is True and fragment.has_location_index:
             length = fragment.indexed_fragment().length
+
         return dict(
             id=fragment.id,
             uri=reverse("fragment", kwargs=dict(fragment_id=fragment.id)),
@@ -183,13 +184,20 @@ class FragmentAnnotationsView(ViewBase):
         return dict(
             base_first=annotation.base_first,
             base_last=annotation.base_last,
-            name=annotation.feature.name,
-            type=annotation.feature.type,
             strand=annotation.feature.strand,
-            qualifiers=annotation.feature.qualifiers,
-            feature_full_length=annotation.feature.length,
             feature_base_first=annotation.feature_base_first,
             feature_base_last=annotation.feature_base_last,
+            feature=dict(id=annotation.feature.id,
+                         name=annotation.feature.name,
+                         type=annotation.feature.type,
+                         length=annotation.feature.length,
+                         qualifiers=annotation.feature.qualifiers),
+            # below fields are for backwards compatibility only, repeated in
+            # the .feature dictionary
+            name=annotation.feature.name,
+            type=annotation.feature.type,
+            qualifiers=annotation.feature.qualifiers,
+            feature_full_length=annotation.feature.length
         )
 
     def on_get(self, request, fragment_id):
