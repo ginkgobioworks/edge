@@ -17,7 +17,6 @@ RUN apt-get update && apt-get install --assume-yes --verbose-versions \
   apt-utils \
   default-mysql-client \
   nodejs \
-  npm \
   ncbi-blast+ \
   primer3
 
