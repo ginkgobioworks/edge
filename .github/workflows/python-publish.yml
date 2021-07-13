@@ -55,6 +55,7 @@ jobs:
     - name: Install dependencies
       run: |
         npm install -g bower
+        pip install mysql-python
         python -m pip install --upgrade pip
     - name: Build package
       run: python -m build
