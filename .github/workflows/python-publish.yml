@@ -9,6 +9,11 @@
 
 name: Upload Python Package
 
+env:
+  DB_DATABASE: edge_dev
+  DB_USER: root
+  DB_PASSWORD: ''
+
 on:
   push:
     branches:
@@ -39,6 +44,10 @@ jobs:
         restore-keys: npm-
     # - name: Set up npm
     #   uses: bahmutov/npm-install@v1
+    - name: Set up MySQL
+      run: |
+        sudo /etc/init.d/mysql start
+        mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u root -p '' 
     - name: Set up cache
       uses: actions/cache@v1
       id: cache
@@ -55,8 +64,8 @@ jobs:
     - name: Install dependencies
       run: |
         npm install -g bower
-        pip install mysql-python
         python -m pip install --upgrade pip
+        python -c 'import MySQLdb as Database; print(Database.__version__)'
     - name: Build package
       run: python -m build
     - name: Publish package
