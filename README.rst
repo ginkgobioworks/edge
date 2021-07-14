@@ -199,6 +199,7 @@ patch), and push the resulting tagged commits to the GitHub remote repo:
     you@localhost:edge$ git push --tags origin master
 
 If you cannot push to master directly, do the same thing on a new branch and submit a pull request.
+foo
 
 .. _webassets: https://webassets.readthedocs.io/
 .. _Bower: https://bower.io/
