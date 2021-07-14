@@ -31,8 +31,10 @@ script:
 - make $TARGET
 deploy:
   provider: pypi
-  user: ginkgodev
+  user: "__token__"
   distributions: sdist bdist_wheel
+  skip_cleanup: true
+  skip_existing: true
   password:
     secure: A/Pq1Jkuueu8d8a0SaQiErWWhaQFVCP8CgJO4XOjrlCXKWaXjDDPs0a+eXiwV/xRQPw6TF6NYWgrxjNHshDbADbrbnWtCCN0nL72CoUtj1E8Kk2nUpUyF4SKuYAErxKdD1gzRZS1zp3vCS7MxUzChEQyy5Q1foDgIBBuLb0x+8NFLKlHhJoUel3ClMO8HdJwpBpChlzRd9WuWWVKeA1l1/clpLpBt3GhWB4iTRgpMwBvTEXGdadbcoWaQ0FKT4l5Wfn5inJ5SfyyNCN4jYLsxn+KDfo2MS2g3pEko+7wtRIv9RgHWlsuvZecdhfBwLjo5/7vVm8b+RJpg6eqggqrkB6v55uB1U1nVOtXaeBJDwtzHYf/ullEo5y9szIde1j4nIRK3mzsRPHrApDd/kQM+MBwJASL6LvE3R0ea0mySwvaEzoGbPs5lvTdRJ3p4iaVpY74THWS7EOK8XHoI0NyUmmMkoUT0itj6DbudANqyAEaKX79xm9g9+PL9VfFCQc8nxj5Jh80YTF2mVgC4HZoqlLbbOv2SPlcRoINp0Vfene2jM+10GXshoj0L0k9bh/T3ITcfbExDKDgwAURFCRhJ4q5wL4hGSk/Ekl7sl6cqEtET44f0boPSGWQrfib13ltlorC+losE0HLDyulBUa3Xu1sTce0oFs39SqO6cvjmms=
   on:
