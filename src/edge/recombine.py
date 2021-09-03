@@ -1004,7 +1004,7 @@ class RecombineOp(object):
         primer3_opts=None,
         annotations=None,
     ):
-        return recombine(
+        new_genome = recombine(
             genome,
             cassette,
             homology_arm_length,
@@ -1013,3 +1013,10 @@ class RecombineOp(object):
             notes=notes,
             annotations=annotations,
         )
+
+	# some fragment indices may be destroyed because we had to split up
+	# existing chunks, rebuild them, so that parent genome is immediately
+	# reusable in an RO server
+        genome.indexed_genome()
+
+        return new_genome

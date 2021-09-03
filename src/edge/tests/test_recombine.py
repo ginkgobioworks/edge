@@ -10,6 +10,7 @@ from edge.recombine import (
     find_root_genome,
     recombine,
     remove_overhangs,
+    RecombineOp
 )
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 from edge.models import Genome, Fragment, Genome_Fragment, Operation
@@ -341,6 +342,23 @@ class GenomeRecombinationTest(TestCase):
             c.fragments.all()[0].indexed_fragment().sequence,
             "".join([upstream, cassette, downstream]),
         )
+
+    def test_RecombineOp_works_correctly(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "a" * 100
+
+        template = "".join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = "".join([front_bs, replaced, back_bs])
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+
+        c = RecombineOp.perform(g, cassette, arm_len, "foo", "test cassette", "bar")
+        self.assertEquals(c.name, "foo")
 
     def test_recombines_ignoring_many_extra_bases_upstream_and_downstream_of_cassette(
         self,
