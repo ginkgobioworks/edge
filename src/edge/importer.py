@@ -37,6 +37,7 @@ class GFFFragmentImporter(object):
         self.__rec = gff_rec
         self.__sequence = None
         self.__features = None
+        self.__subfeatures = None
         self.__fclocs = None
 
     def do_import(self):
@@ -64,7 +65,7 @@ class GFFFragmentImporter(object):
         seqlen = len(self.__sequence)
         print("%s: %s" % (self.__rec.id, seqlen))
 
-        features = []
+        features, subfeatures = [], []
         for feature in self.__rec.features:
             # skip features that cover the entire sequence
             if feature.location.start == 0 and feature.location.end == seqlen:
@@ -100,15 +101,33 @@ class GFFFragmentImporter(object):
                     qualifiers,
                 )
             )
+
+            # add sub features for chunking for CDS only
+            for sub in feature.sub_features:
+                if feature.type == 'CDS' and sub.type == 'CDS':
+                    subfeatures.append(
+                        (
+                            sub.location.start + 1,
+                            sub.location.end,
+                            name,
+                            sub.type,
+                            sub.strand,
+                            qualifiers,
+                        )
+                    )
+
         self.__features = features
+        self.__subfeatures = subfeatures
 
     def build_fragment(self):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
         break_points = list(
-            set([f[0] for f in self.__features] + [f[1] + 1 for f in self.__features])
+            set([f[0] for f in self.__features] + [f[1] + 1 for f in self.__features]\
+                + [f[0] for f in self.__subfeatures] + [f[1] + 1 for f in self.__subfeatures])
         )
         break_points = sorted(break_points)
+        print(break_points)
 
         cur_len = 0
         chunk_sizes = []
