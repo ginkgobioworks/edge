@@ -123,11 +123,10 @@ class GFFFragmentImporter(object):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
         break_points = list(
-            set([f[0] for f in self.__features] + [f[1] for f in self.__features] \
-                + [f[0] for f in self.__subfeatures] + [f[1] for f in self.__subfeatures])
+            set([f[0] for f in self.__features] + [f[1] + 1 for f in self.__features] \
+                + [f[0] for f in self.__subfeatures] + [f[1] + 1 for f in self.__subfeatures])
         )
         break_points = sorted(break_points)
-        print(break_points)
 
         cur_len = 0
         chunk_sizes = []
@@ -204,14 +203,14 @@ class GFFFragmentImporter(object):
     ):
         if fragment.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
-            length = len(self.__sequence) - first_base1 + last_base1
+            length = len(self.__sequence) - first_base1 + 1 + last_base1
         else:
-            length = last_base1 - first_base1
+            length = last_base1 - first_base1 + 1
             if length <= 0:
                 raise Exception("Annotation must have length one or more")
 
         if first_base1 not in self.__fclocs or (
-            last_base1 < len(self.__sequence) and last_base1 not in self.__fclocs
+            last_base1 < len(self.__sequence) and last_base1 + 1 not in self.__fclocs
         ):
             raise Exception(
                 "Cannot find appropriate sequence for feature: %s, start %s, end %s"
@@ -220,7 +219,7 @@ class GFFFragmentImporter(object):
 
         annotation_start = self.__fclocs[first_base1]
         if last_base1 < len(self.__sequence):
-            annotation_end = self.__fclocs[last_base1]
+            annotation_end = self.__fclocs[last_base1 + 1]
         elif last_base1 == len(self.__sequence):
             annotation_end = self.__fclocs[1]
         else:
@@ -231,9 +230,12 @@ class GFFFragmentImporter(object):
 
         fc = annotation_start
         a_i = 1
+
+        # Store start points of chunks that should be added to cds features
         cds_starts = list(set(
             [f[0] for f in self.__subfeatures] + [f[0] for f in self.__features if f[3] == 'CDS']
             ))
+
         while True:
             chunk = fc.chunk
             if type != 'CDS' or a_i + first_base1 - 1 in cds_starts:
