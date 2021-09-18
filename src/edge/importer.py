@@ -238,7 +238,7 @@ class GFFFragmentImporter(object):
 
         while True:
             chunk = fc.chunk
-            if type != 'CDS' or a_i + first_base1 - 1 in cds_starts:
+            if type != 'CDS' or a_i + first_base1 - 1 in cds_starts or a_i + first_base1 in cds_starts:
                 fragment._annotate_chunk(
                     chunk, new_feature, a_i, a_i + len(chunk.sequence) - 1
                 )
