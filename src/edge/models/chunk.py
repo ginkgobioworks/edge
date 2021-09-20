@@ -55,8 +55,10 @@ class Annotation(object):
             if (
                 len(annotations) > 0
                 and annotations[-1].feature.id == cf.feature_id
-                and annotations[-1].feature_base_last == cf.feature_base_first - 1
-                and annotations[-1].base_last == fcl.base_first - 1
+                and ((annotations[-1].feature_base_last >= cf.feature_base_first - 1
+                and annotations[-1].base_last >= fcl.base_first - 1)
+                or (annotations[-1].feature.type.upper() == 'CDS'
+                and cf.feature.type.upper() == 'CDS'))
             ):
                 # merge annotation
                 annotations[-1].base_last = fcl.base_last

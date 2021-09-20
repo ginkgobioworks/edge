@@ -3,7 +3,7 @@ import time
 from BCBio import GFF
 from django.db import connection
 
-from edge.models import Fragment, Fragment_Chunk_Location
+from edge.models import Fragment, Fragment_Chunk_Location, chunk
 
 
 class GFFImporter(object):
@@ -104,7 +104,7 @@ class GFFFragmentImporter(object):
 
             # add sub features for chunking for CDS only
             for sub in feature.sub_features:
-                if feature.type == 'CDS' and sub.type == 'CDS':
+                if feature.type.upper() == 'CDS' and sub.type.upper() == 'CDS':
                     subfeatures.append(
                         (
                             int(sub.location.start) + 1,
@@ -117,16 +117,22 @@ class GFFFragmentImporter(object):
                     )
 
         self.__features = features
-        self.__subfeatures = subfeatures
+        self.__subfeatures = sorted(subfeatures, key=lambda f: f[0])
 
     def build_fragment(self):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
-        break_points = list(
-            set([f[0] for f in self.__features] + [f[1] + 1 for f in self.__features] \
-                + [f[0] for f in self.__subfeatures] + [f[1] + 1 for f in self.__subfeatures])
-        )
-        break_points = sorted(break_points)
+        sub_feature_coords = {f[0]: f[1] + 1 for f in self.__subfeatures}
+        break_points = [f[0] for f in self.__features] + [f[1] + 1 for f in self.__features] \
+                + [f[0] for f in self.__subfeatures]
+        for i, sf in enumerate(self.__subfeatures):
+            if i == len(self.__subfeatures) - 1:
+                continue
+            sf_next = self.__subfeatures[i + 1]
+            if sf[1] < sf_next[0]:
+                break_points.append(sf[1] + 1)
+
+        break_points = sorted(list(set(break_points)))
 
         cur_len = 0
         chunk_sizes = []
@@ -137,8 +143,12 @@ class GFFFragmentImporter(object):
                     chunk_sizes.append(break_points[i] - 1)
                     cur_len += chunk_sizes[-1]
             else:
-                chunk_sizes.append(break_points[i] - break_points[i - 1])
-                cur_len += chunk_sizes[-1]
+                # Add case if sub feature passes current break point
+                if break_points[i - 1] in sub_feature_coords:
+                    chunk_sizes.append(sub_feature_coords[break_points[i - 1]] - break_points[i - 1])
+                else:
+                    chunk_sizes.append(break_points[i] - break_points[i - 1])
+                cur_len += break_points[i] - break_points[i - 1]
 
         if cur_len < seq_len:
             chunk_sizes.append(seq_len - cur_len)
@@ -168,6 +178,7 @@ class GFFFragmentImporter(object):
 
         prev = None
         fragment_len = 0
+        current_bp_i = 0
         for chunk_size in chunk_sizes:
             t0 = time.time()
             prev = new_fragment._append_to_fragment(
@@ -177,6 +188,15 @@ class GFFFragmentImporter(object):
             )
             fragment_len += chunk_size
             print("add chunk to fragment: %.4f\r" % (time.time() - t0,), end="")
+
+            # adjust fragment_len depending on break points in case of subfragment overlap
+            if current_bp_i == len(break_points):
+                continue
+            elif fragment_len == break_points[current_bp_i] - 1:
+                current_bp_i += 1
+            elif fragment_len >= break_points[current_bp_i]:
+                fragment_len = break_points[current_bp_i] - 1
+                current_bp_i += 1
 
         return new_fragment
 
@@ -217,35 +237,24 @@ class GFFFragmentImporter(object):
                 % (name, first_base1, last_base1)
             )
 
-        annotation_start = self.__fclocs[first_base1]
-        if last_base1 < len(self.__sequence):
-            annotation_end = self.__fclocs[last_base1 + 1]
-        elif last_base1 == len(self.__sequence):
-            annotation_end = self.__fclocs[1]
-        else:
+        if last_base1 > len(self.__sequence):
             # bad annotation, beyond end of sequence
             return
+        
+        reduced_fcloc_ais = sorted([i - first_base1 + 1 for i in self.__fclocs if i >= first_base1 and i <= last_base1 + 1])
 
         new_feature = fragment._add_feature(name, type, length, strand, qualifiers)
 
-        fc = annotation_start
-        a_i = 1
-
         # Store start points of chunks that should be added to cds features
-        cds_starts = list(set(
-            [f[0] for f in self.__subfeatures] + [f[0] for f in self.__features if f[3] == 'CDS']
-            ))
+        cds_starts = [f[0] for f in self.__subfeatures] + [f[0] for f in self.__features if f[3].upper() == 'CDS']
+        cds_starts = sorted([start for start in list(set(cds_starts)) if start >= first_base1 and start <= last_base1])
 
-        while True:
+        for a_i in reduced_fcloc_ais:
+            if a_i == (last_base1 + 1 - (first_base1 - 1)):
+                break
+            fc = self.__fclocs[a_i + first_base1 - 1]
             chunk = fc.chunk
-            if type != 'CDS' or a_i + first_base1 - 1 in cds_starts or a_i + first_base1 in cds_starts:
+            if type.upper() != 'CDS' or a_i + first_base1 - 1 in cds_starts:
                 fragment._annotate_chunk(
                     chunk, new_feature, a_i, a_i + len(chunk.sequence) - 1
                 )
-            a_i += len(chunk.sequence)
-            if fc.base_last + 1 in self.__fclocs:
-                fc = self.__fclocs[fc.base_last + 1]
-            else:
-                fc = self.__fclocs[1]
-            if fc.id == annotation_end.id:
-                break
