@@ -213,7 +213,7 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
             s = fcl.chunk.sequence
             if (
                 last_chunk_base_last is not None
-                and fcl.base_first > last_chunk_base_last + 1
+                and fcl.base_first != last_chunk_base_last + 1
             ):
                 raise Exception(
                     "Fragment chunk location table missing chunks before %s"
@@ -223,10 +223,7 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
                 s = s[bp_lo - fcl.base_first :]
             if bp_hi is not None and fcl.base_last > bp_hi:
                 s = s[: bp_hi - fcl.base_last]
-            if last_chunk_base_last is None or last_chunk_base_last == fcl.base_first - 1:
-                sequence.append(s)
-            else:
-                sequence.append(s[(last_chunk_base_last - fcl.base_first + 1):])
+            sequence.append(s)
             last_chunk_base_last = fcl.base_last
 
         return "".join(sequence)

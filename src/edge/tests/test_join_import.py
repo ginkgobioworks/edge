@@ -15,6 +15,7 @@ class JoinImporterTest(TestCase):
     U00096.3	feature	gene	58474	59269	.	+	.	db_xref=EcoGene:EG12610;gene=yabP;gene_synonym=ECK0057,JW0055,yabQ;locus_tag=b4659;pseudo=
     U00096.3	feature	CDS	58474	59269	.	+	0	ID=biopygen1;codon_start=1;db_xref=ASAP:ABE-0000192,ASAP:ABE-0000194,UniProtKB/Swiss-Prot:P39220,EcoGene:EG12610;gene=yabP;gene_synonym=ECK0057,JW0055,yabQ;locus_tag=b4659;note=pseudogene;pseudo=;transl_table=11
     U00096.3	feature	CDS	58474	59052	.	+	0	Parent=biopygen1
+    U00096.3	feature	CDS	59052	59228	.	+	0	Parent=biopygen1
     U00096.3	feature	CDS	59228	59269	.	+	0	Parent=biopygen1
     """
 
@@ -47,10 +48,16 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "chrI"
         ][0]
         self.assertEquals(len(chrI.sequence), 160)
-        self.assertEquals(len(chrI.annotations()), 1)
+        self.assertEquals(len(chrI.annotations()), 3)
         self.assertEquals(chrI.annotations()[0].base_first, 30)
-        self.assertEquals(chrI.annotations()[0].base_last, 80)
+        self.assertEquals(chrI.annotations()[0].base_last, 41)
         self.assertEquals(chrI.annotations()[0].feature.name, 'f2')
+        self.assertEquals(chrI.annotations()[1].base_first, 50)
+        self.assertEquals(chrI.annotations()[1].base_last, 55)
+        self.assertEquals(chrI.annotations()[1].feature.name, 'f2')
+        self.assertEquals(chrI.annotations()[2].base_first, 60)
+        self.assertEquals(chrI.annotations()[2].base_last, 80)
+        self.assertEquals(chrI.annotations()[2].feature.name, 'f2')
 
     def test_import_gff_CDS_subfragments_overlap(self):
         data = """##gff-version 3
@@ -82,15 +89,22 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "chrI"
         ][0]
         self.assertEquals(len(chrI.sequence), 160)
-        self.assertEquals(len(chrI.annotations()), 2)
+        self.assertEquals(len(chrI.annotations()), 5)
         self.assertEquals(chrI.annotations()[0].base_first, 30)
         self.assertEquals(chrI.annotations()[0].base_last, 80)
-        self.assertEquals(chrI.annotations()[1].base_first, 30)
-        self.assertEquals(chrI.annotations()[1].base_last, 80)
         self.assertEquals(chrI.annotations()[0].feature.name, 'f2g')
+        self.assertEquals(chrI.annotations()[1].base_first, 30)
+        self.assertEquals(chrI.annotations()[1].base_last, 41)
         self.assertEquals(chrI.annotations()[1].feature.name, 'f2')
-        self.assertEquals(chrI.annotations()[0].feature.id, 2)
-        self.assertEquals(chrI.annotations()[1].feature.id, 3)
+        self.assertEquals(chrI.annotations()[2].base_first, 41)
+        self.assertEquals(chrI.annotations()[2].base_last, 50)
+        self.assertEquals(chrI.annotations()[2].feature.name, 'f2')
+        self.assertEquals(chrI.annotations()[3].base_first, 56)
+        self.assertEquals(chrI.annotations()[3].base_last, 61)
+        self.assertEquals(chrI.annotations()[3].feature.name, 'f2')
+        self.assertEquals(chrI.annotations()[4].base_first, 60)
+        self.assertEquals(chrI.annotations()[4].base_last, 80)
+        self.assertEquals(chrI.annotations()[4].feature.name, 'f2')
 
 
     @mock.patch("edge.models.fragment.Annotation.from_chunk_feature_and_location_array")
@@ -103,11 +117,6 @@ chrI\tTest\tCDS\t30\t41\t.\t+\t.\tParent=i2
 chrI\tTest\tCDS\t41\t50\t.\t+\t.\tParent=i2
 chrI\tTest\tCDS\t56\t61\t.\t+\t.\tParent=i2
 chrI\tTest\tCDS\t60\t80\t.\t+\t.\tParent=i2
-chrII\tTest\tchromosome\t1\t100\t.\t.\t.\tID=i3;Name=f3
-chrII\tTest\trbs\t50\t70\t.\t+\t.\tID=i4r;Name=f4r
-chrII\tTest\tCDS\t20\t90\t.\t+\t.\tID=i4;Name=f4
-chrII\tTest\tCDS\t20\t45\t.\t+\t.\tParent=i4
-chrII\tTest\tCDS\t80\t90\t.\t+\t.\tParent=i4
 ###
 ##FASTA
 >chrI
@@ -123,7 +132,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 
         # created one fragment for each sequence in GFF file
         self.assertCountEqual(
-            [fr.name for fr in genome.fragments.all()], ["chrI", "chrII"]
+            [fr.name for fr in genome.fragments.all()], ["chrI"]
         )
         chrI = [
             fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "chrI"
@@ -138,36 +147,13 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
                 gene_cfs.append(cf)
             elif cf.feature_id == 5:
                 cds_cfs.append(cf)
-        gene_starts = sorted([cf.fcl_base_first for cf in gene_cfs])
-        gene_ends = sorted([cf.fcl_base_last for cf in gene_cfs])
-        cds_starts = sorted([cf.fcl_base_first for cf in cds_cfs])
-        cds_ends = sorted([cf.fcl_base_last for cf in cds_cfs])
+        gene_chunk_starts = sorted([cf.fcl_base_first for cf in gene_cfs])
+        gene_chunk_ends = sorted([cf.fcl_base_last for cf in gene_cfs])
+        cds_chunk_starts = sorted([cf.fcl_base_first for cf in cds_cfs])
+        cds_chunk_ends = sorted([cf.fcl_base_last for cf in cds_cfs])
     
         self.assertEquals(len(chrI.sequence), 160)
-        self.assertEquals(gene_starts, [30, 41, 51, 56, 60])
-        self.assertEquals(gene_ends, [41, 50, 55, 61, 80])
-        self.assertEquals(cds_starts, [30, 41, 56, 60])
-        self.assertEquals(cds_ends, [41, 50, 61, 80])
-
-        chrII = [
-            fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "chrII"
-        ][0]
-        chrII.annotations()
-        rbs_cfs = []
-        cds_cfs = []
-        args, _ = cf_fcl_mock.call_args
-        for cf, fcl in args[0]:
-            if cf.feature_id == 6:
-                rbs_cfs.append(cf)
-            elif cf.feature_id == 7:
-                cds_cfs.append(cf)
-        rbs_starts = sorted([cf.fcl_base_first for cf in rbs_cfs])
-        rbs_ends = sorted([cf.fcl_base_last for cf in rbs_cfs])
-        cds_starts = sorted([cf.fcl_base_first for cf in cds_cfs])
-        cds_ends = sorted([cf.fcl_base_last for cf in cds_cfs])
-    
-        self.assertEquals(len(chrII.sequence), 100)
-        self.assertEquals(rbs_starts, [50])
-        self.assertEquals(rbs_ends, [70])
-        self.assertEquals(cds_starts, [20, 80])
-        self.assertEquals(cds_ends, [45, 90])
+        self.assertEquals(gene_chunk_starts, [30, 41, 42, 51, 56, 60, 62])
+        self.assertEquals(gene_chunk_ends, [40, 41, 50, 55, 59, 61, 80])
+        self.assertEquals(cds_chunk_starts, [30, 41, 41, 42, 56, 60, 60, 62])
+        self.assertEquals(cds_chunk_ends, [40, 41, 41, 50, 59, 61, 61, 80])
