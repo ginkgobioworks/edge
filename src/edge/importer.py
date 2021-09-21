@@ -133,6 +133,8 @@ class GFFFragmentImporter(object):
                 break_points.append(sf[1] + 1)
 
         break_points = sorted(list(set(break_points)))
+        if break_points[0] == 1:
+            break_points = break_points[1:]
 
         cur_len = 0
         chunk_sizes = []
@@ -230,7 +232,9 @@ class GFFFragmentImporter(object):
                 raise Exception("Annotation must have length one or more")
 
         if first_base1 not in self.__fclocs or (
-            last_base1 < len(self.__sequence) and last_base1 + 1 not in self.__fclocs
+            last_base1 < len(self.__sequence)
+            and list(filter(lambda base: int(base[0]) <= last_base1 + 1 
+                and int(base[0]) > first_base1, self.__fclocs.items())) == []
         ):
             raise Exception(
                 "Cannot find appropriate sequence for feature: %s, start %s, end %s"
@@ -245,16 +249,21 @@ class GFFFragmentImporter(object):
 
         new_feature = fragment._add_feature(name, type, length, strand, qualifiers)
 
-        # Store start points of chunks that should be added to cds features
-        cds_starts = [f[0] for f in self.__subfeatures] + [f[0] for f in self.__features if f[3].upper() == 'CDS']
-        cds_starts = sorted([start for start in list(set(cds_starts)) if start >= first_base1 and start <= last_base1])
+        # Store positions where exons are not considered for CDS
+        noncoding_positions = []
+        if type.upper() == 'CDS':
+            for i, f in enumerate(self.__subfeatures):
+                if i == 0:
+                    continue
+                if self.__subfeatures[i][0] > self.__subfeatures[i - 1][1] + 1:
+                    noncoding_positions.extend(list(range(self.__subfeatures[i - 1][1] + 1, self.__subfeatures[i][0] - 1)))
 
         for a_i in reduced_fcloc_ais:
             if a_i == (last_base1 + 1 - (first_base1 - 1)):
                 break
             fc = self.__fclocs[a_i + first_base1 - 1]
             chunk = fc.chunk
-            if type.upper() != 'CDS' or a_i + first_base1 - 1 in cds_starts:
+            if a_i + first_base1 - 1 not in noncoding_positions:
                 fragment._annotate_chunk(
                     chunk, new_feature, a_i, a_i + len(chunk.sequence) - 1
                 )
