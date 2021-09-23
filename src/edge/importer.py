@@ -38,6 +38,7 @@ class GFFFragmentImporter(object):
         self.__sequence = None
         self.__features = None
         self.__fclocs = None
+        self.__subfeatures_dict = {}
 
     def do_import(self):
         self.parse_gff()
@@ -90,62 +91,107 @@ class GFFFragmentImporter(object):
                     qualifiers[field] = v
 
             # start in Genbank format is start after, so +1 here
-            if feature.type.upper() != 'CDS' or len(feature.sub_features) == 0:
-                features.append(
-                    (
-                        int(feature.location.start) + 1,
-                        int(feature.location.end),
-                        name,
-                        feature.type,
-                        feature.strand,
-                        qualifiers,
-                    )
+            features.append(
+                (
+                    int(feature.location.start) + 1,
+                    int(feature.location.end),
+                    name,
+                    feature.type,
+                    feature.strand,
+                    qualifiers,
                 )
+            )
 
+            feature_name = name
             # add sub features for chunking for CDS only
+            self.__subfeatures_dict[feature_name] = []
             for sub in feature.sub_features:
+                # change name for sub feature
                 if hasattr(sub, 'qualifiers') and 'Name' in sub.qualifiers:
-                    name = sub.qualifiers['Name'][0]
+                    subfeature_name = sub.qualifiers['Name'][0]
                 elif sub.id != '':
-                    name = sub.id
+                    subfeature_name = sub.id
+                else:
+                    subfeature_name = feature_name
 
+                # check that the type is right
                 if sub.type.upper() in ['MRNA', 'CDS']:
-                    features.append(
-                        (
+                    sub_tup = (
                             int(sub.location.start) + 1,
                             int(sub.location.end),
-                            name,
+                            subfeature_name,
                             sub.type,
                             sub.strand,
                             qualifiers,
                         )
-                    )
-                    for sub_sub in sub.sub_features:
-                        if hasattr(sub, 'qualifiers') and 'Name' in sub.qualifiers:
-                            name = sub_sub.qualifiers['Name'][0]
-                        elif sub_sub.id != '':
-                            name = sub_sub.id
 
-                        features.append(
-                            (
+                    # if it has no id, it belongs to the feature
+                    # otherwise, mark it as its own feature
+                    if subfeature_name == feature_name:
+                        self.__subfeatures_dict[feature_name].append(sub_tup)
+                    else:
+                        if subfeature_name in self.__subfeatures_dict:
+                            self.__subfeatures_dict[subfeature_name].append(sub_tup)
+                        else:
+                            features.append(sub_tup)
+                            self.__subfeatures_dict[subfeature_name] = [sub_tup]
+
+                    for sub_sub in sub.sub_features:
+                        # change name for sub sub feature
+                        if hasattr(sub, 'qualifiers') and 'Name' in sub.qualifiers:
+                            subsubfeature_name = sub_sub.qualifiers['Name'][0]
+                        elif sub_sub.id != '':
+                            subsubfeature_name = sub_sub.id
+                        else:
+                            subsubfeature_name = subfeature_name
+
+                        sub_sub_tup = (
                                 int(sub_sub.location.start) + 1,
                                 int(sub_sub.location.end),
-                                name,
+                                subsubfeature_name,
                                 sub_sub.type,
                                 sub_sub.strand,
                                 qualifiers,
                             )
-                        )
+
+                        # if it has no id and the sub feature has no id, it belongs to the feature
+                        # if it has no id and the sub feature has id, it belongs to the sub feature
+                        # otherwise, mark it as its own feature
+                        if subsubfeature_name == feature_name:
+                            self.__subfeatures_dict[feature_name].append(sub_sub_tup)
+                        elif subsubfeature_name == subfeature_name:
+                            self.__subfeatures_dict[subfeature_name].append(sub_sub_tup)
+                        else:
+                            if subsubfeature_name in self.__subfeatures_dict:
+                                self.__subfeatures_dict[subsubfeature_name].append(sub_sub_tup)
+                            else:
+                                features.append(sub_sub_tup)
+                                self.__subfeatures_dict[subsubfeature_name] = [sub_sub_tup]
+
 
         self.__features = features
+
+        # update features made from only subfeatures
+        for feature in features:
+            if self.__subfeatures_dict[feature[2]] != []:
+                features.remove(feature)
+                new_start = self.__subfeatures_dict[feature[2]][0][0]
+                new_end = self.__subfeatures_dict[feature[2]][-1][1]
+                new_feature = (new_start, new_end, feature[2], feature[3], feature[4], feature[5])
+                features.append(new_feature)
 
     def build_fragment(self):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
-        break_points = list(
-            set([f[0] for f in self.__features] + [f[1] + 1 for f in self.__features])
-        )
-        break_points = sorted(break_points)
+        starts_and_ends = []
+        for feature in self.__features:
+            name = feature[2]
+            starts_and_ends.append(feature[0])
+            starts_and_ends.append(feature[1] + 1)
+            for subfeature in self.__subfeatures_dict[name]:
+                starts_and_ends.append(subfeature[0])
+                starts_and_ends.append(subfeature[1] + 1)
+        break_points = sorted(list(set(starts_and_ends)))
 
         cur_len = 0
         chunk_sizes = []
@@ -209,17 +255,22 @@ class GFFFragmentImporter(object):
 
         for feature in self.__features:
             t0 = time.time()
-            print(feature)
             f_start, f_end, f_name, f_type, f_strand, f_qualifiers = feature
             # print('  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand))
-            self._annotate_feature(
+            new_feature = self._annotate_feature(
                 fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers
             )
+            for subfeature in self.__subfeatures_dict[f_name]:
+                sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers = subfeature
+                self._annotate_feature(
+                    fragment, sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers, 
+                    feature=new_feature, feature_base_first=sf_start-f_start+1
+                )
             print("annotate feature: %.4f\r" % (time.time() - t0,), end="")
         print("\nfinished annotating feature")
 
     def _annotate_feature(
-        self, fragment, first_base1, last_base1, name, type, strand, qualifiers
+        self, fragment, first_base1, last_base1, name, type, strand, qualifiers, feature=None, feature_base_first=1
     ):
         if fragment.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
@@ -244,4 +295,21 @@ class GFFFragmentImporter(object):
                 bases.append((fcloc.base_first, fcloc.base_last))
 
         assert bases[0][0] >= first_base1 and bases[-1][1] <= last_base1
-        assert fragment.annotate_chunks(bases, name, type, strand, qualifiers=qualifiers) != None
+
+        length = 0
+        for first_base1, last_base1 in bases:
+            length += fragment.bp_covered_length(first_base1, last_base1)
+
+        new_feature = fragment._add_feature(
+            name, type, length, strand, qualifiers
+        ) if feature == None else feature
+            
+        if feature != None or self.__subfeatures_dict[name] == []:
+            for first_base1, last_base1 in bases:
+                region_length = fragment.bp_covered_length(first_base1, last_base1)
+                fragment.annotate_chunk(
+                    new_feature, feature_base_first, first_base1, last_base1
+                )
+                feature_base_first += region_length
+        
+        return new_feature
