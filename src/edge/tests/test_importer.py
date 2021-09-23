@@ -415,6 +415,7 @@ class JoinImporterTest(TestCase):
 
         data = """##gff-version 3
 chrI\tTest\tchromosome\t1\t160\t.\t.\t.\tID=i1;Name=f1
+chrI\tTest\tgene\t30\t80\t.\t+\t.\tID=i2g;Name=f2g
 chrI\tTest\tCDS\t30\t80\t.\t+\t.\tID=i2;Name=f2
 chrI\tTest\tCDS\t30\t41\t.\t+\t.\tParent=i2
 chrI\tTest\tCDS\t50\t55\t.\t+\t.\tParent=i2
@@ -440,16 +441,19 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "chrI"
         ][0]
         self.assertEquals(len(chrI.sequence), 160)
-        self.assertEquals(len(chrI.annotations()), 3)
+        self.assertEquals(len(chrI.annotations()), 4)
         self.assertEquals(chrI.annotations()[0].base_first, 30)
-        self.assertEquals(chrI.annotations()[0].base_last, 41)
-        self.assertEquals(chrI.annotations()[0].feature.name, 'f2')
-        self.assertEquals(chrI.annotations()[1].base_first, 50)
-        self.assertEquals(chrI.annotations()[1].base_last, 55)
+        self.assertEquals(chrI.annotations()[0].base_last, 80)
+        self.assertEquals(chrI.annotations()[0].feature.name, 'f2g')
+        self.assertEquals(chrI.annotations()[1].base_first, 30)
+        self.assertEquals(chrI.annotations()[1].base_last, 41)
         self.assertEquals(chrI.annotations()[1].feature.name, 'f2')
-        self.assertEquals(chrI.annotations()[2].base_first, 60)
-        self.assertEquals(chrI.annotations()[2].base_last, 80)
+        self.assertEquals(chrI.annotations()[2].base_first, 50)
+        self.assertEquals(chrI.annotations()[2].base_last, 55)
         self.assertEquals(chrI.annotations()[2].feature.name, 'f2')
+        self.assertEquals(chrI.annotations()[3].base_first, 60)
+        self.assertEquals(chrI.annotations()[3].base_last, 80)
+        self.assertEquals(chrI.annotations()[3].feature.name, 'f2')
 
     def test_import_gff_CDS_subfragments_overlap(self):
         data = """##gff-version 3
@@ -529,15 +533,16 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         chrI = [
             fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "chrI"
         ][0]
-        
         chrI.annotations()
         gene_cfs = []
         cds_cfs = []
         args, _ = cf_fcl_mock.call_args
-        for cf, _ in args[0]:
-            if cf.feature_id == 4:
+        for cf, fcl in args[0]:
+            print(dir(cf.feature))
+            print(cf.feature.__dict__)
+            if cf.feature.type == 'gene':
                 gene_cfs.append(cf)
-            elif cf.feature_id == 5:
+            elif cf.feature.type == 'CDS':
                 cds_cfs.append(cf)
         gene_chunk_starts = sorted([cf.fcl_base_first for cf in gene_cfs])
         gene_chunk_ends = sorted([cf.fcl_base_last for cf in gene_cfs])
@@ -549,3 +554,49 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         self.assertEquals(gene_chunk_ends, [40, 41, 50, 55, 59, 61, 80])
         self.assertEquals(cds_chunk_starts, [30, 41, 41, 42, 56, 60, 60, 62])
         self.assertEquals(cds_chunk_ends, [40, 41, 41, 50, 59, 61, 61, 80])
+
+    def test_import_gff_CDS_subfragments_SGD_CDS(self):
+        data = """##gff-version 3
+chrI\tSGD\tchromosome\t1\t160\t.\t.\t.\tID=i1;Name=f1
+chrI\tSGD\tgene\t20\t60\t.\t+\t.\tID=A1;Name=A1;gene=gene_A1
+chrI\tSGD\tCDS\t20\t37\t.\t+\t0\tParent=A1_mRNA;Name=A1_CDS;orf_classification=Verified
+chrI\tSGD\tintron\t38\t39\t.\t+\t.\tParent=A1_mRNA;Name=A1_intron;orf_classification=Verified
+chrI\tSGD\tCDS\t40\t60\t.\t+\t0\tParent=A1_mRNA;Name=A1_CDS;orf_classification=Verified
+chrI\tSGD\tmRNA\t20\t60\t.\t+\t.\tID=A1_mRNA;Name=A1_mRNA;Parent=A1
+###
+##FASTA
+>chrI
+CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
+ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
+            f.write(data)
+            f.close()
+            genome = Genome.import_gff("Foo", f.name)
+            os.unlink(f.name)
+
+        # created one fragment for each sequence in GFF file
+        self.assertCountEqual(
+            [fr.name for fr in genome.fragments.all()], ["chrI"]
+        )
+        chrI = [
+            fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "chrI"
+        ][0]
+        self.assertEquals(len(chrI.sequence), 160)
+        self.assertEquals(len(chrI.annotations()), 5)
+        self.assertEquals(chrI.annotations()[0].base_first, 20)
+        self.assertEquals(chrI.annotations()[0].base_last, 60)
+        self.assertEquals(chrI.annotations()[0].feature.name, 'A1')
+        self.assertEquals(chrI.annotations()[1].base_first, 20)
+        self.assertEquals(chrI.annotations()[1].base_last, 60)
+        self.assertEquals(chrI.annotations()[1].feature.name, 'A1_mRNA')
+        self.assertEquals(chrI.annotations()[2].base_first, 20)
+        self.assertEquals(chrI.annotations()[2].base_last, 37)
+        self.assertEquals(chrI.annotations()[2].feature.name, 'A1_CDS')
+        self.assertEquals(chrI.annotations()[3].base_first, 38)
+        self.assertEquals(chrI.annotations()[3].base_last, 39)
+        self.assertEquals(chrI.annotations()[3].feature.name, 'A1_intron')
+        self.assertEquals(chrI.annotations()[4].base_first, 40)
+        self.assertEquals(chrI.annotations()[4].base_last, 60)
+        self.assertEquals(chrI.annotations()[4].feature.name, 'A1_CDS')

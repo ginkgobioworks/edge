@@ -37,7 +37,6 @@ class GFFFragmentImporter(object):
         self.__rec = gff_rec
         self.__sequence = None
         self.__features = None
-        self.__subfeatures = None
         self.__fclocs = None
 
     def do_import(self):
@@ -65,7 +64,7 @@ class GFFFragmentImporter(object):
         seqlen = len(self.__sequence)
         print("%s: %s" % (self.__rec.id, seqlen))
 
-        features, subfeatures = [], []
+        features = []
         for feature in self.__rec.features:
             # skip features that cover the entire sequence
             if feature.location.start == 0 and feature.location.end == seqlen:
@@ -91,21 +90,27 @@ class GFFFragmentImporter(object):
                     qualifiers[field] = v
 
             # start in Genbank format is start after, so +1 here
-            features.append(
-                (
-                    int(feature.location.start) + 1,
-                    int(feature.location.end),
-                    name,
-                    feature.type,
-                    feature.strand,
-                    qualifiers,
+            if feature.type.upper() != 'CDS' or len(feature.sub_features) == 0:
+                features.append(
+                    (
+                        int(feature.location.start) + 1,
+                        int(feature.location.end),
+                        name,
+                        feature.type,
+                        feature.strand,
+                        qualifiers,
+                    )
                 )
-            )
 
             # add sub features for chunking for CDS only
             for sub in feature.sub_features:
-                if feature.type == 'CDS' and sub.type == 'CDS':
-                    subfeatures.append(
+                if hasattr(sub, 'qualifiers') and 'Name' in sub.qualifiers:
+                    name = sub.qualifiers['Name'][0]
+                elif sub.id != '':
+                    name = sub.id
+
+                if sub.type.upper() in ['MRNA', 'CDS']:
+                    features.append(
                         (
                             int(sub.location.start) + 1,
                             int(sub.location.end),
@@ -115,16 +120,30 @@ class GFFFragmentImporter(object):
                             qualifiers,
                         )
                     )
+                    for sub_sub in sub.sub_features:
+                        if hasattr(sub, 'qualifiers') and 'Name' in sub.qualifiers:
+                            name = sub_sub.qualifiers['Name'][0]
+                        elif sub_sub.id != '':
+                            name = sub_sub.id
+
+                        features.append(
+                            (
+                                int(sub_sub.location.start) + 1,
+                                int(sub_sub.location.end),
+                                name,
+                                sub_sub.type,
+                                sub_sub.strand,
+                                qualifiers,
+                            )
+                        )
 
         self.__features = features
-        self.__subfeatures = subfeatures
 
     def build_fragment(self):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
         break_points = list(
-            set([f[0] for f in self.__features] + [f[1] + 1 for f in self.__features] \
-                + [f[0] for f in self.__subfeatures] + [f[1] + 1 for f in self.__subfeatures])
+            set([f[0] for f in self.__features] + [f[1] + 1 for f in self.__features])
         )
         break_points = sorted(break_points)
 
@@ -190,6 +209,7 @@ class GFFFragmentImporter(object):
 
         for feature in self.__features:
             t0 = time.time()
+            print(feature)
             f_start, f_end, f_name, f_type, f_strand, f_qualifiers = feature
             # print('  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand))
             self._annotate_feature(
@@ -222,12 +242,6 @@ class GFFFragmentImporter(object):
             fcloc = self.__fclocs[key]
             if fcloc.base_first >= first_base1 and fcloc.base_last <= last_base1:
                 bases.append((fcloc.base_first, fcloc.base_last))
-
-        if type.upper() == 'CDS':
-            bases_by_subs = [(sub[0], sub[1]) for sub in self.__subfeatures if sub[2] == name]
-            if bases_by_subs != []:
-                bases = bases_by_subs
-        bases = sorted(bases, key=lambda x: x[0])
 
         assert bases[0][0] >= first_base1 and bases[-1][1] <= last_base1
         assert fragment.annotate_chunks(bases, name, type, strand, qualifiers=qualifiers) != None
