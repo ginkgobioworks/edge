@@ -1039,7 +1039,7 @@ class GenomeAnnotationsTest(TestCase):
 
 class GenomeImportTest(TestCase):
     def test_import_works(self):
-        with open("src/edge/tests/fixtures/ecoli-mg1655-simple.gff") as fp:
+        with open("/usr/src/edge/src/edge/tests/fixtures/ecoli-mg1655-simple.gff") as fp:
             url = reverse("import")
             res = self.client.post(url, {"name": "ecoli", "attachment": fp})
             self.assertEquals(len(json.loads(res.content)["imported_genomes"]), 1)
