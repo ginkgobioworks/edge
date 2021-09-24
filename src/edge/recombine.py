@@ -1014,9 +1014,9 @@ class RecombineOp(object):
             annotations=annotations,
         )
 
-	# some fragment indices may be destroyed because we had to split up
-	# existing chunks, rebuild them, so that parent genome is immediately
-	# reusable in an RO server
+    # some fragment indices may be destroyed because we had to split up
+    # existing chunks, rebuild them, so that parent genome is immediately
+    # reusable in an RO server
         genome.indexed_genome()
 
         return new_genome
