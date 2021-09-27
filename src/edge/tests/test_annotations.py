@@ -47,6 +47,23 @@ class AnnotationsTest(TestCase):
         self.assertEquals(self.root.annotations()[1].feature_base_first, 1)
         self.assertEquals(self.root.annotations()[1].feature_base_last, 3)
 
+    def test_annotate_on_reverse_strand(self):
+        self.root.annotate(1, 3, "A1", "gene", 1)
+        self.root.annotate(7, 9, "A2", "gene", -1)
+        self.assertEquals(len(self.root.annotations()), 2)
+        self.assertEquals(self.root.annotations()[0].base_first, 1)
+        self.assertEquals(self.root.annotations()[0].base_last, 3)
+        self.assertEquals(self.root.annotations()[0].feature.name, "A1")
+        self.assertEquals(self.root.annotations()[0].feature.strand, 1)
+        self.assertEquals(self.root.annotations()[0].feature_base_first, 1)
+        self.assertEquals(self.root.annotations()[0].feature_base_last, 3)
+        self.assertEquals(self.root.annotations()[1].base_first, 7)
+        self.assertEquals(self.root.annotations()[1].base_last, 9)
+        self.assertEquals(self.root.annotations()[1].feature.name, "A2")
+        self.assertEquals(self.root.annotations()[1].feature.strand, -1)
+        self.assertEquals(self.root.annotations()[1].feature_base_first, 1)
+        self.assertEquals(self.root.annotations()[1].feature_base_last, 3)
+
     def test_annotate_with_operation(self):
         op = Operation(genome=self.genome, type=Operation.RECOMBINATION[0])
         op.save()
@@ -280,6 +297,38 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].feature_base_first, 1)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].feature_base_last, n)
 
+    def test_merging_splitted_annotations_on_reverse_strand(self):
+        self.root.annotate(1, len(self.root_sequence), "A1", "gene", -1)
+        self.assertEquals(len(self.root.annotations()), 1)
+
+        f = self.root.update("Bar")
+        f._find_and_split_before(4)
+
+        self.assertEquals(len(f.annotations(bp_lo=1, bp_hi=3)), 1)
+        self.assertEquals(len(f.annotations(bp_lo=4, bp_hi=13)), 1)
+
+	# annotation is 1-13 on genome, in reverse direction, so after
+	# splitting, first 3 bps should cover the end of the annotation, not
+	# the start.
+
+        annotation = f.annotations(bp_lo=1, bp_hi=3)[0]
+        self.assertEquals((annotation.base_first,
+                           annotation.base_last,
+                           annotation.feature.name,
+                           annotation.feature.strand,
+                           annotation.feature_base_first,
+                           annotation.feature_base_last),
+                          (1, 3, "A1", -1, 11, 13))
+
+        annotation = f.annotations(bp_lo=4, bp_hi=13)[0]
+        self.assertEquals((annotation.base_first,
+                           annotation.base_last,
+                           annotation.feature.name,
+                           annotation.feature.strand,
+                           annotation.feature_base_first,
+                           annotation.feature_base_last),
+                          (4, 13, "A1", -1, 1, 10))
+
     def test_does_not_merge_splitted_annotations_if_bp_removed_from_annotation(self):
         self.root.annotate(1, len(self.root_sequence), "A1", "gene", 1)
         self.assertEquals(len(self.root.annotations()), 1)
@@ -434,6 +483,25 @@ class AnnotationsTest(TestCase):
         self.assertEquals(annotations[1].base_first, 5)
         self.assertEquals(annotations[1].base_last, 8)
         self.assertEquals(annotations[1].feature.name, "A1")
+        self.assertEquals(annotations[1].feature_base_first, 1)
+        self.assertEquals(annotations[1].feature_base_last, 4)
+        self.assertEquals(annotations[0].feature.id, annotations[1].feature.id)
+
+    def test_annotate_multiple_chunks_with_same_annotation_reverse_strand(self):
+        self.root.annotate_chunks(((5, 8), (1, 3)), "A1", "gene", -1)
+        annotations = self.root.annotations()
+        self.assertEquals(len(annotations), 2)
+        annotations = sorted(annotations, key=lambda a: a.base_first)
+        self.assertEquals(annotations[0].base_first, 1)
+        self.assertEquals(annotations[0].base_last, 3)
+        self.assertEquals(annotations[0].feature.name, "A1")
+        self.assertEquals(annotations[0].feature.strand, -1)
+        self.assertEquals(annotations[0].feature_base_first, 5)
+        self.assertEquals(annotations[0].feature_base_last, 7)
+        self.assertEquals(annotations[1].base_first, 5)
+        self.assertEquals(annotations[1].base_last, 8)
+        self.assertEquals(annotations[1].feature.name, "A1")
+        self.assertEquals(annotations[1].feature.strand, -1)
         self.assertEquals(annotations[1].feature_base_first, 1)
         self.assertEquals(annotations[1].feature_base_last, 4)
         self.assertEquals(annotations[0].feature.id, annotations[1].feature.id)
