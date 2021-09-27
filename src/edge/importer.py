@@ -1,4 +1,4 @@
-import time
+import time, hashlib
 
 from BCBio import GFF
 from django.db import connection
@@ -107,15 +107,28 @@ class GFFFragmentImporter(object):
             self.__subfeatures_dict[feature_name] = []
             for sub in feature.sub_features:
                 # change name for sub feature
-                if hasattr(sub, 'qualifiers') and 'Name' in sub.qualifiers:
-                    subfeature_name = sub.qualifiers['Name'][0]
-                elif sub.id != '':
-                    subfeature_name = sub.id
-                else:
-                    subfeature_name = feature_name
+                subfeature_name = ''
+                for field in name_fields:
+                    if field in sub.qualifiers:
+                        v = sub.qualifiers[field]
+                        if len(v) > 0:
+                            subfeature_name = v[0]
+                            break
+                subfeature_name = subfeature_name[0:100]
+
+                if subfeature_name == '':
+                    if sub.id != '':
+                        subfeature_name = sub.id
+                    else:
+                        subfeature_name = feature_name
 
                 # check that the type is right
                 if sub.type.upper() in ['MRNA', 'CDS']:
+                    qualifiers = {}
+                    for field in sub.qualifiers:
+                        v = sub.qualifiers[field]
+                        if len(v) > 0:
+                            qualifiers[field] = v
                     sub_tup = (
                             int(sub.location.start) + 1,
                             int(sub.location.end),
@@ -138,13 +151,26 @@ class GFFFragmentImporter(object):
 
                     for sub_sub in sub.sub_features:
                         # change name for sub sub feature
-                        if hasattr(sub, 'qualifiers') and 'Name' in sub.qualifiers:
-                            subsubfeature_name = sub_sub.qualifiers['Name'][0]
-                        elif sub_sub.id != '':
-                            subsubfeature_name = sub_sub.id
-                        else:
-                            subsubfeature_name = subfeature_name
+                        subsubfeature_name = ''
+                        for field in name_fields:
+                            if field in sub_sub.qualifiers:
+                                v = sub_sub.qualifiers[field]
+                                if len(v) > 0:
+                                    subsubfeature_name = v[0]
+                                    break
+                        subsubfeature_name = subsubfeature_name[0:100]
 
+                        if subsubfeature_name == '':
+                            if sub_sub.id != '':
+                                subsubfeature_name = sub_sub.id
+                            else:
+                                subsubfeature_name = subfeature_name
+
+                        qualifiers = {}
+                        for field in feature.qualifiers:
+                            v = feature.qualifiers[field]
+                            if len(v) > 0:
+                                qualifiers[field] = v
                         sub_sub_tup = (
                                 int(sub_sub.location.start) + 1,
                                 int(sub_sub.location.end),
@@ -257,6 +283,11 @@ class GFFFragmentImporter(object):
             t0 = time.time()
             f_start, f_end, f_name, f_type, f_strand, f_qualifiers = feature
             # print('  %s %s: %s-%s %s' % (f_type, f_name, f_start, f_end, f_strand))
+            if self.__subfeatures_dict[f_name] != []:
+                f_qualifiers['subfeature_qualifiers'] = {
+                    f"{sf[0]}_{sf[1]}": sf[5] for sf in self.__subfeatures_dict[f_name]
+                    if sf[0] != f_start and sf[1] != f_end
+                }
             new_feature = self._annotate_feature(
                 fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers
             )

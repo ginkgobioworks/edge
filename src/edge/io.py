@@ -53,12 +53,16 @@ class IO(object):
                     qualifiers["Phase"] = 0
 
                 qualifiers.update({"name": annotation.feature_name})
+                qualifiers_copy = {key: qualifiers[key] for key in qualifiers if key != 'subfeature_qualifiers'}
+                sf_hash = f"{annotation.base_first}_{annotation.base_last}"
+                if 'subfeature_qualifiers' in qualifiers and sf_hash in qualifiers['subfeature_qualifiers']:
+                    qualifiers_copy = qualifiers['subfeature_qualifiers'][sf_hash]
                 strand = annotation.feature.strand
                 feature = SeqFeature(
                     loc,
                     type=annotation.feature.type,
                     strand=0 if strand is None else strand,
-                    qualifiers=qualifiers,
+                    qualifiers=qualifiers_copy,
                 )
                 features.append(feature)
 

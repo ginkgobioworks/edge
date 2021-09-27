@@ -235,3 +235,64 @@ Bar\tfeature\tCDS\t2\t9\t.\t+\t0\taliases=foo,bar;foo=blah;locus_tag=b0002;name=
             fragment.sequence,
         )
         self.assertEquals(expected, gff)
+
+    def test_outputs_gff_subfeatures_with_qualifiers(self):
+        fragment = self.fragment.indexed_fragment()
+        quals = dict(locus_tag="b0002", foo=["blah"], aliases=["foo", "bar"],
+                subfeature_qualifiers={"2_4": dict(Parent="A1", Name="A1_exon"), 
+                "5_6": dict(Parent="A1", Name="A1_intron"), "7_9": dict(Parent="A1", Name="A1_exon")})
+        fragment.annotate(
+            2,
+            9,
+            "A1",
+            "CDS",
+            1,
+            qualifiers=quals,
+        )
+        fragment.annotate(
+            2,
+            4,
+            "A1_exon",
+            "CDS",
+            1,
+            qualifiers=quals,
+        )
+        fragment.annotate(
+            5,
+            6,
+            "A1_intron",
+            "CDS",
+            1,
+            qualifiers=quals,
+        )
+        fragment.annotate(
+            7,
+            9,
+            "A1_exon",
+            "CDS",
+            1,
+            qualifiers=quals,
+        )
+
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
+            f.close()
+            IO(self.genome).to_gff(f.name)
+            filehandle = open(f.name, "r")
+            gff = filehandle.read()
+            filehandle.close()
+            os.unlink(f.name)
+
+        # be aware of the tabs in the string below
+        expected = """##gff-version 3
+##sequence-region Bar 1 13
+Bar\tfeature\tCDS\t2\t9\t.\t+\t0\taliases=foo,bar;foo=blah;locus_tag=b0002;name=A1
+Bar\tfeature\tCDS\t2\t4\t.\t+\t0\tName=A1_exon;Parent=A1
+Bar\tfeature\tCDS\t5\t6\t.\t+\t0\tName=A1_intron;Parent=A1
+Bar\tfeature\tCDS\t7\t9\t.\t+\t0\tName=A1_exon;Parent=A1
+##FASTA
+>Bar <unknown description>
+%s
+""" % (
+            fragment.sequence,
+        )
+        self.assertEqual(expected, gff)
