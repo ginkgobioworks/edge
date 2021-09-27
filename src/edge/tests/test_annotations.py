@@ -294,10 +294,11 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].base_first, 1)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].base_last, n)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].feature.name, "A1")
+        self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].feature.strand, 1)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].feature_base_first, 1)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].feature_base_last, n)
 
-    def test_merging_splitted_annotations_on_reverse_strand(self):
+    def test_split_annotations_with_correct_feature_base_positions_when_feature_is_reversed(self):
         self.root.annotate(1, len(self.root_sequence), "A1", "gene", -1)
         self.assertEquals(len(self.root.annotations()), 1)
 
@@ -328,6 +329,22 @@ class AnnotationsTest(TestCase):
                            annotation.feature_base_first,
                            annotation.feature_base_last),
                           (4, 13, "A1", -1, 1, 10))
+
+    def test_merge_splitted_annotations_correctly_on_reverse_strand(self):
+        self.root.annotate(1, len(self.root_sequence), "A1", "gene", -1)
+        self.assertEquals(len(self.root.annotations()), 1)
+
+        f = self.root.update("Bar")
+        f._find_and_split_before(4)
+
+        n = len(self.root_sequence)
+        self.assertEquals(len(f.annotations()), 1)
+        self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].base_first, 1)
+        self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].base_last, n)
+        self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].feature.name, "A1")
+        self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].feature.strand, -1)
+        self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].feature_base_first, 1)
+        self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[0].feature_base_last, n)
 
     def test_does_not_merge_splitted_annotations_if_bp_removed_from_annotation(self):
         self.root.annotate(1, len(self.root_sequence), "A1", "gene", 1)
