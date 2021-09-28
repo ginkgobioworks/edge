@@ -308,27 +308,31 @@ class AnnotationsTest(TestCase):
         self.assertEquals(len(f.annotations(bp_lo=1, bp_hi=3)), 1)
         self.assertEquals(len(f.annotations(bp_lo=4, bp_hi=13)), 1)
 
-	# annotation is 1-13 on genome, in reverse direction, so after
-	# splitting, first 3 bps should cover the end of the annotation, not
-	# the start.
+        # annotation is 1-13 on genome, in reverse direction, so after
+        # splitting, first 3 bps should cover the end of the annotation, not
+        # the start.
 
         annotation = f.annotations(bp_lo=1, bp_hi=3)[0]
-        self.assertEquals((annotation.base_first,
-                           annotation.base_last,
-                           annotation.feature.name,
-                           annotation.feature.strand,
-                           annotation.feature_base_first,
-                           annotation.feature_base_last),
-                          (1, 3, "A1", -1, 11, 13))
+        self.assertEquals(
+            (annotation.base_first,
+             annotation.base_last,
+             annotation.feature.name,
+             annotation.feature.strand,
+             annotation.feature_base_first,
+             annotation.feature_base_last),
+            (1, 3, "A1", -1, 11, 13)
+        )
 
         annotation = f.annotations(bp_lo=4, bp_hi=13)[0]
-        self.assertEquals((annotation.base_first,
-                           annotation.base_last,
-                           annotation.feature.name,
-                           annotation.feature.strand,
-                           annotation.feature_base_first,
-                           annotation.feature_base_last),
-                          (4, 13, "A1", -1, 1, 10))
+        self.assertEquals(
+            (annotation.base_first,
+             annotation.base_last,
+             annotation.feature.name,
+             annotation.feature.strand,
+             annotation.feature_base_first,
+             annotation.feature_base_last),
+            (4, 13, "A1", -1, 1, 10)
+        )
 
     def test_merge_splitted_annotations_correctly_on_reverse_strand(self):
         self.root.annotate(1, len(self.root_sequence), "A1", "gene", -1)
@@ -390,7 +394,6 @@ class AnnotationsTest(TestCase):
         self.root.annotate(1, 6, "A1", "gene", 1)
         self.root.annotate(5, 8, "A2", "gene", -1)
 
-        n = len(self.root_sequence)
         self.assertEquals(len(self.root.annotations()), 2)
         self.assertEquals(self.root.annotations()[0].base_first, 1)
         self.assertEquals(self.root.annotations()[0].base_last, 6)
@@ -409,7 +412,6 @@ class AnnotationsTest(TestCase):
         self.root.annotate(1, 6, "A1", "gene", 1)
         self.root.annotate(5, 8, "A2", "gene", 1)
 
-        n = len(self.root_sequence)
         self.assertEquals(len(self.root.annotations()), 2)
         self.assertEquals(self.root.annotations()[0].base_first, 1)
         self.assertEquals(self.root.annotations()[0].base_last, 6)

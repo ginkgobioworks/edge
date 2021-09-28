@@ -47,8 +47,9 @@ class Annotation(object):
         """
 
         chunk_feature_locs = sorted(
-            chunk_feature_locs, key=lambda t: (t[0].feature.id, t[1].base_first, 
-                t[0].feature.strand * t[0].feature_base_first)
+            chunk_feature_locs,
+            key=lambda t: (t[0].feature.id, t[1].base_first,
+                           t[0].feature.strand * t[0].feature_base_first)
         )
 
         annotations = []

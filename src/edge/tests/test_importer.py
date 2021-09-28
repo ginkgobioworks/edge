@@ -658,7 +658,6 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         self.assertEqual(chrI.annotations()[2].feature.name, "f2_cds")
         self.assertEquals(chrI.annotations()[2].feature.strand, -1)
 
-
     def test_import_subfeatures_overlap_reverse_coordinates(self):
 
         data = """##gff-version 3

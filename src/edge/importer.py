@@ -260,7 +260,10 @@ class GFFFragmentImporter(object):
                 fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers
             )
             feature_base_first = 1
-            sorted_subfeatures = sorted(self.__subfeatures_dict[f_name], key=lambda x: f_strand * x[0])
+            sorted_subfeatures = sorted(
+                self.__subfeatures_dict[f_name],
+                key=lambda x: f_strand * x[0]
+            )
             for subfeature in sorted_subfeatures:
                 sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers = subfeature
                 self._annotate_feature(
