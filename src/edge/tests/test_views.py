@@ -697,7 +697,6 @@ class FragmentTest(TestCase):
         )
         res = self.client.get(self.uri + "annotations/")
         self.assertEquals(res.status_code, 200)
-        print(json.loads(res.content))
         self.assertEquals(
             json.loads(res.content),
             [
