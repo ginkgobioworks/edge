@@ -612,3 +612,108 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         self.assertEqual(chrI.annotations()[4].feature.name, 'A1_CDS')
         self.assertEqual(chrI.annotations()[4].feature.type, 'CDS')
         self.assertEqual(chrI.annotations()[1].feature.id, chrI.annotations()[4].feature.id)
+
+    def test_import_subfeatures_simple_reverse_coordinates(self):
+
+        data = """##gff-version 3
+chrI\tTest\tchromosome\t1\t160\t.\t.\t.\tID=i1;Name=f1
+chrI\tTest\tgene\t20\t65\t.\t-\t.\tID=i2;Name=f2
+chrI\tTest\tcds\t20\t28\t.\t-\t.\tParent=i2;Name=f2_cds
+chrI\tTest\tcds\t58\t65\t.\t-\t.\tParent=i2;Name=f2_cds
+###
+##FASTA
+>chrI
+CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
+ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
+            f.write(data)
+            f.close()
+            genome = Genome.import_gff("Foo", f.name)
+            os.unlink(f.name)
+
+        # verify chrI fragment
+        chrI = [
+            fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "chrI"
+        ][0]
+        self.assertEqual(len(chrI.sequence), 160)
+        self.assertEqual(len(chrI.annotations()), 3)
+        self.assertEqual(chrI.annotations()[0].base_first, 20)
+        self.assertEqual(chrI.annotations()[0].base_last, 65)
+        self.assertEqual(chrI.annotations()[0].feature_base_first, 1)
+        self.assertEqual(chrI.annotations()[0].feature_base_last, 46)
+        self.assertEqual(chrI.annotations()[0].feature.name, "f2")
+        self.assertEquals(chrI.annotations()[0].feature.strand, -1)
+        self.assertEqual(chrI.annotations()[1].base_first, 20)
+        self.assertEqual(chrI.annotations()[1].base_last, 28)
+        self.assertEqual(chrI.annotations()[1].feature_base_first, 9)
+        self.assertEqual(chrI.annotations()[1].feature_base_last, 17)
+        self.assertEqual(chrI.annotations()[1].feature.name, "f2_cds")
+        self.assertEquals(chrI.annotations()[1].feature.strand, -1)
+        self.assertEqual(chrI.annotations()[2].base_first, 58)
+        self.assertEqual(chrI.annotations()[2].base_last, 65)
+        self.assertEqual(chrI.annotations()[2].feature_base_first, 1)
+        self.assertEqual(chrI.annotations()[2].feature_base_last, 8)
+        self.assertEqual(chrI.annotations()[2].feature.name, "f2_cds")
+        self.assertEquals(chrI.annotations()[2].feature.strand, -1)
+
+
+    def test_import_subfeatures_overlap_reverse_coordinates(self):
+
+        data = """##gff-version 3
+chrI\tTest\tchromosome\t1\t160\t.\t.\t.\tID=i1;Name=f1
+chrI\tTest\tgene\t20\t65\t.\t-\t.\tID=i2;Name=f2
+chrI\tTest\tcds\t20\t28\t.\t-\t.\tParent=i2;Name=f2_cds
+chrI\tTest\tintron\t29\t40\t.\t-\t.\tParent=i2;Name=f2_intron
+chrI\tTest\tcds\t41\t60\t.\t-\t.\tParent=i2;Name=f2_cds
+chrI\tTest\tcds\t58\t65\t.\t-\t.\tParent=i2;Name=f2_cds
+###
+##FASTA
+>chrI
+CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
+ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
+            f.write(data)
+            f.close()
+            genome = Genome.import_gff("Foo", f.name)
+            os.unlink(f.name)
+
+        # verify chrI fragment
+        chrI = [
+            fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "chrI"
+        ][0]
+        self.assertEqual(len(chrI.sequence), 160)
+        self.assertEqual(len(chrI.annotations()), 5)
+        self.assertEqual(chrI.annotations()[0].base_first, 20)
+        self.assertEqual(chrI.annotations()[0].base_last, 65)
+        self.assertEqual(chrI.annotations()[0].feature_base_first, 1)
+        self.assertEqual(chrI.annotations()[0].feature_base_last, 46)
+        self.assertEqual(chrI.annotations()[0].feature.name, "f2")
+        self.assertEquals(chrI.annotations()[0].feature.strand, -1)
+        self.assertEqual(chrI.annotations()[1].base_first, 20)
+        self.assertEqual(chrI.annotations()[1].base_last, 28)
+        self.assertEqual(chrI.annotations()[1].feature_base_first, 29)
+        self.assertEqual(chrI.annotations()[1].feature_base_last, 37)
+        self.assertEqual(chrI.annotations()[1].feature.name, "f2_cds")
+        self.assertEquals(chrI.annotations()[1].feature.strand, -1)
+        self.assertEqual(chrI.annotations()[2].base_first, 29)
+        self.assertEqual(chrI.annotations()[2].base_last, 40)
+        self.assertEqual(chrI.annotations()[2].feature_base_first, 1)
+        self.assertEqual(chrI.annotations()[2].feature_base_last, 12)
+        self.assertEqual(chrI.annotations()[2].feature.name, "f2_intron")
+        self.assertEquals(chrI.annotations()[2].feature.strand, -1)
+        self.assertEqual(chrI.annotations()[3].base_first, 41)
+        self.assertEqual(chrI.annotations()[3].base_last, 60)
+        self.assertEqual(chrI.annotations()[3].feature_base_first, 9)
+        self.assertEqual(chrI.annotations()[3].feature_base_last, 28)
+        self.assertEqual(chrI.annotations()[3].feature.name, "f2_cds")
+        self.assertEquals(chrI.annotations()[3].feature.strand, -1)
+        self.assertEqual(chrI.annotations()[4].base_first, 58)
+        self.assertEqual(chrI.annotations()[4].base_last, 65)
+        self.assertEqual(chrI.annotations()[4].feature_base_first, 1)
+        self.assertEqual(chrI.annotations()[4].feature_base_last, 8)
+        self.assertEqual(chrI.annotations()[4].feature.name, "f2_cds")
+        self.assertEquals(chrI.annotations()[4].feature.strand, -1)
