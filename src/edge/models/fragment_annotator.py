@@ -31,12 +31,22 @@ class Fragment_Annotator(object):
         a_i = 0
         while True:
             fc = self.fragment_chunk(chunk)
-            self._annotate_chunk(
-                chunk,
-                feature,
-                feature_base_first + a_i,
-                feature_base_first + a_i + len(chunk.sequence) - 1,
-            )
+            if feature.strand > 0:
+                self._annotate_chunk(
+                    chunk,
+                    feature,
+                    feature_base_first + a_i,
+                    feature_base_first + a_i + len(chunk.sequence) - 1
+                )
+            else:
+                subfeature_length = self.bp_covered_length(first_base1, last_base1)
+                feature_base_last = feature_base_first + subfeature_length - 1
+                self._annotate_chunk(
+                    chunk,
+                    feature,
+                    feature_base_last - a_i - len(chunk.sequence) + 1,
+                    feature_base_last - a_i
+                )
             a_i += len(chunk.sequence)
             if chunk.id == annotation_end.id:
                 break

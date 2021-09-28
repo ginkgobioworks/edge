@@ -386,6 +386,44 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].feature_base_first, 4)
         self.assertEquals(f.annotations(bp_lo=1, bp_hi=n)[1].feature_base_last, n - 3)
 
+    def test_adds_overlapping_annotation_on_reverse_strand_correctly(self):
+        self.root.annotate(1, 6, "A1", "gene", 1)
+        self.root.annotate(5, 8, "A2", "gene", -1)
+
+        n = len(self.root_sequence)
+        self.assertEquals(len(self.root.annotations()), 2)
+        self.assertEquals(self.root.annotations()[0].base_first, 1)
+        self.assertEquals(self.root.annotations()[0].base_last, 6)
+        self.assertEquals(self.root.annotations()[0].feature.name, "A1")
+        self.assertEquals(self.root.annotations()[0].feature.strand, 1)
+        self.assertEquals(self.root.annotations()[0].feature_base_first, 1)
+        self.assertEquals(self.root.annotations()[0].feature_base_last, 6)
+        self.assertEquals(self.root.annotations()[1].base_first, 5)
+        self.assertEquals(self.root.annotations()[1].base_last, 8)
+        self.assertEquals(self.root.annotations()[1].feature.name, "A2")
+        self.assertEquals(self.root.annotations()[1].feature.strand, -1)
+        self.assertEquals(self.root.annotations()[1].feature_base_first, 1)
+        self.assertEquals(self.root.annotations()[1].feature_base_last, 4)
+
+    def test_adds_overlapping_annotation_on_forward_strand_correctly(self):
+        self.root.annotate(1, 6, "A1", "gene", 1)
+        self.root.annotate(5, 8, "A2", "gene", 1)
+
+        n = len(self.root_sequence)
+        self.assertEquals(len(self.root.annotations()), 2)
+        self.assertEquals(self.root.annotations()[0].base_first, 1)
+        self.assertEquals(self.root.annotations()[0].base_last, 6)
+        self.assertEquals(self.root.annotations()[0].feature.name, "A1")
+        self.assertEquals(self.root.annotations()[0].feature.strand, 1)
+        self.assertEquals(self.root.annotations()[0].feature_base_first, 1)
+        self.assertEquals(self.root.annotations()[0].feature_base_last, 6)
+        self.assertEquals(self.root.annotations()[1].base_first, 5)
+        self.assertEquals(self.root.annotations()[1].base_last, 8)
+        self.assertEquals(self.root.annotations()[1].feature.name, "A2")
+        self.assertEquals(self.root.annotations()[1].feature.strand, 1)
+        self.assertEquals(self.root.annotations()[1].feature_base_first, 1)
+        self.assertEquals(self.root.annotations()[1].feature_base_last, 4)
+
     def test_child_inherits_annotation_from_parent_when_parent_annotates_preserved_region(
         self,
     ):
