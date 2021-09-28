@@ -685,7 +685,7 @@ class FragmentTest(TestCase):
             ],
         )
 
-    def test_get_multiple_annotations(self):
+    def test_get_multiple_annotations_that_are_overlapping(self):
         data = dict(base_first=2, base_last=9, name="proC", type="promoter", strand=1)
         url = reverse("fragment_annotations", kwargs=dict(fragment_id=self.fragment_id))
         res = self.client.post(

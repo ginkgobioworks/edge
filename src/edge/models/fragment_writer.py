@@ -51,12 +51,28 @@ class Fragment_Writer(object):
 
     def _split_annotations(self, annotations, bps_to_split, split1, split2):
         for a in annotations:
-            a1 = (
-                a.feature,
-                a.feature_base_first,
-                a.feature_base_first + bps_to_split - 1,
-            )
-            a2 = (a.feature, a.feature_base_first + bps_to_split, a.feature_base_last)
+            if a.feature.strand > 0:
+                a1 = (
+                    a.feature,
+                    a.feature_base_first,
+                    a.feature_base_first + bps_to_split - 1,
+                )
+                a2 = (
+                    a.feature,
+                    a.feature_base_first + bps_to_split,
+                    a.feature_base_last
+                )
+            else:
+                a1 = (
+                    a.feature,
+                    a.feature_base_last - bps_to_split + 1,
+                    a.feature_base_last
+                )
+                a2 = (
+                    a.feature,
+                    a.feature_base_first,
+                    a.feature_base_last - bps_to_split
+                )
             self._annotate_chunk(split1, *a1)
             self._annotate_chunk(split2, *a2)
 

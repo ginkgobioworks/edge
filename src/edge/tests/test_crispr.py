@@ -260,14 +260,14 @@ class GenomeCrisprDSBTest(TestCase):
         self.assertEquals(len(a), 2)
         self.assertEquals(a[0].base_first, 1)
         self.assertEquals(a[0].base_last, 5)
-        self.assertEquals(a[0].feature_base_first, 16)
-        self.assertEquals(a[0].feature_base_last, 20)
+        self.assertEquals(a[0].feature_base_first, 1)
+        self.assertEquals(a[0].feature_base_last, 5)
         self.assertEquals(a[0].feature.strand, -1)
 
         self.assertEquals(a[1].base_first, len(s) - 15 + 1)
         self.assertEquals(a[1].base_last, len(s))
-        self.assertEquals(a[1].feature_base_first, 1)
-        self.assertEquals(a[1].feature_base_last, 15)
+        self.assertEquals(a[1].feature_base_first, 6)
+        self.assertEquals(a[1].feature_base_last, 20)
         self.assertEquals(a[1].feature.strand, -1)
 
     def test_crispr_dsb_creates_operations(self):
