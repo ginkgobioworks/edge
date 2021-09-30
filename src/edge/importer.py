@@ -123,7 +123,7 @@ class GFFFragmentImporter(object):
                         subfeature_name = feature_name
 
                 # check that the type is right
-                if sub.type.upper() in ['MRNA', 'CDS']:
+                if sub.type.upper() in ['MRNA', 'CDS', 'EXON', 'INTRON']:
                     qualifiers = {}
                     for field in sub.qualifiers:
                         v = sub.qualifiers[field]
@@ -290,12 +290,18 @@ class GFFFragmentImporter(object):
             new_feature = self._annotate_feature(
                 fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers
             )
-            for subfeature in self.__subfeatures_dict[f_name]:
+            feature_base_first = 1
+            sorted_subfeatures = sorted(
+                self.__subfeatures_dict[f_name],
+                key=lambda x: f_strand * x[0]
+            )
+            for subfeature in sorted_subfeatures:
                 sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers = subfeature
                 self._annotate_feature(
                     fragment, sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers,
-                    feature=new_feature, feature_base_first=sf_start - f_start + 1
+                    feature=new_feature, feature_base_first=feature_base_first
                 )
+                feature_base_first += sf_end - sf_start + 1
             print("annotate feature: %.4f\r" % (time.time() - t0,), end="")
         print("\nfinished annotating feature")
 
@@ -313,7 +319,8 @@ class GFFFragmentImporter(object):
 
         if first_base1 not in self.__fclocs or (
             (last_base1 < len(self.__sequence) and last_base1 + 1 not in self.__fclocs)) or (
-                last_base1 > len(self.__sequence)):
+            last_base1 > len(self.__sequence)
+        ):
             raise Exception(
                 "Cannot find appropriate sequence for feature: %s, start %s, end %s"
                 % (name, first_base1, last_base1)
@@ -324,8 +331,7 @@ class GFFFragmentImporter(object):
             fcloc = self.__fclocs[key]
             if fcloc.base_first >= first_base1 and fcloc.base_last <= last_base1:
                 bases.append((fcloc.base_first, fcloc.base_last))
-
-        assert bases[0][0] >= first_base1 and bases[-1][1] <= last_base1
+        bases.sort(key=lambda x: strand * x[0])
 
         length = 0
         for first_base1, last_base1 in bases:
