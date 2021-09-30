@@ -1,4 +1,4 @@
-import time, hashlib
+import time
 
 from BCBio import GFF
 from django.db import connection
@@ -194,7 +194,6 @@ class GFFFragmentImporter(object):
                                 features.append(sub_sub_tup)
                                 self.__subfeatures_dict[subsubfeature_name] = [sub_sub_tup]
 
-
         self.__features = features
 
         # update features made from only subfeatures
@@ -294,14 +293,15 @@ class GFFFragmentImporter(object):
             for subfeature in self.__subfeatures_dict[f_name]:
                 sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers = subfeature
                 self._annotate_feature(
-                    fragment, sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers, 
-                    feature=new_feature, feature_base_first=sf_start-f_start+1
+                    fragment, sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers,
+                    feature=new_feature, feature_base_first=sf_start - f_start + 1
                 )
             print("annotate feature: %.4f\r" % (time.time() - t0,), end="")
         print("\nfinished annotating feature")
 
     def _annotate_feature(
-        self, fragment, first_base1, last_base1, name, type, strand, qualifiers, feature=None, feature_base_first=1
+        self, fragment, first_base1, last_base1, name, type, strand, qualifiers,
+        feature=None, feature_base_first=1
     ):
         if fragment.circular and last_base1 < first_base1:
             # has to figure out the total length from last chunk
@@ -313,7 +313,7 @@ class GFFFragmentImporter(object):
 
         if first_base1 not in self.__fclocs or (
             (last_base1 < len(self.__sequence) and last_base1 + 1 not in self.__fclocs)) or (
-            last_base1 > len(self.__sequence)):
+                last_base1 > len(self.__sequence)):
             raise Exception(
                 "Cannot find appropriate sequence for feature: %s, start %s, end %s"
                 % (name, first_base1, last_base1)
@@ -333,14 +333,14 @@ class GFFFragmentImporter(object):
 
         new_feature = fragment._add_feature(
             name, type, length, strand, qualifiers
-        ) if feature == None else feature
-            
-        if feature != None or self.__subfeatures_dict[name] == []:
+        ) if feature is None else feature
+
+        if feature is not None or self.__subfeatures_dict[name] == []:
             for first_base1, last_base1 in bases:
                 region_length = fragment.bp_covered_length(first_base1, last_base1)
                 fragment.annotate_chunk(
                     new_feature, feature_base_first, first_base1, last_base1
                 )
                 feature_base_first += region_length
-        
+
         return new_feature

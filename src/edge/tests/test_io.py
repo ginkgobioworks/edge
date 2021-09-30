@@ -238,9 +238,12 @@ Bar\tfeature\tCDS\t2\t9\t.\t+\t0\taliases=foo,bar;foo=blah;locus_tag=b0002;name=
 
     def test_outputs_gff_subfeatures_with_qualifiers(self):
         fragment = self.fragment.indexed_fragment()
-        quals = dict(locus_tag="b0002", foo=["blah"], aliases=["foo", "bar"],
-                subfeature_qualifiers={"2_4": dict(Parent="A1", Name="A1_exon"), 
-                "5_6": dict(Parent="A1", Name="A1_intron"), "7_9": dict(Parent="A1", Name="A1_exon")})
+        quals = dict(
+            locus_tag="b0002", foo=["blah"], aliases=["foo", "bar"],
+            subfeature_qualifiers={
+                "2_4": dict(Parent="A1", Name="A1_exon"),
+                "5_6": dict(Parent="A1", Name="A1_intron"),
+                "7_9": dict(Parent="A1", Name="A1_exon")})
         fragment.annotate(
             2,
             9,
@@ -299,9 +302,12 @@ Bar\tfeature\tCDS\t7\t9\t.\t+\t0\tName=A1_exon;Parent=A1
 
     def test_outputs_reverse_gff_subfeatures_with_qualifiers(self):
         fragment = self.fragment.indexed_fragment()
-        quals = dict(locus_tag="b0002", foo=["blah"], aliases=["foo", "bar"],
-                subfeature_qualifiers={"2_4": dict(Parent="A1", Name="A1_exon"), 
-                "5_6": dict(Parent="A1", Name="A1_intron"), "7_9": dict(Parent="A1", Name="A1_exon")})
+        quals = dict(
+            locus_tag="b0002", foo=["blah"], aliases=["foo", "bar"],
+            subfeature_qualifiers={
+                "2_4": dict(Parent="A1", Name="A1_exon"),
+                "5_6": dict(Parent="A1", Name="A1_intron"),
+                "7_9": dict(Parent="A1", Name="A1_exon")})
         fragment.annotate(
             2,
             9,
@@ -360,8 +366,10 @@ Bar\tfeature\tCDS\t7\t9\t.\t-\t0\tName=A1_exon;Parent=A1
 
     def test_outputs_overlap_gff_subfeatures_with_qualifiers(self):
         fragment = self.fragment.indexed_fragment()
-        quals = dict(locus_tag="b0002", foo=["blah"], aliases=["foo", "bar"],
-                subfeature_qualifiers={"2_6": dict(Parent="A1", Name="A1_exon"), 
+        quals = dict(
+            locus_tag="b0002", foo=["blah"], aliases=["foo", "bar"],
+            subfeature_qualifiers={
+                "2_6": dict(Parent="A1", Name="A1_exon"),
                 "5_9": dict(Parent="A1", Name="A1_exon")})
         fragment.annotate(
             2,
