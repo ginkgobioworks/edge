@@ -400,7 +400,6 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 
 
 class JoinImporterTest(TestCase):
-
     def test_import_gff_CDS_subfragments(self):
 
         data = """##gff-version 3
