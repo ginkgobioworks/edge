@@ -19,6 +19,8 @@ from edge.io import IO
 from edge import import_gff
 from edge.tasks import build_genome_blastdb, build_genome_fragment_indices
 
+IS_RO_SERVER = os.getenv("RO_SERVER", False) == "True"
+
 
 def genome_export(request, genome_id):
     get_genome_or_404(genome_id)
@@ -584,6 +586,10 @@ class GenomeOperationViewBase(ViewBase):
         from edge.blastdb import check_and_build_genome_db
 
         genome = get_genome_or_404(genome_id)
+
+        if IS_RO_SERVER and (not genome.has_location_index or not genome.blastdb):
+            return [], 409  # 409 is "Conflict" - caller is expected to retry request on RW server
+
         check_and_build_genome_db(genome)
 
         # always require a 'create' argument
