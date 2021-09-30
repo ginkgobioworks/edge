@@ -5,7 +5,6 @@ __pycache__
 *.so
 
 # Packages
-.egg
 *.egg
 *.egg-info
 dist
