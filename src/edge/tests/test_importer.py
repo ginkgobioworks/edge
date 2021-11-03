@@ -1,3 +1,4 @@
+# flake8: noqa
 import os
 import tempfile
 import unittest.mock as mock
@@ -280,7 +281,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         data = """##gff-version 3
 ##sequence-region  1 1540
 ##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=1282
-1	Local	region	1	1540	.	+	.	ID=1:1..2424096;Dbxref=taxon:1282;Is_circular=true;Name=ANONYMOUS;gbkey=Src;genome=chromosome;mol_type=genomic DNA;strain=AZS-SE_43
+1	Local	region	1	1540	.	+	.	ID=1:1..2424096;Is_circular=true;Name=ANONYMOUS;gbkey=Src;genome=chromosome;mol_type=genomic DNA;strain=AZS-SE_43
 1	.	gene	1	1356	.	+	.	ID=gene-AZS-SE_43_000001;Name=dnaA;gbkey=Gene;gene=dnaA;gene_biotype=protein_coding;locus_tag=AZS-SE_43_000001
 ##FASTA
 >lcl|1 Staphylococcus epidermidis strain AZS-SE_43 chromosome, complete genome
