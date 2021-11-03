@@ -312,6 +312,8 @@ class GFFFragmentImporter(object):
             new_feature = self._annotate_feature(
                 fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers
             )
+            if new_feature is None:
+                continue
             feature_base_first = 1
             sorted_subfeatures = self.__subfeatures_dict[f_name]
             if f_strand == -1:
@@ -343,10 +345,14 @@ class GFFFragmentImporter(object):
             (last_base1 < len(self.__sequence) and last_base1 + 1 not in self.__fclocs)) or (
             last_base1 > len(self.__sequence)
         ):
+            """
             raise Exception(
                 "Cannot find appropriate sequence for feature: %s, start %s, end %s"
                 % (name, first_base1, last_base1)
             )
+            """
+            # 11/03/2021 - ignoring features at end of GFF that went beyond the last bp
+            return None
 
         bases = []
         for key in self.__fclocs:
