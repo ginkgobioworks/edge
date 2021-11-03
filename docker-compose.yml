@@ -29,11 +29,11 @@ services:
       MYSQL_ROOT_PASSWORD: edge-dev-pw
       MYSQL_DATABASE: edge_dev
     volumes:
-      - edge-db-data:/var/lib/mysql
+      - ./mysql:/var/lib/mysql
 
   rabbit:
     image: rabbitmq
 
 volumes:
-  edge-db-data:
+  mysql:
   ncbi:

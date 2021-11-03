@@ -1,0 +1,15 @@
+
+From top of the repo working directory:
+
+> mkdir mysql
+
+This will install mysql files in the mysql dir
+
+To create a docker shell, run
+
+> docker-compose run edge bash
+
+In the docker shell, run this
+
+> python3 src/manage.py migrate
+> DJANGO_SETTINGS_MODULE=server.settings python3 example/import.py test example/AZS-SE_43.gff3

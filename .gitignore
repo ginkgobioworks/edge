@@ -65,3 +65,6 @@ ncbi/
 
 # Ignore vim files
 *.swp
+mysql
+.bash_history
+ginkgo-examples
