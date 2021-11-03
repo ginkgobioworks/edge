@@ -65,10 +65,14 @@ class GFFFragmentImporter(object):
         seqlen = len(self.__sequence)
         print("%s: %s" % (self.__rec.id, seqlen))
 
+        # lambda for absolute position of bp to region
+        circular_mod = lambda x: ((x - 1) % seqlen) + 1
+
         features = []
         for feature in self.__rec.features:
             # skip features that cover the entire sequence
-            if feature.location.start == 0 and feature.location.end == seqlen:
+            if feature.location.start == 0 and feature.location.end == seqlen \
+                    and feature.type.upper() in ['REGION', 'CHR', 'CHROM', 'CHROMOSOME']:
                 continue
 
             # get name
@@ -93,8 +97,8 @@ class GFFFragmentImporter(object):
             # start in Genbank format is start after, so +1 here
             features.append(
                 (
-                    int(feature.location.start) + 1,
-                    int(feature.location.end),
+                    circular_mod(int(feature.location.start) + 1),
+                    circular_mod(int(feature.location.end)),
                     name,
                     feature.type,
                     feature.strand,
@@ -105,7 +109,17 @@ class GFFFragmentImporter(object):
             feature_name = name
             # add sub features for chunking for CDS only
             self.__subfeatures_dict[feature_name] = []
-            for sub in feature.sub_features:
+
+            # order based on relative position in the feature
+            first, second = [], []
+            for f in sorted(feature.sub_features, key=lambda f: int(f.location.start)):
+                if circular_mod(int(f.location.start) + 1) < features[-1][0]:
+                    second.append(f)
+                else:
+                    first.append(f)
+            sub_feats_to_iter = first + second
+
+            for sub in sub_feats_to_iter:
                 # change name for sub feature
                 subfeature_name = ''
                 for field in name_fields:
@@ -123,15 +137,15 @@ class GFFFragmentImporter(object):
                         subfeature_name = feature_name
 
                 # check that the type is right
-                if sub.type.upper() in ['MRNA', 'CDS', 'EXON', 'INTRON']:
+                if sub.type.upper() in ['CDS', 'EXON', 'INTRON'] or sub.type.upper()[-3:] == 'RNA':
                     qualifiers = {}
                     for field in sub.qualifiers:
                         v = sub.qualifiers[field]
                         if len(v) > 0:
                             qualifiers[field] = v
                     sub_tup = (
-                            int(sub.location.start) + 1,
-                            int(sub.location.end),
+                            circular_mod(int(sub.location.start) + 1),
+                            circular_mod(int(sub.location.end)),
                             subfeature_name,
                             sub.type,
                             sub.strand,
@@ -149,7 +163,15 @@ class GFFFragmentImporter(object):
                             features.append(sub_tup)
                             self.__subfeatures_dict[subfeature_name] = [sub_tup]
 
-                    for sub_sub in sub.sub_features:
+                    sub_first, sub_second = [], []
+                    for f in sorted(sub.sub_features, key=lambda f: int(f.location.start)):
+                        if circular_mod(int(f.location.start) + 1) < sub_tup[0]:
+                            second.append(f)
+                        else:
+                            first.append(f)
+                    sub_sub_feats_to_iter = sub_first + sub_second
+
+                    for sub_sub in sub_sub_feats_to_iter:
                         # change name for sub sub feature
                         subsubfeature_name = ''
                         for field in name_fields:
@@ -172,8 +194,8 @@ class GFFFragmentImporter(object):
                             if len(v) > 0:
                                 qualifiers[field] = v
                         sub_sub_tup = (
-                                int(sub_sub.location.start) + 1,
-                                int(sub_sub.location.end),
+                                circular_mod(int(sub_sub.location.start) + 1),
+                                circular_mod(int(sub_sub.location.end)),
                                 subsubfeature_name,
                                 sub_sub.type,
                                 sub_sub.strand,
@@ -204,7 +226,7 @@ class GFFFragmentImporter(object):
                 new_end = self.__subfeatures_dict[feature[2]][-1][1]
                 new_feature = (new_start, new_end, feature[2], feature[3], feature[4], feature[5])
                 features.append(new_feature)
-
+        
     def build_fragment(self):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
@@ -233,8 +255,16 @@ class GFFFragmentImporter(object):
         if cur_len < seq_len:
             chunk_sizes.append(seq_len - cur_len)
 
+        fragment_circular = False
+        for feature in self.__rec.features:
+            # skip features that cover the entire sequence
+            if feature.location.start == 0 and feature.location.end == seq_len and feature.type == 'region':
+                if 'Is_circular' in feature.qualifiers:
+                    fragment_circular = feature.qualifiers['Is_circular'][0].upper() == 'TRUE'
+                break
+
         new_fragment = Fragment(
-            name=self.__rec.id, circular=False, parent=None, start_chunk=None
+            name=self.__rec.id, circular=fragment_circular, parent=None, start_chunk=None
         )
         new_fragment.save()
         new_fragment = new_fragment.indexed_fragment()
@@ -291,10 +321,9 @@ class GFFFragmentImporter(object):
                 fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers
             )
             feature_base_first = 1
-            sorted_subfeatures = sorted(
-                self.__subfeatures_dict[f_name],
-                key=lambda x: f_strand * x[0]
-            )
+            sorted_subfeatures = self.__subfeatures_dict[f_name]
+            if f_strand == -1:
+                sorted_subfeatures.reverse()
             for subfeature in sorted_subfeatures:
                 sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers = subfeature
                 self._annotate_feature(
@@ -309,7 +338,8 @@ class GFFFragmentImporter(object):
         self, fragment, first_base1, last_base1, name, type, strand, qualifiers,
         feature=None, feature_base_first=1
     ):
-        if fragment.circular and last_base1 < first_base1:
+        wrap_around = fragment.circular and last_base1 < first_base1
+        if wrap_around:
             # has to figure out the total length from last chunk
             length = len(self.__sequence) - first_base1 + 1 + last_base1
         else:
@@ -331,7 +361,10 @@ class GFFFragmentImporter(object):
             fcloc = self.__fclocs[key]
             if fcloc.base_first >= first_base1 and fcloc.base_last <= last_base1:
                 bases.append((fcloc.base_first, fcloc.base_last))
-        bases.sort(key=lambda x: strand * x[0])
+            elif wrap_around:
+                if fcloc.base_first >= first_base1 or fcloc.base_last <= last_base1:
+                    bases.append((fcloc.base_first, fcloc.base_last))
+        bases.sort(key=lambda x: (wrap_around * (x[1] <= last_base1), strand * x[0]))
 
         length = 0
         for first_base1, last_base1 in bases:

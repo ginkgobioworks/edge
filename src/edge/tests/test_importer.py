@@ -715,3 +715,153 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         self.assertEqual(chrI.annotations()[4].feature_base_last, 8)
         self.assertEqual(chrI.annotations()[4].feature.name, "f2_cds")
         self.assertEquals(chrI.annotations()[4].feature.strand, -1)
+
+
+class CircularImporterTest(TestCase):
+    def test_circular_wrap_around_import(self):
+        data = """##gff-version 3
+chrI\tTest\tregion\t1\t160\t.\t.\t.\tID=i1;Name=f1;Is_circular=True
+chrI\tTest\tgene\t150\t10\t.\t+\t.\tID=i2g;Name=f2g
+chrI\tTest\tCDS\t150\t160\t.\t+\t.\tName=i2gCDS;Parent=i2g
+chrI\tTest\tCDS\t1\t10\t.\t+\t.\tName=i2gCDS;Parent=i2g
+###
+##FASTA
+>chrI
+CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
+ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
+            f.write(data)
+            f.close()
+            genome = Genome.import_gff("Foo", f.name)
+            os.unlink(f.name)
+
+        # created one fragment for each sequence in GFF file
+        chrI = [
+            fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "chrI"
+        ][0]
+        self.assertEqual(len(chrI.sequence), 160)
+        self.assertEqual(len(chrI.annotations()), 4)
+        self.assertEqual(chrI.annotations()[0].base_first, 1)
+        self.assertEqual(chrI.annotations()[0].base_last, 10)
+        self.assertEqual(chrI.annotations()[0].feature.name, 'f2g')
+        self.assertEqual(chrI.annotations()[0].feature.type, 'gene')
+        self.assertEqual(chrI.annotations()[0].feature_base_first, 12)
+        self.assertEqual(chrI.annotations()[0].feature_base_last, 21)
+        self.assertEqual(chrI.annotations()[1].base_first, 1)
+        self.assertEqual(chrI.annotations()[1].base_last, 10)
+        self.assertEqual(chrI.annotations()[1].feature.name, 'i2gCDS')
+        self.assertEqual(chrI.annotations()[1].feature.type, 'CDS')
+        self.assertEqual(chrI.annotations()[1].feature_base_first, 12)
+        self.assertEqual(chrI.annotations()[1].feature_base_last, 21)
+        self.assertEqual(chrI.annotations()[2].base_first, 150)
+        self.assertEqual(chrI.annotations()[2].base_last, 160)
+        self.assertEqual(chrI.annotations()[2].feature.name, 'f2g')
+        self.assertEqual(chrI.annotations()[2].feature.type, 'gene')
+        self.assertEqual(chrI.annotations()[2].feature_base_first, 1)
+        self.assertEqual(chrI.annotations()[2].feature_base_last, 11)
+        self.assertEqual(chrI.annotations()[3].base_first, 150)
+        self.assertEqual(chrI.annotations()[3].base_last, 160)
+        self.assertEqual(chrI.annotations()[3].feature.name, 'i2gCDS')
+        self.assertEqual(chrI.annotations()[3].feature.type, 'CDS')
+        self.assertEqual(chrI.annotations()[3].feature_base_first, 1)
+        self.assertEqual(chrI.annotations()[3].feature_base_last, 11)
+
+    def test_circular_over_end_import(self):
+        data = """##gff-version 3
+chrI\tTest\tregion\t1\t160\t.\t.\t.\tID=i1;Name=f1;Is_circular=True
+chrI\tTest\tgene\t150\t170\t.\t+\t.\tID=i2g;Name=f2g
+###
+##FASTA
+>chrI
+CCACACCACACCCACACACCCACACACCACACCACACACCACACCACACCCACACACACACATCCTAACACTACCCTAAC
+ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
+            f.write(data)
+            f.close()
+            genome = Genome.import_gff("Foo", f.name)
+            os.unlink(f.name)
+
+        # created one fragment for each sequence in GFF file
+        chrI = [
+            fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "chrI"
+        ][0]
+        self.assertEqual(len(chrI.sequence), 160)
+        self.assertEqual(len(chrI.annotations()), 2)
+        self.assertEqual(chrI.annotations()[0].base_first, 1)
+        self.assertEqual(chrI.annotations()[0].base_last, 10)
+        self.assertEqual(chrI.annotations()[0].feature.name, 'f2g')
+        self.assertEqual(chrI.annotations()[0].feature.type, 'gene')
+        self.assertEqual(chrI.annotations()[0].feature_base_first, 12)
+        self.assertEqual(chrI.annotations()[0].feature_base_last, 21)
+        self.assertEqual(chrI.annotations()[1].base_first, 150)
+        self.assertEqual(chrI.annotations()[1].base_last, 160)
+        self.assertEqual(chrI.annotations()[1].feature.name, 'f2g')
+        self.assertEqual(chrI.annotations()[1].feature.type, 'gene')
+        self.assertEqual(chrI.annotations()[1].feature_base_first, 1)
+        self.assertEqual(chrI.annotations()[1].feature_base_last, 11)
+
+
+class SpecialCaseImport(TestCase):
+    def test_rbs_slippage_annotation_import(self):
+        data = """##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+##sequence-region 1 1 210
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=1282
+1\tLocal\tregion\t1\t210\t.\t+\t.\tID=1:1..210;Dbxref=taxon:1282;Is_circular=true;Name=ANONYMOUS;\
+gbkey=Src;genome=chromosome;mol_type=genomic DNA;strain=AZS-SE_43
+1\t.\tgene\t19\t181\t.\t-\t.\tID=gene-AZS-SE_43_001895;Name=prfB;gbkey=Gene;gene=prfB;\
+gene_biotype=protein_coding;locus_tag=AZS-SE_43_001895
+1\tProtein Homology\tCDS\t101\t181\t.\t-\t0\tID=cds-AZS-SE_43_001895;Parent=gene-AZS-SE_43_001895;\
+Name=extdb:AZS-SE_43_001895;Note=programmed frameshift;exception=ribosomal slippage;gbkey=CDS;\
+gene=prfB;inference=COORDINATES: similar to AA sequence:RefSeq:WP_010959142.1;locus_tag=AZS-SE_43_001895;\
+product=peptide chain release factor 2;protein_id=extdb:AZS-SE_43_001895;transl_table=11
+1\tProtein Homology\tCDS\t19\t99\t.\t-\t0\tID=cds-AZS-SE_43_001895;Parent=gene-AZS-SE_43_001895;\
+Name=extdb:AZS-SE_43_001895;Note=programmed frameshift;exception=ribosomal slippage;gbkey=CDS;\
+gene=prfB;inference=COORDINATES: similar to AA sequence:RefSeq:WP_010959142.1;locus_tag=AZS-SE_43_001895;\
+product=peptide chain release factor 2;protein_id=extdb:AZS-SE_43_001895;transl_table=11
+##FASTA
+>1
+ATGTCAGAGAAAGAAATTTGGGATAAAGTTTTAGAAATTGCCCAGGAAAGAATTTCAAACACTAGTTATC
+AAACGTTCATAAAAGATACGCAACTCTACTCACTTAAAAATGACGAAGCCATTATATTAGTAAGTCTGCC
+TTTCAATGCGAGTTGGCTTAATCAGCGATATTCAGAAATTATGCAGGCTATTATTTATGATGTCATCGGT
+"""
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
+            f.write(data)
+            f.close()
+            genome = Genome.import_gff("Foo", f.name)
+            os.unlink(f.name)
+
+        contig_1 = [
+            fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "1"
+        ][0]
+        self.assertEqual(len(contig_1.sequence), 210)
+        self.assertEqual(len(contig_1.annotations()), 3)
+        self.assertEqual(contig_1.annotations()[0].base_first, 19)
+        self.assertEqual(contig_1.annotations()[0].base_last, 181)
+        self.assertEqual(contig_1.annotations()[0].feature_base_first, 1)
+        self.assertEqual(contig_1.annotations()[0].feature_base_last, 163)
+        self.assertEqual(contig_1.annotations()[0].feature.name, "prfB")
+        self.assertEquals(contig_1.annotations()[0].feature.strand, -1)
+        self.assertEqual(contig_1.annotations()[1].base_first, 19)
+        self.assertEqual(contig_1.annotations()[1].base_last, 99)
+        self.assertEqual(contig_1.annotations()[1].feature_base_first, 82)
+        self.assertEqual(contig_1.annotations()[1].feature_base_last, 162)
+        self.assertEqual(contig_1.annotations()[1].feature.name, "extdb:AZS-SE_43_001895")
+        self.assertEquals(contig_1.annotations()[1].feature.strand, -1)
+        self.assertEqual(contig_1.annotations()[2].base_first, 101)
+        self.assertEqual(contig_1.annotations()[2].base_last, 181)
+        self.assertEqual(contig_1.annotations()[2].feature_base_first, 1)
+        self.assertEqual(contig_1.annotations()[2].feature_base_last, 81)
+        self.assertEqual(contig_1.annotations()[2].feature.name, "extdb:AZS-SE_43_001895")
+        self.assertEquals(contig_1.annotations()[2].feature.strand, -1)
+
+    def test_full_rbs_slippage_annotation_import(self):
+        genome2 = Genome.import_gff("Foo1", "example/AZS-ribosomal.gff")
+        only_contig = [fr.indexed_fragment() for fr in genome2.fragments.all() if fr.name == "1"][0]
+        anns = only_contig.annotations()
+        self.assertEqual(len(anns), 4565)

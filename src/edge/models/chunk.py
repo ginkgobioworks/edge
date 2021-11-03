@@ -78,6 +78,7 @@ class Annotation(object):
                         fragment=fcl.fragment,
                     )
                 )
+
         return sorted(annotations, key=lambda a: a.base_first)
 
 
