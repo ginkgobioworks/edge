@@ -6,6 +6,10 @@ from django.db import connection
 from edge.models import Fragment, Fragment_Chunk_Location
 
 
+def circular_mod(number, seq_length):
+    return ((number - 1) % seq_length) + 1
+
+
 class GFFImporter(object):
     def __init__(self, genome, gff_fasta_fn):
         self.__genome = genome
@@ -65,9 +69,6 @@ class GFFFragmentImporter(object):
         seqlen = len(self.__sequence)
         print("%s: %s" % (self.__rec.id, seqlen))
 
-        # lambda for absolute position of bp to region
-        circular_mod = lambda x: ((x - 1) % seqlen) + 1
-
         features = []
         for feature in self.__rec.features:
             # skip features that cover the entire sequence
@@ -97,8 +98,8 @@ class GFFFragmentImporter(object):
             # start in Genbank format is start after, so +1 here
             features.append(
                 (
-                    circular_mod(int(feature.location.start) + 1),
-                    circular_mod(int(feature.location.end)),
+                    circular_mod(int(feature.location.start) + 1, seqlen),
+                    circular_mod(int(feature.location.end), seqlen),
                     name,
                     feature.type,
                     feature.strand,
@@ -113,7 +114,7 @@ class GFFFragmentImporter(object):
             # order based on relative position in the feature
             first, second = [], []
             for f in sorted(feature.sub_features, key=lambda f: int(f.location.start)):
-                if circular_mod(int(f.location.start) + 1) < features[-1][0]:
+                if circular_mod(int(f.location.start) + 1, seqlen) < features[-1][0]:
                     second.append(f)
                 else:
                     first.append(f)
@@ -144,8 +145,8 @@ class GFFFragmentImporter(object):
                         if len(v) > 0:
                             qualifiers[field] = v
                     sub_tup = (
-                            circular_mod(int(sub.location.start) + 1),
-                            circular_mod(int(sub.location.end)),
+                            circular_mod(int(sub.location.start) + 1, seqlen),
+                            circular_mod(int(sub.location.end), seqlen),
                             subfeature_name,
                             sub.type,
                             sub.strand,
@@ -186,8 +187,8 @@ class GFFFragmentImporter(object):
                             if len(v) > 0:
                                 qualifiers[field] = v
                         sub_sub_tup = (
-                                circular_mod(int(sub_sub.location.start) + 1),
-                                circular_mod(int(sub_sub.location.end)),
+                                circular_mod(int(sub_sub.location.start) + 1, seqlen),
+                                circular_mod(int(sub_sub.location.end), seqlen),
                                 subsubfeature_name,
                                 sub_sub.type,
                                 sub_sub.strand,
@@ -218,7 +219,7 @@ class GFFFragmentImporter(object):
                 new_end = self.__subfeatures_dict[feature[2]][-1][1]
                 new_feature = (new_start, new_end, feature[2], feature[3], feature[4], feature[5])
                 features.append(new_feature)
-        
+
     def build_fragment(self):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
@@ -250,7 +251,8 @@ class GFFFragmentImporter(object):
         fragment_circular = False
         for feature in self.__rec.features:
             # skip features that cover the entire sequence
-            if feature.location.start == 0 and feature.location.end == seq_len and feature.type == 'region':
+            if feature.location.start == 0 and feature.location.end == seq_len \
+                    and feature.type == 'region':
                 if 'Is_circular' in feature.qualifiers:
                     fragment_circular = feature.qualifiers['Is_circular'][0].upper() == 'TRUE'
                 break
