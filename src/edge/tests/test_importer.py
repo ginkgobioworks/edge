@@ -370,7 +370,7 @@ CCTCTGAATAACAATAGCAATTGTGGATAATGTGAAAAAATAATACACAACATACACAGTTTATCCACAT
         self.assertEqual(len(chrI.sequence), 1540)
         self.assertEqual(len(chrI.annotations()), 1)
 
-    def test_does_not_like_fasta_sequence_shorter_than_annotation_asks(self):
+    def test_ignores_first_whole_region_annotation_that_went_beyond_fasta_sequence_length(self):
 
         # there are 1540 bps, but 1541 is used in the first annotation
 
@@ -407,11 +407,18 @@ CCTCTGAATAACAATAGCAATTGTGGATAATGTGAAAAAATAATACACAACATACACAGTTTATCCACAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            with self.assertRaisesRegex(Exception, "Cannot find appropriate sequence for feature"):
-                genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name)
             os.unlink(f.name)
 
-    def test_does_not_like_fasta_sequence_shorter_than_what_last_annotation_asks(self):
+        # verify first fragment
+        self.assertEquals(genome.fragments.count(), 1)
+        chrI = [
+            fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "1"
+        ][0]
+        self.assertEqual(len(chrI.sequence), 1540)
+        self.assertEqual(len(chrI.annotations()), 1)
+
+    def test_ignores_annotations_at_end_of_gff_that_go_beyond_fasta_sequence(self):
 
         # there are 1540 bps, but 1541 is used in the last annotation
 
@@ -449,9 +456,16 @@ CCTCTGAATAACAATAGCAATTGTGGATAATGTGAAAAAATAATACACAACATACACAGTTTATCCACAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            with self.assertRaisesRegex(Exception, "Cannot find appropriate sequence for feature"):
-                genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name)
             os.unlink(f.name)
+
+        # verify first fragment
+        self.assertEquals(genome.fragments.count(), 1)
+        chrI = [
+            fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "1"
+        ][0]
+        self.assertEqual(len(chrI.sequence), 1540)
+        self.assertEqual(len(chrI.annotations()), 1)
 
 
 class QualifierTest(TestCase):
