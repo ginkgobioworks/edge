@@ -163,15 +163,7 @@ class GFFFragmentImporter(object):
                             features.append(sub_tup)
                             self.__subfeatures_dict[subfeature_name] = [sub_tup]
 
-                    sub_first, sub_second = [], []
-                    for f in sorted(sub.sub_features, key=lambda f: int(f.location.start)):
-                        if circular_mod(int(f.location.start) + 1) < sub_tup[0]:
-                            second.append(f)
-                        else:
-                            first.append(f)
-                    sub_sub_feats_to_iter = sub_first + sub_second
-
-                    for sub_sub in sub_sub_feats_to_iter:
+                    for sub_sub in sub.sub_features:
                         # change name for sub sub feature
                         subsubfeature_name = ''
                         for field in name_fields:
