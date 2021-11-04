@@ -1053,7 +1053,7 @@ TTTCAATGCGAGTTGGCTTAATCAGCGATATTCAGAAATTATGCAGGCTATTATTTATGATGTCATCGGT
         self.assertEquals(contig_1.annotations()[2].feature.strand, -1)
 
     def test_full_rbs_slippage_annotation_import(self):
-        genome2 = Genome.import_gff("Foo1", "example/AZS-ribosomal.gff")
+        genome2 = Genome.import_gff("Foo1", "edge/tests/fixtures/AZS-ribosomal.gff")
         only_contig = [fr.indexed_fragment() for fr in genome2.fragments.all() if fr.name == "1"][0]
         anns = only_contig.annotations()
         self.assertEqual(len(anns), 4565)
