@@ -465,7 +465,7 @@ CCTCTGAATAACAATAGCAATTGTGGATAATGTGAAAAAATAATACACAACATACACAGTTTATCCACAT
             fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "1"
         ][0]
         self.assertEqual(len(chrI.sequence), 1540)
-        self.assertEqual(len(chrI.annotations()), 1)
+        self.assertEqual(len(chrI.annotations()), 3)
 
 
 class QualifierTest(TestCase):

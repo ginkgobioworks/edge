@@ -25,6 +25,7 @@ class GFFImporter(object):
         connection.use_debug_cursor = False
 
         for rec in GFF.parse(in_handle):
+            print(rec.__dict__)
             if self.__genome.fragments.filter(name=rec.id).count() > 0:
                 print("skipping %s, already imported" % rec.id)
             else:
@@ -72,8 +73,7 @@ class GFFFragmentImporter(object):
         features = []
         for feature in self.__rec.features:
             # skip features that cover the entire sequence
-            if feature.location.start == 0 and feature.location.end == seqlen \
-                    and feature.type.upper() in ['REGION', 'CHR', 'CHROM', 'CHROMOSOME']:
+            if feature.type.upper() in ['REGION', 'CHR', 'CHROM', 'CHROMOSOME']:
                 continue
 
             # get name
@@ -113,11 +113,11 @@ class GFFFragmentImporter(object):
 
             # order based on relative position in the feature
             first, second = [], []
-            for f in sorted(feature.sub_features, key=lambda f: int(f.location.start)):
-                if circular_mod(int(f.location.start) + 1, seqlen) < features[-1][0]:
-                    second.append(f)
+            for sub in sorted(feature.sub_features, key=lambda f: int(f.location.start)):
+                if circular_mod(int(sub.location.start) + 1, seqlen) < features[-1][0]:
+                    second.append(sub)
                 else:
-                    first.append(f)
+                    first.append(sub)
             sub_feats_to_iter = first + second
 
             for sub in sub_feats_to_iter:
@@ -164,7 +164,15 @@ class GFFFragmentImporter(object):
                             features.append(sub_tup)
                             self.__subfeatures_dict[subfeature_name] = [sub_tup]
 
-                    for sub_sub in sub.sub_features:
+                    first, second = [], []
+                    for sub_sub in sorted(sub.sub_features, key=lambda f: int(f.location.start)):
+                        if circular_mod(int(sub.location.start) + 1, seqlen) < features[-1][0]:
+                            second.append(sub_sub)
+                        else:
+                            first.append(sub_sub)
+                    sub_sub_feats_to_iter = first + second
+
+                    for sub_sub in sub_sub_feats_to_iter:
                         # change name for sub sub feature
                         subsubfeature_name = ''
                         for field in name_fields:
@@ -251,8 +259,7 @@ class GFFFragmentImporter(object):
         fragment_circular = False
         for feature in self.__rec.features:
             # skip features that cover the entire sequence
-            if feature.location.start == 0 and feature.location.end == seq_len \
-                    and feature.type == 'region':
+            if feature.type.upper() in ['REGION', 'CHR', 'CHROM', 'CHROMOSOME']:
                 if 'Is_circular' in feature.qualifiers:
                     fragment_circular = feature.qualifiers['Is_circular'][0].upper() == 'TRUE'
                 break
