@@ -31,6 +31,14 @@ def fragment_fasta_fn(fragment):
     )
 
 
+def does_blast_db_have_all_fragments(fragments, dbname):
+    f = open(dbname + ".nsd")
+    lines = f.readlines()
+    f.close()
+    print("verifying: expecting %s fragments, got %s lines in nsd" % (len(fragments), len(lines)))
+    return len(fragments) * 2 == len(lines)
+
+
 def build_fragment_fasta(fragment, refresh=False):
     fn = fragment_fasta_fn(fragment)
     make_required_dirs(fn)
@@ -59,7 +67,7 @@ def build_fragment_fasta(fragment, refresh=False):
     return fn
 
 
-def build_db(fragments, dbname, refresh=True):
+def build_db(fragments, dbname, refresh=True, attempt=0):
     if len(fragments) == 0:
         return None
 
@@ -77,6 +85,7 @@ def build_db(fragments, dbname, refresh=True):
                     f.write(line)
 
     # the following prevents concurrent blastdb builds corrupting each other
+    orig_dbname = dbname
     unique_suffix = str(uuid.uuid4())
     dbname = "%s_%s" % (dbname, unique_suffix)
 
@@ -90,6 +99,11 @@ def build_db(fragments, dbname, refresh=True):
         print(r)
 
     os.unlink(fafile)
+
+    if not does_blast_db_have_all_fragments(fragments, dbname) and attempt < 5:
+        print("does not have all fragments, retry (attempts: %s)" % (attempt + 1,))
+        return build_db(fragments, orig_dbname, refresh=refresh, attempt=(attempt + 1))
+
     return dbname
 
 
