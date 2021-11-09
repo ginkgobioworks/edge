@@ -763,10 +763,7 @@ def trim_cassette_and_region(specified_cassette, annotations, genome, region):
 
     trim_front = find_common_start(integrated_sequence, replaced_sequence)
     if trim_front:
-        if region.cassette_reversed:
-           region.cassette = region.cassette[:-trim_front]
-        else:
-           region.cassette = region.cassette[trim_front:]
+        region.cassette = region.cassette[trim_front:]
         # print("trim front", trim_front)
         region.start += trim_front
         region.start = ((region.start - 1) % fragment_length) + 1
@@ -776,10 +773,7 @@ def trim_cassette_and_region(specified_cassette, annotations, genome, region):
 
     trim_back = find_common_start(integrated_sequence[::-1], replaced_sequence[::-1])
     if trim_back:
-        if region.cassette_reversed:
-           region.cassette = region.cassette[trim_back:]
-        else:
-           region.cassette = region.cassette[:-trim_back]
+        region.cassette = region.cassette[:-trim_back]
         # print("trim back", trim_back)
         region.end -= trim_back
         region.end = ((region.end - 1) % fragment_length) + 1
