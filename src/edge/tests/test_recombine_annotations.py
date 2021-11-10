@@ -235,7 +235,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         self.assertEquals(a.feature_base_first, 12)
         self.assertEquals(a.feature_base_last, 45)
 
-    def test_preserves_annotations_on_homology_arm_fwd_that_have_not_changed_with_replacement_sequence(self):
+    def test_preserves_annotations_on_homology_arm_fwd_when_inserting_sequence(self):
         cassette = "".join([self.front_bs, "aaa", self.back_bs])
 
         # add annotaiton on upstream arm
@@ -263,7 +263,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         a = annotations[1]
         self.assertEquals(a.feature.type, "operation")
 
-    def test_preserves_annotations_on_homology_arm_fwd_that_have_not_changed_when_doing_ko(self):
+    def test_preserves_annotations_on_homology_arm_fwd_when_doing_ko(self):
         cassette = "".join([self.front_bs, self.back_bs])
 
         # add annotaiton on upstream arm
@@ -288,7 +288,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         self.assertEquals(a.base_first, len(self.upstream) + 2)
         self.assertEquals(a.base_last, len(self.upstream) + len(self.front_bs))
 
-    def test_preserves_annotations_on_homology_arm_rev_that_have_not_changed(self):
+    def test_preserves_annotations_on_homology_arm_rev(self):
         cassette = "".join([self.front_bs, self.back_bs])
 
         # add annotaiton on reverse strand of downstream arm

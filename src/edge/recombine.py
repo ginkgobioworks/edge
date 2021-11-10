@@ -627,7 +627,7 @@ def trim_cassette_and_region(specified_cassette, annotations, genome, region):
     integrated_sequence = integrated_sequence.lower()
     replaced_sequence = region.sequence.lower()
 
-    # print("region is %s-%s, in fragment of length %s" % (region.start, region.end, fragment_length))
+    # print("region %s-%s, fragment length %s" % (region.start, region.end, fragment_length))
     # print("integrated: %s" % integrated_sequence)
     # print("  original: %s" % replaced_sequence)
 
