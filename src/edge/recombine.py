@@ -33,8 +33,18 @@ def remove_overhangs(s):
 
 
 def get_cassette_new_annotations(
-    cassette, cassette_reversed, specified_cassette, new_annotations
+    cassette, cassette_reversed, specified_cassette, specified_annotations
 ):
+    """
+    user specified cassette sequence is `specified_cassette`, with
+    `specified_annotations`. new sequence integrated into the genome is
+    `cassette`. here we have to translate `specified_annotations` to
+    coordinates relative to `cassette`.
+    """
+
+    cassette = cassette.lower()
+    specified_cassette = specified_cassette.lower()
+
     annotations = []
     for orf in detect_orfs(cassette):
         annotations.append(
@@ -48,13 +58,13 @@ def get_cassette_new_annotations(
             )
         )
 
-    if new_annotations:
+    if specified_annotations:
         if cassette_reversed is True:
             cassette_len = len(cassette)
-            reversed_cassette = str(Seq(cassette).reverse_complement()).lower()
-            if reversed_cassette in specified_cassette.lower():
-                offset = specified_cassette.lower().index(reversed_cassette)
-                for annotation in new_annotations:
+            reversed_cassette = str(Seq(cassette).reverse_complement())
+            if reversed_cassette in specified_cassette:
+                offset = specified_cassette.index(reversed_cassette)
+                for annotation in specified_annotations:
                     if annotation["base_first"] - offset > 0:
                         annotations.append(
                             dict(
@@ -72,10 +82,10 @@ def get_cassette_new_annotations(
                         )
 
         else:
-            if cassette.lower() in specified_cassette.lower():
-                offset = specified_cassette.lower().index(cassette.lower())
-                for annotation in new_annotations:
-                    if annotation["base_first"] - offset > 0:
+            if cassette in specified_cassette:
+                offset = specified_cassette.index(cassette)
+                for annotation in specified_annotations:
+                    if annotation["base_first"] - offset > 0 or True:
                         annotations.append(
                             dict(
                                 base_first=annotation["base_first"] - offset,
@@ -88,21 +98,6 @@ def get_cassette_new_annotations(
                         )
 
     return annotations
-
-
-def get_cassette_annotations(
-    genome,
-    cassette,
-    cassette_reversed,
-    fragment_id,
-    region_start,
-    region_end,
-    specified_cassette,
-    new_annotations,
-):
-    return get_cassette_new_annotations(
-        cassette, cassette_reversed, specified_cassette, new_annotations
-    )
 
 
 class RecombinationRegion(object):
@@ -131,7 +126,6 @@ class RecombinationRegion(object):
             self.cassette = str(Seq(integrated_cassette).reverse_complement())
         else:
             self.cassette = integrated_cassette
-
         self.front_arm = front_arm
         self.back_arm = back_arm
         self.verification_front = []
@@ -598,27 +592,15 @@ def find_common_start(a, b):
     return len(os.path.commonprefix([a, b]))
 
 
-def trim_cassette_and_region(specified_cassette, annotations, genome, region):
+def trim_cassette_and_region(genome, region):
     """
     Trim an integration region by removing sequences at both ends that also
     appear on the specified integration donor cassette (i.e. removing homology
-    arms). If there are annotations, don't trim/remove sequences that are
-    annotated.
+    arms).
     """
 
     if region.is_double_crossover is False:
         return region
-
-    """
-    if region.cassette_reversed is True:
-        cassette_len = len(region.cassette)
-        reversed_cassette = str(Seq(region.cassette).reverse_complement()).lower()
-        if reversed_cassette in specified_cassette.lower():
-            offset = specified_cassette.lower().index(reversed_cassette)
-    else:
-        if region.cassette.lower() in specified_cassette.lower():
-            offset = specified_cassette.lower().index(cassette.lower())
-    """
 
     fragment = [f for f in genome.fragments.all() if f.id == region.fragment_id][0]
     fragment_length = fragment.indexed_fragment().length
@@ -627,14 +609,14 @@ def trim_cassette_and_region(specified_cassette, annotations, genome, region):
     integrated_sequence = integrated_sequence.lower()
     replaced_sequence = region.sequence.lower()
 
-    # print("region %s-%s, fragment length %s" % (region.start, region.end, fragment_length))
-    # print("integrated: %s" % integrated_sequence)
-    # print("  original: %s" % replaced_sequence)
+    print("region %s-%s, fragment length %s" % (region.start, region.end, fragment_length))
+    print("integrated: %s" % integrated_sequence)
+    print("  original: %s" % replaced_sequence)
 
     trim_front = find_common_start(integrated_sequence, replaced_sequence)
     if trim_front:
         region.cassette = region.cassette[trim_front:]
-        # print("trim front", trim_front)
+        print("trim front", trim_front)
         region.start += trim_front
         region.start = ((region.start - 1) % fragment_length) + 1
 
@@ -644,12 +626,12 @@ def trim_cassette_and_region(specified_cassette, annotations, genome, region):
     trim_back = find_common_start(integrated_sequence[::-1], replaced_sequence[::-1])
     if trim_back:
         region.cassette = region.cassette[:-trim_back]
-        # print("trim back", trim_back)
+        print("trim back", trim_back)
         region.end -= trim_back
         region.end = ((region.end - 1) % fragment_length) + 1
 
-    # print("new coordinates %s-%s" % (region.start, region.end))
-    # print("new cassette %s" % region.cassette)
+    print("new coordinates %s-%s" % (region.start, region.end))
+    print("new cassette %s" % region.cassette)
     return region
 
 
@@ -669,7 +651,7 @@ def recombine_sequence(
     if regions is None or len(regions) == 0:
         return None
 
-    regions = [trim_cassette_and_region(cassette, annotations, genome, r) for r in regions]
+    regions = [trim_cassette_and_region(genome, r) for r in regions]
 
     # lock root genome to prevent other genomes of touching same fragment or chunk
     lock_genome(find_root_genome(genome))
@@ -703,7 +685,7 @@ def recombine_sequence(
             start=region.start,
             end=region.end,
             cassette_reversed=region.cassette_reversed,
-            cassette=region.cassette,
+            cassette=region.cassette
         )
         for region in regions
     ]
@@ -747,7 +729,7 @@ def annotate_integration(
     cassette_name,
     op,
     specified_cassette,
-    new_annotations,
+    specified_annotations,
 ):
 
     specified_cassette = specified_cassette.lower()
@@ -757,21 +739,21 @@ def annotate_integration(
 
     before_and_after_with_annotations = []
     for before, after in zip(regions_before, regions_after):
+        annotations_to_use = []
         if (
             before["cassette"].lower() not in specified_cassette
             and before["cassette"].lower() not in reversed_specified_cassette
         ):
             # opps, annotations no longer match, ignore them for now
-            new_annotations = []
-        annotations = get_cassette_annotations(
-            genome,
+            annotations_to_use = []
+        else:
+            annotations_to_use = specified_annotations
+
+        annotations = get_cassette_new_annotations(
             before["cassette"],
             before["cassette_reversed"],
-            before["fragment_id"],
-            before["start"],
-            before["end"],
             specified_cassette,
-            new_annotations,
+            annotations_to_use,
         )
         before_and_after_with_annotations.append((before, after, annotations))
 

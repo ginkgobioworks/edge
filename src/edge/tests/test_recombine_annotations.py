@@ -1241,3 +1241,145 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         self.assertEquals(
             fragment_sequence[ans[6].base_first - 1 : ans[6].base_last], "t" * 100
         )
+
+    def test_adds_annotations_correctly_when_bps_flanking_new_seq_matches_wt_genome_sequence(
+        self,
+    ):
+        donor = self.middle[:3] + "a" * 97 + "c" * 100 + "t" * 97 + self.middle[-3:]
+        cassette = "".join([self.front_bs, donor, self.back_bs])
+        flen = len(self.front_bs)
+
+        annotations = [
+            dict(
+                base_first=flen + 1,
+                base_last=flen + 100,
+                name="pFavorite",
+                type="promoter",
+                strand=1,
+                qualifiers=None,
+            ),
+            dict(
+                base_first=flen + 101,
+                base_last=flen + 200,
+                name="Favorite",
+                type="gene",
+                strand=1,
+                qualifiers=dict(locus="Favorite", product="Favoritep"),
+            ),
+            dict(
+                base_first=flen + 201,
+                base_last=flen + 300,
+                name="tFavorite",
+                type="terminator",
+                strand=1,
+                qualifiers=None,
+            ),
+        ]
+
+        c = recombine(self.genome, cassette, self.arm_len, annotations=annotations)
+        f = c.fragments.all()[0].indexed_fragment()
+        fragment_sequence = f.sequence
+
+        ans = f.annotations()
+        self.assertEquals(len(ans), 4)
+
+        ans = sorted(ans, key=lambda a: (a.base_first, -a.base_last))
+
+        self.assertEquals(ans[0].feature.type, "promoter")
+        self.assertEquals(ans[0].feature.name, "pFavorite")
+        self.assertEquals(ans[0].feature.strand, 1)
+        self.assertEquals(
+            ans[0].base_first, len(self.upstream + self.front_bs) + 1
+        )
+        self.assertEquals(
+            ans[0].base_last, len(self.upstream + self.front_bs) + 100
+        )
+        self.assertEquals(
+            fragment_sequence[ans[0].base_first - 1 : ans[0].base_last],
+            self.middle[:3] + "a" * 97
+        )
+
+        self.assertEquals(ans[1].feature.type, "operation")
+
+        self.assertEquals(ans[2].feature.type, "gene")
+        self.assertEquals(ans[2].feature.name, "Favorite")
+        self.assertEquals(ans[2].feature.strand, 1)
+        self.assertEquals(
+            ans[2].base_first, len(self.upstream + self.front_bs) + 100 + 1
+        )
+        self.assertEquals(
+            ans[2].base_last, len(self.upstream + self.front_bs) + 100 + 100
+        )
+        self.assertEquals(
+            fragment_sequence[ans[2].base_first - 1 : ans[2].base_last], "c" * 100
+        )
+
+        self.assertEquals(ans[3].feature.type, "terminator")
+        self.assertEquals(ans[3].feature.name, "tFavorite")
+        self.assertEquals(ans[3].feature.strand, 1)
+        self.assertEquals(
+            ans[3].base_first, len(self.upstream + self.front_bs) + 200 + 1
+        )
+        self.assertEquals(
+            ans[3].base_last, len(self.upstream + self.front_bs) + 200 + 100
+        )
+        self.assertEquals(
+            fragment_sequence[ans[3].base_first - 1 : ans[3].base_last],
+            "t" * 97 + self.middle[-3:]
+        )
+
+    def test_adds_new_annotations_on_homology_arm(
+        self,
+    ):
+        donor = "a" * 100 + "c" * 100 + "t" * 100
+        cassette = "".join([self.front_bs, donor, self.back_bs])
+
+        annotations = [
+            dict(
+                base_first=1,
+                base_last=3,
+                name="foo",
+                type="feature",
+                strand=1,
+                qualifiers=None,
+            ),
+            dict(
+                base_first=len(self.front_bs + donor + self.back_bs) - 4,
+                base_last=len(self.front_bs + donor + self.back_bs),
+                name="bar",
+                type="feature",
+                strand=-1,
+                qualifiers=None
+            )
+        ]
+
+        c = recombine(self.genome, cassette, self.arm_len, annotations=annotations)
+        f = c.fragments.all()[0].indexed_fragment()
+        fragment_sequence = f.sequence
+
+        ans = f.annotations()
+        self.assertEquals(len(ans), 3)
+
+        ans = sorted(ans, key=lambda a: (a.base_first, -a.base_last))
+
+        self.assertEquals(ans[0].feature.type, "feature")
+        self.assertEquals(ans[0].feature.name, "foo")
+        self.assertEquals(ans[0].feature.strand, 1)
+        self.assertEquals(ans[0].base_first, len(self.upstream) + 1)
+        self.assertEquals(ans[0].base_last, len(self.upstream) + 3)
+        self.assertEquals(
+            fragment_sequence[ans[0].base_first - 1 : ans[0].base_last],
+            self.front_bs[:3]
+        )
+
+        self.assertEquals(ans[1].feature.type, "operation")
+
+        self.assertEquals(ans[2].feature.type, "feature")
+        self.assertEquals(ans[2].feature.name, "bar")
+        self.assertEquals(ans[2].feature.strand, -1)
+        self.assertEquals(ans[2].base_first, len(self.upstream + cassette) - 4)
+        self.assertEquals(ans[2].base_last, len(self.upstream + cassette))
+        self.assertEquals(
+            fragment_sequence[ans[2].base_first - 1 : ans[2].base_last],
+            self.back_bs[-5:]
+        )
