@@ -566,7 +566,9 @@ def shift_regions(regions, fragment_id, start, replaced, added, new_fragment_id)
     if len(regions) == 0:
         return []
 
-    assert start <= regions[0].start
+    for r in regions:
+        if r.fragment_id == fragment_id:
+            assert start <= r.start
 
     def updated_region(region):
         if region.start <= start + replaced - 1:  # overlapping
