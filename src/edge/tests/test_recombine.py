@@ -448,10 +448,10 @@ class GenomeRecombinationTest(TestCase):
 
         a = c.fragments.all()[0].indexed_fragment().annotations()
         self.assertEquals(len(a), 1)
-        self.assertEquals(a[0].base_first, len(upstream) + 1)
-        self.assertEquals(a[0].base_last, len(upstream + cassette))
+        self.assertEquals(a[0].base_first, len(upstream) + len(front_bs) + 1)
+        self.assertEquals(a[0].base_last, len(upstream + front_bs + replaced))
         self.assertEquals(a[0].feature_base_first, 1)
-        self.assertEquals(a[0].feature_base_last, len(cassette))
+        self.assertEquals(a[0].feature_base_last, len(replaced))
         self.assertEquals(a[0].feature.strand, 1)
         self.assertEquals(a[0].feature.operation.type, Operation.RECOMBINATION[0])
         self.assertEquals(a[0].feature.operation.genome, c)
@@ -476,10 +476,10 @@ class GenomeRecombinationTest(TestCase):
 
         a = c.fragments.all()[0].indexed_fragment().annotations()
         self.assertEquals(len(a), 1)
-        self.assertEquals(a[0].base_first, len(upstream) + 1)
-        self.assertEquals(a[0].base_last, len(upstream + cassette))
+        self.assertEquals(a[0].base_first, len(upstream) + len(front_bs) + 1)
+        self.assertEquals(a[0].base_last, len(upstream + front_bs + replaced))
         self.assertEquals(a[0].feature_base_first, 1)
-        self.assertEquals(a[0].feature_base_last, len(cassette))
+        self.assertEquals(a[0].feature_base_last, len(replaced))
         # on reverse strand
         self.assertEquals(a[0].feature.strand, -1)
         self.assertEquals(a[0].feature.operation.type, Operation.RECOMBINATION[0])
@@ -505,15 +505,15 @@ class GenomeRecombinationTest(TestCase):
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
             c.fragments.all()[0].indexed_fragment().sequence,
-            "".join([downstream, upstream, cassette]),
+            "".join([back_bs, downstream, upstream, front_bs, replaced])
         )
 
         a = c.fragments.all()[0].indexed_fragment().annotations()
         self.assertEquals(len(a), 1)
-        self.assertEquals(a[0].base_first, len(downstream + upstream) + 1)
+        self.assertEquals(a[0].base_first, len(back_bs + downstream + upstream + front_bs) + 1)
         self.assertEquals(a[0].base_last, len(downstream + upstream + cassette))
         self.assertEquals(a[0].feature_base_first, 1)
-        self.assertEquals(a[0].feature_base_last, len(cassette))
+        self.assertEquals(a[0].feature_base_last, len(replaced))
         self.assertEquals(a[0].feature.strand, 1)
         self.assertEquals(a[0].feature.operation.type, Operation.RECOMBINATION[0])
         self.assertEquals(a[0].feature.operation.genome, c)
@@ -538,7 +538,7 @@ class GenomeRecombinationTest(TestCase):
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
             c.fragments.all()[0].indexed_fragment().sequence,
-            "".join([downstream, upstream, cassette]),
+            "".join([front_bs[8:], replaced, back_bs, downstream, upstream, front_bs[0:8]]),
         )
 
     def test_recombine_when_back_arm_is_across_circular_boundary(self):
@@ -561,7 +561,7 @@ class GenomeRecombinationTest(TestCase):
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
             c.fragments.all()[0].indexed_fragment().sequence,
-            "".join([downstream, upstream, cassette]),
+            "".join([back_bs[8:], downstream, upstream, front_bs, replaced, back_bs[0:8]])
         )
 
     def test_recombines_with_reverse_complement_cassette_correctly(self):
@@ -846,14 +846,16 @@ class GenomeRecombinationTest(TestCase):
         c = recombine(g, cassette, arm_len)
         self.assertEquals(
             c.fragments.all()[0].indexed_fragment().sequence,
-            downstream
+            back_bs
+            + downstream
             + "t" * 20
             + upstream
             + cassette
             + downstream
             + "c" * 20
             + upstream
-            + cassette,
+            + front_bs
+            + replaced,
         )
 
     def test_multiple_recombines_return_same_child(self):
