@@ -654,6 +654,22 @@ class GenomeRecombinationTest(TestCase):
             "".join([upstream, cassette, downstream]),
         )
 
+    def test_recombines_genome_parental_sequence_does_nothing(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+
+        template = "".join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = "".join([front_bs, middle, back_bs])
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+        c = recombine(g, cassette, arm_len)
+
+        self.assertEqual(c, None)
+
     def test_recombines_multiple_times_on_different_fragments(self):
         upstream = "gagattgtccgcgtttt"
         front_bs = "catagcgcacaggacgcggag"

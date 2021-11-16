@@ -610,6 +610,8 @@ def trim_cassette_and_region(genome, region):
     integrated_sequence = region.cassette
     integrated_sequence = integrated_sequence.lower()
     replaced_sequence = region.sequence.lower()
+    if integrated_sequence == replaced_sequence:
+        return None
 
     # print("region %s-%s, fragment length %s" % (region.start, region.end, fragment_length))
     # print("integrated: %s" % integrated_sequence)
@@ -654,6 +656,9 @@ def recombine_sequence(
         return None
 
     regions = [trim_cassette_and_region(genome, r) for r in regions]
+    regions = [r for r in regions if r is not None]
+    if len(regions) == 0:
+        return None
 
     # lock root genome to prevent other genomes of touching same fragment or chunk
     lock_genome(find_root_genome(genome))
