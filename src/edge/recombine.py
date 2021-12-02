@@ -545,7 +545,8 @@ def recombine_region(genome, region, min_homology_arm_length, op, new_fragment_d
         # and we should allow that.
 
         if region_start <= region_end + 1:
-            f.replace_bases(region_start, region_end - region_start + 1, cassette)
+            number_of_bps_to_remove = region_end - region_start + 1
+            f.replace_bases(region_start, number_of_bps_to_remove, cassette)
             replaced = region_end - region_start + 1
         else:
             assert f.circular is True

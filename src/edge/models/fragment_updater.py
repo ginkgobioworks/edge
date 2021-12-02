@@ -85,7 +85,7 @@ class Fragment_Updater(object):
 
     def remove_bases(self, before_base1, length):
         if length <= 0:
-            raise Exception("Cannot remove less than one base pair")
+            raise Exception("Cannot remove fewer than one base pair")
         if before_base1 is None:
             raise Exception("Missing position to remove sequences")
 
@@ -128,7 +128,7 @@ class Fragment_Updater(object):
     def replace_bases(self, before_base1, length_to_remove, sequence):
 
         if length_to_remove < 0:
-            raise Exception("Cannot remove less than one chunk pair")
+            raise Exception("Cannot remove fewer than zero chunk pairs")
         if before_base1 is None:
             raise Exception("Missing position to remove sequences")
 
@@ -198,7 +198,7 @@ class Fragment_Updater(object):
     def replace_with_fragment(self, before_base1, length_to_remove, fragment):
 
         if length_to_remove <= 0:
-            raise Exception("Cannot remove less than one chunk pair")
+            raise Exception("Cannot remove fewer than one chunk pair")
         if before_base1 is None:
             raise Exception("Missing position to remove sequences")
 
