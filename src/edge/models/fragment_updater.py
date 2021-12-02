@@ -127,12 +127,13 @@ class Fragment_Updater(object):
 
     def replace_bases(self, before_base1, length_to_remove, sequence):
 
-        if length_to_remove <= 0:
+        if length_to_remove < 0:
             raise Exception("Cannot remove less than one chunk pair")
         if before_base1 is None:
             raise Exception("Missing position to remove sequences")
 
-        self.remove_bases(before_base1, length_to_remove)
+        if length_to_remove > 0:
+            self.remove_bases(before_base1, length_to_remove)
         self.insert_bases(before_base1, sequence)
 
     def insert_fragment(self, before_base1, fragment):
