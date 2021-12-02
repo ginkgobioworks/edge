@@ -538,8 +538,15 @@ def recombine_region(genome, region, min_homology_arm_length, op, new_fragment_d
         new_fragment_dict[f.id] = 1
 
         replaced = 0
-        if region_start <= region_end:
-            f.replace_bases(region_start, region_end - region_start + 1, cassette)
+
+        # added "+1 here": region_start and region_end are interpreted as
+        # replacing the bp starting at region_start and ending at region_end.
+        # If region_end is region_start-1, that means it's just an insertion
+        # and we should allow that.
+
+        if region_start <= region_end + 1:
+            number_of_bps_to_remove = region_end - region_start + 1
+            f.replace_bases(region_start, number_of_bps_to_remove, cassette)
             replaced = region_end - region_start + 1
         else:
             assert f.circular is True

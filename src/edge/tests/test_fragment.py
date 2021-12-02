@@ -330,6 +330,16 @@ class FragmentTests(TestCase):
         # does not affect root
         self.assertEquals(self.root.sequence, self.root_sequence)
 
+    def test_replace_zero_bases(self):
+        f = self.root.update("Bar")
+        f.replace_bases(3, 0, "cccc")
+        self.assertEquals(f.name, "Bar")
+        self.assertEquals(
+            f.sequence, self.root_sequence[0:2] + "cccc" + self.root_sequence[2:]
+        )
+        # does not affect root
+        self.assertEquals(self.root.sequence, self.root_sequence)
+
     def test_replace_sequence_at_start(self):
         f = self.root.update("Bar")
         f.replace_bases(1, 6, "cccc")

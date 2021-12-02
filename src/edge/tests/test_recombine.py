@@ -428,6 +428,26 @@ class GenomeRecombinationTest(TestCase):
             json.dumps(dict(cassette=cassette, homology_arm_length=arm_len)),
         )
 
+    def test_inserting_new_sequence_without_removal_of_old_sequence(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "a" * 100
+
+        template = "".join([upstream, front_bs, back_bs, downstream])
+        cassette = "".join([front_bs, replaced, back_bs])
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+        c = recombine(g, cassette, arm_len)
+
+        self.assertNotEqual(g.id, c.id)
+        self.assertEquals(
+            c.fragments.all()[0].indexed_fragment().sequence,
+            "".join([upstream, cassette, downstream]),
+        )
+
     def test_annotates_cassette(self):
         upstream = "gagattgtccgcgtttt"
         front_bs = "catagcgcacaggacgcggag"
