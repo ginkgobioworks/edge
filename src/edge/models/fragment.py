@@ -91,8 +91,22 @@ class Fragment(models.Model):
 
             return out_edges[0].to_chunk
 
+    def lock(self):
+        """
+        Do a select for update, which, when executed inside a transaction, places
+        a lock on the fragment.
+        """
+
+        fragments = Fragment.objects.select_for_update().filter(pk=self.id)
+        # Lock only happens when querset is evaluated, therefore need to do at least fragments[0]
+        fragment = fragments[0]
+        print(f"Lock fragment {fragment.id}")
+        return fragment
+
     @transaction.atomic()
     def index_fragment_chunk_locations(self):
+        self.lock()
+
         # remove old index
         self.fragment_chunk_location_set.all().delete()
 

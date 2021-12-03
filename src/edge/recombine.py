@@ -510,6 +510,11 @@ def find_root_genome(genome):
 
 
 def lock_genome(genome):
+    """
+    Do a select for update, which, when executed inside a transaction, places a
+    lock on the genome.
+    """
+
     genomes = Genome.objects.select_for_update().filter(pk=find_root_genome(genome).id)
     # Lock only happens when querset is evaluated, therefore need to do at least genomes[0]
     genome = genomes[0]
