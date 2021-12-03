@@ -98,7 +98,7 @@ class Fragment(models.Model):
         """
 
         fragments = Fragment.objects.select_for_update().filter(pk=self.id)
-        # Lock only happens when querset is evaluated, therefore need to do at least fragments[0]
+        # Lock only happens when queryset is evaluated, therefore need to do at least fragments[0]
         fragment = fragments[0]
         print(f"Lock fragment {fragment.id}")
         return fragment
