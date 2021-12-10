@@ -1,3 +1,4 @@
+from celery import shared_task
 from django.test import TestCase
 
 from edge.models import Genome
@@ -383,3 +384,23 @@ class GenomeTest(TestCase):
                 )
             else:
                 raise Exception("Unexpected fragment")
+
+
+@shared_task
+def test_task(x, y):
+    return x + y
+
+
+class GenomeTaskSchedulingTest(TestCase):
+
+    def test_schedules_tasks(self):
+        genome = Genome.create("Foo")
+        x = 3
+
+        def task_caller():
+            return test_task(x, 2)
+
+        genome.add_task(task_caller)
+        x = genome.schedule_tasks()
+        self.assertEquals(len(x), 1)
+        self.assertEquals(x[0], 5)
