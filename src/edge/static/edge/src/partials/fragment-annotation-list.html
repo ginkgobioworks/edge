@@ -2,7 +2,7 @@
   <span class="text-danger">Error: {{ annotate_error.message }}</span>
 </div>
 
-<form class="form-inline" role="form" ng-model-options="{ type: misc }">
+<form class="form-inline" role="form">
   From
   <div class="form-group">
     <input
@@ -25,19 +25,7 @@
       placeholder="Bp"
     />
   </div>
-  <div class="form-group">
-    <input
-      class="fs-block"
-      required
-      class="form-control"
-      type="text"
-      ng-model="annotation.name"
-      size="8"
-      placeholder="Name"
-    />
-  </div>
-  <br />
-  <div class="form-group space-top-small">
+  <div class="form-group space-left-small">
     <select
       required
       class="form-control select-mini"
@@ -47,7 +35,17 @@
       <option value="-1">Rev</option>
     </select>
   </div>
-  <div class="form-group space-top-small">
+  <div class="form-group space-left-small">
+    <input
+      required
+      class="form-control"
+      type="text"
+      ng-model="annotation.name"
+      size="8"
+      placeholder="Name"
+    />
+  </div>
+  <div class="form-group space-left-small">
     <button class="btn btn-primary" ng-click="addAnnotation(annotation)">
       Annotate
     </button>
