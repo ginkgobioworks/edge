@@ -5,6 +5,7 @@ import shutil
 import uuid
 import tempfile
 import subprocess
+from django.db import transaction
 from edge.models import Fragment, Genome
 from edge.blast import BLAST_DB, default_genome_db_name
 from edge.blast import Blast_Accession
@@ -39,6 +40,9 @@ def does_blast_db_have_all_fragments(fragments, dbname):
     return len(fragments) * 2 == len(lines)
 
 
+# needs to be in atomic block, so we can build fragment location indices, if
+# needed
+@transaction.atomic()
 def build_fragment_fasta(fragment, refresh=False):
     fn = fragment_fasta_fn(fragment)
     make_required_dirs(fn)
