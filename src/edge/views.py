@@ -581,7 +581,6 @@ class GenomePcrView(ViewBase):
 
 
 class GenomeOperationViewBase(ViewBase):
-    @transaction.atomic()
     def on_post(self, request, genome_id):
         from edge.blastdb import check_and_build_genome_db
 
@@ -611,36 +610,44 @@ class GenomeOperationViewBase(ViewBase):
             return [x.to_dict() for x in r], 200
 
         else:
-            op = op_class.get_operation(**args)
 
-            # find another a child genome with same operation
             child = None
-            for existing_child in genome.children.all():
-                if (
-                    existing_child.operation_set.count() == 1
-                    and existing_child.operation_set.all()[0].type == op.type
-                    and existing_child.operation_set.all()[0].params == op.params
-                ):
-                    child = existing_child
+            status_code = 400
 
-            if child is None:
-                child = op_class.perform(genome, **args)
-                if child:
-                    print(
-                        f"Generated child genome {child.id} from parent genome {genome_id}"
-                    )
-                    schedule_building_blast_db(child.id)
-                    return GenomeView.to_dict(child), 201
-            else:  # found existing child, update genome name and set to active
-                if "genome_name" in args:
-                    child.name = args["genome_name"]
-                child.active = True
-                child.save()
+            with transaction.atomic():
+                op = op_class.get_operation(**args)
+
+                # find another a child genome with same operation
+                for existing_child in genome.children.all():
+                    if (
+                        existing_child.operation_set.count() == 1
+                        and existing_child.operation_set.all()[0].type == op.type
+                        and existing_child.operation_set.all()[0].params == op.params
+                    ):
+                        child = existing_child
+
+                if child is None:
+                    child = op_class.perform(genome, **args)
+                    if child:
+                        print(
+                            f"Generated child genome {child.id} from parent genome {genome_id}"
+                        )
+                        status_code = 201
+
+                else:  # found existing child, update genome name and set to active
+                    if "genome_name" in args:
+                        child.name = args["genome_name"]
+                    child.active = True
+                    child.save()
+                    status_code = 200
 
             if child is None:
                 return None, 400
             else:
-                return GenomeView.to_dict(child), 200
+                # scheduling tasks outside of transaction block
+                schedule_building_blast_db(child.id)
+
+                return GenomeView.to_dict(child), status_code
 
 
 class GenomeCrisprDSBView(GenomeOperationViewBase):

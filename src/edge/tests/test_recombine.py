@@ -421,6 +421,7 @@ class GenomeRecombinationTest(TestCase):
         g = self.build_genome(False, template)
         self.assertEquals(Operation.objects.count(), 0)
         c = recombine(g, cassette, arm_len)
+
         self.assertEquals(Operation.objects.count(), 1)
         self.assertEquals(c.operation_set.all()[0].type, Operation.RECOMBINATION[0])
         self.assertEquals(
@@ -709,6 +710,7 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(g.fragments.count(), 2)
 
         c = recombine(g, cassette, arm_len)
+
         self.assertEquals(c.fragments.count(), 2)
 
         sequences = [f.indexed_fragment().sequence for f in c.fragments.all()]
@@ -759,6 +761,7 @@ class GenomeRecombinationTest(TestCase):
 
         # first recombination on g, producing first child c
         c1 = recombine(g, cassette, arm_len)
+
         self.assertEquals(c1.fragments.count(), 2)
         sequences = [f.indexed_fragment().sequence for f in c1.fragments.all()]
         sequences = sorted(sequences, key=lambda s: len(s))
@@ -797,6 +800,7 @@ class GenomeRecombinationTest(TestCase):
 
         # second recombination on g, producing second child c2
         c2 = recombine(g, cassette, arm_len)
+
         self.assertEquals(c2.fragments.count(), 2)
         sequences = [f.indexed_fragment().sequence for f in c2.fragments.all()]
         sequences = sorted(sequences, key=lambda s: len(s))
@@ -880,6 +884,7 @@ class GenomeRecombinationTest(TestCase):
         arm_len = min(len(front_bs), len(back_bs))
         g = self.build_genome(True, f)
         c = recombine(g, cassette, arm_len)
+
         self.assertEquals(
             c.fragments.all()[0].indexed_fragment().sequence,
             back_bs

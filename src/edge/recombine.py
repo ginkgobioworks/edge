@@ -672,9 +672,6 @@ def recombine_sequence(
     if len(regions) == 0:
         return None
 
-    # lock root genome to prevent other genomes of touching same fragment or chunk
-    lock_genome(find_root_genome(genome))
-
     if genome_name is None or genome_name.strip() == "":
         genome_name = "%s recombined with %d bps integration cassette" % (
             genome.name,
@@ -776,9 +773,6 @@ def annotate_integration(
         )
         before_and_after_with_annotations.append((before, after, annotations))
 
-    # lock root genome to prevent other genomes of touching same fragment or chunk
-    lock_genome(find_root_genome(genome))
-
     for before, after, annotations in before_and_after_with_annotations:
         with new_genome.annotate_fragment_by_fragment_id(after["fragment_id"]) as f:
             # region_start is already adjusted for multiple integration in this
@@ -823,6 +817,9 @@ def recombine(
     annotations=None,
 ):
 
+    # lock root genome to prevent other genomes of touching same fragment or chunk
+    lock_genome(find_root_genome(genome))
+
     x = recombine_sequence(
         genome,
         cassette,
@@ -835,25 +832,20 @@ def recombine(
 
     if x is None:
         return x
+    new_genome = x["new_genome"]
 
-    # schedule background job to lift over annotations, after 10 seconds
-    from edge.tasks import annotate_integration_task
-
-    annotate_integration_task.apply_async(
-        (
-            genome.id,
-            x["new_genome"].id,
-            x["regions"]["before"],
-            x["regions"]["after"],
-            x["cassette_name"],
-            x["operation"].id,
-            cassette,
-            annotations,
-        ),
-        countdown=10,
+    annotate_integration(
+        genome,
+        new_genome,
+        x["regions"]["before"],
+        x["regions"]["after"],
+        x["cassette_name"],
+        x["operation"],
+        cassette,
+        annotations
     )
 
-    return x["new_genome"]
+    return new_genome
 
 
 class RecombineOp(object):
