@@ -20,6 +20,7 @@ Edge comes with a simple UI for browsing features and sequences, the UI is
 primitive compared to other specialized applications.
 
 
+
 Try it using Docker
 -------------------
 * Use ``docker-compose``:
