@@ -91,17 +91,25 @@ class Fragment(models.Model):
 
             return out_edges[0].to_chunk
 
+    def root(self):
+        if self.parent is None:
+            return self
+        return self.parent.root()
+
     def lock(self):
         """
         Do a select for update, which, when executed inside a transaction, places
         a lock on the fragment.
         """
 
-        fragments = Fragment.objects.select_for_update().filter(pk=self.id)
-        # Lock only happens when queryset is evaluated, therefore need to do at least fragments[0]
-        fragment = fragments[0]
-        print(f"Lock fragment {fragment.id}")
-        return fragment
+        root = self.root()
+
+        root_fragments = Fragment.objects.select_for_update().filter(pk=root.id)
+        # Lock only happens when queryset is evaluated, hence root_fragments[0]
+        root_fragment = root_fragments[0]
+        print(f"Lock fragment {root_fragment.id}")
+
+        return self
 
     @transaction.atomic()
     def index_fragment_chunk_locations(self):

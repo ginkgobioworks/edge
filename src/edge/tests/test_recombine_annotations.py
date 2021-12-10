@@ -56,6 +56,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         )
 
         c = recombine(self.genome, cassette, self.arm_len)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
 
         annotations = f.annotations()
@@ -85,6 +87,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         )
 
         c = recombine(self.genome, cassette, self.arm_len)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
 
         annotations = f.annotations()
@@ -116,6 +120,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         )
 
         c = recombine(self.genome, cassette, self.arm_len)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
 
         annotations = f.annotations()
@@ -162,6 +168,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         )
 
         c = recombine(self.genome, cassette, self.arm_len)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
 
         annotations = f.annotations()
@@ -207,6 +215,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         )
 
         c = recombine(self.genome, cassette, self.arm_len)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
 
         annotations = f.annotations()
@@ -248,6 +258,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         )
 
         c = recombine(self.genome, cassette, self.arm_len)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
 
         annotations = f.annotations()
@@ -276,6 +288,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         )
 
         c = recombine(self.genome, cassette, self.arm_len)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
 
         annotations = f.annotations()
@@ -304,6 +318,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         )
 
         c = recombine(self.genome, cassette, self.arm_len)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
 
         annotations = f.annotations()
@@ -375,6 +391,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         ]
 
         c = recombine(self.genome, cassette, self.arm_len, annotations=annotations)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
         fragment_sequence = f.sequence
 
@@ -854,6 +872,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         ]
 
         c = recombine(self.genome, cassette, self.arm_len, annotations=annotations)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
         fragment_sequence = f.sequence
 
@@ -1001,6 +1021,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         ]
 
         c = recombine(self.genome, cassette, self.arm_len, annotations=annotations)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
         fragment_sequence = f.sequence
 
@@ -1154,6 +1176,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         ]
 
         c = recombine(self.genome, cassette, self.arm_len, annotations=annotations)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
         fragment_sequence = f.sequence
 
@@ -1277,6 +1301,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         ]
 
         c = recombine(self.genome, cassette, self.arm_len, annotations=annotations)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
         fragment_sequence = f.sequence
 
@@ -1354,6 +1380,8 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         ]
 
         c = recombine(self.genome, cassette, self.arm_len, annotations=annotations)
+        c.schedule_tasks()
+
         f = c.fragments.all()[0].indexed_fragment()
         fragment_sequence = f.sequence
 

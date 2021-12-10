@@ -835,25 +835,26 @@ def recombine(
 
     if x is None:
         return x
+    new_genome = x["new_genome"]
 
-    # schedule background job to lift over annotations, after 10 seconds
     from edge.tasks import annotate_integration_task
 
-    annotate_integration_task.apply_async(
-        (
-            genome.id,
-            x["new_genome"].id,
-            x["regions"]["before"],
-            x["regions"]["after"],
-            x["cassette_name"],
-            x["operation"].id,
-            cassette,
-            annotations,
-        ),
-        countdown=10,
-    )
+    def annotate_task_caller():
+        return annotate_integration_task.apply_async(
+            (
+                genome.id,
+                x["new_genome"].id,
+                x["regions"]["before"],
+                x["regions"]["after"],
+                x["cassette_name"],
+                x["operation"].id,
+                cassette,
+                annotations,
+            ),
+        )
 
-    return x["new_genome"]
+    new_genome.add_task(annotate_task_caller)
+    return new_genome
 
 
 class RecombineOp(object):
