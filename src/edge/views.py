@@ -645,7 +645,6 @@ class GenomeOperationViewBase(ViewBase):
                 return None, 400
             else:
                 # scheduling tasks outside of transaction block
-                child.schedule_tasks()
                 schedule_building_blast_db(child.id)
 
                 return GenomeView.to_dict(child), status_code

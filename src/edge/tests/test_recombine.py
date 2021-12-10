@@ -336,7 +336,6 @@ class GenomeRecombinationTest(TestCase):
         arm_len = min(len(front_bs), len(back_bs))
         g = self.build_genome(False, template)
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
@@ -377,7 +376,6 @@ class GenomeRecombinationTest(TestCase):
         arm_len = int(min(len(front_bs), len(back_bs)) / 2)
         g = self.build_genome(False, template)
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
@@ -401,7 +399,6 @@ class GenomeRecombinationTest(TestCase):
         arm_len = int(min(len(front_bs), len(back_bs)) / 2)
         g = self.build_genome(False, template)
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
@@ -424,7 +421,6 @@ class GenomeRecombinationTest(TestCase):
         g = self.build_genome(False, template)
         self.assertEquals(Operation.objects.count(), 0)
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         self.assertEquals(Operation.objects.count(), 1)
         self.assertEquals(c.operation_set.all()[0].type, Operation.RECOMBINATION[0])
@@ -446,7 +442,6 @@ class GenomeRecombinationTest(TestCase):
         arm_len = min(len(front_bs), len(back_bs))
         g = self.build_genome(False, template)
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
@@ -471,7 +466,6 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(a), 0)
 
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         a = c.fragments.all()[0].indexed_fragment().annotations()
         self.assertEquals(len(a), 1)
@@ -500,7 +494,6 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(len(a), 0)
 
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         a = c.fragments.all()[0].indexed_fragment().annotations()
         self.assertEquals(len(a), 1)
@@ -529,7 +522,6 @@ class GenomeRecombinationTest(TestCase):
         )
         g = self.build_genome(True, template)
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
@@ -563,7 +555,6 @@ class GenomeRecombinationTest(TestCase):
         )
         g = self.build_genome(True, template)
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
@@ -587,7 +578,6 @@ class GenomeRecombinationTest(TestCase):
         )
         g = self.build_genome(True, template)
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
@@ -609,7 +599,6 @@ class GenomeRecombinationTest(TestCase):
         arm_len = min(len(front_bs), len(back_bs))
         g = self.build_genome(False, template)
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
@@ -721,7 +710,6 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(g.fragments.count(), 2)
 
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         self.assertEquals(c.fragments.count(), 2)
 
@@ -773,7 +761,6 @@ class GenomeRecombinationTest(TestCase):
 
         # first recombination on g, producing first child c
         c1 = recombine(g, cassette, arm_len)
-        c1.schedule_tasks()
 
         self.assertEquals(c1.fragments.count(), 2)
         sequences = [f.indexed_fragment().sequence for f in c1.fragments.all()]
@@ -813,7 +800,6 @@ class GenomeRecombinationTest(TestCase):
 
         # second recombination on g, producing second child c2
         c2 = recombine(g, cassette, arm_len)
-        c2.schedule_tasks()
 
         self.assertEquals(c2.fragments.count(), 2)
         sequences = [f.indexed_fragment().sequence for f in c2.fragments.all()]
@@ -898,7 +884,6 @@ class GenomeRecombinationTest(TestCase):
         arm_len = min(len(front_bs), len(back_bs))
         g = self.build_genome(True, f)
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         self.assertEquals(
             c.fragments.all()[0].indexed_fragment().sequence,
@@ -1049,7 +1034,6 @@ class GenomeRecombinationTest(TestCase):
         # do recombination, then try primers again on modified genome
 
         c = recombine(g, cassette, arm_len)
-        c.schedule_tasks()
 
         for f in c.fragments.all():
             try:
@@ -1236,7 +1220,6 @@ class SingleCrossoverTest(TestCase):
 
         g = self.build_genome(False, template)
         c = recombine(g, cassette, bs_len - 2)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
@@ -1259,7 +1242,6 @@ class SingleCrossoverTest(TestCase):
 
         g = self.build_genome(False, template)
         c = recombine(g, cassette, bs_len - arm_short)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
@@ -1283,7 +1265,6 @@ class SingleCrossoverTest(TestCase):
 
         g = self.build_genome(False, template)
         c = recombine(g, cassette, bs_len - 2)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(
@@ -1309,7 +1290,6 @@ class SingleCrossoverTest(TestCase):
 
         g = self.build_genome(False, template)
         c = recombine(g, cassette, bs_len - arm_short)
-        c.schedule_tasks()
 
         self.assertNotEqual(g.id, c.id)
         self.assertEquals(

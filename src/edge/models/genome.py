@@ -61,18 +61,6 @@ class Genome(Genome_Updater, models.Model):
         # casting to Indexed_Genome
         return Indexed_Genome.objects.get(pk=self.pk)
 
-    def add_task(self, task_func):
-        if not hasattr(self, "_tasks"):
-            self._tasks = []
-        self._tasks.append(task_func)
-
-    def schedule_tasks(self):
-        res = []
-        if hasattr(self, "_tasks"):
-            for task_func in self._tasks:
-                res.append(task_func())
-        return res
-
 
 class Indexed_Genome(Genome):
     """
