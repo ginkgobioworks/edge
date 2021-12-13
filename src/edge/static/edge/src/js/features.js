@@ -27,6 +27,7 @@ var edgeFeatureTypes = [
   "LTR",
   "LTR_retrotransposon",
   "mat_peptide",
+  "misc",
   "misc_binding",
   "misc_difference",
   "misc_feature",
