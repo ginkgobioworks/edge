@@ -5,7 +5,7 @@ import json
 from Bio.Seq import Seq
 
 from edge.blast import blast_genome
-from edge.models import Genome, Fragment, Operation
+from edge.models import Fragment, Operation
 from edge.primer import design_primers_from_template
 from edge.pcr import pcr_from_genome
 from edge.orfs import detect_orfs
@@ -502,26 +502,6 @@ def find_swap_region(
     return regions
 
 
-def find_root_genome(genome):
-    root_genome = genome
-    while root_genome.parent_id:
-        root_genome = Genome.objects.get(pk=root_genome.parent_id)
-    return root_genome
-
-
-def lock_genome(genome):
-    """
-    Do a select for update, which, when executed inside a transaction, places a
-    lock on the genome.
-    """
-
-    genomes = Genome.objects.select_for_update().filter(pk=find_root_genome(genome).id)
-    # Lock only happens when queryset is evaluated, therefore need to do at least genomes[0]
-    genome = genomes[0]
-    print(f"Lock genome {genome.id}")
-    return genome
-
-
 def recombine_region(genome, region, min_homology_arm_length, op, new_fragment_dict):
     """
     Recombines on a given region. Returns recombination cassette location, how
@@ -818,7 +798,7 @@ def recombine(
 ):
 
     # lock root genome to prevent other genomes of touching same fragment or chunk
-    lock_genome(find_root_genome(genome))
+    genome.lock()
 
     x = recombine_sequence(
         genome,

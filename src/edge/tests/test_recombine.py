@@ -7,7 +7,6 @@ from django.test import TestCase
 import edge.recombine
 from edge.recombine import (
     find_swap_region,
-    find_root_genome,
     recombine,
     remove_overhangs,
     RecombineOp
@@ -250,11 +249,6 @@ class GenomeRecombinationTest(TestCase):
         self.assertEquals(
             r[0].back_arm, str(Seq(front_bs[0:arm_len]).reverse_complement())
         )
-
-    def test_find_root_genome(self):
-        genome = self.build_genome_and_ancestors(["Foo", "Bar", "Foobar"])
-        root_genome = find_root_genome(genome)
-        self.assertEqual(root_genome.name, "Foo")
 
     def test_finding_reverse_complement_region_when_front_arm_is_across_circular_boundary(
         self,

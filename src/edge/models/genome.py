@@ -61,6 +61,25 @@ class Genome(Genome_Updater, models.Model):
         # casting to Indexed_Genome
         return Indexed_Genome.objects.get(pk=self.pk)
 
+    def root(self):
+        if self.parent is None:
+            return self
+        return self.parent.root()
+
+    def lock(self):
+        """
+        Do a select for update, which, when executed inside a transaction, places
+        a lock on the genome.
+        """
+
+        root = self.root()
+
+        genomes = Genome.objects.select_for_update().filter(pk=root.id)
+        # Lock only happens when queryset is evaluated, therefore need to do at least genomes[0]
+        genome = genomes[0]
+        print(f"Lock genome {genome.id}")
+        return self
+
 
 class Indexed_Genome(Genome):
     """
