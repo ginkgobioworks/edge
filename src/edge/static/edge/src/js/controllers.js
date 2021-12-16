@@ -472,6 +472,7 @@ function FragmentControllerBase($scope, $routeParams, $http, $location) {
 
   $scope.annotate_error = undefined;
   $scope.addAnnotation = function(annotation) {
+    annotation["type"] = "misc"
     var data = JSON.stringify(annotation);
     $http
       .post("/edge/fragments/" + $scope.fragmentId + "/annotations/", data)
