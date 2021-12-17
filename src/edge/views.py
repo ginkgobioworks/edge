@@ -606,7 +606,7 @@ class GenomeOperationViewBase(ViewBase):
         if create is False:
             r = op_class.check(genome, **args)
             if r is None:
-                return None, 400
+                return [], 200
             return [x.to_dict() for x in r], 200
 
         else:

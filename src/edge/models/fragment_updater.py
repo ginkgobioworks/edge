@@ -36,6 +36,9 @@ class Fragment_Updater(object):
         return new_chunk
 
     def insert_bases(self, before_base1, sequence):
+        if len(sequence) == 0:
+            return
+
         # find chunks before and containing the insertion point
         prev_chunk, chunk = self._find_and_split_before(before_base1)
 
