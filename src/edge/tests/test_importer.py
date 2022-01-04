@@ -1057,3 +1057,9 @@ TTTCAATGCGAGTTGGCTTAATCAGCGATATTCAGAAATTATGCAGGCTATTATTTATGATGTCATCGGT
         only_contig = [fr.indexed_fragment() for fr in genome2.fragments.all() if fr.name == "1"][0]
         anns = only_contig.annotations()
         self.assertEqual(len(anns), 4565)
+
+    def test_none_strand_import(self):
+        genome3 = Genome.import_gff("Foo2", "edge/tests/fixtures/sHU0003.g1.gff")
+        only_contig = [fr.indexed_fragment() for fr in genome3.fragments.all() if fr.name == "sHU0003.g1"][0]
+        anns = only_contig.annotations()
+        self.assertEqual(len(anns), 1)

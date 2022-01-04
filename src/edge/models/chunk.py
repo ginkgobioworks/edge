@@ -49,7 +49,7 @@ class Annotation(object):
         chunk_feature_locs = sorted(
             chunk_feature_locs,
             key=lambda t: (t[0].feature.id, t[1].base_first,
-                           t[0].feature.strand * t[0].feature_base_first)
+                           (t[0].feature.strand if t[0].feature.strand is not None else 1) * t[0].feature_base_first)
         )
 
         annotations = []
@@ -57,15 +57,15 @@ class Annotation(object):
             if (
                 len(annotations) > 0
                 and annotations[-1].feature.id == cf.feature_id
-                and ((annotations[-1].feature.strand > 0
+                and (((annotations[-1].feature.strand is None or annotations[-1].feature.strand > 0)
                       and annotations[-1].feature_base_last == cf.feature_base_first - 1)
-                     or (annotations[-1].feature.strand < 0
+                     or ((annotations[-1].feature.strand is not None and annotations[-1].feature.strand < 0)
                          and annotations[-1].feature_base_first == cf.feature_base_last + 1))
                 and annotations[-1].base_last == fcl.base_first - 1
             ):
                 # merge annotation
                 annotations[-1].base_last = fcl.base_last
-                if annotations[-1].feature.strand > 0:
+                if (annotations[-1].feature.strand is None or annotations[-1].feature.strand > 0):
                     annotations[-1].feature_base_last = cf.feature_base_last
                 else:
                     annotations[-1].feature_base_first = cf.feature_base_first
