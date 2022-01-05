@@ -25,7 +25,6 @@ class GFFImporter(object):
         connection.use_debug_cursor = False
 
         for rec in GFF.parse(in_handle):
-            print(rec.__dict__)
             if self.__genome.fragments.filter(name=rec.id).count() > 0:
                 print("skipping %s, already imported" % rec.id)
             else:
@@ -371,7 +370,8 @@ class GFFFragmentImporter(object):
             elif wrap_around:
                 if fcloc.base_first >= first_base1 or fcloc.base_last <= last_base1:
                     bases.append((fcloc.base_first, fcloc.base_last))
-        bases.sort(key=lambda x: (wrap_around * (x[1] <= last_base1), strand * x[0]))
+        sorting_strand = strand if strand is not None else 1
+        bases.sort(key=lambda x: (wrap_around * (x[1] <= last_base1), sorting_strand * x[0]))
 
         length = 0
         for first_base1, last_base1 in bases:

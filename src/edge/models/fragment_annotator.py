@@ -31,7 +31,7 @@ class Fragment_Annotator(object):
         a_i = 0
         while True:
             fc = self.fragment_chunk(chunk)
-            if feature.strand > 0:
+            if feature.strand is None or feature.strand > 0:
                 self._annotate_chunk(
                     chunk,
                     feature,

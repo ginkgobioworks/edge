@@ -1057,3 +1057,23 @@ TTTCAATGCGAGTTGGCTTAATCAGCGATATTCAGAAATTATGCAGGCTATTATTTATGATGTCATCGGT
         only_contig = [fr.indexed_fragment() for fr in genome2.fragments.all() if fr.name == "1"][0]
         anns = only_contig.annotations()
         self.assertEqual(len(anns), 4565)
+
+    def test_none_strand_import(self):
+        data = """##gff-version 3
+##source-version geneious 2022.0.1
+##sequence-region	sHU0003.g1	1	140
+sHU0003.g1	Geneious	region	1	140	.	+	0	Is_circular=true
+sHU0003.g1	Geneious	terminator	5	22	.	.	.	Name=tonB
+##FASTA
+>1
+ATGTCAGAGAAAGAAATTTGGGATAAAGTTTTAGAAATTGCCCAGGAAAGAATTTCAAACACTAGTTATC
+AAACGTTCATAAAAGATACGCAACTCTACTCACTTAAAAATGACGAAGCCATTATATTAGTAAGTCTGCC"""
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
+            f.write(data)
+            f.close()
+            genome = Genome.import_gff("Foo", f.name)
+            os.unlink(f.name)
+
+        only_contig = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "sHU0003.g1"][0]
+        anns = only_contig.annotations()
+        self.assertEqual(len(anns), 1)
