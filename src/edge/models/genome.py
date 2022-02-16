@@ -56,7 +56,7 @@ class Genome(Genome_Updater, models.Model):
         return True
 
     def indexed_genome(self):
-        for f in self.fragments.all():
+        for f in sorted(self.fragments.all(), key=lambda f: f.id):
             f.indexed_fragment()
         # casting to Indexed_Genome
         return Indexed_Genome.objects.get(pk=self.pk)

@@ -72,7 +72,7 @@ def build_db(fragments, dbname, refresh=True, attempt=0):
         return None
 
     fns = []
-    for fragment in fragments:
+    for fragment in sorted(fragments, key=lambda f: f.id):
         fn = build_fragment_fasta(fragment, refresh)
         fns.append(fn)
 
