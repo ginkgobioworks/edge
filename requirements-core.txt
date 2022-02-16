@@ -13,4 +13,4 @@ bcbio-gff == 0.6.8
 django_assets == 0.12
 jsmin == 2.2.2
 
-numpy == 1.12.1
+numpy == 1.21.0
