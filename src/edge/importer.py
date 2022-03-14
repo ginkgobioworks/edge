@@ -24,26 +24,6 @@ class GFFImporter(object):
         # logging.
         connection.use_debug_cursor = False
 
-        for rec in GFF.parse(in_handle):
-            if self.__genome.fragments.filter(name=rec.id).count() > 0:
-                print("skipping %s, already imported" % rec.id)
-            else:
-                f = GFFFragmentImporter(rec).do_import()
-                self.__genome.genome_fragment_set.create(fragment=f, inherited=False)
-
-        # Be nice and turn debug cursor back on
-        connection.use_debug_cursor = True
-        in_handle.close()
-
-    def do_import_by_phase(self):
-        in_file = self.__gff_fasta_fn
-        in_handle = open(in_file)
-
-        # In DEBUG=True mode, Django keeps list of queries and blows up memory
-        # usage when doing a big import. The following line disables this
-        # logging.
-        connection.use_debug_cursor = False
-
         # First, parse GFF by rec
         importers = []
         for rec in GFF.parse(in_handle):
