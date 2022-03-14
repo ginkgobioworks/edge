@@ -35,6 +35,34 @@ class GFFImporter(object):
         connection.use_debug_cursor = True
         in_handle.close()
 
+    def do_import_by_phase(self):
+        in_file = self.__gff_fasta_fn
+        in_handle = open(in_file)
+
+        # In DEBUG=True mode, Django keeps list of queries and blows up memory
+        # usage when doing a big import. The following line disables this
+        # logging.
+        connection.use_debug_cursor = False
+
+        # First, parse GFF by rec
+        importers = []
+        for rec in GFF.parse(in_handle):
+            if self.__genome.fragments.filter(name=rec.id).count() > 0:
+                print("skipping %s, already imported" % rec.id)
+            else:
+                importer = GFFFragmentImporter(rec)
+                importer.parse_gff()
+                importers.append(importer)
+
+        # Then, build and annotate fragments
+        for importer in importers:
+            fragment = importer.finish_import()
+            self.__genome.genome_fragment_set.create(fragment=fragment, inherited=False)
+
+        # Be nice and turn debug cursor back on
+        connection.use_debug_cursor = True
+        in_handle.close()
+
 
 class GFFFragmentImporter(object):
     def __init__(self, gff_rec):
@@ -44,8 +72,7 @@ class GFFFragmentImporter(object):
         self.__fclocs = None
         self.__subfeatures_dict = {}
 
-    def do_import(self):
-        self.parse_gff()
+    def finish_import(self):
         t0 = time.time()
         f = self.build_fragment()
         print("build fragment: %.4f" % (time.time() - t0,))
@@ -53,6 +80,10 @@ class GFFFragmentImporter(object):
         self.annotate(f)
         print("annotate: %.4f" % (time.time() - t0,))
         return f
+
+    def do_import(self):
+        self.parse_gff()
+        return self.finish_import()
 
     def parse_gff(self):
         name_fields = (
