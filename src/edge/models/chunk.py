@@ -112,9 +112,35 @@ class Chunk(BigIntPrimaryModel):
 
     initial_fragment = models.ForeignKey("Fragment", on_delete=models.PROTECT)
     sequence = models.TextField(null=True)
+    ref_fn = models.TextField(null=True)
+    ref_start_index = models.PositiveIntegerField(blank=True, null=True)
+    ref_end_index = models.PositiveIntegerField(blank=True, null=True)
+
+    @property
+    def is_sequence_based(self):
+        return self.sequence is not None
+
+    @property
+    def is_reference_based(self):
+        return None not in [self.ref_fn, self.ref_start_index, self.ref_end_index]
 
     def reload(self):
         return Chunk.objects.get(pk=self.pk)
+
+    def get_sequence(self):
+        if self.is_sequence_based():
+            return self.sequence
+        elif self.is_reference_based():
+            # make adjustments for 1-based indexing
+            starting_byte = self.ref_start_index - 1
+            reference_length = self.ref_end_index - starting_byte
+            with open(self.ref_fn, 'rb') as f:
+                f.seek(starting_byte)
+                reference_bytes = f.read(reference_length)
+            return reference_bytes.decode('utf-8')
+        else:
+            return ''
+
 
 
 class Edge(BigIntPrimaryModel):
