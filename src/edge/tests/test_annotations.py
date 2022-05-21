@@ -275,6 +275,21 @@ class AnnotationsTest(TestCase):
             self.root.annotations(bp_lo=4, bp_hi=9)[0].feature_base_last, 3
         )
 
+    def test_getting_annotations_by_bp_returns_partial_annotations(self):
+        self.root.annotate(1, 3, "A1", "gene", 1)
+        self.root.annotate(7, 9, "A2", "gene", 1)
+        self.assertEquals(len(self.root.annotations()), 2)
+        self.assertEquals(len(self.root.annotations(bp_lo=4, bp_hi=7)), 1)
+        self.assertEquals(self.root.annotations(bp_lo=4, bp_hi=8)[0].base_first, 7)
+        self.assertEquals(self.root.annotations(bp_lo=4, bp_hi=8)[0].base_last, 9)
+        self.assertEquals(self.root.annotations(bp_lo=4, bp_hi=8)[0].feature.name, "A2")
+        self.assertEquals(
+            self.root.annotations(bp_lo=4, bp_hi=8)[0].feature_base_first, 1
+        )
+        self.assertEquals(
+            self.root.annotations(bp_lo=4, bp_hi=8)[0].feature_base_last, 3
+        )
+
     def test_getting_annotations_by_bp_not_at_chunk_break_points(self):
         self.root.annotate(1, len(self.root_sequence), "A1", "gene", 1)
         self.assertEquals(
