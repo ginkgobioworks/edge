@@ -200,7 +200,7 @@ class Fragment_Writer(object):
 
         # found the bp we are looking for
         if before_base1 is not None and bases_visited >= before_base1:
-            chunk_len = len(chunk.sequence)
+            chunk_len = chunk.length
 
             # can avoid splitting if first bp in this chunk is before_base1
             if bases_visited - chunk_len + 1 == before_base1:

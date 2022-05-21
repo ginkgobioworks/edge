@@ -150,7 +150,7 @@ class Fragment_Updater(object):
         fragment_length = 0
         for chunk in fragment.chunks():
             # also compute how long fragment is
-            fragment_length += len(chunk.sequence)
+            fragment_length += chunk.length
             if last_chunk is None:  # add new chunks at start of fragment
                 self.start_chunk = chunk
                 self.save()
@@ -188,15 +188,15 @@ class Fragment_Updater(object):
                 self.fragment_chunk_location_set.create(
                     chunk=chunk,
                     base_first=before_base1 + c,
-                    base_last=before_base1 + c + len(chunk.sequence) - 1,
+                    base_last=before_base1 + c + chunk.length - 1,
                 )
             else:
                 self.fragment_chunk_location_set.create(
                     chunk=chunk,
                     base_first=original_length + 1 + c,
-                    base_last=original_length + 1 + c + len(chunk.sequence) - 1,
+                    base_last=original_length + 1 + c + chunk.length - 1,
                 )
-            c += len(chunk.sequence)
+            c += chunk.length
 
     def replace_with_fragment(self, before_base1, length_to_remove, fragment):
 

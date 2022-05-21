@@ -708,7 +708,7 @@ class FragmentLocationTest(TestCase):
         dirn = self.dirn
         fn = new_fl_file(fragment_id, chunk_ids_and_sizes, dirn=dirn)
 
-        fn_check = "%s/%s_%s.p" % (dirn, fragment_id, len(chunk_ids_and_sizes))
+        fn_check = "%s/%s.p" % (dirn, fragment_id)
         self.assertTrue(os.path.isfile(fn_check))
 
         coord_to_chunk_id = unpickle_fl_file(fn)

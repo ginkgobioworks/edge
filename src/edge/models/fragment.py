@@ -99,6 +99,12 @@ class Fragment(models.Model):
         genomes[0].lock()
         return self
 
+    def generate_fl_index_file_input(self):
+        """
+        Returns [(1st Chunk ID, 1st Chunk Size), ...] for use in fl file synthesis.
+        """
+        return [(c.id, c.length) for c in self.chunks_by_walking()]
+
     @transaction.atomic()
     def index_fragment_chunk_locations(self):
         self.lock()
@@ -110,17 +116,17 @@ class Fragment(models.Model):
         i = 1
         entries = []
         for chunk in self.chunks_by_walking():
-            if len(chunk.sequence) > 0:
+            if chunk.length > 0:
                 entries.append(
                     Fragment_Chunk_Location(
                         fragment_id=self.id,
                         chunk_id=chunk.id,
                         base_first=i,
-                        base_last=i + len(chunk.sequence) - 1,
+                        base_last=i + chunk.length - 1,
                     )
                 )
 
-                i += len(chunk.sequence)
+                i += chunk.length
         Fragment_Chunk_Location.bulk_create(entries)
 
         indexed = Indexed_Fragment.objects.get(pk=self.id)

@@ -66,7 +66,7 @@ def new_fl_file(fragment_id, chunk_ids_and_sizes, dirn='.'):
         coord += size
     coord_to_chunk_id[coord] = None
 
-    fn = "%s/%s_%s.p" % (dirn, fragment_id, len(chunk_ids_and_sizes))
+    fn = "%s/%s.p" % (dirn, fragment_id)
     pickle_fl_file(fn, coord_to_chunk_id)
     return fn
 

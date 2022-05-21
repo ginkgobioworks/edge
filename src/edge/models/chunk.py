@@ -124,13 +124,21 @@ class Chunk(BigIntPrimaryModel):
     def is_reference_based(self):
         return None not in [self.ref_fn, self.ref_start_index, self.ref_end_index]
 
+    @property
+    def length(self):
+        if self.is_sequence_based:
+            return len(self.sequence)
+        elif self.is_reference_based:
+            return self.ref_end_index - self.ref_start_index + 1
+        return 0
+
     def reload(self):
         return Chunk.objects.get(pk=self.pk)
 
     def get_sequence(self):
-        if self.is_sequence_based():
+        if self.is_sequence_based:
             return self.sequence
-        elif self.is_reference_based():
+        elif self.is_reference_based:
             # make adjustments for 1-based indexing
             starting_byte = self.ref_start_index - 1
             reference_length = self.ref_end_index - starting_byte
