@@ -112,9 +112,9 @@ class Chunk(BigIntPrimaryModel):
 
     initial_fragment = models.ForeignKey("Fragment", on_delete=models.PROTECT)
     sequence = models.TextField(null=True)
-    ref_fn = models.TextField(null=True)
-    ref_start_index = models.PositiveIntegerField(blank=True, null=True)
-    ref_end_index = models.PositiveIntegerField(blank=True, null=True)
+    #ref_fn = models.TextField(null=True)
+    #ref_start_index = models.PositiveIntegerField(blank=True, null=True)
+    #ref_end_index = models.PositiveIntegerField(blank=True, null=True)
 
     @property
     def is_sequence_based(self):
