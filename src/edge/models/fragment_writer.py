@@ -20,10 +20,26 @@ class Fragment_Writer(object):
             feature_base_last=feature_base_last,
         ).save()
 
+    def _add_reference_chunk(self, ref_fn, start, end, fragment):
+        c = Chunk(ref_fn=ref_fn, ref_start_index=start,
+            ref_end_index=end, initial_fragment=fragment)
+        c.save()
+        return c
+
     def _add_chunk(self, sequence, fragment):
         c = Chunk(sequence=sequence, initial_fragment=fragment)
         c.save()
         return c
+
+    def __reset_chunk_reference(self, chunk, start, end):
+        chunk.ref_start_index = start
+        chunk.ref_end_index = end
+        chunk.save()
+        Chunk_Feature.objects.filter(chunk=chunk).delete()
+        # if chunk is the start chunk, update the object reference
+        if self.start_chunk.id == chunk.id:
+            self.start_chunk = chunk
+            self.save()
 
     def __reset_chunk_sequence(self, chunk, sequence):
         chunk.sequence = sequence
@@ -76,6 +92,7 @@ class Fragment_Writer(object):
             self._annotate_chunk(split1, *a1)
             self._annotate_chunk(split2, *a2)
 
+    # TODO: CHANGE FOR FILE BASED
     def __invalidate_index_for(self, fragment_ids):
         from edge.models.fragment import Fragment_Index
 
@@ -86,11 +103,13 @@ class Fragment_Writer(object):
                 index.fresh = False
                 index.save()
 
+    # TODO: CHANGE FOR FILE BASED
     # make sure you call this atomically! otherwise we may have corrupted chunk
     # and index
     def __split_chunk(self, chunk, bps_to_split):
-        s1 = chunk.sequence[0:bps_to_split]
-        s2 = chunk.sequence[bps_to_split:]
+        chunk_sequence = chunk.get_sequence()
+        s1 = chunk_sequence[0:bps_to_split]
+        s2 = chunk_sequence[bps_to_split:]
 
         # invalidate chunk location index for all fragments using this chunk,
         # except parent fragment and current fragment
@@ -113,8 +132,14 @@ class Fragment_Writer(object):
 
         # splitted chunk should be "created" by the fragment that created the
         # original chunk
-        split2 = self._add_chunk(s2, chunk.initial_fragment)
-        self.__reset_chunk_sequence(chunk, s1)
+        if chunk.is_sequence_based():
+            split2 = self._add_chunk(s2, chunk.initial_fragment)
+            self.__reset_chunk_sequence(chunk, s1)
+        elif chunk.is_reference_based():
+            split2 = self._add_reference_chunk(
+                chunk.ref_fn, bps_to_split, len(chunk_sequence) - 1, chunk.initial_fragment
+            )
+            self.__reset_chunk_reference(chunk, 0, bps_to_split)
 
         # move all edges from original chunk to second chunk
         Edge.objects.filter(from_chunk=chunk).update(from_chunk=split2)
@@ -151,6 +176,7 @@ class Fragment_Writer(object):
         ).update(base_last=F("base_first") + len(s1) - 1)
         return split2
 
+    # TODO: CHANGE FOR FILE BASED
     def _find_chunk_prev_next(self, before_base1):
         prev_chunk = None
         next_chunk = None
