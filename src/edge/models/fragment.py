@@ -235,7 +235,7 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         last_chunk_base_last = None
 
         for fcl in q:
-            s = fcl.chunk.sequence
+            s = fcl.chunk.get_sequence()
             if (
                 last_chunk_base_last is not None
                 and fcl.base_first != last_chunk_base_last + 1
