@@ -13,7 +13,6 @@ class Fragment_Updater(object):
                 "Fragment %s already linked to chunk %s" % (self.id, chunk.id)
             )
 
-    # TODO: CHANGE FOR FILE BASED
     def _append_to_fragment(self, prev_chunk, cur_fragment_length, sequence):
         # only use this if you are appending chunk to fragment while importing
         # a fragment
@@ -36,7 +35,6 @@ class Fragment_Updater(object):
         )
         return new_chunk
 
-    # TODO: CHANGE FOR FILE BASED
     def insert_bases(self, before_base1, sequence):
         if len(sequence) == 0:
             return
@@ -88,7 +86,6 @@ class Fragment_Updater(object):
                 base_last=fragment_length + 1 + len(sequence) - 1,
             )
 
-    # TODO: CHANGE FOR FILE BASED
     def remove_bases(self, before_base1, length):
         if length <= 0:
             raise Exception("Cannot remove fewer than one base pair")
@@ -142,7 +139,6 @@ class Fragment_Updater(object):
             self.remove_bases(before_base1, length_to_remove)
         self.insert_bases(before_base1, sequence)
 
-    # TODO: CHANGE FOR FILE BASED
     def insert_fragment(self, before_base1, fragment):
         fragment = fragment.indexed_fragment()
 

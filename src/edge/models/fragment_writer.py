@@ -92,7 +92,6 @@ class Fragment_Writer(object):
             self._annotate_chunk(split1, *a1)
             self._annotate_chunk(split2, *a2)
 
-    # TODO: CHANGE FOR FILE BASED
     def __invalidate_index_for(self, fragment_ids):
         from edge.models.fragment import Fragment_Index
 
@@ -103,7 +102,6 @@ class Fragment_Writer(object):
                 index.fresh = False
                 index.save()
 
-    # TODO: CHANGE FOR FILE BASED
     # make sure you call this atomically! otherwise we may have corrupted chunk
     # and index
     def __split_chunk(self, chunk, bps_to_split):
@@ -176,7 +174,6 @@ class Fragment_Writer(object):
         ).update(base_last=F("base_first") + len(s1) - 1)
         return split2
 
-    # TODO: CHANGE FOR FILE BASED
     def _find_chunk_prev_next(self, before_base1):
         prev_chunk = None
         next_chunk = None

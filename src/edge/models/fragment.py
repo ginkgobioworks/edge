@@ -3,9 +3,6 @@ from django.utils import timezone
 from django.db import models
 from django.db.models import Q
 
-from edge.fragment_location import (
-    new_fl_file,
-)
 from edge.models.chunk import (
     Annotation,
     Chunk_Feature,
@@ -108,7 +105,6 @@ class Fragment(models.Model):
         """
         return [(c.id, c.length) for c in self.chunks_by_walking()]
 
-    # TODO: CHANGE FOR FILE BASED
     @transaction.atomic()
     def index_fragment_chunk_locations(self):
         self.lock()
@@ -155,7 +151,6 @@ class Fragment(models.Model):
             yield chunk
             chunk = self.next_chunk(chunk)
 
-    # TODO: CHANGE FOR FILE BASED
     @property
     def has_location_index(self):
         if self.fragment_chunk_location_set.count() > 0:
@@ -195,7 +190,6 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         app_label = "edge"
         proxy = True
 
-    # TODO: CHANGE FOR FILE BASED
     def chunks(self):
         q = self.fragment_chunk_location_set.select_related("chunk").order_by(
             "base_first"
@@ -208,7 +202,6 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
             return ((bp - 1) % self.length) + 1
         return bp
 
-    # TODO: CHANGE FOR FILE BASED
     @property
     def length(self):
         q = self.fragment_chunk_location_set.order_by("-base_last")[:1]
@@ -218,11 +211,9 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         else:
             return q[0].base_last
 
-    # TODO: CHANGE FOR FILE BASED
     def fragment_chunk(self, chunk):
         return self.fragment_chunk_location_set.filter(chunk=chunk)[0]
 
-    # TODO: CHANGE FOR FILE BASED
     def __get_linear_sequence(self, bp_lo=None, bp_hi=None):
         q = self.fragment_chunk_location_set.select_related("chunk")
         if bp_lo is not None:
@@ -275,7 +266,6 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
     def sequence(self):
         return self.get_sequence()
 
-    # TODO: CHANGE FOR FILE BASED
     def annotations(self, bp_lo=None, bp_hi=None):
         # hand-crafted query to fetch both Chunk_Feature and
         # Fragment_Chunk_Location instances
@@ -327,7 +317,6 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         chunk_features = sorted(chunk_features, key=lambda t: t[1].base_first)
         return Annotation.from_chunk_feature_and_location_array(chunk_features)
 
-    # TODO: CHANGE FOR FILE BASED
     def update(self, name):
         new_fragment = Fragment(
             name=name, circular=self.circular, parent=self, start_chunk=self.start_chunk
