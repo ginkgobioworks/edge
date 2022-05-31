@@ -1,3 +1,4 @@
+import gzip
 import json
 from django.db import models
 from django.db import transaction
@@ -80,6 +81,48 @@ class Annotation(object):
                 )
 
         return sorted(annotations, key=lambda a: a.base_first)
+
+
+class ChunkReference(object):
+    """
+    Parent class for storing chunk sequences in reference files
+    """
+
+    def __init__(self, ref_fn):
+        self.ref_fn = ref_fn
+
+    def read_reference_sequence_at_position(self):
+        return ""
+
+
+class LocalChunkReference(object):
+    """
+    Class for locally storing chunk sequences in reference files
+    """
+
+    def __init__(self, ref_fn):
+        self.ref_fn = ref_fn
+
+    def read_reference_sequence_at_position(self, start, end):
+        """
+        Read sequence from 1-indexed positions from reference.
+        """
+        with gzip.open(self.ref_fn, 'rb') as f:
+            f.seek(start - 1)
+            sequence = f.read(end - start + 1).decode('utf-8')
+        return sequence
+
+
+class AWSChunkReference(object):
+    """
+    Class for storing chunk sequences in reference files on AWS
+    """
+
+    def __init__(self, ref_fn):
+        self.ref_fn = ref_fn
+
+    def read_reference_sequence_at_position(self):
+        return None
 
 
 class BigIntPrimaryModel(models.Model):
