@@ -109,10 +109,7 @@ class Fragment_Writer(object):
         s1 = chunk_sequence[0:bps_to_split]
         s2 = chunk_sequence[bps_to_split:]
 
-        # invalidate chunk location index for all fragments using this chunk,
-        # except parent fragment and current fragment
-        index_to_invalidate = []
-        index_to_update = []
+        # retrieve relevant fragments
         candidates = (
             chunk.fragment_chunk_location_set.filter(
                 fragment__fragment_index__fresh=True
@@ -120,20 +117,14 @@ class Fragment_Writer(object):
             .values_list("fragment_id")
             .distinct()
         )
-        for row in candidates:
-            fragment_id = row[0]
-            if fragment_id not in [self.id, self.parent_id]:
-                index_to_invalidate.append(fragment_id)
-            else:
-                index_to_update.append(fragment_id)
-        self.__invalidate_index_for(index_to_invalidate)
+        index_to_update = [row[0] for row in candidates]
 
         # splitted chunk should be "created" by the fragment that created the
         # original chunk
-        if chunk.is_sequence_based():
+        if chunk.is_sequence_based:
             split2 = self._add_chunk(s2, chunk.initial_fragment)
             self.__reset_chunk_sequence(chunk, s1)
-        elif chunk.is_reference_based():
+        elif chunk.is_reference_based:
             split2 = self._add_reference_chunk(
                 chunk.ref_fn, bps_to_split, len(chunk_sequence) - 1, chunk.initial_fragment
             )

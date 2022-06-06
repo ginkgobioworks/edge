@@ -1,5 +1,8 @@
 import os
+import random
+import string
 import tempfile
+import time
 from unittest import mock
 
 from django.test import TestCase
@@ -107,32 +110,6 @@ class FragmentTests(TestCase):
         prev, cur = u._find_and_split_before(3)
         self.assertEquals([c.sequence for c in u.chunks()], ["ag", "t", "tcgaggctga"])
         self.assertEquals(u.sequence, self.root_sequence)
-
-    def test_split_chunk_invalidates_location_indices(self):
-        u1 = self.root.update("Bar")
-        u1._find_and_split_before(4)
-        u2 = self.root.update("Baz")
-
-        self.assertEquals(self.root.has_location_index, True)
-        self.assertEquals(u1.has_location_index, True)
-        self.assertEquals(u2.has_location_index, True)
-
-        # split, keeps parent (self.root) and current fragment (u2) index, but
-        # invalidate indices of fragments using the splitted chunk
-        u2._find_and_split_before(3)
-
-        self.root = Fragment.objects.get(pk=self.root.pk)
-        u1 = Fragment.objects.get(pk=u1.pk)
-        u2 = Fragment.objects.get(pk=u2.pk)
-
-        self.assertEquals(self.root.has_location_index, True)
-        self.assertEquals(u1.has_location_index, False)
-        self.assertEquals(u2.has_location_index, True)
-
-        # can re-index u1
-        u1 = u1.indexed_fragment()
-        self.assertEquals(u1.sequence, self.root_sequence)
-        self.assertEquals(u1.length, len(self.root_sequence))
 
     def test_split_does_not_invalidate_location_indices_if_not_splitting_a_chunk(self):
         u1 = self.root.update("Bar")
