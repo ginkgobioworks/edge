@@ -95,7 +95,7 @@ class ChunkReference(object):
         return ""
 
 
-class LocalChunkReference(object):
+class LocalChunkReference(ChunkReference):
     """
     Class for locally storing chunk sequences in reference files
     """
@@ -113,7 +113,7 @@ class LocalChunkReference(object):
         return sequence
 
 
-class AWSChunkReference(object):
+class AWSChunkReference(ChunkReference):
     """
     Class for storing chunk sequences in reference files on AWS
     """
@@ -175,22 +175,19 @@ class Chunk(BigIntPrimaryModel):
             return self.ref_end_index - self.ref_start_index + 1
         return 0
 
-    def reload(self):
-        return Chunk.objects.get(pk=self.pk)
-
     def get_sequence(self):
         if self.is_sequence_based:
             return self.sequence
         elif self.is_reference_based:
-            # make adjustments for 1-based indexing
-            starting_byte = self.ref_start_index - 1
-            reference_length = self.ref_end_index - starting_byte
-            with open(self.ref_fn, 'rb') as f:
-                f.seek(starting_byte)
-                reference_bytes = f.read(reference_length)
-            return reference_bytes.decode('utf-8')
+            lcr = LocalChunkReference(self.ref_fn)
+            return lcr.read_reference_sequence_at_position(
+                self.ref_start_index, self.ref_end_index
+            )
         else:
             return ''
+
+    def reload(self):
+        return Chunk.objects.get(pk=self.pk)
 
 
 
