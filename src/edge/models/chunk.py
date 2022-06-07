@@ -50,7 +50,8 @@ class Annotation(object):
         chunk_feature_locs = sorted(
             chunk_feature_locs,
             key=lambda t: (t[0].feature.id, t[1].base_first,
-                           (t[0].feature.strand if t[0].feature.strand is not None else 1) * t[0].feature_base_first)
+                           (t[0].feature.strand if t[0].feature.strand is not None else 1)
+                           * t[0].feature_base_first)
         )
 
         annotations = []
@@ -60,7 +61,8 @@ class Annotation(object):
                 and annotations[-1].feature.id == cf.feature_id
                 and (((annotations[-1].feature.strand is None or annotations[-1].feature.strand > 0)
                       and annotations[-1].feature_base_last == cf.feature_base_first - 1)
-                     or ((annotations[-1].feature.strand is not None and annotations[-1].feature.strand < 0)
+                     or ((annotations[-1].feature.strand is not None
+                          and annotations[-1].feature.strand < 0)
                          and annotations[-1].feature_base_first == cf.feature_base_last + 1))
                 and annotations[-1].base_last == fcl.base_first - 1
             ):
@@ -86,6 +88,7 @@ class Annotation(object):
 class ChunkReference(object):
     """
     Parent class for storing chunk sequences in reference files
+    1-based indexing example: 5'-ATCGGCTA-3' --> 2-4 --> TCG
     """
 
     def __init__(self, ref_fn):
@@ -155,9 +158,9 @@ class Chunk(BigIntPrimaryModel):
 
     initial_fragment = models.ForeignKey("Fragment", on_delete=models.PROTECT)
     sequence = models.TextField(null=True)
-    #ref_fn = models.TextField(null=True)
-    #ref_start_index = models.PositiveIntegerField(blank=True, null=True)
-    #ref_end_index = models.PositiveIntegerField(blank=True, null=True)
+    # ref_fn = models.TextField(null=True)
+    # ref_start_index = models.PositiveIntegerField(blank=True, null=True)
+    # ref_end_index = models.PositiveIntegerField(blank=True, null=True)
 
     @property
     def is_sequence_based(self):
@@ -188,7 +191,6 @@ class Chunk(BigIntPrimaryModel):
 
     def reload(self):
         return Chunk.objects.get(pk=self.pk)
-
 
 
 class Edge(BigIntPrimaryModel):

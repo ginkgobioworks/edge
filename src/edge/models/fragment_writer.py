@@ -22,7 +22,7 @@ class Fragment_Writer(object):
 
     def _add_reference_chunk(self, ref_fn, start, end, fragment):
         c = Chunk(ref_fn=ref_fn, ref_start_index=start,
-            ref_end_index=end, initial_fragment=fragment)
+                  ref_end_index=end, initial_fragment=fragment)
         c.save()
         return c
 
@@ -105,10 +105,6 @@ class Fragment_Writer(object):
     # make sure you call this atomically! otherwise we may have corrupted chunk
     # and index
     def __split_chunk(self, chunk, bps_to_split):
-        chunk_sequence = chunk.get_sequence()
-        s1 = chunk_sequence[0:bps_to_split]
-        s2 = chunk_sequence[bps_to_split:]
-
         # retrieve relevant fragments
         candidates = (
             chunk.fragment_chunk_location_set.filter(
@@ -122,13 +118,18 @@ class Fragment_Writer(object):
         # splitted chunk should be "created" by the fragment that created the
         # original chunk
         if chunk.is_sequence_based:
+            chunk_sequence = chunk.get_sequence()
+            s1 = chunk_sequence[0:bps_to_split]
+            s2 = chunk_sequence[bps_to_split:]
             split2 = self._add_chunk(s2, chunk.initial_fragment)
             self.__reset_chunk_sequence(chunk, s1)
         elif chunk.is_reference_based:
+            # note reference based chunks have 1-based indexing
+            split_start = chunk.ref_start_index + bps_to_split
             split2 = self._add_reference_chunk(
-                chunk.ref_fn, bps_to_split, len(chunk_sequence) - 1, chunk.initial_fragment
+                chunk.ref_fn, split_start, chunk.ref_end_index, chunk.initial_fragment
             )
-            self.__reset_chunk_reference(chunk, 0, bps_to_split)
+            self.__reset_chunk_reference(chunk, chunk.ref_start_index, split_start - 1)
 
         # move all edges from original chunk to second chunk
         Edge.objects.filter(from_chunk=chunk).update(from_chunk=split2)
@@ -153,7 +154,7 @@ class Fragment_Writer(object):
                 Fragment_Chunk_Location(
                     fragment_id=fcl.fragment_id,
                     chunk_id=split2.id,
-                    base_first=fcl.base_first + len(s1),
+                    base_first=fcl.base_first + bps_to_split,
                     base_last=fcl.base_last,
                 )
             )
@@ -162,7 +163,7 @@ class Fragment_Writer(object):
         # adjust chunk location index for existing chunk
         chunk.fragment_chunk_location_set.filter(
             fragment_id__in=index_to_update
-        ).update(base_last=F("base_first") + len(s1) - 1)
+        ).update(base_last=F("base_first") + bps_to_split - 1)
         return split2
 
     def _find_chunk_prev_next(self, before_base1):

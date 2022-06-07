@@ -1,15 +1,11 @@
 import os
-import random
-import string
 import tempfile
-import time
 from unittest import mock
 
 from django.test import TestCase
 
 from edge.fragment_location import (
     new_fl_file,
-    pickle_fl_file,
     reconstruct_fragment_from_fl_file,
     reconstruct_fragment_from_fl_file_by_coordinate,
     unpickle_fl_file,
@@ -667,6 +663,7 @@ class FragmentChunkTest(TestCase):
         self.assertEquals(annotations[0].feature_base_first, 1)
         self.assertEquals(annotations[0].feature_base_last, 6)
 
+
 class FragmentLocationTest(TestCase):
     def setUp(self):
         self.dirn = tempfile.mkdtemp()
@@ -681,7 +678,11 @@ class FragmentLocationTest(TestCase):
 
     def test_pickling_and_new_fl_file(self):
         fragment_id = 1
-        chunk_ids_and_sizes = [(self.mock_chunk_1.id, 50), (self.mock_chunk_2.id, 40), (self.mock_chunk_3.id, 17)]
+        chunk_ids_and_sizes = [
+            (self.mock_chunk_1.id, 50),
+            (self.mock_chunk_2.id, 40),
+            (self.mock_chunk_3.id, 17)
+        ]
         dirn = self.dirn
         fn = new_fl_file(fragment_id, chunk_ids_and_sizes, dirn=dirn)
 
@@ -698,7 +699,11 @@ class FragmentLocationTest(TestCase):
     @mock.patch("edge.fragment_location.Chunk.get_sequence")
     def test_reconstruct_fragment_from_fl_file(self, mock_get_sequence):
         fragment_id = 1
-        chunk_ids_and_sizes = [(self.mock_chunk_1.id, 50), (self.mock_chunk_2.id, 40), (self.mock_chunk_3.id, 17)]
+        chunk_ids_and_sizes = [
+            (self.mock_chunk_1.id, 50),
+            (self.mock_chunk_2.id, 40),
+            (self.mock_chunk_3.id, 17)
+        ]
         dirn = self.dirn
         fn = new_fl_file(fragment_id, chunk_ids_and_sizes, dirn=dirn)
 
@@ -712,31 +717,35 @@ class FragmentLocationTest(TestCase):
     @mock.patch("edge.fragment_location.Chunk.get_sequence")
     def test_reconstruct_fragment_from_fl_file_by_coordinate(self, mock_get_sequence):
         fragment_id = 1
-        chunk_ids_and_sizes = [(self.mock_chunk_1.id, 10), (self.mock_chunk_2.id, 10), (self.mock_chunk_3.id, 10)]
+        chunk_ids_and_sizes = [
+            (self.mock_chunk_1.id, 10),
+            (self.mock_chunk_2.id, 10),
+            (self.mock_chunk_3.id, 10)
+        ]
         dirn = self.dirn
         fn = new_fl_file(fragment_id, chunk_ids_and_sizes, dirn=dirn)
 
         # full reconstruction
-        mock_get_sequence.side_effect = ["a"*10, "t"*10, "c"*10]
+        mock_get_sequence.side_effect = ["a" * 10, "t" * 10, "c" * 10]
         seq = reconstruct_fragment_from_fl_file_by_coordinate(fn, 1, 30)
-        self.assertEqual(seq, "a"*10 + "t"*10 + "c"*10)
+        self.assertEqual(seq, "a" * 10 + "t" * 10 + "c" * 10)
 
         # some fragments reconstruction
-        mock_get_sequence.side_effect = ["t"*10, "c"*10]
+        mock_get_sequence.side_effect = ["t" * 10, "c" * 10]
         seq = reconstruct_fragment_from_fl_file_by_coordinate(fn, 11, 30)
-        self.assertEqual(seq, "t"*10 + "c"*10)
+        self.assertEqual(seq, "t" * 10 + "c" * 10)
 
         # fragment partial reconstruction
-        mock_get_sequence.side_effect = ["t"*10, "c"*10]
+        mock_get_sequence.side_effect = ["t" * 10, "c" * 10]
         seq = reconstruct_fragment_from_fl_file_by_coordinate(fn, 16, 25)
-        self.assertEqual(seq, "t"*5 + "c"*5)
+        self.assertEqual(seq, "t" * 5 + "c" * 5)
 
         # reconstruction ends at start
-        mock_get_sequence.side_effect = ["a"*10, "t"*10, "c"*10]
+        mock_get_sequence.side_effect = ["a" * 10, "t" * 10, "c" * 10]
         seq = reconstruct_fragment_from_fl_file_by_coordinate(fn, 1, 21)
-        self.assertEqual(seq, "a"*10 + "t"*10 + "c"*1)
+        self.assertEqual(seq, "a" * 10 + "t" * 10 + "c" * 1)
 
         # stretched bounds proper reconstruction
-        mock_get_sequence.side_effect = ["a"*10, "t"*10, "c"*10]
+        mock_get_sequence.side_effect = ["a" * 10, "t" * 10, "c" * 10]
         seq = reconstruct_fragment_from_fl_file_by_coordinate(fn, -20, 50)
-        self.assertEqual(seq, "a"*10 + "t"*10 + "c"*10)
+        self.assertEqual(seq, "a" * 10 + "t" * 10 + "c" * 10)
