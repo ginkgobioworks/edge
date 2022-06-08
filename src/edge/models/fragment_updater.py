@@ -207,3 +207,17 @@ class Fragment_Updater(object):
 
         self.remove_bases(before_base1, length_to_remove)
         self.insert_fragment(before_base1, fragment)
+
+    def build_fragment_reference_chunk(self, ref_fn, sequence_length):
+        new_chunk = self._add_reference_chunk(ref_fn, 1, sequence_length, self)
+        self.start_chunk = new_chunk
+        self.save()
+
+        self._add_edges(
+            new_chunk, Edge(from_chunk=new_chunk, fragment=self, to_chunk=None)
+        )
+        self.fragment_chunk_location_set.create(
+            chunk=new_chunk,
+            base_first=1,
+            base_last=sequence_length
+        )

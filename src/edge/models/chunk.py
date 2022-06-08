@@ -88,8 +88,12 @@ class Annotation(object):
 class ChunkReference(object):
     """
     Parent class for storing chunk sequences in reference files
-    1-based indexing example: 5'-ATCGGCTA-3' --> 2-4 --> TCG
+    1-based indexing example: (2, 4) of 5'-A(TCG)GCTA-3'
     """
+
+    @staticmethod
+    def generate_from_name_and_sequence(name, sequence):
+        return ChunkReference(None)
 
     def __init__(self, ref_fn):
         self.ref_fn = ref_fn
@@ -102,6 +106,14 @@ class LocalChunkReference(ChunkReference):
     """
     Class for locally storing chunk sequences in reference files
     """
+
+    @staticmethod
+    def generate_from_name_and_sequence(name, sequence):
+        ref_fn = f"{name}.fa.gz"
+        with gzip.open(ref_fn, 'wb') as f:
+            sequence = f.write(sequence.encode('utf-8'))
+
+        return LocalChunkReference(ref_fn)
 
     def __init__(self, ref_fn):
         self.ref_fn = ref_fn
@@ -120,6 +132,10 @@ class AWSChunkReference(ChunkReference):
     """
     Class for storing chunk sequences in reference files on AWS
     """
+
+    @staticmethod
+    def generate_from_name_and_sequence(name, sequence):
+        return AWSChunkReference(None)
 
     def __init__(self, ref_fn):
         self.ref_fn = ref_fn

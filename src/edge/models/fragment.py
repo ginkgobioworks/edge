@@ -7,6 +7,7 @@ from edge.models.chunk import (
     Annotation,
     Chunk_Feature,
     Fragment_Chunk_Location,
+    LocalChunkReference,
 )
 from edge.models.fragment_writer import Fragment_Writer
 from edge.models.fragment_annotator import Fragment_Annotator
@@ -43,17 +44,27 @@ class Fragment(models.Model):
     # chunk size significantly improves import time: when dividing up smaller
     # chunks, you copy/slice less sequence data.
     @staticmethod
-    def create_with_sequence(name, sequence, circular=False, initial_chunk_size=20000):
+    def create_with_sequence(
+            name, sequence, circular=False,
+            initial_chunk_size=20000, reference_based=False
+    ):
         new_fragment = Fragment(
             name=name, circular=circular, parent=None, start_chunk=None
         )
         new_fragment.save()
         new_fragment = new_fragment.indexed_fragment()
-        if initial_chunk_size is None or initial_chunk_size == 0:
-            new_fragment.insert_bases(None, sequence)
+
+        if reference_based:
+            # don't split into chunk sized bits for reference based import
+            lcr = LocalChunkReference.generate_from_name_and_sequence(name, sequence)
+            new_fragment.build_fragment_reference_chunk(lcr.ref_fn, len(sequence))
         else:
-            for i in range(0, len(sequence), initial_chunk_size):
-                new_fragment.insert_bases(None, sequence[i : i + initial_chunk_size])
+            if initial_chunk_size is None or initial_chunk_size == 0:
+                new_fragment.insert_bases(None, sequence)
+            else:
+                for i in range(0, len(sequence), initial_chunk_size):
+                    new_fragment.insert_bases(None, sequence[i : i + initial_chunk_size])
+
         return new_fragment
 
     def predecessors(self):
