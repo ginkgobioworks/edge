@@ -4,6 +4,7 @@ from BCBio import GFF
 from django.db import connection
 
 from edge.models import Fragment, Fragment_Chunk_Location
+from edge.models.chunk import LocalChunkReference
 
 
 def circular_mod(number, seq_length):
@@ -283,7 +284,7 @@ class GFFFragmentImporter(object):
         # divide chunks bigger than a certain threshold to smaller chunks, to
         # allow insertion of sequence into database. e.g. MySQL has a packet
         # size that prevents chunks that are too large from being inserted.
-        chunk_size_limit = 1000000
+        """chunk_size_limit = 1000000
         new_chunk_sizes = []
         for original_chunk_size in chunk_sizes:
             if original_chunk_size < chunk_size_limit:
@@ -294,17 +295,24 @@ class GFFFragmentImporter(object):
                     divided_chunks.append(min(original_chunk_size, chunk_size_limit))
                     original_chunk_size -= chunk_size_limit
                 new_chunk_sizes.extend(divided_chunks)
-        chunk_sizes = new_chunk_sizes
+        chunk_sizes = new_chunk_sizes"""
         print("%d chunks" % (len(chunk_sizes),))
 
+        lcr = LocalChunkReference.generate_from_name_and_sequence(self.__rec.id, self.__sequence)
         prev = None
         fragment_len = 0
         for chunk_size in chunk_sizes:
             t0 = time.time()
-            prev = new_fragment._append_to_fragment(
+            """prev = new_fragment._append_to_fragment(
                 prev,
                 fragment_len,
                 self.__sequence[fragment_len : fragment_len + chunk_size],
+            )"""
+            prev = new_fragment._ref_append_to_fragment(
+                lcr.ref_fn,
+                prev,
+                fragment_len,
+                chunk_size,
             )
             fragment_len += chunk_size
             print("add chunk to fragment: %.4f\r" % (time.time() - t0,), end="")

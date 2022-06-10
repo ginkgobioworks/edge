@@ -31,7 +31,31 @@ class Fragment_Updater(object):
         self.fragment_chunk_location_set.create(
             chunk=new_chunk,
             base_first=cur_fragment_length + 1,
-            base_last=cur_fragment_length + 1 + len(sequence) - 1,
+            base_last=cur_fragment_length + new_chunk.length,
+        )
+        return new_chunk
+
+    def _ref_append_to_fragment(self, ref_fn, prev_chunk, cur_fragment_length, chunk_size):
+        # only use this if you are appending chunk to fragment while importing
+        # a fragment
+        new_chunk = self._add_reference_chunk(
+            ref_fn, cur_fragment_length + 1, cur_fragment_length + chunk_size, self
+        )
+        if prev_chunk is not None:  # add chunks after prev_chunk_id
+            self._add_edges(
+                prev_chunk,
+                Edge(from_chunk=prev_chunk, fragment=self, to_chunk=new_chunk),
+            )
+        else:
+            self.start_chunk = new_chunk
+            self.save()
+        self._add_edges(
+            new_chunk, Edge(from_chunk=new_chunk, fragment=self, to_chunk=None)
+        )
+        self.fragment_chunk_location_set.create(
+            chunk=new_chunk,
+            base_first=cur_fragment_length + 1,
+            base_last=cur_fragment_length + new_chunk.length,
         )
         return new_chunk
 
