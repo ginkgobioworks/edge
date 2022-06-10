@@ -1,5 +1,12 @@
+import time
+
+import django.db
 from django.db.models import F
-from edge.models.chunk import Edge
+from edge.models.chunk import (
+    Chunk, 
+    Edge,
+    Fragment_Chunk_Location
+)
 
 
 class Fragment_Updater(object):
@@ -58,6 +65,54 @@ class Fragment_Updater(object):
             base_last=cur_fragment_length + new_chunk.length,
         )
         return new_chunk
+
+    def _bulk_create_fragment_chunks(self, ref_fn, chunk_sizes):
+        start = 0
+        chunks = []
+        t0 = time.time()
+        for chunk_size in chunk_sizes:
+            chunks.append(
+                Chunk(
+                    ref_fn=ref_fn, ref_start_index=start + 1,
+                    ref_end_index=start + chunk_size, initial_fragment=self
+                )
+            )
+            start += chunk_size
+        Chunk.bulk_create(chunks)
+
+        self.start_chunk = chunks[0]
+        self.save()
+        print("Chunk generation took %s seconds" % (time.time() - t0))
+
+        start = 0
+        fcls = []
+        t0 = time.time()
+        for chunk in chunks:
+            fcls.append(
+                Fragment_Chunk_Location(
+                    fragment=self,
+                    chunk=chunk,
+                    base_first=start + 1,
+                    base_last=start + chunk.length,
+                )
+            )
+            start += chunk.length
+        print("FCL generation took %s seconds" % (time.time() - t0))
+
+        t0 = time.time()
+        Edge.objects.filter(from_chunk__in=chunks, fragment_id=self.id).delete()
+        edges = [
+                Edge(
+                    from_chunk=chunks[i],
+                    fragment=self,
+                    to_chunk=(chunks[i + 1] if ((i + 1) < len(chunks)) else None)
+                )
+            for i in range(len(chunks))
+        ]
+        Edge.bulk_create(edges)
+        print("Edge generation took %s seconds" % (time.time() - t0))
+
+        Fragment_Chunk_Location.bulk_create(fcls)
 
     def insert_bases(self, before_base1, sequence):
         if len(sequence) == 0:

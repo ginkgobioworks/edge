@@ -1,5 +1,7 @@
-from edge.models.chunk import Feature
-
+from edge.models.chunk import (
+    Chunk_Feature,
+    Feature,
+)
 
 class Fragment_Annotator(object):
     """
@@ -29,30 +31,44 @@ class Fragment_Annotator(object):
         # we hit annotation_end, and add annotation for each chunk
         chunk = annotation_start
         a_i = 0
+        cfs = []
         while True:
             fc = self.fragment_chunk(chunk)
             if feature.strand is None or feature.strand > 0:
-                self._annotate_chunk(
+                cfs.append(Chunk_Feature(
+                    chunk=chunk,
+                    feature=feature,
+                    feature_base_first=feature_base_first + a_i,
+                    feature_base_last=feature_base_first + a_i + chunk.length - 1,
+                ))
+                """self._annotate_chunk(
                     chunk,
                     feature,
                     feature_base_first + a_i,
                     feature_base_first + a_i + chunk.length - 1
-                )
+                )"""
             else:
                 subfeature_length = self.bp_covered_length(first_base1, last_base1)
                 feature_base_last = feature_base_first + subfeature_length - 1
-                self._annotate_chunk(
+                cfs.append(Chunk_Feature(
+                    chunk=chunk,
+                    feature=feature,
+                    feature_base_first=feature_base_last - a_i - chunk.length + 1,
+                    feature_base_last=feature_base_last - a_i,
+                ))
+                """self._annotate_chunk(
                     chunk,
                     feature,
                     feature_base_last - a_i - chunk.length + 1,
                     feature_base_last - a_i
-                )
+                )"""
             a_i += chunk.length
             if chunk.id == annotation_end.id:
                 break
             chunk = fc.next_chunk
             if chunk is None:
                 chunk = self.start_chunk
+        return cfs
 
     def bp_covered_length(self, first_base1, last_base1):
         if self.circular and last_base1 < first_base1:

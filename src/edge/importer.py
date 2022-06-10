@@ -4,7 +4,7 @@ from BCBio import GFF
 from django.db import connection
 
 from edge.models import Fragment, Fragment_Chunk_Location
-from edge.models.chunk import LocalChunkReference
+from edge.models.chunk import Chunk_Feature, LocalChunkReference
 
 
 def circular_mod(number, seq_length):
@@ -298,16 +298,19 @@ class GFFFragmentImporter(object):
         chunk_sizes = new_chunk_sizes"""
         print("%d chunks" % (len(chunk_sizes),))
 
-        lcr = LocalChunkReference.generate_from_name_and_sequence(self.__rec.id, self.__sequence)
-        prev = None
+        """t0 = time.time()
+        lcr = LocalChunkReference.generate_from_name_and_sequence(new_fragment.id, self.__sequence)
+        print("LCR generation took %s seconds" % (time.time() - t0))"""
+
+        """prev = None
         fragment_len = 0
         for chunk_size in chunk_sizes:
             t0 = time.time()
-            """prev = new_fragment._append_to_fragment(
+            prev = new_fragment._append_to_fragment(
                 prev,
                 fragment_len,
                 self.__sequence[fragment_len : fragment_len + chunk_size],
-            )"""
+            )
             prev = new_fragment._ref_append_to_fragment(
                 lcr.ref_fn,
                 prev,
@@ -315,8 +318,10 @@ class GFFFragmentImporter(object):
                 chunk_size,
             )
             fragment_len += chunk_size
-            print("add chunk to fragment: %.4f\r" % (time.time() - t0,), end="")
+            print("add chunk to fragment: %.4f\r" % (time.time() - t0,), end="")"""
 
+        ref_fn = '1.fa.gz'
+        new_fragment._bulk_create_fragment_chunks(ref_fn, chunk_sizes)
         return new_fragment
 
     def annotate(self, fragment):
@@ -327,6 +332,8 @@ class GFFFragmentImporter(object):
             )
         }
 
+        cfs = []
+        i = 0
         for feature in self.__features:
             t0 = time.time()
             f_start, f_end, f_name, f_type, f_strand, f_qualifiers = feature
@@ -336,9 +343,11 @@ class GFFFragmentImporter(object):
                     f"{sf[0]}_{sf[1]}": sf[5] for sf in self.__subfeatures_dict[f_name]
                     if sf[0] != f_start and sf[1] != f_end
                 }
-            new_feature = self._annotate_feature(
+            new_feature, new_cfs = self._annotate_feature(
                 fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers
             )
+            i += 1
+            cfs.extend(new_cfs)
             if new_feature is None:
                 continue
             feature_base_first = 1
@@ -347,12 +356,15 @@ class GFFFragmentImporter(object):
                 sorted_subfeatures.reverse()
             for subfeature in sorted_subfeatures:
                 sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers = subfeature
-                self._annotate_feature(
+                _, new_cfs = self._annotate_feature(
                     fragment, sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers,
                     feature=new_feature, feature_base_first=feature_base_first
                 )
+                cfs.extend(new_cfs)
                 feature_base_first += sf_end - sf_start + 1
-            print("annotate feature: %.4f\r" % (time.time() - t0,), end="")
+                i += 1
+            print("annotate feature: %.4f, %d done\r" % (time.time() - t0, i), end="")
+        Chunk_Feature.bulk_create(cfs)
         print("\nfinished annotating feature")
 
     def _annotate_feature(
@@ -400,12 +412,13 @@ class GFFFragmentImporter(object):
             name, type, length, strand, qualifiers
         ) if feature is None else feature
 
+        cfs = []
         if feature is not None or self.__subfeatures_dict[name] == []:
             for first_base1, last_base1 in bases:
                 region_length = fragment.bp_covered_length(first_base1, last_base1)
-                fragment.annotate_chunk(
+                cfs.extend(fragment.annotate_chunk(
                     new_feature, feature_base_first, first_base1, last_base1
-                )
+                ))
                 feature_base_first += region_length
 
-        return new_feature
+        return new_feature, cfs

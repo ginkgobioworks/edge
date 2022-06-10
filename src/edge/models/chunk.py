@@ -4,6 +4,8 @@ from django.db import models
 from django.db import transaction
 
 
+BULK_CREATE_BATCH_SIZE = 10000
+
 class Annotation(object):
     """
     Can contain multiple Chunk_Feature objects merged together.
@@ -208,6 +210,28 @@ class Chunk(BigIntPrimaryModel):
     def reload(self):
         return Chunk.objects.get(pk=self.pk)
 
+    @staticmethod
+    @transaction.atomic()  # this method has to be in a transaction, see below
+    def bulk_create(entries):
+        # IMPORTANT: this entire method must be within a transaction, so we can
+        # compute and assign unique BigIntPrimary IDs
+
+        cur_id = 1
+        try:
+            cur_id = (
+                Chunk.objects.select_for_update()
+                .order_by("-id")
+                .values("id")[0]["id"]
+                + 1
+            )
+        except IndexError:
+            pass
+
+        for entry in entries:
+            entry.id = cur_id
+            cur_id += 1
+        Chunk.objects.bulk_create(entries, batch_size=BULK_CREATE_BATCH_SIZE)
+
 
 class Edge(BigIntPrimaryModel):
     class Meta:
@@ -221,6 +245,28 @@ class Edge(BigIntPrimaryModel):
     to_chunk = models.ForeignKey(
         Chunk, null=True, related_name="in_edges", on_delete=models.PROTECT
     )
+
+    @staticmethod
+    @transaction.atomic()  # this method has to be in a transaction, see below
+    def bulk_create(entries):
+        # IMPORTANT: this entire method must be within a transaction, so we can
+        # compute and assign unique BigIntPrimary IDs
+
+        cur_id = 1
+        try:
+            cur_id = (
+                Edge.objects.select_for_update()
+                .order_by("-id")
+                .values("id")[0]["id"]
+                + 1
+            )
+        except IndexError:
+            pass
+
+        for entry in entries:
+            entry.id = cur_id
+            cur_id += 1
+        Edge.objects.bulk_create(entries, batch_size=BULK_CREATE_BATCH_SIZE)
 
 
 class Feature(models.Model):
@@ -263,6 +309,28 @@ class Chunk_Feature(BigIntPrimaryModel):
     feature = models.ForeignKey(Feature, on_delete=models.PROTECT)
     feature_base_first = models.IntegerField()
     feature_base_last = models.IntegerField()
+
+    @staticmethod
+    @transaction.atomic()  # this method has to be in a transaction, see below
+    def bulk_create(entries):
+        # IMPORTANT: this entire method must be within a transaction, so we can
+        # compute and assign unique BigIntPrimary IDs
+
+        cur_id = 1
+        try:
+            cur_id = (
+                Chunk_Feature.objects.select_for_update()
+                .order_by("-id")
+                .values("id")[0]["id"]
+                + 1
+            )
+        except IndexError:
+            pass
+
+        for entry in entries:
+            entry.id = cur_id
+            cur_id += 1
+        Chunk_Feature.objects.bulk_create(entries, batch_size=BULK_CREATE_BATCH_SIZE)
 
 
 class Fragment_Chunk_Location(BigIntPrimaryModel):
@@ -329,4 +397,4 @@ class Fragment_Chunk_Location(BigIntPrimaryModel):
         for entry in entries:
             entry.id = cur_id
             cur_id += 1
-        Fragment_Chunk_Location.objects.bulk_create(entries)
+        Fragment_Chunk_Location.objects.bulk_create(entries, batch_size=BULK_CREATE_BATCH_SIZE)
