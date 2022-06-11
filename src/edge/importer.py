@@ -239,7 +239,7 @@ class GFFFragmentImporter(object):
                 new_feature = (new_start, new_end, feature[2], feature[3], feature[4], feature[5])
                 features.append(new_feature)
 
-    def build_fragment(self):
+    def build_fragment_with_sequence_chunks(self):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
         starts_and_ends = []
@@ -284,7 +284,7 @@ class GFFFragmentImporter(object):
         # divide chunks bigger than a certain threshold to smaller chunks, to
         # allow insertion of sequence into database. e.g. MySQL has a packet
         # size that prevents chunks that are too large from being inserted.
-        """chunk_size_limit = 1000000
+        chunk_size_limit = 1000000
         new_chunk_sizes = []
         for original_chunk_size in chunk_sizes:
             if original_chunk_size < chunk_size_limit:
@@ -295,14 +295,10 @@ class GFFFragmentImporter(object):
                     divided_chunks.append(min(original_chunk_size, chunk_size_limit))
                     original_chunk_size -= chunk_size_limit
                 new_chunk_sizes.extend(divided_chunks)
-        chunk_sizes = new_chunk_sizes"""
+        chunk_sizes = new_chunk_sizes
         print("%d chunks" % (len(chunk_sizes),))
 
-        """t0 = time.time()
-        lcr = LocalChunkReference.generate_from_name_and_sequence(new_fragment.id, self.__sequence)
-        print("LCR generation took %s seconds" % (time.time() - t0))"""
-
-        """prev = None
+        prev = None
         fragment_len = 0
         for chunk_size in chunk_sizes:
             t0 = time.time()
@@ -311,17 +307,60 @@ class GFFFragmentImporter(object):
                 fragment_len,
                 self.__sequence[fragment_len : fragment_len + chunk_size],
             )
-            prev = new_fragment._ref_append_to_fragment(
-                lcr.ref_fn,
-                prev,
-                fragment_len,
-                chunk_size,
-            )
             fragment_len += chunk_size
-            print("add chunk to fragment: %.4f\r" % (time.time() - t0,), end="")"""
+            print("add chunk to fragment: %.4f\r" % (time.time() - t0,), end="")
 
-        ref_fn = '1.fa.gz'
-        new_fragment._bulk_create_fragment_chunks(ref_fn, chunk_sizes)
+        return new_fragment
+
+    def build_fragment(self):
+        # pre-chunk the fragment sequence at feature start and end locations.
+        # there should be no need to further divide any chunk during import.
+        starts_and_ends = []
+        for feature in self.__features:
+            name = feature[2]
+            starts_and_ends.append(feature[0])
+            starts_and_ends.append(feature[1] + 1)
+            for subfeature in self.__subfeatures_dict[name]:
+                starts_and_ends.append(subfeature[0])
+                starts_and_ends.append(subfeature[1] + 1)
+        break_points = sorted(list(set(starts_and_ends)))
+
+        cur_len = 0
+        chunk_sizes = []
+        seq_len = len(self.__sequence)
+        for i, bp in enumerate(break_points):
+            if i == 0:
+                if bp > 1:
+                    chunk_sizes.append(break_points[i] - 1)
+                    cur_len += chunk_sizes[-1]
+            else:
+                chunk_sizes.append(break_points[i] - break_points[i - 1])
+                cur_len += chunk_sizes[-1]
+
+        if cur_len < seq_len:
+            chunk_sizes.append(seq_len - cur_len)
+
+        fragment_circular = False
+        for feature in self.__rec.features:
+            # skip features that cover the entire sequence
+            if feature.type.upper() in ['REGION', 'CHR', 'CHROM', 'CHROMOSOME']:
+                if 'Is_circular' in feature.qualifiers:
+                    fragment_circular = feature.qualifiers['Is_circular'][0].upper() == 'TRUE'
+                break
+
+        new_fragment = Fragment(
+            name=self.__rec.id, circular=fragment_circular, parent=None, start_chunk=None
+        )
+        new_fragment.save()
+        new_fragment = new_fragment.indexed_fragment()
+
+        print("%d chunks" % (len(chunk_sizes),))
+
+        t0 = time.time()
+        lcr = LocalChunkReference.generate_from_name_and_sequence(new_fragment.id, self.__sequence)
+        print("Reference file generation took %s seconds" % (time.time() - t0))
+
+        new_fragment._bulk_create_fragment_chunks(lcr.ref_fn, chunk_sizes)
         return new_fragment
 
     def annotate(self, fragment):
@@ -416,7 +455,7 @@ class GFFFragmentImporter(object):
         if feature is not None or self.__subfeatures_dict[name] == []:
             for first_base1, last_base1 in bases:
                 region_length = fragment.bp_covered_length(first_base1, last_base1)
-                cfs.extend(fragment.annotate_chunk(
+                cfs.extend(fragment.create_chunk_annotations(
                     new_feature, feature_base_first, first_base1, last_base1
                 ))
                 feature_base_first += region_length

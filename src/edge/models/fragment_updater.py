@@ -42,30 +42,6 @@ class Fragment_Updater(object):
         )
         return new_chunk
 
-    def _ref_append_to_fragment(self, ref_fn, prev_chunk, cur_fragment_length, chunk_size):
-        # only use this if you are appending chunk to fragment while importing
-        # a fragment
-        new_chunk = self._add_reference_chunk(
-            ref_fn, cur_fragment_length + 1, cur_fragment_length + chunk_size, self
-        )
-        if prev_chunk is not None:  # add chunks after prev_chunk_id
-            self._add_edges(
-                prev_chunk,
-                Edge(from_chunk=prev_chunk, fragment=self, to_chunk=new_chunk),
-            )
-        else:
-            self.start_chunk = new_chunk
-            self.save()
-        self._add_edges(
-            new_chunk, Edge(from_chunk=new_chunk, fragment=self, to_chunk=None)
-        )
-        self.fragment_chunk_location_set.create(
-            chunk=new_chunk,
-            base_first=cur_fragment_length + 1,
-            base_last=cur_fragment_length + new_chunk.length,
-        )
-        return new_chunk
-
     def _bulk_create_fragment_chunks(self, ref_fn, chunk_sizes):
         start = 0
         chunks = []
@@ -97,7 +73,7 @@ class Fragment_Updater(object):
                 )
             )
             start += chunk.length
-        print("FCL generation took %s seconds" % (time.time() - t0))
+        print("Index generation took %s seconds" % (time.time() - t0))
 
         t0 = time.time()
         Edge.objects.filter(from_chunk__in=chunks, fragment_id=self.id).delete()

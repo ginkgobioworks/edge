@@ -12,12 +12,17 @@ class Fragment_Writer(object):
     Mixin that includes helpers for updating a fragment.
     """
 
-    def _annotate_chunk(self, chunk, feature, feature_base_first, feature_base_last):
-        Chunk_Feature(
+    def _create_chunk_annotation(self, chunk, feature, feature_base_first, feature_base_last):
+        return Chunk_Feature(
             chunk=chunk,
             feature=feature,
             feature_base_first=feature_base_first,
             feature_base_last=feature_base_last,
+        )
+
+    def _annotate_chunk(self, chunk, feature, feature_base_first, feature_base_last):
+        self._create_chunk_annotation(
+            chunk, feature, feature_base_first, feature_base_last
         ).save()
 
     def _add_reference_chunk(self, ref_fn, start, end, fragment):
@@ -66,6 +71,7 @@ class Fragment_Writer(object):
             edge.save()
 
     def _split_annotations(self, annotations, bps_to_split, split1, split2):
+        cfs = []
         for a in annotations:
             if a.feature.strand > 0:
                 a1 = (
@@ -89,18 +95,9 @@ class Fragment_Writer(object):
                     a.feature_base_first,
                     a.feature_base_last - bps_to_split
                 )
-            self._annotate_chunk(split1, *a1)
-            self._annotate_chunk(split2, *a2)
-
-    def __invalidate_index_for(self, fragment_ids):
-        from edge.models.fragment import Fragment_Index
-
-        for f in fragment_ids:
-            index = Fragment_Index.objects.filter(fragment_id=f)
-            if index.count():
-                index = index[0]
-                index.fresh = False
-                index.save()
+            cfs.append(self._create_chunk_annotation(split1, *a1))
+            cfs.append(self._create_chunk_annotation(split2, *a2))
+        Chunk_Feature.bulk_create(cfs)
 
     # make sure you call this atomically! otherwise we may have corrupted chunk
     # and index
