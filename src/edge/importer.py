@@ -371,7 +371,6 @@ class GFFFragmentImporter(object):
             )
         }
 
-        cfs = []
         i = 0
         for feature in self.__features:
             t0 = time.time()
@@ -382,11 +381,10 @@ class GFFFragmentImporter(object):
                     f"{sf[0]}_{sf[1]}": sf[5] for sf in self.__subfeatures_dict[f_name]
                     if sf[0] != f_start and sf[1] != f_end
                 }
-            new_feature, new_cfs = self._annotate_feature(
+            new_feature = self._annotate_feature(
                 fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers
             )
             i += 1
-            cfs.extend(new_cfs)
             if new_feature is None:
                 continue
             feature_base_first = 1
@@ -395,15 +393,13 @@ class GFFFragmentImporter(object):
                 sorted_subfeatures.reverse()
             for subfeature in sorted_subfeatures:
                 sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers = subfeature
-                _, new_cfs = self._annotate_feature(
+                self._annotate_feature(
                     fragment, sf_start, sf_end, sf_name, sf_type, sf_strand, sf_qualifiers,
                     feature=new_feature, feature_base_first=feature_base_first
                 )
-                cfs.extend(new_cfs)
                 feature_base_first += sf_end - sf_start + 1
                 i += 1
             print("annotate feature: %.4f, %d done\r" % (time.time() - t0, i), end="")
-        Chunk_Feature.bulk_create(cfs)
         print("\nfinished annotating feature")
 
     def _annotate_feature(
@@ -451,13 +447,12 @@ class GFFFragmentImporter(object):
             name, type, length, strand, qualifiers
         ) if feature is None else feature
 
-        cfs = []
         if feature is not None or self.__subfeatures_dict[name] == []:
             for first_base1, last_base1 in bases:
                 region_length = fragment.bp_covered_length(first_base1, last_base1)
-                cfs.extend(fragment.create_chunk_annotations(
+                fragment.annotate_chunk(
                     new_feature, feature_base_first, first_base1, last_base1
-                ))
+                )
                 feature_base_first += region_length
 
-        return new_feature, cfs
+        return new_feature
