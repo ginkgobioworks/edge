@@ -35,7 +35,7 @@ class Fragment_Annotator(object):
                     chunk,
                     feature,
                     feature_base_first + a_i,
-                    feature_base_first + a_i + len(chunk.sequence) - 1
+                    feature_base_first + a_i + chunk.length - 1
                 )
             else:
                 subfeature_length = self.bp_covered_length(first_base1, last_base1)
@@ -43,7 +43,7 @@ class Fragment_Annotator(object):
                 self._annotate_chunk(
                     chunk,
                     feature,
-                    feature_base_last - a_i - len(chunk.sequence) + 1,
+                    feature_base_last - a_i - chunk.length + 1,
                     feature_base_last - a_i
                 )
             a_i += chunk.length
