@@ -281,9 +281,8 @@ class GFFFragmentImporter(object):
         new_fragment.save()
         new_fragment = new_fragment.indexed_fragment()
 
-        print("%d chunks" % (len(chunk_sizes),))
-
         if reference_based:
+            print("%d chunks" % (len(chunk_sizes),))
             t0 = time.time()
             lcr = LocalChunkReference.generate_from_name_and_sequence(
                 new_fragment.id, self.__sequence
