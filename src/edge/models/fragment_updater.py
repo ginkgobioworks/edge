@@ -1,9 +1,8 @@
 import time
 
-import django.db
 from django.db.models import F
 from edge.models.chunk import (
-    Chunk, 
+    Chunk,
     Edge,
     Fragment_Chunk_Location
 )
@@ -78,11 +77,11 @@ class Fragment_Updater(object):
         t0 = time.time()
         Edge.objects.filter(from_chunk__in=chunks, fragment_id=self.id).delete()
         edges = [
-                Edge(
-                    from_chunk=chunks[i],
-                    fragment=self,
-                    to_chunk=(chunks[i + 1] if ((i + 1) < len(chunks)) else None)
-                )
+            Edge(
+                from_chunk=chunks[i],
+                fragment=self,
+                to_chunk=(chunks[i + 1] if ((i + 1) < len(chunks)) else None)
+            )
             for i in range(len(chunks))
         ]
         Edge.bulk_create(edges)

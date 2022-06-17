@@ -4,7 +4,7 @@ from BCBio import GFF
 from django.db import connection
 
 from edge.models import Fragment, Fragment_Chunk_Location
-from edge.models.chunk import Chunk_Feature, LocalChunkReference
+from edge.models.chunk import LocalChunkReference
 
 
 def circular_mod(number, seq_length):
@@ -312,7 +312,7 @@ class GFFFragmentImporter(object):
 
         return new_fragment
 
-    def build_fragment(self):
+    def build_fragment(self, reference_based=True):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
         starts_and_ends = []
@@ -356,11 +356,45 @@ class GFFFragmentImporter(object):
 
         print("%d chunks" % (len(chunk_sizes),))
 
-        t0 = time.time()
-        lcr = LocalChunkReference.generate_from_name_and_sequence(new_fragment.id, self.__sequence)
-        print("Reference file generation took %s seconds" % (time.time() - t0))
+        if reference_based:
+            t0 = time.time()
+            lcr = LocalChunkReference.generate_from_name_and_sequence(
+                new_fragment.id, self.__sequence
+            )
+            print("Reference file generation took %s seconds" % (time.time() - t0))
 
-        new_fragment._bulk_create_fragment_chunks(lcr.ref_fn, chunk_sizes)
+            new_fragment._bulk_create_fragment_chunks(lcr.ref_fn, chunk_sizes)
+            return new_fragment
+
+        # divide chunks bigger than a certain threshold to smaller chunks, to
+        # allow insertion of sequence into database. e.g. MySQL has a packet
+        # size that prevents chunks that are too large from being inserted.
+        chunk_size_limit = 1000000
+        new_chunk_sizes = []
+        for original_chunk_size in chunk_sizes:
+            if original_chunk_size < chunk_size_limit:
+                new_chunk_sizes.append(original_chunk_size)
+            else:
+                divided_chunks = []
+                while original_chunk_size > 0:
+                    divided_chunks.append(min(original_chunk_size, chunk_size_limit))
+                    original_chunk_size -= chunk_size_limit
+                new_chunk_sizes.extend(divided_chunks)
+        chunk_sizes = new_chunk_sizes
+        print("%d chunks" % (len(chunk_sizes),))
+
+        prev = None
+        fragment_len = 0
+        for chunk_size in chunk_sizes:
+            t0 = time.time()
+            prev = new_fragment._append_to_fragment(
+                prev,
+                fragment_len,
+                self.__sequence[fragment_len : fragment_len + chunk_size],
+            )
+            fragment_len += chunk_size
+            print("add chunk to fragment: %.4f\r" % (time.time() - t0,), end="")
+
         return new_fragment
 
     def annotate(self, fragment):

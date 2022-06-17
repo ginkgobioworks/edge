@@ -6,6 +6,7 @@ from django.db import transaction
 
 BULK_CREATE_BATCH_SIZE = 10000
 
+
 class Annotation(object):
     """
     Can contain multiple Chunk_Feature objects merged together.
