@@ -332,7 +332,6 @@ class GFFFragmentImporter(object):
             )
         }
 
-        i = 0
         for feature in self.__features:
             t0 = time.time()
             f_start, f_end, f_name, f_type, f_strand, f_qualifiers = feature
@@ -345,7 +344,6 @@ class GFFFragmentImporter(object):
             new_feature = self._annotate_feature(
                 fragment, f_start, f_end, f_name, f_type, f_strand, f_qualifiers
             )
-            i += 1
             if new_feature is None:
                 continue
             feature_base_first = 1
@@ -359,8 +357,7 @@ class GFFFragmentImporter(object):
                     feature=new_feature, feature_base_first=feature_base_first
                 )
                 feature_base_first += sf_end - sf_start + 1
-                i += 1
-            print("annotate feature: %.4f, %d done\r" % (time.time() - t0, i), end="")
+            print("annotate feature: %.4f\r" % (time.time() - t0,), end="")
         print("\nfinished annotating feature")
 
     def _annotate_feature(
