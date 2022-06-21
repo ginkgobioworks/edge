@@ -52,7 +52,7 @@ class Fragment(models.Model):
     @staticmethod
     def create_with_sequence(
             name, sequence, circular=False,
-            initial_chunk_size=20000, reference_based=False
+            initial_chunk_size=20000, reference_based=True
     ):
         new_fragment = Fragment(
             name=name, circular=circular, parent=None, start_chunk=None
@@ -242,9 +242,19 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
                       else reference_fcls.all().first().chunk.ref_fn
 
         f = gzip.open(ref_fn, "rb") if ref_fn is not None else None
+        open_files = {ref_fn: f}
         try:
             for fcl in q:
-                s = fcl.chunk.get_sequence(f=f)
+                if fcl.chunk.ref_fn is None or fcl.chunk.ref_fn == ref_fn:
+                    s = fcl.chunk.get_sequence(f=f)
+                else:
+                    ref_fn = fcl.chunk.ref_fn
+                    if ref_fn in open_files:
+                        f = open_files[ref_fn]
+                    else:
+                        f = gzip.open(ref_fn, "rb")
+                        open_files[ref_fn] = f
+                    s = fcl.chunk.get_sequence(f=f)
                 if (
                     last_chunk_base_last is not None
                     and fcl.base_first != last_chunk_base_last + 1
@@ -260,8 +270,7 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
                 sequence.append(s)
                 last_chunk_base_last = fcl.base_last
         finally:
-            if f is not None:
-                f.close()
+            [open_files[k].close() for k in open_files if k is not None]
 
         return "".join(sequence)
 

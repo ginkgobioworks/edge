@@ -239,7 +239,7 @@ class GFFFragmentImporter(object):
                 new_feature = (new_start, new_end, feature[2], feature[3], feature[4], feature[5])
                 features.append(new_feature)
 
-    def build_fragment(self, reference_based=False):
+    def build_fragment(self, reference_based=True):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
         starts_and_ends = []

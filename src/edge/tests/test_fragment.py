@@ -1,3 +1,6 @@
+import os
+import tempfile
+
 from django.test import TestCase
 
 from edge.models import (
@@ -8,6 +11,14 @@ from edge.models import (
 
 
 class FragmentCreateTests(TestCase):
+    def setUp(self):
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        os.chdir(self.tmp_dir.name)
+
+    def tearDown(self):
+        os.chdir(".")
+        self.tmp_dir.cleanup()
+
     def test_can_create_fragment_with_no_chunk_size(self):
         f = Fragment.create_with_sequence(
             "Foo", "gataccggtactag", initial_chunk_size=None
@@ -30,8 +41,14 @@ class FragmentCreateTests(TestCase):
 
 class FragmentTests(TestCase):
     def setUp(self):
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        os.chdir(self.tmp_dir.name)
         self.root_sequence = "agttcgaggctga"
         self.root = Fragment.create_with_sequence("Foo", self.root_sequence)
+
+    def tearDown(self):
+        os.chdir(".")
+        self.tmp_dir.cleanup()
 
     def test_root_fragment(self):
         self.assertEquals(self.root.sequence, self.root_sequence)
@@ -41,7 +58,7 @@ class FragmentTests(TestCase):
         u = self.root.update("Bar")
         self.assertEquals(len([c for c in u.chunks()]), 1)
         prev, cur = u._find_and_split_before(4)
-        self.assertEquals([c.sequence for c in u.chunks()], ["agt", "tcgaggctga"])
+        self.assertEquals([c.get_sequence() for c in u.chunks()], ["agt", "tcgaggctga"])
         self.assertEquals(u.sequence, self.root_sequence)
 
     def test_can_reconstruct_index_after_split(self):
@@ -58,43 +75,43 @@ class FragmentTests(TestCase):
         u = self.root.update("Bar")
         self.assertEquals(len([c for c in u.chunks()]), 1)
         prev, cur = u._find_and_split_before(1)
-        self.assertEquals([c.sequence for c in u.chunks()], ["agttcgaggctga"])
+        self.assertEquals([c.get_sequence() for c in u.chunks()], ["agttcgaggctga"])
         self.assertEquals(u.sequence, self.root_sequence)
 
     def test_split_at_end(self):
         u = self.root.update("Bar")
         self.assertEquals(len([c for c in u.chunks()]), 1)
         prev, cur = u._find_and_split_before(len(self.root_sequence))
-        self.assertEquals([c.sequence for c in u.chunks()], ["agttcgaggctg", "a"])
+        self.assertEquals([c.get_sequence() for c in u.chunks()], ["agttcgaggctg", "a"])
         self.assertEquals(u.sequence, self.root_sequence)
 
     def test_split_past_end(self):
         u = self.root.update("Bar")
         self.assertEquals(len([c for c in u.chunks()]), 1)
         prev, cur = u._find_and_split_before(len(self.root_sequence) + 1)
-        self.assertEquals([c.sequence for c in u.chunks()], ["agttcgaggctga"])
+        self.assertEquals([c.get_sequence() for c in u.chunks()], ["agttcgaggctga"])
         self.assertEquals(u.sequence, self.root_sequence)
 
     def test_double_split_at_same_position(self):
         u = self.root.update("Bar")
         self.assertEquals(len([c for c in u.chunks()]), 1)
         prev, cur = u._find_and_split_before(3)
-        self.assertEquals([c.sequence for c in u.chunks()], ["ag", "ttcgaggctga"])
+        self.assertEquals([c.get_sequence() for c in u.chunks()], ["ag", "ttcgaggctga"])
         prev, cur = u._find_and_split_before(3)
-        self.assertEquals([c.sequence for c in u.chunks()], ["ag", "ttcgaggctga"])
+        self.assertEquals([c.get_sequence() for c in u.chunks()], ["ag", "ttcgaggctga"])
         self.assertEquals(u.sequence, self.root_sequence)
 
     def test_split_chunk_with_size_of_one(self):
         u = self.root.update("Bar")
         self.assertEquals(len([c for c in u.chunks()]), 1)
         prev, cur = u._find_and_split_before(4)
-        self.assertEquals([c.sequence for c in u.chunks()], ["agt", "tcgaggctga"])
+        self.assertEquals([c.get_sequence() for c in u.chunks()], ["agt", "tcgaggctga"])
         prev, cur = u._find_and_split_before(3)
-        self.assertEquals([c.sequence for c in u.chunks()], ["ag", "t", "tcgaggctga"])
+        self.assertEquals([c.get_sequence() for c in u.chunks()], ["ag", "t", "tcgaggctga"])
         prev, cur = u._find_and_split_before(4)
-        self.assertEquals([c.sequence for c in u.chunks()], ["ag", "t", "tcgaggctga"])
+        self.assertEquals([c.get_sequence() for c in u.chunks()], ["ag", "t", "tcgaggctga"])
         prev, cur = u._find_and_split_before(3)
-        self.assertEquals([c.sequence for c in u.chunks()], ["ag", "t", "tcgaggctga"])
+        self.assertEquals([c.get_sequence() for c in u.chunks()], ["ag", "t", "tcgaggctga"])
         self.assertEquals(u.sequence, self.root_sequence)
 
     def test_split_does_not_invalidate_location_indices_if_not_splitting_a_chunk(self):
@@ -538,7 +555,7 @@ class FragmentTests(TestCase):
 
         # there should now be 4 chunks for f
         self.assertEquals(
-            [c.sequence for c in f.chunks()],
+            [c.get_sequence() for c in f.chunks()],
             [self.root_sequence[0:2], "gat", "aca", self.root_sequence[2:]],
         )
         self.assertEquals(f.has_location_index, True)
@@ -549,7 +566,7 @@ class FragmentTests(TestCase):
 
         # can still get chunks by walking edges
         self.assertEquals(
-            [c.sequence for c in f.chunks_by_walking()],
+            [c.get_sequence() for c in f.chunks_by_walking()],
             [self.root_sequence[0:2], "gat", "aca", self.root_sequence[2:]],
         )
 
@@ -557,7 +574,7 @@ class FragmentTests(TestCase):
         f.index_fragment_chunk_locations()
         self.assertEquals(f.has_location_index, True)
         self.assertEquals(
-            [c.sequence for c in f.chunks()],
+            [c.get_sequence() for c in f.chunks()],
             [self.root_sequence[0:2], "gat", "aca", self.root_sequence[2:]],
         )
 
@@ -574,7 +591,7 @@ class FragmentTests(TestCase):
 
         # there should now be 3 chunks for f
         self.assertEquals(
-            [c.sequence for c in f.chunks()],
+            [c.get_sequence() for c in f.chunks()],
             [self.root_sequence[0:2], "gataca", self.root_sequence[2:]],
         )
         chunk_ids = [c.id for c in f.chunks()]
@@ -615,6 +632,45 @@ class FragmentTests(TestCase):
         self.assertEquals(chunk, None)
         self.assertEquals(next_chunk, None)
         self.assertEquals(bases_visited, 6 + len(self.root_sequence))
+
+    def test_converts_to_reference_based_chunks(self):
+        self.root = Fragment.create_with_sequence(
+            "FooSeq", self.root_sequence, reference_based=False
+        )
+        f = self.root.update("Bar")
+        converted = f.indexed_fragment().convert_chunks_to_reference_based()
+        self.assertTrue(converted)
+
+        converted_twice = f.indexed_fragment().convert_chunks_to_reference_based()
+        self.assertFalse(converted_twice)
+
+    def test_propagates_conversion_to_reference_based_chunks(self):
+        self.root = Fragment.create_with_sequence(
+            "FooSeq", self.root_sequence, reference_based=False
+        )
+        f = self.root.update("Bar")
+        c1 = f.update("Child 1")
+        c1.insert_bases(7, "gataca")
+        c2 = c1.update("Child 2")
+        c2.insert_bases(3, "atta")
+        converted = f.convert_chunks_to_reference_based()
+        self.assertTrue(converted)
+        f = f.indexed_fragment()
+        c1 = c1.indexed_fragment()
+        c2 = c2.indexed_fragment()
+
+        converted_c1 = c1.convert_chunks_to_reference_based()
+        self.assertFalse(converted_c1)
+        converted_c2 = c2.convert_chunks_to_reference_based()
+        self.assertFalse(converted_c2)
+
+        unconverted_f_chunks = [c for c in f.chunks_by_walking() if c.is_sequence_based]
+        unconverted_c1_chunks = [c for c in c1.chunks_by_walking() if c.is_sequence_based]
+        unconverted_c2_chunks = [c for c in c2.chunks_by_walking() if c.is_sequence_based]
+        self.assertEqual(len(unconverted_f_chunks), 0)
+        self.assertEqual(len(unconverted_c1_chunks), 1)
+        self.assertEqual(len(unconverted_c2_chunks), 2)
+        self.assertTrue(unconverted_c1_chunks[0] in unconverted_c2_chunks)
 
 
 class FragmentChunkTest(TestCase):
