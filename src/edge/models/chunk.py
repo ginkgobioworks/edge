@@ -98,6 +98,15 @@ class ChunkReference(object):
     def generate_from_name_and_sequence(name, sequence):
         return ChunkReference(None)
 
+    @staticmethod
+    def read_reference_sequence_at_position_opened_file(f, start, end):
+        """
+        Read sequence from 1-indexed positions from reference.
+        """
+        f.seek(start - 1)
+        sequence = f.read(end - start + 1).decode('utf-8')
+        return sequence
+
     def __init__(self, ref_fn):
         self.ref_fn = ref_fn
 
@@ -197,14 +206,19 @@ class Chunk(BigIntPrimaryModel):
             return self.ref_end_index - self.ref_start_index + 1
         return 0
 
-    def get_sequence(self):
+    def get_sequence(self, f=None):
         if self.is_sequence_based:
             return self.sequence
         elif self.is_reference_based:
-            lcr = LocalChunkReference(self.ref_fn)
-            return lcr.read_reference_sequence_at_position(
-                self.ref_start_index, self.ref_end_index
-            )
+            if f is None:
+                lcr = LocalChunkReference(self.ref_fn)
+                return lcr.read_reference_sequence_at_position(
+                    self.ref_start_index, self.ref_end_index
+                )
+            else:
+                return ChunkReference.read_reference_sequence_at_position_opened_file(
+                    f, self.ref_start_index, self.ref_end_index
+                )
         else:
             return ''
 

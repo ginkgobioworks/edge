@@ -1,7 +1,11 @@
-from django.db import transaction
-from django.utils import timezone
-from django.db import models
+import gzip
+
+from django.db import (
+    models,
+    transaction
+)
 from django.db.models import Q
+from django.utils import timezone
 
 from edge.models.chunk import (
     Annotation,
@@ -230,22 +234,31 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         sequence = []
         last_chunk_base_last = None
 
-        for fcl in q:
-            s = fcl.chunk.get_sequence()
-            if (
-                last_chunk_base_last is not None
-                and fcl.base_first != last_chunk_base_last + 1
-            ):
-                raise Exception(
-                    "Fragment chunk location table missing chunks before %s"
-                    % (fcl.base_first,)
-                )
-            if bp_lo is not None and fcl.base_first < bp_lo:
-                s = s[bp_lo - fcl.base_first :]
-            if bp_hi is not None and fcl.base_last > bp_hi:
-                s = s[: bp_hi - fcl.base_last]
-            sequence.append(s)
-            last_chunk_base_last = fcl.base_last
+        reference_fcls = q.filter(chunk__ref_fn__isnull=False)
+        ref_fn = None if reference_fcls.count() == 0 \
+                      else reference_fcls.all().first().chunk.ref_fn
+
+        f = gzip.open(ref_fn, "rb") if ref_fn is not None else None
+        try:
+            for fcl in q:
+                s = fcl.chunk.get_sequence(f=f)
+                if (
+                    last_chunk_base_last is not None
+                    and fcl.base_first != last_chunk_base_last + 1
+                ):
+                    raise Exception(
+                        "Fragment chunk location table missing chunks before %s"
+                        % (fcl.base_first,)
+                    )
+                if bp_lo is not None and fcl.base_first < bp_lo:
+                    s = s[bp_lo - fcl.base_first :]
+                if bp_hi is not None and fcl.base_last > bp_hi:
+                    s = s[: bp_hi - fcl.base_last]
+                sequence.append(s)
+                last_chunk_base_last = fcl.base_last
+        finally:
+            if f is not None:
+                f.close()
 
         return "".join(sequence)
 
