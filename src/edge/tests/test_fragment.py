@@ -1,6 +1,3 @@
-import os
-import tempfile
-
 from django.test import TestCase
 
 from edge.models import (
@@ -11,14 +8,6 @@ from edge.models import (
 
 
 class FragmentCreateTests(TestCase):
-    def setUp(self):
-        self.tmp_dir = tempfile.TemporaryDirectory()
-        os.chdir(self.tmp_dir.name)
-
-    def tearDown(self):
-        os.chdir(".")
-        self.tmp_dir.cleanup()
-
     def test_can_create_fragment_with_no_chunk_size(self):
         f = Fragment.create_with_sequence(
             "Foo", "gataccggtactag", initial_chunk_size=None
@@ -41,14 +30,8 @@ class FragmentCreateTests(TestCase):
 
 class FragmentTests(TestCase):
     def setUp(self):
-        self.tmp_dir = tempfile.TemporaryDirectory()
-        os.chdir(self.tmp_dir.name)
         self.root_sequence = "agttcgaggctga"
         self.root = Fragment.create_with_sequence("Foo", self.root_sequence)
-
-    def tearDown(self):
-        os.chdir(".")
-        self.tmp_dir.cleanup()
 
     def test_root_fragment(self):
         self.assertEquals(self.root.sequence, self.root_sequence)

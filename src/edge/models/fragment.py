@@ -63,7 +63,7 @@ class Fragment(models.Model):
         if reference_based:
             # don't split into chunk sized bits for reference based import
             # TODO: change to AWS
-            lcr = LocalChunkReference.generate_from_name_and_sequence(name, sequence)
+            lcr = LocalChunkReference.generate_from_name_and_sequence(new_fragment.id, sequence)
             new_fragment.build_fragment_reference_chunk(lcr.ref_fn, len(sequence))
         else:
             if initial_chunk_size is None or initial_chunk_size == 0:
