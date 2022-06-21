@@ -9,6 +9,8 @@ from django.utils import timezone
 
 from edge.models.chunk import (
     Annotation,
+    BULK_CREATE_BATCH_SIZE,
+    Chunk,
     Chunk_Feature,
     Fragment_Chunk_Location,
     LocalChunkReference,
@@ -60,6 +62,7 @@ class Fragment(models.Model):
 
         if reference_based:
             # don't split into chunk sized bits for reference based import
+            # TODO: change to AWS
             lcr = LocalChunkReference.generate_from_name_and_sequence(name, sequence)
             new_fragment.build_fragment_reference_chunk(lcr.ref_fn, len(sequence))
         else:
@@ -357,3 +360,39 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
             fragment=new_fragment, fresh=True, updated_on=self.fragment_index.updated_on
         ).save()
         return new_fragment.indexed_fragment()
+
+    def convert_chunks_to_reference_based(self):
+        self.lock()
+
+        old_chunks = list(self.chunks_by_walking())
+        if any([c.is_reference_based for c in old_chunks]):
+            print(f"Fragment {self.id} is already reference-based")
+            return False
+
+        sequence = self.sequence
+        # TODO: change to AWS
+        lcr = LocalChunkReference.generate_from_name_and_sequence(self.id, sequence)
+
+        chunks_to_update = []
+        start = 1
+        for chunk in self.chunks_by_walking():
+            saved_chunk_length = chunk.length
+            chunk.sequence = None
+            chunk.ref_fn = lcr.ref_fn
+            chunk.ref_start_index = start
+            start += saved_chunk_length
+            chunk.ref_end_index = start - 1
+            chunks_to_update.append(chunk)
+
+        Chunk.objects.bulk_update(
+            objs=chunks_to_update,
+            fields=['sequence', 'ref_fn', 'ref_start_index', 'ref_end_index'],
+            batch_size=BULK_CREATE_BATCH_SIZE
+        )
+
+        new_chunks = list(self.chunks_by_walking())
+        chunk_ids_constant = [c.id for c in old_chunks] == [c.id for c in new_chunks]
+        all_reference_based = all(chunk.is_reference_based for chunk in new_chunks)
+        sequence_constant = sequence == self.sequence
+
+        return chunk_ids_constant and all_reference_based and sequence_constant

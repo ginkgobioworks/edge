@@ -211,6 +211,7 @@ class Chunk(BigIntPrimaryModel):
             return self.sequence
         elif self.is_reference_based:
             if f is None:
+                # TODO: change to AWS
                 lcr = LocalChunkReference(self.ref_fn)
                 return lcr.read_reference_sequence_at_position(
                     self.ref_start_index, self.ref_end_index

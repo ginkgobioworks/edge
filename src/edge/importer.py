@@ -239,7 +239,7 @@ class GFFFragmentImporter(object):
                 new_feature = (new_start, new_end, feature[2], feature[3], feature[4], feature[5])
                 features.append(new_feature)
 
-    def build_fragment(self, reference_based=True):
+    def build_fragment(self, reference_based=False):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
         starts_and_ends = []
@@ -284,6 +284,7 @@ class GFFFragmentImporter(object):
         if reference_based:
             print("%d chunks" % (len(chunk_sizes),))
             t0 = time.time()
+            # TODO: change to AWS
             lcr = LocalChunkReference.generate_from_name_and_sequence(
                 new_fragment.id, self.__sequence
             )
