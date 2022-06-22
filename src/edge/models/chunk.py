@@ -110,7 +110,8 @@ class ChunkReference(object):
     def __init__(self, ref_fn):
         self.ref_fn = ref_fn
 
-    def read_reference_sequence_at_position(self):
+    # TODO: Implement me!
+    def read_reference_sequence_at_position(self, start, end):
         return ""
 
 
@@ -145,14 +146,17 @@ class AWSChunkReference(ChunkReference):
     Class for storing chunk sequences in reference files on AWS
     """
 
+    # TODO: Implement me!
     @staticmethod
     def generate_from_name_and_sequence(name, sequence):
         return AWSChunkReference(None)
 
+    # TODO: Implement me!
     def __init__(self, ref_fn):
         self.ref_fn = ref_fn
 
-    def read_reference_sequence_at_position(self):
+    # TODO: Implement me!
+    def read_reference_sequence_at_position(self, start, end):
         return None
 
 
@@ -204,7 +208,7 @@ class Chunk(BigIntPrimaryModel):
             return len(self.sequence)
         elif self.is_reference_based:
             return self.ref_end_index - self.ref_start_index + 1
-        return 0
+        raise Exception("invalid chunk data")
 
     def get_sequence(self, f=None):
         if self.is_sequence_based:
@@ -220,8 +224,7 @@ class Chunk(BigIntPrimaryModel):
                 return ChunkReference.read_reference_sequence_at_position_opened_file(
                     f, self.ref_start_index, self.ref_end_index
                 )
-        else:
-            return ''
+        raise Exception("invalid chunk data")
 
     def reload(self):
         return Chunk.objects.get(pk=self.pk)

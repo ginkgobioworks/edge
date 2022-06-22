@@ -691,3 +691,46 @@ class FragmentChunkTest(TestCase):
         self.assertEquals(annotations[0].feature.name, "A1")
         self.assertEquals(annotations[0].feature_base_first, 1)
         self.assertEquals(annotations[0].feature_base_last, 6)
+
+    def test_chunk_validity(self):
+        f = self.root.update("Bar")
+        c = Chunk(
+            initial_fragment=f,
+            sequence="atcg",
+            ref_fn=None,
+            ref_start_index=None,
+            ref_end_index=None
+        )
+        c.save()
+
+        self.assertTrue(c.is_sequence_based)
+        self.assertFalse(c.is_reference_based)
+        self.assertEqual(c.get_sequence(), "atcg")
+        self.assertEqual(c.length, 4)
+
+        c.sequence = None
+        c.ref_fn = "./reference.fa.gz"
+        c.save()
+        self.assertFalse(c.is_sequence_based)
+        self.assertFalse(c.is_reference_based)
+        try:
+            c.length
+            assert False
+        except Exception as e:
+            self.assertEqual("invalid chunk data", str(e))
+        try:
+            c.get_sequence()
+            assert False
+        except Exception as e:
+            self.assertEqual("invalid chunk data", str(e))
+
+        c.ref_start_index = 1
+        c.ref_end_index = 5
+        c.save()
+        self.assertFalse(c.is_sequence_based)
+        self.assertTrue(c.is_reference_based)
+
+        c.ref_fn = None
+        c.save()
+        self.assertFalse(c.is_sequence_based)
+        self.assertFalse(c.is_reference_based)
