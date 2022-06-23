@@ -1,3 +1,5 @@
+import tempfile
+
 from django.test import TestCase
 
 from edge.models import (
@@ -8,30 +10,52 @@ from edge.models import (
 
 
 class FragmentCreateTests(TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
     def test_can_create_fragment_with_no_chunk_size(self):
         f = Fragment.create_with_sequence(
-            "Foo", "gataccggtactag", initial_chunk_size=None
+            "Foo", "gataccggtactag", initial_chunk_size=None, dirn=self.tmpdir.name
         )
         self.assertEquals(f.sequence, "gataccggtactag")
 
     def test_can_create_fragment_with_different_chunk_sizes(self):
         s = "gataccggtactag"
-        f = Fragment.create_with_sequence("Foo", s, initial_chunk_size=len(s))
+        f = Fragment.create_with_sequence(
+            "Foo", s, initial_chunk_size=len(s), dirn=self.tmpdir.name
+        )
         self.assertEquals(f.sequence, s)
-        f = Fragment.create_with_sequence("Foo", s, initial_chunk_size=0)
+        f = Fragment.create_with_sequence(
+            "Foo", s, initial_chunk_size=0, dirn=self.tmpdir.name
+        )
         self.assertEquals(f.sequence, s)
-        f = Fragment.create_with_sequence("Foo", s, initial_chunk_size=1)
+        f = Fragment.create_with_sequence(
+            "Foo", s, initial_chunk_size=1, dirn=self.tmpdir.name
+        )
         self.assertEquals(f.sequence, s)
-        f = Fragment.create_with_sequence("Foo", s, initial_chunk_size=3)
+        f = Fragment.create_with_sequence(
+            "Foo", s, initial_chunk_size=3, dirn=self.tmpdir.name
+        )
         self.assertEquals(f.sequence, s)
-        f = Fragment.create_with_sequence("Foo", s, initial_chunk_size=len(s) * 1000)
+        f = Fragment.create_with_sequence(
+            "Foo", s, initial_chunk_size=len(s) * 1000, dirn=self.tmpdir.name
+        )
         self.assertEquals(f.sequence, s)
 
 
 class FragmentTests(TestCase):
     def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
         self.root_sequence = "agttcgaggctga"
-        self.root = Fragment.create_with_sequence("Foo", self.root_sequence)
+        self.root = Fragment.create_with_sequence(
+            "Foo", self.root_sequence, dirn=self.tmpdir.name
+        )
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
 
     def test_root_fragment(self):
         self.assertEquals(self.root.sequence, self.root_sequence)
@@ -131,7 +155,9 @@ class FragmentTests(TestCase):
 
     def test_get_circular_sequence(self):
         s = "agttcgaggctga"
-        f = Fragment.create_with_sequence("Foo", s, circular=True)
+        f = Fragment.create_with_sequence(
+            "Foo", s, circular=True, dirn=self.tmpdir.name
+        )
         self.assertEquals(f.get_sequence(len(s) - 3 + 1, 4), s[-3:] + s[:4])
 
     def test_insert_sequence_in_middle(self):
@@ -173,7 +199,7 @@ class FragmentTests(TestCase):
 
     def test_does_not_allow_insert_same_fragment_twice_which_creates_loops(self):
         u = self.root.update("Bar")
-        new_f = Fragment.create_with_sequence("Test", "gataca")
+        new_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         new_f = new_f.update("Test")
         new_f.insert_bases(2, "ccc")
         u.insert_fragment(3, new_f)
@@ -181,7 +207,7 @@ class FragmentTests(TestCase):
 
     def test_insert_new_fragment_in_middle(self):
         f = self.root.update("Bar")
-        new_f = Fragment.create_with_sequence("Test", "gataca")
+        new_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         new_f = new_f.update("Test")
         new_f.insert_bases(2, "ccc")
         f.insert_fragment(3, new_f)
@@ -193,7 +219,7 @@ class FragmentTests(TestCase):
 
     def test_insert_new_fragment_at_start(self):
         f = self.root.update("Bar")
-        new_f = Fragment.create_with_sequence("Test", "gataca")
+        new_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         new_f = new_f.update("Test")
         new_f.insert_bases(2, "ccc")
         f.insert_fragment(1, new_f)
@@ -203,7 +229,7 @@ class FragmentTests(TestCase):
 
     def test_insert_new_fragment_at_end(self):
         f = self.root.update("Bar")
-        new_f = Fragment.create_with_sequence("Test", "gataca")
+        new_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         new_f = new_f.update("Test")
         new_f.insert_bases(2, "ccc")
         f.insert_fragment(None, new_f)
@@ -213,7 +239,7 @@ class FragmentTests(TestCase):
 
     def test_insert_new_fragment_at_end_then_insert_again(self):
         u = self.root.update("Bar")
-        new_f = Fragment.create_with_sequence("Test", "gataca")
+        new_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         new_f = new_f.update("Test")
         new_f.insert_bases(2, "ccc")
         u.insert_fragment(None, new_f)
@@ -226,7 +252,7 @@ class FragmentTests(TestCase):
         self.assertEquals(self.root.sequence, self.root_sequence)
 
     def test_insert_existing_fragment_in_middle(self):
-        existing_f = Fragment.create_with_sequence("Test", "gataca")
+        existing_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         f = self.root.update("Bar")
         f.insert_fragment(3, existing_f)
         self.assertEquals(
@@ -238,7 +264,7 @@ class FragmentTests(TestCase):
     def test_insert_fragment_inherits_annotations_from_new_fragment(self):
         f = self.root.update("Bar")
         self.assertEquals([a for a in f.annotations() if a.name == "Uma"], [])
-        new_f = Fragment.create_with_sequence("Test", "gataca")
+        new_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         new_f.annotate(2, 4, "Uma", "feature", 1)
         f.insert_fragment(2, new_f)
         self.assertEquals(
@@ -364,7 +390,7 @@ class FragmentTests(TestCase):
 
     def test_replace_fragment_in_middle(self):
         f = self.root.update("Bar")
-        new_f = Fragment.create_with_sequence("Test", "gataca")
+        new_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         new_f = new_f.update("Test")
         new_f.insert_bases(2, "ccc")
         f.replace_with_fragment(3, 6, new_f)
@@ -377,7 +403,7 @@ class FragmentTests(TestCase):
 
     def test_replace_fragment_at_start(self):
         f = self.root.update("Bar")
-        new_f = Fragment.create_with_sequence("Test", "gataca")
+        new_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         new_f = new_f.update("Test")
         new_f.insert_bases(2, "ccc")
         f.replace_with_fragment(1, 6, new_f)
@@ -388,7 +414,7 @@ class FragmentTests(TestCase):
 
     def test_replace_fragment_at_end(self):
         f = self.root.update("Bar")
-        new_f = Fragment.create_with_sequence("Test", "gataca")
+        new_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         new_f = new_f.update("Test")
         new_f.insert_bases(2, "ccc")
         f.replace_with_fragment(len(self.root_sequence) - 5, 6, new_f)
@@ -399,7 +425,7 @@ class FragmentTests(TestCase):
 
     def test_replace_fragment_past_end(self):
         f = self.root.update("Bar")
-        new_f = Fragment.create_with_sequence("Test", "gataca")
+        new_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         new_f = new_f.update("Test")
         new_f.insert_bases(2, "ccc")
         f.replace_with_fragment(len(self.root_sequence) - 3, 6, new_f)
@@ -410,7 +436,7 @@ class FragmentTests(TestCase):
 
     def test_replace_fragment_at_end_then_insert_again(self):
         u = self.root.update("Bar")
-        new_f = Fragment.create_with_sequence("Test", "gataca")
+        new_f = Fragment.create_with_sequence("Test", "gataca", dirn=self.tmpdir.name)
         new_f = new_f.update("Test")
         new_f.insert_bases(2, "ccc")
         u.replace_with_fragment(len(self.root_sequence) - 5, 6, new_f)
@@ -618,33 +644,33 @@ class FragmentTests(TestCase):
 
     def test_converts_to_reference_based_chunks(self):
         self.root = Fragment.create_with_sequence(
-            "FooSeq", self.root_sequence, reference_based=False
+            "FooSeq", self.root_sequence, reference_based=False, dirn=self.tmpdir.name
         )
         f = self.root.update("Bar")
-        converted = f.indexed_fragment().convert_chunks_to_reference_based()
+        converted = f.indexed_fragment().convert_chunks_to_reference_based(dirn=self.tmpdir.name)
         self.assertTrue(converted)
 
-        converted_twice = f.indexed_fragment().convert_chunks_to_reference_based()
+        converted_twice = f.indexed_fragment().convert_chunks_to_reference_based(dirn=self.tmpdir.name)
         self.assertFalse(converted_twice)
 
     def test_propagates_conversion_to_reference_based_chunks(self):
         self.root = Fragment.create_with_sequence(
-            "FooSeq", self.root_sequence, reference_based=False
+            "FooSeq", self.root_sequence, reference_based=False, dirn=self.tmpdir.name
         )
         f = self.root.update("Bar")
         c1 = f.update("Child 1")
         c1.insert_bases(7, "gataca")
         c2 = c1.update("Child 2")
         c2.insert_bases(3, "atta")
-        converted = f.convert_chunks_to_reference_based()
+        converted = f.convert_chunks_to_reference_based(dirn=self.tmpdir.name)
         self.assertTrue(converted)
         f = f.indexed_fragment()
         c1 = c1.indexed_fragment()
         c2 = c2.indexed_fragment()
 
-        converted_c1 = c1.convert_chunks_to_reference_based()
+        converted_c1 = c1.convert_chunks_to_reference_based(dirn=self.tmpdir.name)
         self.assertFalse(converted_c1)
-        converted_c2 = c2.convert_chunks_to_reference_based()
+        converted_c2 = c2.convert_chunks_to_reference_based(dirn=self.tmpdir.name)
         self.assertFalse(converted_c2)
 
         unconverted_f_chunks = [c for c in f.chunks_by_walking() if c.is_sequence_based]
@@ -658,8 +684,14 @@ class FragmentTests(TestCase):
 
 class FragmentChunkTest(TestCase):
     def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
         self.root_sequence = "agttcgaggctga"
-        self.root = Fragment.create_with_sequence("Foo", self.root_sequence)
+        self.root = Fragment.create_with_sequence(
+            "Foo", self.root_sequence, dirn=self.tmpdir.name
+        )
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
 
     def test_next_chunk(self):
         f = self.root.update("Bar")

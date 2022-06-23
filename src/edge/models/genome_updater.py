@@ -60,11 +60,11 @@ class Genome_Updater(object):
         if new_fragment is True:
             self._add_updated_fragment(u)
 
-    def add_fragment(self, name, sequence, circular=False):
+    def add_fragment(self, name, sequence, circular=False, dirn='.'):
         if len(sequence) == 0:
             raise Exception("Cannot create a fragment of length zero")
         new_fragment = Fragment.create_with_sequence(
-            name=name, sequence=sequence, circular=circular
+            name=name, sequence=sequence, circular=circular, dirn=dirn
         )
         self.genome_fragment_set.create(fragment=new_fragment, inherited=False)
         return new_fragment

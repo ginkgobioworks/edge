@@ -1,5 +1,6 @@
-import os
 import json
+import os
+import tempfile
 
 from Bio.Seq import Seq
 from django.test import TestCase
@@ -39,6 +40,7 @@ class RemoveOverhangsTest(TestCase):
 
 class GenomeRecombinationTest(TestCase):
     def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
         self.old_check_junction_lu = edge.recombine.CHECK_JUNCTION_LEFT_UP
         self.old_check_junction_ld = edge.recombine.CHECK_JUNCTION_LEFT_DN
         self.old_check_junction_ru = edge.recombine.CHECK_JUNCTION_RIGHT_UP
@@ -53,6 +55,7 @@ class GenomeRecombinationTest(TestCase):
         edge.recombine.SINGLE_CROSSOVER_MAX_GAP = 10
 
     def tearDown(self):
+        self.tmpdir.cleanup()
         edge.recombine.CHECK_JUNCTION_LEFT_UP = self.old_check_junction_lu
         edge.recombine.CHECK_JUNCTION_LEFT_DN = self.old_check_junction_ld
         edge.recombine.CHECK_JUNCTION_RIGHT_UP = self.old_check_junction_ru
@@ -63,7 +66,9 @@ class GenomeRecombinationTest(TestCase):
         g = Genome(name="Foo")
         g.save()
         for seq in templates:
-            f = Fragment.create_with_sequence("Bar", seq, circular=circular)
+            f = Fragment.create_with_sequence(
+                "Bar", seq, circular=circular, dirn=self.tmpdir.name
+            )
             Genome_Fragment(genome=g, fragment=f, inherited=False).save()
             try:
                 os.unlink(fragment_fasta_fn(f))
@@ -1146,6 +1151,7 @@ class GenomeRecombinationTest(TestCase):
 
 class SingleCrossoverTest(TestCase):
     def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
         self.old_check_junction_lu = edge.recombine.CHECK_JUNCTION_LEFT_UP
         self.old_check_junction_ld = edge.recombine.CHECK_JUNCTION_LEFT_DN
         self.old_check_junction_ru = edge.recombine.CHECK_JUNCTION_RIGHT_UP
@@ -1161,6 +1167,7 @@ class SingleCrossoverTest(TestCase):
         edge.recombine.SINGLE_CROSSOVER_MAX_GAP = self.new_max_gap
 
     def tearDown(self):
+        self.tmpdir.cleanup()
         edge.recombine.CHECK_JUNCTION_LEFT_UP = self.old_check_junction_lu
         edge.recombine.CHECK_JUNCTION_LEFT_DN = self.old_check_junction_ld
         edge.recombine.CHECK_JUNCTION_RIGHT_UP = self.old_check_junction_ru
@@ -1171,7 +1178,9 @@ class SingleCrossoverTest(TestCase):
         g = Genome(name="Foo")
         g.save()
         for seq in templates:
-            f = Fragment.create_with_sequence("Bar", seq, circular=circular)
+            f = Fragment.create_with_sequence(
+                "Bar", seq, circular=circular, dirn=self.tmpdir.name
+            )
             Genome_Fragment(genome=g, fragment=f, inherited=False).save()
             try:
                 os.unlink(fragment_fasta_fn(f))

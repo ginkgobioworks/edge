@@ -10,6 +10,12 @@ from edge.models import Genome
 
 
 class ImporterTest(TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
     def test_import_gff_procedure_creates_genome_and_annotations(self):
 
         data = """##gff-version 3
@@ -33,15 +39,15 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
             f.close()
 
             self.assertEquals(Genome.objects.filter(name="TestGenome").count(), 0)
-            import_gff("TestGenome", f.name)
+            import_gff("TestGenome", f.name, output_dir=self.tmpdir.name)
             self.assertEquals(Genome.objects.filter(name="TestGenome").count(), 1)
 
             # import again with same name does not work
-            self.assertRaises(Exception, import_gff, "TestGenome", f.name)
+            self.assertRaises(Exception, import_gff, "TestGenome", f.name, output_dir=self.tmpdir.name)
 
             # can import again with different name
             self.assertEquals(Genome.objects.filter(name="TestGenome2").count(), 0)
-            import_gff("TestGenome2", f.name)
+            import_gff("TestGenome2", f.name, output_dir=self.tmpdir.name)
             self.assertEquals(Genome.objects.filter(name="TestGenome2").count(), 1)
 
             genome = Genome.objects.get(name="TestGenome")
@@ -84,7 +90,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
@@ -144,7 +150,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # verify chrI fragment
@@ -181,7 +187,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # verify chrI fragment
@@ -218,7 +224,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # verify chrI fragment
@@ -255,7 +261,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # verify chrI fragment
@@ -312,7 +318,7 @@ CCTCTGAATAACAATAGCAATTGTGGATAATGTGAAAAAATAATACACAACATACACAGTTTATCCACAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # verify first fragment
@@ -359,7 +365,7 @@ CCTCTGAATAACAATAGCAATTGTGGATAATGTGAAAAAATAATACACAACATACACAGTTTATCCACAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # verify first fragment
@@ -407,7 +413,7 @@ CCTCTGAATAACAATAGCAATTGTGGATAATGTGAAAAAATAATACACAACATACACAGTTTATCCACAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # verify first fragment
@@ -456,7 +462,7 @@ CCTCTGAATAACAATAGCAATTGTGGATAATGTGAAAAAATAATACACAACATACACAGTTTATCCACAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # verify first fragment
@@ -469,6 +475,12 @@ CCTCTGAATAACAATAGCAATTGTGGATAATGTGAAAAAATAATACACAACATACACAGTTTATCCACAT
 
 
 class QualifierTest(TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
     def import_with_qualifiers(self, qualifiers, phase="."):
         data = """##gff-version 3
 chrI\tTest\tcds\t30\t80\t.\t-\t%s\t%s
@@ -484,7 +496,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            self.genome = Genome.import_gff("Foo", f.name)
+            self.genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
     def test_stores_phase(self):
@@ -592,6 +604,12 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 
 
 class JoinImporterTest(TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
     def test_import_gff_CDS_subfragments(self):
 
         data = """##gff-version 3
@@ -611,7 +629,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
@@ -659,7 +677,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
@@ -716,7 +734,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
@@ -764,7 +782,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
@@ -821,7 +839,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # verify chrI fragment
@@ -868,7 +886,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # verify chrI fragment
@@ -910,6 +928,12 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 
 
 class CircularImporterTest(TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
     def test_circular_wrap_around_import(self):
         data = """##gff-version 3
 chrI\tTest\tregion\t1\t160\t.\t.\t.\tID=i1;Name=f1;Is_circular=True
@@ -926,7 +950,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
@@ -974,7 +998,7 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         # created one fragment for each sequence in GFF file
@@ -998,6 +1022,12 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
 
 
 class SpecialCaseImport(TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
     def test_rbs_slippage_annotation_import(self):
         data = """##gff-version 3
 #!gff-spec-version 1.21
@@ -1025,7 +1055,7 @@ TTTCAATGCGAGTTGGCTTAATCAGCGATATTCAGAAATTATGCAGGCTATTATTTATGATGTCATCGGT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         contig_1 = [
@@ -1053,7 +1083,7 @@ TTTCAATGCGAGTTGGCTTAATCAGCGATATTCAGAAATTATGCAGGCTATTATTTATGATGTCATCGGT
         self.assertEquals(contig_1.annotations()[2].feature.strand, -1)
 
     def test_full_rbs_slippage_annotation_import(self):
-        genome2 = Genome.import_gff("Foo1", "edge/tests/fixtures/AZS-ribosomal.gff")
+        genome2 = Genome.import_gff("Foo1", "edge/tests/fixtures/AZS-ribosomal.gff", dirn=self.tmpdir.name)
         only_contig = [fr.indexed_fragment() for fr in genome2.fragments.all() if fr.name == "1"][0]
         anns = only_contig.annotations()
         self.assertEqual(len(anns), 4565)
@@ -1071,7 +1101,7 @@ AAACGTTCATAAAAGATACGCAACTCTACTCACTTAAAAATGACGAAGCCATTATATTAGTAAGTCTGCC"""
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            genome = Genome.import_gff("Foo", f.name)
+            genome = Genome.import_gff("Foo", f.name, dirn=self.tmpdir.name)
             os.unlink(f.name)
 
         only_contig = [fr.indexed_fragment() for fr in genome.fragments.all() if fr.name == "sHU0003.g1"][0]

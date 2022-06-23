@@ -1,5 +1,7 @@
 import os
 import random
+import tempfile
+
 from Bio import SeqIO
 from django.test import TestCase
 from edge import get_random_sequence
@@ -14,12 +16,18 @@ from edge.models import (
 class BuildBlastDBTest(TestCase):
     def setUp(self):
         random.seed(0)
+        self.tmpdir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
 
     def test_builds_fragment_fastas(self):
         s1 = get_random_sequence(200)
         g1 = Genome(name="Foo")
         g1.save()
-        f1 = Fragment.create_with_sequence("Bar", s1)
+        f1 = Fragment.create_with_sequence(
+            "Bar", s1, dirn=self.tmpdir.name
+        )
         Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
 
         fn = fragment_fasta_fn(f1)
@@ -37,7 +45,9 @@ class BuildBlastDBTest(TestCase):
         s1 = get_random_sequence(200)
         g1 = Genome(name="Foo")
         g1.save()
-        f1 = Fragment.create_with_sequence("Bar", s1)
+        f1 = Fragment.create_with_sequence(
+            "Bar", s1, dirn=self.tmpdir.name
+        )
         Genome_Fragment(genome=g1, fragment=f1, inherited=False).save()
 
         dbname1 = build_genome_db(g1)

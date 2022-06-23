@@ -35,9 +35,9 @@ class Genome(Genome_Updater, models.Model):
         return new_genome
 
     @staticmethod
-    def import_gff(name, gff_fasta_fn):
+    def import_gff(name, gff_fasta_fn, dirn='.'):
         genome = Genome.create(name)
-        GFFImporter(genome, gff_fasta_fn).do_import()
+        GFFImporter(genome, gff_fasta_fn).do_import(dirn=dirn)
         return genome
 
     def update(self, name=None, notes=None):

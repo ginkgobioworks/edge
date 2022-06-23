@@ -1,9 +1,17 @@
+import tempfile
+
 from django.test import TestCase
 
 from edge.models import Genome
 
 
 class GenomeTest(TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
     def test_create_genome(self):
         self.assertEquals(len(Genome.objects.all()), 0)
         genome = Genome.create("Foo")
@@ -15,7 +23,7 @@ class GenomeTest(TestCase):
         genome = Genome.create("Foo")
         self.assertEquals(len(genome.fragments.all()), 0)
         s = "atggcatattcgcagct"
-        genome.add_fragment("chrI", s)
+        genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
         self.assertEquals(len(genome.fragments.all()), 1)
         self.assertEquals(genome.fragments.all()[0].name, "chrI")
         self.assertEquals(genome.fragments.all()[0].indexed_fragment().sequence, s)
@@ -25,7 +33,7 @@ class GenomeTest(TestCase):
         self.assertEquals(len(Genome.objects.all()), 1)
         u = parent.update()
         s = "atggcatattcgcagct"
-        u.add_fragment("chrI", s)
+        u.add_fragment("chrI", s, dirn=self.tmpdir.name)
 
         child = u
         # created a child genome
@@ -41,7 +49,7 @@ class GenomeTest(TestCase):
     def test_find_annotation_by_name(self):
         genome = Genome.create("Foo")
         s = "atggcatattcgcagct"
-        f = genome.add_fragment("chrI", s)
+        f = genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
         f.annotate(3, 8, "Foo gene", "gene", 1)
 
         annotations = genome.indexed_genome().find_annotation_by_name("Foo gene")
@@ -67,7 +75,7 @@ class GenomeTest(TestCase):
     def test_find_annotation_by_qualifier(self):
         genome = Genome.create("Foo")
         s = "atggcatattcgcagct"
-        f = genome.add_fragment("chrI", s)
+        f = genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
         f.annotate(
             3, 8, "Foo gene", "gene", 1, qualifiers=dict(foo="bar,baz", far="foo,fu")
         )
@@ -125,7 +133,7 @@ class GenomeTest(TestCase):
     def test_find_annotation_by_feature(self):
         genome = Genome.create("Foo")
         s = "atggcatattcgcagct"
-        f = genome.add_fragment("chrI", s)
+        f = genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
         feature = f.annotate(3, 8, "Foo gene", "gene", 1)
 
         annotations = genome.indexed_genome().find_annotation_by_feature(feature)
@@ -140,7 +148,7 @@ class GenomeTest(TestCase):
         genome = Genome.create("Foo")
         self.assertEquals(len(genome.fragments.all()), 0)
         s = "atggcatattcgcagct"
-        genome.add_fragment("chrI", s)
+        genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
         self.assertEquals(genome.indexed_genome().changes(), [])
 
     def test_can_insert_and_get_changes(self):
@@ -149,7 +157,7 @@ class GenomeTest(TestCase):
 
         # add initial sequence
         s = "atggcatattcgcagct"
-        genome.add_fragment("chrI", s)
+        genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
 
         # insert
         g_u = genome.update()
@@ -166,7 +174,7 @@ class GenomeTest(TestCase):
     def test_update_fragment_by_id(self):
         genome = Genome.create("Foo")
         s = "atggcatattcgcagct"
-        f1 = genome.add_fragment("chrI", s)
+        f1 = genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
 
         g2 = genome.update()
         with g2.update_fragment_by_fragment_id(f1.id) as f2:
@@ -179,7 +187,7 @@ class GenomeTest(TestCase):
 
     def test_can_update_fragment_by_name_and_assign_new_name(self):
         genome = Genome.create("Foo")
-        genome.add_fragment("chrI", "atggcatattcgcagct")
+        genome.add_fragment("chrI", "atggcatattcgcagct", dirn=self.tmpdir.name)
         self.assertCountEqual([f.name for f in genome.fragments.all()], ["chrI"])
 
         # insert
@@ -191,7 +199,7 @@ class GenomeTest(TestCase):
 
     def test_can_update_fragment_by_id_and_assign_new_name(self):
         genome = Genome.create("Foo")
-        f0 = genome.add_fragment("chrI", "atggcatattcgcagct")
+        f0 = genome.add_fragment("chrI", "atggcatattcgcagct", dirn=self.tmpdir.name)
         self.assertCountEqual([f.name for f in genome.fragments.all()], ["chrI"])
 
         # insert
@@ -207,7 +215,7 @@ class GenomeTest(TestCase):
 
         # add initial sequence
         s = "atggcatattcgcagct"
-        genome.add_fragment("chrI", s)
+        genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
         g1 = genome
 
         # insert
@@ -240,8 +248,8 @@ class GenomeTest(TestCase):
 
         # add initial sequence
         s = "atggcatattcgcagct"
-        genome.add_fragment("chrI", s)
-        genome.add_fragment("chrII", s)
+        genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
+        genome.add_fragment("chrII", s, dirn=self.tmpdir.name)
         g1 = genome
 
         # insert
@@ -262,7 +270,7 @@ class GenomeTest(TestCase):
 
         # add initial sequence
         s = "atggcatattcgcagct"
-        genome.add_fragment("chrI", s)
+        genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
         g = genome
 
         # remove
@@ -281,7 +289,7 @@ class GenomeTest(TestCase):
 
         # add initial sequence
         s = "atggcatattcgcagct"
-        genome.add_fragment("chrI", s)
+        genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
         g = genome
 
         # insert and remove
@@ -304,7 +312,7 @@ class GenomeTest(TestCase):
 
         # add initial sequence
         s = "atggcatattcgcagct"
-        genome.add_fragment("chrI", s)
+        genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
 
         # insert
         u = genome.update(notes=u"Bar bar")
@@ -319,7 +327,7 @@ class GenomeTest(TestCase):
 
         # add initial sequence
         s = "atggcatattcgcagct"
-        genome.add_fragment("chrI", s)
+        genome.add_fragment("chrI", s, dirn=self.tmpdir.name)
 
         # insert
         u = genome.update(name=u"Bar bar")
@@ -337,8 +345,8 @@ class GenomeTest(TestCase):
         s2 = "acgatcgggattgagtcgattc"
 
         # add initial sequence
-        f1 = genome.add_fragment("chrI", s0 + s1 + s2)
-        f2 = genome.add_fragment("chrII", s0 + s1 + s2)
+        f1 = genome.add_fragment("chrI", s0 + s1 + s2, dirn=self.tmpdir.name)
+        f2 = genome.add_fragment("chrII", s0 + s1 + s2, dirn=self.tmpdir.name)
 
         # annotate it to break it up into chunks
         with genome.annotate_fragment_by_name("chrI") as f:

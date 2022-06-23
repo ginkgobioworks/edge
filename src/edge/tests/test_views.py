@@ -1,5 +1,7 @@
 import json
+import os
 import re
+import tempfile
 
 from django import forms
 from django.test import TestCase
@@ -9,6 +11,14 @@ from edge.models import Genome, Fragment, Genome_Fragment
 
 
 class GenomeListTest(TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        os.chdir(self.tmpdir.name)
+
+    def tearDown(self):
+        os.chdir('.')
+        self.tmpdir.cleanup()
+
     def test_empty_db(self):
         url = reverse("genome_list")
         res = self.client.get(url)
@@ -293,6 +303,8 @@ class GenomeListTest(TestCase):
 
 class GenomeTest(TestCase):
     def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        os.chdir(self.tmpdir.name)
         url = reverse("genome_list")
         res = self.client.post(
             url,
@@ -304,6 +316,10 @@ class GenomeTest(TestCase):
         self.assertNotEqual(m, None)
         self.genome_uri = uri
         self.genome_id = int(m.group(1))
+
+    def tearDown(self):
+        os.chdir('.')
+        self.tmpdir.cleanup()
 
     def test_get_genome(self):
         res = self.client.get(self.genome_uri)
@@ -411,6 +427,8 @@ class GenomeTest(TestCase):
 
 class FragmentTest(TestCase):
     def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        os.chdir(self.tmpdir.name)
         url = reverse("fragment_list")
         self.sequence = "AGCTAGCTTCGATCGA"
         self.name = "foo"
@@ -423,6 +441,10 @@ class FragmentTest(TestCase):
         m = re.match(r"^/edge/fragments/(\d+)/$", uri)
         self.fragment_id = int(m.group(1))
         self.uri = uri
+
+    def tearDown(self):
+        os.chdir('.')
+        self.tmpdir.cleanup()
 
     def test_get_all_user_defined_fragments(self):
         url = reverse("fragment_list")
@@ -899,6 +921,8 @@ class FragmentTest(TestCase):
 
 class GenomeAnnotationsTest(TestCase):
     def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        os.chdir(self.tmpdir.name)
         url = reverse("genome_list")
         res = self.client.post(
             url,
@@ -917,6 +941,10 @@ class GenomeAnnotationsTest(TestCase):
         self.fragment_data = json.loads(res.content)
         m = re.match(r"^/edge/fragments/(\d+)/$", self.fragment_uri)
         self.fragment_id = int(m.group(1))
+
+    def tearDown(self):
+        os.chdir('.')
+        self.tmpdir.cleanup()
 
     def test_returns_errors_if_genome_not_indexed_and_creates_indexed_genome(self):
         genome = Genome.objects.get(pk=self.genome_id)

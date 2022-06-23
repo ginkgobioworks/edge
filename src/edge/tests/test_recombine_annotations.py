@@ -1,5 +1,6 @@
-import os
 import json
+import os
+import tempfile
 
 from Bio.Seq import Seq
 from django.test import TestCase
@@ -15,7 +16,9 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         g = Genome(name="Foo")
         g.save()
         for seq in templates:
-            f = Fragment.create_with_sequence("Bar", seq, circular=circular)
+            f = Fragment.create_with_sequence(
+                "Bar", seq, circular=circular, dirn=self.tmpdir.name
+            )
             Genome_Fragment(genome=g, fragment=f, inherited=False).save()
             try:
                 os.unlink(fragment_fasta_fn(f))
@@ -25,6 +28,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         return Genome.objects.get(pk=g.id)
 
     def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
         self.upstream = "gagattgtccgcgtttt"
         self.front_bs = "catagcgcacaggacgcggag"
         self.middle = "cggcaccttaattgcgaattgcgagctgacgtctgcatgtagccc"
@@ -41,6 +45,7 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         edge.orfs.min_protein_len = 10
 
     def tearDown(self):
+        self.tmpdir.cleanup()
         edge.orfs.min_protein_len = self.old_min_protein_len
 
     def test_returns_new_orf(self):

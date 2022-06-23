@@ -95,7 +95,7 @@ class ChunkReference(object):
     """
 
     @staticmethod
-    def generate_from_name_and_sequence(name, sequence):
+    def generate_from_name_and_sequence(name, sequence, dirn='.'):
         return ChunkReference(None)
 
     @staticmethod
@@ -121,8 +121,8 @@ class LocalChunkReference(ChunkReference):
     """
 
     @staticmethod
-    def generate_from_name_and_sequence(name, sequence):
-        ref_fn = f"{name}.fa.gz"
+    def generate_from_name_and_sequence(name, sequence, dirn='.'):
+        ref_fn = f"{dirn}/{name}.fa.gz"
         with gzip.open(ref_fn, 'wb') as f:
             sequence = f.write(sequence.encode('utf-8'))
 
@@ -148,7 +148,7 @@ class AWSChunkReference(ChunkReference):
 
     # TODO: Implement me!
     @staticmethod
-    def generate_from_name_and_sequence(name, sequence):
+    def generate_from_name_and_sequence(name, sequence, dirn='.'):
         return AWSChunkReference(None)
 
     # TODO: Implement me!
@@ -185,6 +185,8 @@ class BigIntPrimaryModel(models.Model):
 
 
 class Chunk(BigIntPrimaryModel):
+    CHUNK_REFERENCE_CLASS = LocalChunkReference
+
     class Meta:
         app_label = "edge"
 
@@ -216,8 +218,8 @@ class Chunk(BigIntPrimaryModel):
         elif self.is_reference_based:
             if f is None:
                 # TODO: change to AWS
-                lcr = LocalChunkReference(self.ref_fn)
-                return lcr.read_reference_sequence_at_position(
+                cr = self.CHUNK_REFERENCE_CLASS(self.ref_fn)
+                return cr.read_reference_sequence_at_position(
                     self.ref_start_index, self.ref_end_index
                 )
             else:

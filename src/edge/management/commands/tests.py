@@ -15,6 +15,8 @@ class RemoveTest(TestCase):
         import tempfile
         from edge import import_gff
 
+        self.tmpdir = tempfile.TemporaryDirectory()
+
         data = """##gff-version 3
 chrI\tTest\tchromosome\t1\t160\t.\t.\t.\tID=i1;Name=f1
 chrI\tTest\tcds\t30\t80\t.\t-\t.\tID=i2;Name=f2
@@ -33,12 +35,15 @@ ACAGCCCTAATCTAACCCTGGCCAACCTGTCTCTCAACTTACCCTCCATTACCCTGCCTCCACTCGTTACCCTGTCCCAT
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
             f.write(data)
             f.close()
-            import_gff("TestGenome", f.name)
+            import_gff("TestGenome", f.name, output_dir=self.tmpdir.name)
             self.genome = Genome.objects.get(name="TestGenome")
             os.unlink(f.name)
         self.assertCountEqual(
             [fr.name for fr in self.genome.fragments.all()], ["chrI", "chrII"]
         )
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
 
     def test_remove_fragment_works(self):
         self.assertCountEqual(

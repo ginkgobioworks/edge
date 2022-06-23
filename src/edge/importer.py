@@ -4,7 +4,7 @@ from BCBio import GFF
 from django.db import connection
 
 from edge.models import Fragment, Fragment_Chunk_Location
-from edge.models.chunk import LocalChunkReference
+from edge.models.chunk import Chunk
 
 
 def circular_mod(number, seq_length):
@@ -16,7 +16,7 @@ class GFFImporter(object):
         self.__genome = genome
         self.__gff_fasta_fn = gff_fasta_fn
 
-    def do_import(self):
+    def do_import(self, dirn='.'):
         in_file = self.__gff_fasta_fn
         in_handle = open(in_file)
 
@@ -26,18 +26,21 @@ class GFFImporter(object):
         connection.use_debug_cursor = False
 
         # First, parse GFF by rec
-        importers = []
         for rec in GFF.parse(in_handle):
             if self.__genome.fragments.filter(name=rec.id).count() > 0:
                 print("skipping %s, already imported" % rec.id)
             else:
-                importer = GFFFragmentImporter(rec)
-                importer.parse_gff()
-                importers.append(importer)
+                try:
+                    GFFFragmentImporter(rec, dirn=dirn).parse_gff()
+                except Exception as e:
+                    print(f"{rec} failed import validation: {str(e)}")
 
         # Then, build and annotate fragments
-        for importer in importers:
-            fragment = importer.finish_import()
+        in_handle.close()
+        in_handle = open(in_file)
+        for rec in GFF.parse(in_handle):
+            importer = GFFFragmentImporter(rec, dirn=dirn)
+            fragment = importer.do_import()
             self.__genome.genome_fragment_set.create(fragment=fragment, inherited=False)
 
         # Be nice and turn debug cursor back on
@@ -46,16 +49,17 @@ class GFFImporter(object):
 
 
 class GFFFragmentImporter(object):
-    def __init__(self, gff_rec):
+    def __init__(self, gff_rec, dirn='.'):
         self.__rec = gff_rec
         self.__sequence = None
         self.__features = None
         self.__fclocs = None
         self.__subfeatures_dict = {}
+        self.dirn = dirn
 
     def finish_import(self):
         t0 = time.time()
-        f = self.build_fragment()
+        f = self.build_fragment(dirn=self.dirn)
         print("build fragment: %.4f" % (time.time() - t0,))
         t0 = time.time()
         self.annotate(f)
@@ -143,18 +147,11 @@ class GFFFragmentImporter(object):
                 subfeature_name = subfeature_name[0:100]
 
                 if subfeature_name == '':
-                    if sub.id != '':
-                        subfeature_name = sub.id
-                    else:
-                        subfeature_name = feature_name
+                    subfeature_name = sub.id if sub.id != '' else feature_name
 
                 # check that the type is right
                 if sub.type.upper() in ['CDS', 'EXON', 'INTRON'] or sub.type.upper()[-3:] == 'RNA':
-                    qualifiers = {}
-                    for field in sub.qualifiers:
-                        v = sub.qualifiers[field]
-                        if len(v) > 0:
-                            qualifiers[field] = v
+                    qualifiers = {field: v for field, v in sub.qualifiers.items() if len(v) > 0}
                     sub_tup = (
                             circular_mod(int(sub.location.start) + 1, seqlen),
                             circular_mod(int(sub.location.end), seqlen),
@@ -195,16 +192,9 @@ class GFFFragmentImporter(object):
                         subsubfeature_name = subsubfeature_name[0:100]
 
                         if subsubfeature_name == '':
-                            if sub_sub.id != '':
-                                subsubfeature_name = sub_sub.id
-                            else:
-                                subsubfeature_name = subfeature_name
+                            subsubfeature_name = sub_sub.id if sub_sub.id != '' else subfeature_name
 
-                        qualifiers = {}
-                        for field in feature.qualifiers:
-                            v = feature.qualifiers[field]
-                            if len(v) > 0:
-                                qualifiers[field] = v
+                        qualifiers = {field: v for field, v in feature.qualifiers.items() if len(v) > 0}
                         sub_sub_tup = (
                                 circular_mod(int(sub_sub.location.start) + 1, seqlen),
                                 circular_mod(int(sub_sub.location.end), seqlen),
@@ -239,7 +229,7 @@ class GFFFragmentImporter(object):
                 new_feature = (new_start, new_end, feature[2], feature[3], feature[4], feature[5])
                 features.append(new_feature)
 
-    def build_fragment(self, reference_based=True):
+    def build_fragment(self, reference_based=True, dirn='.'):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
         starts_and_ends = []
@@ -285,12 +275,12 @@ class GFFFragmentImporter(object):
             print("%d chunks" % (len(chunk_sizes),))
             t0 = time.time()
             # TODO: change to AWS
-            lcr = LocalChunkReference.generate_from_name_and_sequence(
-                new_fragment.id, self.__sequence
+            cr = Chunk.CHUNK_REFERENCE_CLASS.generate_from_name_and_sequence(
+                new_fragment.id, self.__sequence, dirn=dirn
             )
             print("Reference file generation took %s seconds" % (time.time() - t0))
 
-            new_fragment._bulk_create_fragment_chunks(lcr.ref_fn, chunk_sizes)
+            new_fragment._bulk_create_fragment_chunks(cr.ref_fn, chunk_sizes)
             return new_fragment
 
         # divide chunks bigger than a certain threshold to smaller chunks, to

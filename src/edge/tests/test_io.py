@@ -13,12 +13,18 @@ from edge.models import (
 
 class IOTest(TestCase):
     def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
         self.sequence = "agttcgaggctga"
         self.genome = Genome.create("Foo")
-        self.fragment = Fragment.create_with_sequence("Bar", self.sequence)
+        self.fragment = Fragment.create_with_sequence(
+            "Bar", self.sequence, dirn=self.tmpdir.name
+        )
         Genome_Fragment(
             genome=self.genome, fragment=self.fragment, inherited=False
         ).save()
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
 
     def test_outputs_fasta(self):
         with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:

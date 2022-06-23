@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import tempfile
 
 from Bio.Seq import Seq
 from django.test import TestCase
@@ -14,12 +15,18 @@ from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
 class GenomePcrTest(TestCase):
     def setUp(self):
         random.seed(0)
+        self.tmpdir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
 
     def build_genome(self, circular, *templates):
         g = Genome(name="Foo")
         g.save()
         for seq in templates:
-            f = Fragment.create_with_sequence("Bar", seq, circular=circular)
+            f = Fragment.create_with_sequence(
+                "Bar", seq, circular=circular, dirn=self.tmpdir.name
+            )
             Genome_Fragment(genome=g, fragment=f, inherited=False).save()
             try:
                 os.unlink(fragment_fasta_fn(f))

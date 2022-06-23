@@ -13,7 +13,6 @@ from edge.models.chunk import (
     Chunk,
     Chunk_Feature,
     Fragment_Chunk_Location,
-    LocalChunkReference,
 )
 from edge.models.fragment_writer import Fragment_Writer
 from edge.models.fragment_annotator import Fragment_Annotator
@@ -52,7 +51,8 @@ class Fragment(models.Model):
     @staticmethod
     def create_with_sequence(
             name, sequence, circular=False,
-            initial_chunk_size=20000, reference_based=True
+            initial_chunk_size=20000, reference_based=True,
+            dirn='.'
     ):
         new_fragment = Fragment(
             name=name, circular=circular, parent=None, start_chunk=None
@@ -63,8 +63,10 @@ class Fragment(models.Model):
         if reference_based:
             # don't split into chunk sized bits for reference based import
             # TODO: change to AWS
-            lcr = LocalChunkReference.generate_from_name_and_sequence(new_fragment.id, sequence)
-            new_fragment.build_fragment_reference_chunk(lcr.ref_fn, len(sequence))
+            cr = Chunk.CHUNK_REFERENCE_CLASS.generate_from_name_and_sequence(
+                new_fragment.id, sequence, dirn=dirn
+            )
+            new_fragment.build_fragment_reference_chunk(cr.ref_fn, len(sequence))
         else:
             if initial_chunk_size is None or initial_chunk_size == 0:
                 new_fragment.insert_bases(None, sequence)
@@ -370,7 +372,7 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         ).save()
         return new_fragment.indexed_fragment()
 
-    def convert_chunks_to_reference_based(self):
+    def convert_chunks_to_reference_based(self, dirn='.'):
         self.lock()
 
         old_chunks = list(self.chunks_by_walking())
@@ -380,14 +382,16 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
 
         sequence = self.sequence
         # TODO: change to AWS
-        lcr = LocalChunkReference.generate_from_name_and_sequence(self.id, sequence)
+        cr = Chunk.CHUNK_REFERENCE_CLASS.generate_from_name_and_sequence(
+            self.id, sequence, dirn=dirn
+        )
 
         chunks_to_update = []
         start = 1
         for chunk in self.chunks_by_walking():
             saved_chunk_length = chunk.length
             chunk.sequence = None
-            chunk.ref_fn = lcr.ref_fn
+            chunk.ref_fn = cr.ref_fn
             chunk.ref_start_index = start
             start += saved_chunk_length
             chunk.ref_end_index = start - 1
