@@ -189,10 +189,13 @@ class Fragment(models.Model):
     def fragment_reference_fasta_gz_fn(self):
         return f"{settings.SEQ_GZ_DIR}/edge-fragment-{self.id}.fa.gz"
 
-    def build_fragment_fasta_from_sequence(self, sequence, refresh=True):
+    def build_fragment_fasta_from_sequence(self, sequence=None, refresh=True):
         #NOTE: logic taken mostly from edge.blastdb.build_fragment_fasta
         fn = self.fragment_reference_fasta_gz_fn()
         make_required_dirs(fn)
+
+        if sequence is None:
+            sequence = self.sequence
 
         if not os.path.isfile(fn) or refresh:
             sequence = re.sub(r"[^agctnAGCTN]", "n", sequence)
@@ -398,6 +401,7 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         ).save()
         return new_fragment.indexed_fragment()
 
+    @transaction.atomic()
     def convert_chunks_to_reference_based(self, force=False, dirn='.'):
         self.lock()
         q = self.fragment_chunk_location_set.select_related("chunk").order_by("base_first")

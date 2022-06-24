@@ -662,6 +662,13 @@ class FragmentTests(TestCase):
         self.assertEqual(len(unconverted_c2_chunks), 2)
         self.assertTrue(unconverted_c1_chunks[0] in unconverted_c2_chunks)
 
+    def test_build_fragment_fasta_from_sequence(self):
+        f = Fragment.create_with_sequence("FooSeq", 'agctnAGCTN')
+        self.assertEqual(f.indexed_fragment().sequence, 'agctnAGCTN')
+
+        b = Fragment.create_with_sequence("BarSeq", 'atcgœ∑˙®†ATCG¥¨∆øπNn')
+        self.assertEqual(b.indexed_fragment().sequence, 'atcgnnnnnATCGnnnnnNn')
+
 
 class FragmentChunkTest(TestCase):
     def setUp(self):
