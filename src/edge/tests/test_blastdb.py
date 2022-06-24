@@ -1,7 +1,5 @@
 import os
 import random
-import tempfile
-
 from Bio import SeqIO
 from django.test import TestCase
 from edge import get_random_sequence

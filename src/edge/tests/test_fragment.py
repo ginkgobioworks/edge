@@ -1,5 +1,3 @@
-import tempfile
-
 from django.test import TestCase
 
 from edge.models import (
@@ -11,7 +9,9 @@ from edge.models import (
 
 class FragmentCreateTests(TestCase):
     def test_can_create_fragment_with_no_chunk_size(self):
-        f = Fragment.create_with_sequence("Foo", "gataccggtactag", initial_chunk_size=None)
+        f = Fragment.create_with_sequence(
+            "Foo", "gataccggtactag", initial_chunk_size=None
+        )
         self.assertEquals(f.sequence, "gataccggtactag")
 
     def test_can_create_fragment_with_different_chunk_sizes(self):
