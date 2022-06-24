@@ -57,7 +57,7 @@ class Fragment(models.Model):
     @staticmethod
     def create_with_sequence(
             name, sequence, circular=False,
-            initial_chunk_size=20000, reference_based=False,
+            initial_chunk_size=20000, reference_based=True,
             dirn='.'
     ):
         new_fragment = Fragment(
@@ -187,10 +187,7 @@ class Fragment(models.Model):
         return Indexed_Fragment.objects.get(pk=self.id)
 
     def fragment_reference_fasta_gz_fn(self):
-        return "%s/fragment/sequence-reference/edge-fragment-%s.fa.gz" % (
-            settings.NCBI_DATA_DIR,
-            self.id,
-        )
+        return f"{settings.SEQ_GZ_DIR}/edge-fragment-{self.id}.fa.gz"
 
     def build_fragment_fasta_from_sequence(self, sequence, refresh=True):
         #NOTE: logic taken mostly from edge.blastdb.build_fragment_fasta
@@ -278,16 +275,14 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         open_files = {ref_fn: f}
         try:
             for fcl in q:
-                if fcl.chunk.ref_fn is None or fcl.chunk.ref_fn == ref_fn:
-                    s = fcl.chunk.get_sequence(f=f)
-                else:
+                if fcl.chunk.is_reference_based and fcl.chunk.ref_fn != ref_fn:
                     ref_fn = fcl.chunk.ref_fn
                     if ref_fn in open_files:
                         f = open_files[ref_fn]
                     else:
                         f = gzip.open(ref_fn, "rb")
                         open_files[ref_fn] = f
-                    s = fcl.chunk.get_sequence(f=f)
+                s = fcl.chunk.get_sequence(f=f)
                 if (
                     last_chunk_base_last is not None
                     and fcl.base_first != last_chunk_base_last + 1
@@ -403,29 +398,40 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         ).save()
         return new_fragment.indexed_fragment()
 
-    def convert_chunks_to_reference_based(self, dirn='.'):
+    def convert_chunks_to_reference_based(self, force=False, dirn='.'):
         self.lock()
+        q = self.fragment_chunk_location_set.select_related("chunk").order_by("base_first")
 
-        old_chunks = list(self.chunks_by_walking())
-        if any([c.is_reference_based for c in old_chunks]):
-            print(f"Fragment {self.id} is already reference-based")
-            return False
-
-        sequence = self.sequence
-        cr = Chunk.CHUNK_REFERENCE_CLASS.generate_from_fragment(
-            self, sequence, dirn=dirn
-        )
+        last_chunk_base_last = None
 
         chunks_to_update = []
-        start = 1
-        for chunk in self.chunks_by_walking():
-            saved_chunk_length = chunk.length
-            chunk.initial_fragment = self
-            chunk.sequence = None
-            chunk.ref_start_index = start
-            start += saved_chunk_length
-            chunk.ref_end_index = start - 1
-            chunks_to_update.append(chunk)
+        for fcl in q:
+            chunk = fcl.chunk
+            if not force and chunk.is_reference_based:
+                print(f"Fragment {self.id} is already reference-based")
+                return False
+            if chunk.initial_fragment.id == self.id:
+                chunk.sequence = None
+                chunk.ref_start_index = fcl.base_first
+                chunk.ref_end_index = fcl.base_last
+                chunks_to_update.append(chunk)
+
+            if (
+                last_chunk_base_last is not None
+                and fcl.base_first != last_chunk_base_last + 1
+            ):
+                raise Exception(
+                    "Fragment chunk location table missing chunks before %s"
+                    % (fcl.base_first,)
+                )
+
+            if last_chunk_base_last is None:
+                self.start_chunk = chunk
+            last_chunk_base_last = fcl.base_last
+
+        Chunk.CHUNK_REFERENCE_CLASS.generate_from_fragment(
+            self, self.sequence, dirn=dirn
+        )
 
         Chunk.objects.bulk_update(
             objs=chunks_to_update,
@@ -433,9 +439,5 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
             batch_size=BULK_CREATE_BATCH_SIZE
         )
 
-        new_chunks = list(self.chunks_by_walking())
-        chunk_ids_constant = [c.id for c in old_chunks] == [c.id for c in new_chunks]
-        all_reference_based = all(chunk.is_reference_based for chunk in new_chunks)
-        sequence_constant = sequence == self.sequence
-
-        return chunk_ids_constant and all_reference_based and sequence_constant
+        self.save()
+        return True

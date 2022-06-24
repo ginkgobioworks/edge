@@ -617,26 +617,37 @@ class FragmentTests(TestCase):
         self.assertEquals(bases_visited, 6 + len(self.root_sequence))
 
     def test_converts_to_reference_based_chunks(self):
-        self.root = Fragment.create_with_sequence("FooSeq", self.root_sequence, reference_based=False)
-        f = self.root.update("Bar")
+        f = Fragment.create_with_sequence("FooSeq", self.root_sequence, reference_based=False)
+
+        old_chunk_ids = [c.id for c in f.chunks_by_walking() if c.initial_fragment.id == f.id]
         converted = f.indexed_fragment().convert_chunks_to_reference_based()
+        f = f.indexed_fragment()
+
         self.assertTrue(converted)
+        self.assertTrue(all([c.id in old_chunk_ids for c in f.chunks_by_walking() if c.initial_fragment.id == f.id]))
+        self.assertTrue(all([c.is_reference_based for c in f.chunks_by_walking() if c.initial_fragment.id == f.id]))
+        self.assertEqual(self.root_sequence, f.sequence)
 
         converted_twice = f.indexed_fragment().convert_chunks_to_reference_based()
         self.assertFalse(converted_twice)
 
     def test_propagates_conversion_to_reference_based_chunks(self):
-        self.root = Fragment.create_with_sequence("FooSeq", self.root_sequence, reference_based=False)
-        f = self.root.update("Bar")
+        f = Fragment.create_with_sequence("FooSeq", self.root_sequence, reference_based=False)
         c1 = f.update("Child 1")
         c1.insert_bases(7, "gataca")
         c2 = c1.update("Child 2")
         c2.insert_bases(3, "atta")
+
+        old_chunk_ids = [c.id for c in f.chunks_by_walking() if c.initial_fragment.id == f.id]
         converted = f.convert_chunks_to_reference_based()
-        self.assertTrue(converted)
         f = f.indexed_fragment()
         c1 = c1.indexed_fragment()
         c2 = c2.indexed_fragment()
+
+        self.assertTrue(converted)
+        self.assertTrue(all([c.id in old_chunk_ids for c in f.chunks_by_walking() if c.initial_fragment.id == f.id]))
+        self.assertTrue(all([c.is_reference_based for c in f.chunks_by_walking() if c.initial_fragment.id == f.id]))
+        self.assertEqual(self.root_sequence, f.sequence)
 
         converted_c1 = c1.convert_chunks_to_reference_based()
         self.assertFalse(converted_c1)
