@@ -11,15 +11,9 @@ from edge.models import (
 
 class AnnotationsTest(TestCase):
     def setUp(self):
-        self.tmpdir = tempfile.TemporaryDirectory()
         self.genome = Genome.create("Test")
         self.root_sequence = "agttcgaggctga"
-        self.root = Fragment.create_with_sequence(
-            "Foo", self.root_sequence, dirn=self.tmpdir.name
-        )
-
-    def tearDown(self):
-        self.tmpdir.cleanup()
+        self.root = Fragment.create_with_sequence("Foo", self.root_sequence)
 
     def test_annotate_whole_chunk(self):
         self.root.annotate(1, len(self.root_sequence), "A1", "gene", 1)
@@ -33,9 +27,7 @@ class AnnotationsTest(TestCase):
         )
 
     def test_computing_lengths_between_bps(self):
-        f = Fragment.create_with_sequence(
-            "Foo", self.root_sequence, circular=True, dirn=self.tmpdir.name
-        )
+        f = Fragment.create_with_sequence("Foo", self.root_sequence, circular=True)
         self.assertEquals(f.bp_covered_length(2, 5), 4)
         # across circular boundary
         self.assertEquals(
@@ -175,9 +167,7 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations()[1].feature_base_last, 8)
 
     def test_annotate_circular_fragment(self):
-        f = Fragment.create_with_sequence(
-            "Foo", self.root_sequence, circular=True, dirn=self.tmpdir.name
-        )
+        f = Fragment.create_with_sequence("Foo", self.root_sequence, circular=True)
         f.annotate(9, 3, "A1", "gene", 1)
         self.assertEquals(len(f.annotations()), 2)
         self.assertEquals(f.annotations()[0].base_first, 1)
@@ -204,9 +194,7 @@ class AnnotationsTest(TestCase):
         )
 
     def test_annotate_circular_fragment_ending_at_bp_1(self):
-        f = Fragment.create_with_sequence(
-            "Foo", self.root_sequence, circular=True, dirn=self.tmpdir.name
-        )
+        f = Fragment.create_with_sequence("Foo", self.root_sequence, circular=True)
         f.annotate(9, 1, "A1", "gene", 1)
         self.assertEquals(len(f.annotations()), 2)
         self.assertEquals(f.annotations()[0].base_first, 1)
@@ -233,9 +221,7 @@ class AnnotationsTest(TestCase):
         )
 
     def test_annotate_circular_fragment_ending_at_base_last(self):
-        f = Fragment.create_with_sequence(
-            "Foo", self.root_sequence, circular=True, dirn=self.tmpdir.name
-        )
+        f = Fragment.create_with_sequence("Foo", self.root_sequence, circular=True)
         f.annotate(9, len(self.root_sequence), "A1", "gene", 1)
         self.assertEquals(len(f.annotations()), 1)
         self.assertEquals(f.annotations()[0].base_first, 9)
@@ -497,9 +483,7 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations()[1].feature_base_last, 8)
 
     def test_inherits_annotations_from_inserted_fragment(self):
-        new_f = Fragment.create_with_sequence(
-            "Test", "gataca", dirn=self.tmpdir.name
-        )
+        new_f = Fragment.create_with_sequence("Test", "gataca")
         new_f.annotate(2, 4, "X1", "gene", 1)
 
         self.assertEquals(len(new_f.annotations()), 1)
@@ -518,9 +502,7 @@ class AnnotationsTest(TestCase):
         self.assertEquals(f.annotations()[0].feature_base_last, 3)
 
     def test_inherits_new_annotations_on_inserted_fragment(self):
-        new_f = Fragment.create_with_sequence(
-            "Test", "gataca", dirn=self.tmpdir.name
-        )
+        new_f = Fragment.create_with_sequence("Test", "gataca")
 
         self.assertEquals(len(new_f.annotations()), 0)
         self.assertEquals(len(self.root.annotations()), 0)

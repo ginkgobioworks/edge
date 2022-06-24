@@ -25,9 +25,12 @@ class Fragment_Writer(object):
             chunk, feature, feature_base_first, feature_base_last
         ).save()
 
-    def _add_reference_chunk(self, ref_fn, start, end, fragment):
-        c = Chunk(ref_fn=ref_fn, ref_start_index=start,
-                  ref_end_index=end, initial_fragment=fragment)
+    def _add_reference_chunk(self, start, end, fragment):
+        c = Chunk(
+            initial_fragment=fragment,
+            ref_start_index=start,
+            ref_end_index=end
+        )
         c.save()
         return c
 
@@ -124,7 +127,7 @@ class Fragment_Writer(object):
             # note reference based chunks have 1-based indexing
             split_start = chunk.ref_start_index + bps_to_split
             split2 = self._add_reference_chunk(
-                chunk.ref_fn, split_start, chunk.ref_end_index, chunk.initial_fragment
+                split_start, chunk.ref_end_index, chunk.initial_fragment
             )
             self.__reset_chunk_reference(chunk, chunk.ref_start_index, split_start - 1)
 

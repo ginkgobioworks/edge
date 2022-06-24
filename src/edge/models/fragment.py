@@ -1,9 +1,14 @@
 import gzip
+import os
+import re
+import shutil
+import tempfile
 
 from django.db import (
     models,
     transaction
 )
+from django.conf import settings
 from django.db.models import Q
 from django.utils import timezone
 
@@ -17,6 +22,7 @@ from edge.models.chunk import (
 from edge.models.fragment_writer import Fragment_Writer
 from edge.models.fragment_annotator import Fragment_Annotator
 from edge.models.fragment_updater import Fragment_Updater
+from edge.utils import make_required_dirs
 
 
 class Fragment(models.Model):
@@ -51,7 +57,7 @@ class Fragment(models.Model):
     @staticmethod
     def create_with_sequence(
             name, sequence, circular=False,
-            initial_chunk_size=20000, reference_based=True,
+            initial_chunk_size=20000, reference_based=False,
             dirn='.'
     ):
         new_fragment = Fragment(
@@ -62,11 +68,10 @@ class Fragment(models.Model):
 
         if reference_based:
             # don't split into chunk sized bits for reference based import
-            # TODO: change to AWS
-            cr = Chunk.CHUNK_REFERENCE_CLASS.generate_from_name_and_sequence(
-                new_fragment.id, sequence, dirn=dirn
+            Chunk.CHUNK_REFERENCE_CLASS.generate_from_fragment(
+                new_fragment, sequence, dirn=dirn
             )
-            new_fragment.build_fragment_reference_chunk(cr.ref_fn, len(sequence))
+            new_fragment.build_fragment_reference_chunk(len(sequence))
         else:
             if initial_chunk_size is None or initial_chunk_size == 0:
                 new_fragment.insert_bases(None, sequence)
@@ -181,6 +186,29 @@ class Fragment(models.Model):
         # casting to Indexed_Fragment
         return Indexed_Fragment.objects.get(pk=self.id)
 
+    def fragment_reference_fasta_gz_fn(self):
+        return "%s/fragment/sequence-reference/edge-fragment-%s.fa.gz" % (
+            settings.NCBI_DATA_DIR,
+            self.id,
+        )
+
+    def build_fragment_fasta_from_sequence(self, sequence, refresh=True):
+        #NOTE: logic taken mostly from edge.blastdb.build_fragment_fasta
+        fn = self.fragment_reference_fasta_gz_fn()
+        make_required_dirs(fn)
+
+        if not os.path.isfile(fn) or refresh:
+            sequence = re.sub(r"[^agctnAGCTN]", "n", sequence)
+            if self.circular is True:
+                sequence = sequence + sequence
+
+            with tempfile.NamedTemporaryFile(mode="wb", delete=False) as tmpf:
+                with gzip.open(tmpf, 'wb') as f:
+                    f.write(sequence.encode('utf-8'))
+            shutil.move(tmpf.name, fn)
+
+        return fn
+
 
 class Fragment_Index(models.Model):
     class Meta:
@@ -239,7 +267,10 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         sequence = []
         last_chunk_base_last = None
 
-        reference_fcls = q.filter(chunk__ref_fn__isnull=False)
+        reference_fcls = q.filter(
+            chunk__ref_start_index__isnull=False,
+            chunk__ref_end_index__isnull=False
+        )
         ref_fn = None if reference_fcls.count() == 0 \
                       else reference_fcls.all().first().chunk.ref_fn
 
@@ -381,17 +412,16 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
             return False
 
         sequence = self.sequence
-        # TODO: change to AWS
-        cr = Chunk.CHUNK_REFERENCE_CLASS.generate_from_name_and_sequence(
-            self.id, sequence, dirn=dirn
+        cr = Chunk.CHUNK_REFERENCE_CLASS.generate_from_fragment(
+            self, sequence, dirn=dirn
         )
 
         chunks_to_update = []
         start = 1
         for chunk in self.chunks_by_walking():
             saved_chunk_length = chunk.length
+            chunk.initial_fragment = self
             chunk.sequence = None
-            chunk.ref_fn = cr.ref_fn
             chunk.ref_start_index = start
             start += saved_chunk_length
             chunk.ref_end_index = start - 1
@@ -399,7 +429,7 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
 
         Chunk.objects.bulk_update(
             objs=chunks_to_update,
-            fields=['sequence', 'ref_fn', 'ref_start_index', 'ref_end_index'],
+            fields=['sequence', 'ref_start_index', 'ref_end_index'],
             batch_size=BULK_CREATE_BATCH_SIZE
         )
 

@@ -17,11 +17,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='chunk',
-            name='ref_fn',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='chunk',
             name='ref_start_index',
             field=models.PositiveIntegerField(blank=True, null=True),
         ),

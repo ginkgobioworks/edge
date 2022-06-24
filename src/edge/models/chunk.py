@@ -95,7 +95,7 @@ class ChunkReference(object):
     """
 
     @staticmethod
-    def generate_from_name_and_sequence(name, sequence, dirn='.'):
+    def generate_from_fragment(fragment, sequence=None, dirn='.'):
         return ChunkReference(None)
 
     @staticmethod
@@ -107,30 +107,6 @@ class ChunkReference(object):
         sequence = f.read(end - start + 1).decode('utf-8')
         return sequence
 
-    def __init__(self, ref_fn):
-        self.ref_fn = ref_fn
-
-    # TODO: Implement me!
-    def read_reference_sequence_at_position(self, start, end):
-        return ""
-
-
-class LocalChunkReference(ChunkReference):
-    """
-    Class for locally storing chunk sequences in reference files
-    """
-
-    @staticmethod
-    def generate_from_name_and_sequence(name, sequence, dirn='.'):
-        ref_fn = f"{dirn}/{name}.fa.gz"
-        with gzip.open(ref_fn, 'wb') as f:
-            sequence = f.write(sequence.encode('utf-8'))
-
-        return LocalChunkReference(ref_fn)
-
-    def __init__(self, ref_fn):
-        self.ref_fn = ref_fn
-
     def read_reference_sequence_at_position(self, start, end):
         """
         Read sequence from 1-indexed positions from reference.
@@ -140,24 +116,40 @@ class LocalChunkReference(ChunkReference):
             sequence = f.read(end - start + 1).decode('utf-8')
         return sequence
 
-
-class AWSChunkReference(ChunkReference):
-    """
-    Class for storing chunk sequences in reference files on AWS
-    """
-
-    # TODO: Implement me!
-    @staticmethod
-    def generate_from_name_and_sequence(name, sequence, dirn='.'):
-        return AWSChunkReference(None)
-
-    # TODO: Implement me!
     def __init__(self, ref_fn):
         self.ref_fn = ref_fn
 
-    # TODO: Implement me!
-    def read_reference_sequence_at_position(self, start, end):
-        return None
+
+class LocalChunkReference(ChunkReference):
+    """
+    Class for locally storing chunk sequences in reference files
+    """
+
+    @staticmethod
+    def generate_from_fragment(fragment, sequence=None, dirn='.'):
+        if sequence is None:
+            sequence = fragment.indexed_fragment().sequence
+
+        ref_fn = f"{dirn}/{fragment.id}.fa.gz"
+        with gzip.open(ref_fn, 'wb') as f:
+            sequence = f.write(sequence.encode('utf-8'))
+
+        return LocalChunkReference(ref_fn)
+
+
+class NetAppChunkReference(ChunkReference):
+    """
+    Class for storing chunk sequences in reference files on NetApp
+    """
+
+    @staticmethod
+    def generate_from_fragment(fragment, sequence=None, dirn='.'):
+        # NOTE: dirn is ignored in this method, as we're storing on NetApp
+        if sequence is None:
+            sequence = fragment.indexed_fragment().sequence
+        ref_fn = fragment.build_fragment_fasta_from_sequence(sequence)
+
+        return NetAppChunkReference(ref_fn)
 
 
 class BigIntPrimaryModel(models.Model):
@@ -185,16 +177,19 @@ class BigIntPrimaryModel(models.Model):
 
 
 class Chunk(BigIntPrimaryModel):
-    CHUNK_REFERENCE_CLASS = LocalChunkReference
+    CHUNK_REFERENCE_CLASS = NetAppChunkReference
 
     class Meta:
         app_label = "edge"
 
     initial_fragment = models.ForeignKey("Fragment", on_delete=models.PROTECT)
     sequence = models.TextField(null=True)
-    ref_fn = models.TextField(null=True)
     ref_start_index = models.PositiveIntegerField(blank=True, null=True)
     ref_end_index = models.PositiveIntegerField(blank=True, null=True)
+
+    @property
+    def ref_fn(self):
+        return self.initial_fragment.fragment_reference_fasta_gz_fn()
 
     @property
     def is_sequence_based(self):
@@ -202,7 +197,7 @@ class Chunk(BigIntPrimaryModel):
 
     @property
     def is_reference_based(self):
-        return None not in [self.ref_fn, self.ref_start_index, self.ref_end_index]
+        return None not in [self.ref_start_index, self.ref_end_index]
 
     @property
     def length(self):
@@ -217,13 +212,12 @@ class Chunk(BigIntPrimaryModel):
             return self.sequence
         elif self.is_reference_based:
             if f is None:
-                # TODO: change to AWS
                 cr = self.CHUNK_REFERENCE_CLASS(self.ref_fn)
                 return cr.read_reference_sequence_at_position(
                     self.ref_start_index, self.ref_end_index
                 )
             else:
-                return ChunkReference.read_reference_sequence_at_position_opened_file(
+                return self.CHUNK_REFERENCE_CLASS.read_reference_sequence_at_position_opened_file(
                     f, self.ref_start_index, self.ref_end_index
                 )
         raise Exception("invalid chunk data")

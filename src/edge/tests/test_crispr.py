@@ -1,7 +1,5 @@
 import os
 import json
-import tempfile
-
 from django.test import TestCase
 from edge.models import Genome, Operation, Fragment, Genome_Fragment
 from edge.blastdb import build_all_genome_dbs, fragment_fasta_fn
@@ -10,22 +8,12 @@ from Bio.Seq import Seq
 
 
 class GenomeCrisprDSBTest(TestCase):
-    def setUp(self):
-        self.tmpdir = tempfile.TemporaryDirectory()
-    
-    def tearDown(self):
-        self.tmpdir.cleanup()
-
     def build_genome(self, circular, *sequences):
         g = Genome(name="Foo")
         g.save()
         for seq in sequences:
-            f = Fragment.create_with_sequence(
-                "Bar", seq, circular=circular, dirn=self.tmpdir.name
-            )
-            Genome_Fragment(
-                genome=g, fragment=f, inherited=False
-            ).save()
+            f = Fragment.create_with_sequence("Bar", seq, circular=circular)
+            Genome_Fragment(genome=g, fragment=f, inherited=False).save()
             try:
                 os.unlink(fragment_fasta_fn(f))
             except OSError:

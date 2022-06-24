@@ -41,15 +41,16 @@ class Fragment_Updater(object):
         )
         return new_chunk
 
-    def _bulk_create_fragment_chunks(self, ref_fn, chunk_sizes):
+    def _bulk_create_fragment_chunks(self, chunk_sizes):
         start = 0
         chunks = []
         t0 = time.time()
         for chunk_size in chunk_sizes:
             chunks.append(
                 Chunk(
-                    ref_fn=ref_fn, ref_start_index=start + 1,
-                    ref_end_index=start + chunk_size, initial_fragment=self
+                    initial_fragment=self,
+                    ref_start_index=start + 1,
+                    ref_end_index=start + chunk_size
                 )
             )
             start += chunk_size
@@ -262,8 +263,8 @@ class Fragment_Updater(object):
         self.remove_bases(before_base1, length_to_remove)
         self.insert_fragment(before_base1, fragment)
 
-    def build_fragment_reference_chunk(self, ref_fn, sequence_length):
-        new_chunk = self._add_reference_chunk(ref_fn, 1, sequence_length, self)
+    def build_fragment_reference_chunk(self, sequence_length):
+        new_chunk = self._add_reference_chunk(1, sequence_length, self)
         self.start_chunk = new_chunk
         self.save()
 
