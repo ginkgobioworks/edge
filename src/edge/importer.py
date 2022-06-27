@@ -7,6 +7,16 @@ from edge.models import Fragment, Fragment_Chunk_Location
 from edge.models.chunk import Chunk
 
 
+GFF_NAME_FIELDS = (
+    "name",
+    "Name",
+    "gene",
+    "locus",
+    "locus_tag",
+    "product",
+    "protein_id",
+)
+
 def circular_mod(number, seq_length):
     return ((number - 1) % seq_length) + 1
 
@@ -71,16 +81,6 @@ class GFFFragmentImporter(object):
         return self.finish_import()
 
     def parse_gff(self):
-        name_fields = (
-            "name",
-            "Name",
-            "gene",
-            "locus",
-            "locus_tag",
-            "product",
-            "protein_id",
-        )
-
         self.__sequence = str(self.__rec.seq)
         seqlen = len(self.__sequence)
         print("%s: %s" % (self.__rec.id, seqlen))
@@ -91,42 +91,31 @@ class GFFFragmentImporter(object):
             if feature.type.upper() in ['REGION', 'CHR', 'CHROM', 'CHROMOSOME']:
                 continue
 
-            # get name
-            name = feature.id
-            if name == "":
-                name = feature.type
-            for field in name_fields:
-                if field in feature.qualifiers:
-                    v = feature.qualifiers[field]
-                    if len(v) > 0:
-                        name = v[0]
-                        break
-            name = name[0:100]
-
-            # get qualifiers
-            qualifiers = {}
-            for field in feature.qualifiers:
-                v = feature.qualifiers[field]
-                if len(v) > 0:
-                    qualifiers[field] = v
+            # get name and qualifiers
+            names = list(
+                filter(lambda x: len(x) > 0,
+                    [feature.qualifiers.get(field, "") for field in GFF_NAME_FIELDS]
+                )
+            )
+            feature_name = ((names[0][0] if names else None) or feature.id or feature.type or "")[0:100]
+            qualifiers = {field: v for field, v in feature.qualifiers.items() if len(v) > 0}
 
             # start in Genbank format is start after, so +1 here
             features.append(
                 (
                     circular_mod(int(feature.location.start) + 1, seqlen),
                     circular_mod(int(feature.location.end), seqlen),
-                    name,
+                    feature_name,
                     feature.type,
                     feature.strand,
                     qualifiers,
                 )
             )
 
-            feature_name = name
             # add sub features for chunking for CDS only
             self.__subfeatures_dict[feature_name] = []
 
-            # order based on relative position in the feature
+            # order sub features based on relative position in the feature
             first, second = [], []
             for sub in sorted(feature.sub_features, key=lambda f: int(f.location.start)):
                 if circular_mod(int(sub.location.start) + 1, seqlen) < features[-1][0]:
@@ -136,87 +125,84 @@ class GFFFragmentImporter(object):
             sub_feats_to_iter = first + second
 
             for sub in sub_feats_to_iter:
-                # change name for sub feature
-                subfeature_name = ''
-                for field in name_fields:
-                    if field in sub.qualifiers:
-                        v = sub.qualifiers[field]
-                        if len(v) > 0:
-                            subfeature_name = v[0]
-                            break
-                subfeature_name = subfeature_name[0:100]
+                # check that the type is right for a sub feature
+                if not (sub.type.upper() in ['CDS', 'EXON', 'INTRON'] or sub.type.upper()[-3:] == 'RNA'):
+                    continue
 
-                if subfeature_name == '':
-                    subfeature_name = sub.id if sub.id != '' else feature_name
+                # get name and qualifiers
+                sub_names = list(
+                    filter(lambda x: len(x) > 0,
+                        [sub.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
+                    )
+                )
+                subfeature_name = ((sub_names[0][0] if sub_names else None)
+                                   or sub.id or feature_name)[0:100]
+                qualifiers = {field: v for field, v in sub.qualifiers.items() if len(v) > 0}
 
-                # check that the type is right
-                if sub.type.upper() in ['CDS', 'EXON', 'INTRON'] or sub.type.upper()[-3:] == 'RNA':
-                    qualifiers = {field: v for field, v in sub.qualifiers.items() if len(v) > 0}
-                    sub_tup = (
-                            circular_mod(int(sub.location.start) + 1, seqlen),
-                            circular_mod(int(sub.location.end), seqlen),
-                            subfeature_name,
-                            sub.type,
-                            sub.strand,
+                # start in Genbank format is start after, so +1 here
+                sub_tup = (
+                        circular_mod(int(sub.location.start) + 1, seqlen),
+                        circular_mod(int(sub.location.end), seqlen),
+                        subfeature_name,
+                        sub.type,
+                        sub.strand,
+                        qualifiers,
+                    )
+
+                # if it has no id, it belongs to the feature
+                # otherwise, mark it as its own feature
+                if subfeature_name == feature_name:
+                    self.__subfeatures_dict[feature_name].append(sub_tup)
+                else:
+                    if subfeature_name in self.__subfeatures_dict:
+                        self.__subfeatures_dict[subfeature_name].append(sub_tup)
+                    else:
+                        features.append(sub_tup)
+                        self.__subfeatures_dict[subfeature_name] = [sub_tup]
+
+                # order sub sub features based on relative position in the sub feature
+                first, second = [], []
+                for sub_sub in sorted(sub.sub_features, key=lambda f: int(f.location.start)):
+                    if circular_mod(int(sub.location.start) + 1, seqlen) < features[-1][0]:
+                        second.append(sub_sub)
+                    else:
+                        first.append(sub_sub)
+                sub_sub_feats_to_iter = first + second
+
+                for sub_sub in sub_sub_feats_to_iter:
+                    # get name and qualifiers
+                    sub_sub_names = list(
+                        filter(lambda x: len(x) > 0,
+                            [sub_sub.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
+                        )
+                    )
+                    subsubfeature_name = ((sub_sub_names[0][0] if sub_sub_names else None)
+                                          or sub_sub.id or subfeature_name)[0:100]
+                    qualifiers = {field: v for field, v in feature.qualifiers.items() if len(v) > 0}
+
+                    # start in Genbank format is start after, so +1 here
+                    sub_sub_tup = (
+                            circular_mod(int(sub_sub.location.start) + 1, seqlen),
+                            circular_mod(int(sub_sub.location.end), seqlen),
+                            subsubfeature_name,
+                            sub_sub.type,
+                            sub_sub.strand,
                             qualifiers,
                         )
 
-                    # if it has no id, it belongs to the feature
+                    # if it has no id and the sub feature has no id, it belongs to the feature
+                    # if it has no id and the sub feature has id, it belongs to the sub feature
                     # otherwise, mark it as its own feature
-                    if subfeature_name == feature_name:
-                        self.__subfeatures_dict[feature_name].append(sub_tup)
+                    if subsubfeature_name == feature_name:
+                        self.__subfeatures_dict[feature_name].append(sub_sub_tup)
+                    elif subsubfeature_name == subfeature_name:
+                        self.__subfeatures_dict[subfeature_name].append(sub_sub_tup)
                     else:
-                        if subfeature_name in self.__subfeatures_dict:
-                            self.__subfeatures_dict[subfeature_name].append(sub_tup)
+                        if subsubfeature_name in self.__subfeatures_dict:
+                            self.__subfeatures_dict[subsubfeature_name].append(sub_sub_tup)
                         else:
-                            features.append(sub_tup)
-                            self.__subfeatures_dict[subfeature_name] = [sub_tup]
-
-                    first, second = [], []
-                    for sub_sub in sorted(sub.sub_features, key=lambda f: int(f.location.start)):
-                        if circular_mod(int(sub.location.start) + 1, seqlen) < features[-1][0]:
-                            second.append(sub_sub)
-                        else:
-                            first.append(sub_sub)
-                    sub_sub_feats_to_iter = first + second
-
-                    for sub_sub in sub_sub_feats_to_iter:
-                        # change name for sub sub feature
-                        subsubfeature_name = ''
-                        for field in name_fields:
-                            if field in sub_sub.qualifiers:
-                                v = sub_sub.qualifiers[field]
-                                if len(v) > 0:
-                                    subsubfeature_name = v[0]
-                                    break
-                        subsubfeature_name = subsubfeature_name[0:100]
-
-                        if subsubfeature_name == '':
-                            subsubfeature_name = sub_sub.id if sub_sub.id != '' else subfeature_name
-
-                        qualifiers = {field: v for field, v in feature.qualifiers.items() if len(v) > 0}
-                        sub_sub_tup = (
-                                circular_mod(int(sub_sub.location.start) + 1, seqlen),
-                                circular_mod(int(sub_sub.location.end), seqlen),
-                                subsubfeature_name,
-                                sub_sub.type,
-                                sub_sub.strand,
-                                qualifiers,
-                            )
-
-                        # if it has no id and the sub feature has no id, it belongs to the feature
-                        # if it has no id and the sub feature has id, it belongs to the sub feature
-                        # otherwise, mark it as its own feature
-                        if subsubfeature_name == feature_name:
-                            self.__subfeatures_dict[feature_name].append(sub_sub_tup)
-                        elif subsubfeature_name == subfeature_name:
-                            self.__subfeatures_dict[subfeature_name].append(sub_sub_tup)
-                        else:
-                            if subsubfeature_name in self.__subfeatures_dict:
-                                self.__subfeatures_dict[subsubfeature_name].append(sub_sub_tup)
-                            else:
-                                features.append(sub_sub_tup)
-                                self.__subfeatures_dict[subsubfeature_name] = [sub_sub_tup]
+                            features.append(sub_sub_tup)
+                            self.__subfeatures_dict[subsubfeature_name] = [sub_sub_tup]
 
         self.__features = features
 
