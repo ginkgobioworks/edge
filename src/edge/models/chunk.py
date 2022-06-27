@@ -305,6 +305,28 @@ class Feature(models.Model):
         else:
             return None
 
+    @staticmethod
+    @transaction.atomic()  # this method has to be in a transaction, see below
+    def bulk_create(entries):
+        # IMPORTANT: this entire method must be within a transaction, so we can
+        # compute and assign unique BigIntPrimary IDs
+
+        cur_id = 1
+        try:
+            cur_id = (
+                Feature.objects.select_for_update()
+                .order_by("-id")
+                .values("id")[0]["id"]
+                + 1
+            )
+        except IndexError:
+            pass
+
+        for entry in entries:
+            entry.id = cur_id
+            cur_id += 1
+        Feature.objects.bulk_create(entries, batch_size=BULK_CREATE_BATCH_SIZE)
+
 
 class Chunk_Feature_Manager(models.Manager):
     def get_query_set(self):
