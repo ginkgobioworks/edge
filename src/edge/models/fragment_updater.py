@@ -1,6 +1,8 @@
 import time
 
+from django.db import transaction
 from django.db.models import F
+
 from edge.models.chunk import (
     Chunk,
     Edge,
@@ -41,6 +43,7 @@ class Fragment_Updater(object):
         )
         return new_chunk
 
+    @transaction.atomic()
     def _bulk_create_fragment_chunks(self, chunk_sizes):
         start = 0
         chunks = []
