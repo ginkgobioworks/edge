@@ -337,6 +337,31 @@ class GenomeRecombinationTest(TestCase):
             "".join([upstream, cassette, downstream]),
         )
 
+    def test_recombines_sequence_with_same_length_correctly(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacatgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "a" * len(middle)
+
+        template = "".join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = "".join([front_bs, replaced, back_bs])
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+        c = recombine(g, cassette, arm_len)
+
+        self.assertNotEqual(g.id, c.id)
+        self.assertEquals(
+            c.fragments.all()[0].indexed_fragment().sequence,
+            "".join([upstream, cassette, downstream]),
+        )
+
+        # test only created chunks where bps differed
+        size_fids = [(c.sequence, c.initial_fragment_id) for c in c.fragments.all()[0].indexed_fragment().chunks()]
+        self.assertEquals(len(size_fids), 1+middle.count("a")*2+1+1)
+
     def test_RecombineOp_works_correctly(self):
         upstream = "gagattgtccgcgtttt"
         front_bs = "catagcgcacaggacgcggag"

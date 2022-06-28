@@ -139,6 +139,27 @@ class Fragment_Updater(object):
             self.remove_bases(before_base1, length_to_remove)
         self.insert_bases(before_base1, sequence)
 
+    def replace_differences(self, before_base1, length_to_remove, sequence):
+
+        before = self.get_sequence(before_base1, before_base1 + length_to_remove - 1)
+        if len(before) != len(sequence):
+            raise Exception("Cannot replace differences between two sequences of different lengths")
+
+        accumulator_start_offset = None
+        accumulator = []
+        for i, (bp_before, bp_after) in enumerate(zip(before, sequence)):
+            if bp_before != bp_after:
+                if accumulator_start_offset is None:
+                    accumulator_start_offset = i
+                accumulator.append(bp_after)
+            elif len(accumulator) > 0:
+                self.replace_bases(before_base1 + accumulator_start_offset, len(accumulator), "".join(accumulator))
+                accumulator_start_offset = None
+                accumulator = []
+         
+        if len(accumulator) > 0:
+            self.replace_bases(before_base1 + accumulator_start_offset, len(accumulator), "".join(accumulator))
+
     def insert_fragment(self, before_base1, fragment):
         fragment = fragment.indexed_fragment()
 

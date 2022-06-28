@@ -642,6 +642,34 @@ class FragmentTests(TestCase):
         self.assertEquals(next_chunk, None)
         self.assertEquals(bases_visited, 6 + len(self.root_sequence))
 
+    def test_replace_differences_between_two_sequences(self):
+        f = self.root.update("Bar")
+        f.replace_differences(3, 6, "cccccc")
+        self.assertEquals(f.name, "Bar")
+        self.assertEquals(
+            f.sequence, self.root_sequence[0:2] + "cccccc" + self.root_sequence[8:]
+        )
+
+    def test_replace_differences_throws_error_if_two_sequences_of_different_length(self):
+        f = self.root.update("Bar")
+        self.assertRaises(Exception, f.replace_differences, 3, 6, "ccccc")
+
+    def test_replace_differences_only_creates_new_edges_where_bps_differ(self):
+        f = self.root.update("Bar")
+        # replacing                agttcgaggctga
+        f.replace_differences(3, 7, "cccgcgt")
+        chunks = [chunk for chunk in f.chunks()]
+        size_and_initial_fragments = [(chunk.sequence, chunk.initial_fragment_id) for chunk in chunks]
+        self.assertEquals(
+            size_and_initial_fragments,
+            [("ag", self.root.id),
+             ("cc", f.id),
+             ("cg", self.root.id),
+             ( "c", f.id),
+             ( "g", self.root.id),
+             ( "t", f.id),
+             ("ctga", self.root.id)]
+        )
 
 class FragmentChunkTest(TestCase):
     def setUp(self):
