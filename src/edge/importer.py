@@ -35,33 +35,54 @@ class GFFImporter(object):
         # logging.
         connection.use_debug_cursor = False
 
-        # First, parse GFF by rec
-        for rec in GFF.parse(in_handle):
-            if self.__genome.fragments.filter(name=rec.id).count() > 0:
-                print("skipping %s, already imported" % rec.id)
-            else:
-                try:
-                    GFFFragmentImporter(rec, dirn=dirn).parse_gff()
-                except Exception as e:
-                    print(f"{rec} failed import validation: {str(e)}")
+        # First, retrieve rec names
+        rec_ids = [i[0] for i in GFF.GFFExaminer().available_limits(in_handle).get('gff_id')]
+        in_handle.close()
+
+        # Then parse GFF by rec
+        t0 = time.time()
+        for rec_id in rec_ids:
+            in_handle = open(in_file)
+            limit_info = dict(gff_id=[rec_id])
+            recs = [rec for rec in GFF.parse(in_handle, limit_info=limit_info)
+                    if rec.id == rec_id]
+
+            for rec in recs:
+                if self.__genome.fragments.filter(name=rec.id).count() > 0:
+                    print("skipping %s, already imported" % rec.id)
+                    break
+                else:
+                    try:
+                        GFFFragmentImporter(rec, dirn=dirn).parse_gff()
+                    except Exception as e:
+                        print(f"{rec} failed import validation: {str(e)}")
+                        return
+            in_handle.close()
+        print("%s seconds to parse and validate all contigs from GFF" % (time.time() - t0))
 
         # Then, build and annotate fragments
-        in_handle.close()
-        in_handle = open(in_file)
-        for rec in GFF.parse(in_handle):
-            importer = GFFFragmentImporter(rec, dirn=dirn)
-            fragment = importer.do_import()
-            self.__genome.genome_fragment_set.create(fragment=fragment, inherited=False)
+        for rec_id in rec_ids:
+            in_handle = open(in_file)
+            limit_info = dict(gff_id=[rec_id])
+            recs = [rec for rec in GFF.parse(in_handle, limit_info=limit_info)
+                    if rec.id == rec_id]
+
+            for rec in recs:
+                importer = GFFFragmentImporter(rec, dirn=dirn)
+                fragment = importer.do_import()
+                if fragment is None:
+                    break
+                self.__genome.genome_fragment_set.create(fragment=fragment, inherited=False)
+            in_handle.close()
 
         # Be nice and turn debug cursor back on
         connection.use_debug_cursor = True
-        in_handle.close()
 
 
 class GFFFragmentImporter(object):
     def __init__(self, gff_rec, dirn='.'):
         self.__rec = gff_rec
-        self.__sequence = None
+        self.__seqlen = len(gff_rec.seq)
         self.__features = None
         self.__fclocs = None
         self.__subfeatures_dict = {}
@@ -98,9 +119,7 @@ class GFFFragmentImporter(object):
         return self.finish_import()
 
     def parse_gff(self):
-        self.__sequence = str(self.__rec.seq)
-        seqlen = len(self.__sequence)
-        print("%s: %s" % (self.__rec.id, seqlen))
+        print("%s: %s" % (self.__rec.id, self.__seqlen))
 
         features = []
         for feature in self.__rec.features:
@@ -120,8 +139,8 @@ class GFFFragmentImporter(object):
             # start in Genbank format is start after, so +1 here
             features.append(
                 (
-                    circular_mod(int(feature.location.start) + 1, seqlen),
-                    circular_mod(int(feature.location.end), seqlen),
+                    circular_mod(int(feature.location.start) + 1, self.__seqlen),
+                    circular_mod(int(feature.location.end), self.__seqlen),
                     feature_name,
                     feature.type,
                     feature.strand,
@@ -135,7 +154,7 @@ class GFFFragmentImporter(object):
             # order sub features based on relative position in the feature
             first, second = [], []
             for sub in sorted(feature.sub_features, key=lambda f: int(f.location.start)):
-                if circular_mod(int(sub.location.start) + 1, seqlen) < features[-1][0]:
+                if circular_mod(int(sub.location.start) + 1, self.__seqlen) < features[-1][0]:
                     second.append(sub)
                 else:
                     first.append(sub)
@@ -158,8 +177,8 @@ class GFFFragmentImporter(object):
 
                 # start in Genbank format is start after, so +1 here
                 sub_tup = (
-                        circular_mod(int(sub.location.start) + 1, seqlen),
-                        circular_mod(int(sub.location.end), seqlen),
+                        circular_mod(int(sub.location.start) + 1, self.__seqlen),
+                        circular_mod(int(sub.location.end), self.__seqlen),
                         subfeature_name,
                         sub.type,
                         sub.strand,
@@ -180,7 +199,7 @@ class GFFFragmentImporter(object):
                 # order sub sub features based on relative position in the sub feature
                 first, second = [], []
                 for sub_sub in sorted(sub.sub_features, key=lambda f: int(f.location.start)):
-                    if circular_mod(int(sub.location.start) + 1, seqlen) < features[-1][0]:
+                    if circular_mod(int(sub.location.start) + 1, self.__seqlen) < features[-1][0]:
                         second.append(sub_sub)
                     else:
                         first.append(sub_sub)
@@ -199,8 +218,8 @@ class GFFFragmentImporter(object):
 
                     # start in Genbank format is start after, so +1 here
                     sub_sub_tup = (
-                            circular_mod(int(sub_sub.location.start) + 1, seqlen),
-                            circular_mod(int(sub_sub.location.end), seqlen),
+                            circular_mod(int(sub_sub.location.start) + 1, self.__seqlen),
+                            circular_mod(int(sub_sub.location.end), self.__seqlen),
                             subsubfeature_name,
                             sub_sub.type,
                             sub_sub.strand,
@@ -247,7 +266,6 @@ class GFFFragmentImporter(object):
 
         cur_len = 0
         chunk_sizes = []
-        seq_len = len(self.__sequence)
         for i, bp in enumerate(break_points):
             if i == 0:
                 if bp > 1:
@@ -257,8 +275,8 @@ class GFFFragmentImporter(object):
                 chunk_sizes.append(break_points[i] - break_points[i - 1])
                 cur_len += chunk_sizes[-1]
 
-        if cur_len < seq_len:
-            chunk_sizes.append(seq_len - cur_len)
+        if cur_len < self.__seqlen:
+            chunk_sizes.append(self.__seqlen - cur_len)
 
         fragment_circular = False
         for feature in self.__rec.features:
@@ -272,13 +290,14 @@ class GFFFragmentImporter(object):
             name=self.__rec.id, circular=fragment_circular, parent=None, start_chunk=None
         )
         new_fragment.save()
+        print("Fragment %s" % (new_fragment.id))
         new_fragment = new_fragment.indexed_fragment()
 
         if reference_based:
             print("%d chunks" % (len(chunk_sizes),))
             t0 = time.time()
             Chunk.CHUNK_REFERENCE_CLASS.generate_from_fragment(
-                new_fragment, self.__sequence, dirn=dirn
+                new_fragment, str(self.__rec.seq), dirn=dirn
             )
             print("Reference file generation took %s seconds" % (time.time() - t0))
 
@@ -309,7 +328,7 @@ class GFFFragmentImporter(object):
             prev = new_fragment._append_to_fragment(
                 prev,
                 fragment_len,
-                self.__sequence[fragment_len : fragment_len + chunk_size],
+                str(self.__rec.seq[fragment_len : fragment_len + chunk_size]),
             )
             fragment_len += chunk_size
             print("add chunk to fragment: %.4f\r" % (time.time() - t0,), end="")
@@ -350,7 +369,6 @@ class GFFFragmentImporter(object):
                 )
                 feature_base_first += sf_end - sf_start + 1
             print("annotate feature: %.4f\r" % (time.time() - t0,), end="")
-        print("\nfinished annotating feature")
 
     def _annotate_feature(
         self, fragment, first_base1, last_base1, name, type, strand, qualifiers,
@@ -359,15 +377,15 @@ class GFFFragmentImporter(object):
         wrap_around = fragment.circular and last_base1 < first_base1
         if wrap_around:
             # has to figure out the total length from last chunk
-            length = len(self.__sequence) - first_base1 + 1 + last_base1
+            length = self.__seqlen - first_base1 + 1 + last_base1
         else:
             length = last_base1 - first_base1 + 1
             if length <= 0:
                 raise Exception("Annotation must have length one or more")
 
         if first_base1 not in self.__fclocs or (
-            (last_base1 < len(self.__sequence) and last_base1 + 1 not in self.__fclocs)) or (
-            last_base1 > len(self.__sequence)
+            (last_base1 < self.__seqlen and last_base1 + 1 not in self.__fclocs)) or (
+            last_base1 > self.__seqlen
         ):
             """
             raise Exception(
