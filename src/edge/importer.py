@@ -56,7 +56,7 @@ class GFFImporter(object):
                         GFFFragmentImporter(rec, dirn=dirn).parse_gff()
                     except Exception as e:
                         print(f"{rec} failed import validation: {str(e)}")
-                        return
+                        raise e
             in_handle.close()
         print("%s seconds to parse and validate all contigs from GFF" % (time.time() - t0))
 
@@ -130,7 +130,7 @@ class GFFFragmentImporter(object):
             # get name and qualifiers
             names = list(
                 filter(lambda x: len(x) > 0,
-                    [feature.qualifiers.get(field, "") for field in GFF_NAME_FIELDS]
+                    [feature.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
                 )
             )
             feature_name = ((names[0][0] if names else None) or feature.id or feature.type or "")[0:100]
