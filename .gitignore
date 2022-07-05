@@ -63,6 +63,9 @@ test.db*
 # don't check in NCBI data
 ncbi/
 
+# Ignore sequence files
+sequence_gz/
+
 # Ignore vim files
 *.swp
 mysql

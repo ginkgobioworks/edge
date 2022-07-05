@@ -187,7 +187,7 @@ class Fragment(models.Model):
         return Indexed_Fragment.objects.get(pk=self.id)
 
     def fragment_reference_fasta_gz_fn(self):
-        return f"{settings.SEQ_GZ_DIR}/edge-fragment-{self.id}.fa.gz"
+        return f"{settings.SEQUENCE_FILE_DIR}/edge-fragment-{self.id}.fa.gz"
 
     def build_fragment_fasta_from_sequence(self, sequence=None, refresh=True):
         #NOTE: logic taken mostly from edge.blastdb.build_fragment_fasta
