@@ -175,7 +175,7 @@ PRIMER3_CONFIG_DIR = os.getenv(
 )
 
 # Chunk Sequence Reference
-SEQUENCE_FILE_DIR = os.getenv("SEQUENCE_FILE_DIR", BASE_DIR + "../sequence_gz")
+SEQUENCE_FILE_DIR = os.getenv("SEQUENCE_FILE_DIR", BASE_DIR + "/../sequence_gz")
 
 NOSE_ARGS = [
     "--with-coverage",
