@@ -84,6 +84,6 @@ urlpatterns = [
         GenomeDeriveView.as_view(),
         name="derive-genome-with-new-fragments",
     ),
-    url(r"^genomes/(?P<genome_id>\d+)/export-gff/$", genome_gff_export),
     url(r"^genomes/(?P<genome_id>\d+)/export-fasta/$", genome_fasta_export),
+    url(r"^genomes/(?P<genome_id>\d+)/export-gff/$", genome_gff_export),
 ]
