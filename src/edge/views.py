@@ -27,7 +27,7 @@ def genome_fasta_export(request, genome_id):
     io = IO(Genome.objects.get(pk=genome_id))
     response = HttpResponse(content_type="text/plain")
     response["Content-Disposition"] = 'attachment; filename="g%s.fa"' % genome_id
-    io.to_fasta_file(response)
+    io.to_fasta_file_cached(response)
     return response
 
 def genome_gff_export(request, genome_id):
