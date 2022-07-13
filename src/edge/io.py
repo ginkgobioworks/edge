@@ -1,4 +1,5 @@
 from BCBio import GFF
+from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import SeqFeature, FeatureLocation
@@ -12,19 +13,28 @@ class IO(object):
     def __init__(self, genome):
         self.__genome = genome.indexed_genome()
 
+    def to_fasta_file(self, f):
+        """
+        Export to FASTA format, saving to provided file like object.
+        """
+        records = []
+
+        for fragment in self.__genome.fragments.all():
+            fragment = fragment.indexed_fragment()
+            seq = Seq(fragment.sequence)
+            rec = SeqRecord(seq, id=str(fragment.name), description='')
+            records.append(rec)
+
+        SeqIO.write(records, f, "fasta")
+
     def to_fasta(self, filename):
         """
         Export to FASTA format, saving to the specified filename.
         """
-        outf = open(filename, "w")
-        for fragment in self.__genome.fragments.all():
-            fragment = fragment.indexed_fragment()
-            outf.write(">%s\n" % (fragment.name,))
-            outf.write(fragment.sequence)
-            outf.write("\n")
-        outf.close()
+        with open(filename, "w") as out_handle:
+            self.to_fasta_file(out_handle)
 
-    def to_gff_file(self, file):
+    def to_gff_file(self, f):
         """
         Export to GFF format, saving to provided file like object.
         """
@@ -33,7 +43,7 @@ class IO(object):
         for fragment in self.__genome.fragments.all():
             fragment = fragment.indexed_fragment()
             seq = Seq(fragment.sequence)
-            rec = SeqRecord(seq, "%s" % (fragment.name,))
+            rec = SeqRecord(seq, id=str(fragment.name), description='')
             features = []
 
             for annotation in fragment.annotations():
@@ -71,7 +81,7 @@ class IO(object):
             rec.features = features
             records.append(rec)
 
-        GFF.write(records, file, include_fasta=True)
+        GFF.write(records, f, include_fasta=True)
 
     def to_gff(self, filename):
         """
