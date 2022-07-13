@@ -22,7 +22,15 @@ from edge.tasks import build_genome_blastdb, build_genome_fragment_indices
 IS_RO_SERVER = os.getenv("RO_SERVER", False) == "True"
 
 
-def genome_export(request, genome_id):
+def genome_fasta_export(request, genome_id):
+    get_genome_or_404(genome_id)
+    io = IO(Genome.objects.get(pk=genome_id))
+    response = HttpResponse(content_type="text/plain")
+    response["Content-Disposition"] = 'attachment; filename="g%s.fa"' % genome_id
+    io.to_fasta_file(response)
+    return response
+
+def genome_gff_export(request, genome_id):
     get_genome_or_404(genome_id)
     io = IO(Genome.objects.get(pk=genome_id))
     response = HttpResponse(content_type="text/plain")

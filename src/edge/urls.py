@@ -16,7 +16,8 @@ from edge.views import (
     GenomePcrView,
     GenomeRecombinationView,
     GenomeCrisprDSBView,
-    genome_export,
+    genome_fasta_export,
+    genome_gff_export,
     genome_import,
 )
 
@@ -83,5 +84,7 @@ urlpatterns = [
         GenomeDeriveView.as_view(),
         name="derive-genome-with-new-fragments",
     ),
-    url(r"^genomes/(?P<genome_id>\d+)/export/$", genome_export),
+    url(r"^genomes/(?P<genome_id>\d+)/export/$", genome_gff_export, name="old-genome-gff-export"),
+    url(r"^genomes/(?P<genome_id>\d+)/export-fasta/$", genome_fasta_export, name="genome-fasta-export"),
+    url(r"^genomes/(?P<genome_id>\d+)/export-gff/$", genome_gff_export, name="genome-gff-export"),
 ]
