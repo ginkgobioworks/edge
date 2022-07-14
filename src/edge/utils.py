@@ -1,5 +1,6 @@
 import os
 
+
 def make_required_dirs(path):
     dirn = os.path.dirname(path)
     try:

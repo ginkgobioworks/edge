@@ -17,6 +17,7 @@ GFF_NAME_FIELDS = (
     "protein_id",
 )
 
+
 def circular_mod(number, seq_length):
     return ((number - 1) % seq_length) + 1
 
@@ -130,10 +131,11 @@ class GFFFragmentImporter(object):
             # get name and qualifiers
             names = list(
                 filter(lambda x: len(x) > 0,
-                    [feature.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
-                )
+                       [feature.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
+                       )
             )
-            feature_name = ((names[0][0] if names else None) or feature.id or feature.type or "")[0:100]
+            feature_name = ((names[0][0] if names else None)
+                            or feature.id or feature.type or "")[0:100]
             qualifiers = {field: v for field, v in feature.qualifiers.items() if len(v) > 0}
 
             # start in Genbank format is start after, so +1 here
@@ -162,14 +164,15 @@ class GFFFragmentImporter(object):
 
             for sub in sub_feats_to_iter:
                 # check that the type is right for a sub feature
-                if not (sub.type.upper() in ['CDS', 'EXON', 'INTRON'] or sub.type.upper()[-3:] == 'RNA'):
+                if not (sub.type.upper() in ['CDS', 'EXON', 'INTRON']
+                        or sub.type.upper()[-3:] == 'RNA'):
                     continue
 
                 # get name and qualifiers
                 sub_names = list(
                     filter(lambda x: len(x) > 0,
-                        [sub.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
-                    )
+                           [sub.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
+                           )
                 )
                 subfeature_name = ((sub_names[0][0] if sub_names else None)
                                    or sub.id or feature_name)[0:100]
@@ -209,8 +212,8 @@ class GFFFragmentImporter(object):
                     # get name and qualifiers
                     sub_sub_names = list(
                         filter(lambda x: len(x) > 0,
-                            [sub_sub.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
-                        )
+                               [sub_sub.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
+                               )
                     )
                     subsubfeature_name = ((sub_sub_names[0][0] if sub_sub_names else None)
                                           or sub_sub.id or subfeature_name)[0:100]
