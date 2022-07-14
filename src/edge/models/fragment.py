@@ -190,7 +190,7 @@ class Fragment(models.Model):
         return f"{settings.SEQUENCE_FILE_DIR}/edge-fragment-{self.id}.fa.gz"
 
     def build_fragment_fasta_from_sequence(self, sequence=None, refresh=True):
-        #NOTE: logic taken mostly from edge.blastdb.build_fragment_fasta
+        # NOTE: logic taken mostly from edge.blastdb.build_fragment_fasta
         fn = self.fragment_reference_fasta_gz_fn()
         make_required_dirs(fn)
 
@@ -272,7 +272,7 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
             chunk__ref_end_index__isnull=False
         )
         ref_fn = None if reference_fcls.count() == 0 \
-                      else reference_fcls.all().first().chunk.ref_fn
+            else reference_fcls.all().first().chunk.ref_fn
 
         f = gzip.open(ref_fn, "rb") if ref_fn is not None else None
         open_files = {ref_fn: f}

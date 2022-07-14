@@ -57,7 +57,7 @@ class Fragment_Annotator(object):
             chunk = fc.next_chunk
             if chunk is None:
                 chunk = self.start_chunk
-        
+
         # generate objects ahead of time, then bulk create at end of call
         Chunk_Feature.bulk_create(cfs)
 

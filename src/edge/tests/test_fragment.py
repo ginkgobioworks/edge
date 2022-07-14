@@ -624,8 +624,10 @@ class FragmentTests(TestCase):
         f = f.indexed_fragment()
 
         self.assertTrue(converted)
-        self.assertTrue(all([c.id in old_chunk_ids for c in f.chunks_by_walking() if c.initial_fragment.id == f.id]))
-        self.assertTrue(all([c.is_reference_based for c in f.chunks_by_walking() if c.initial_fragment.id == f.id]))
+        self.assertTrue(all([c.id in old_chunk_ids for c in f.chunks_by_walking()
+                             if c.initial_fragment.id == f.id]))
+        self.assertTrue(all([c.is_reference_based for c in f.chunks_by_walking()
+                             if c.initial_fragment.id == f.id]))
         self.assertEqual(self.root_sequence, f.sequence)
 
         converted_twice = f.indexed_fragment().convert_chunks_to_reference_based()
@@ -645,8 +647,10 @@ class FragmentTests(TestCase):
         c2 = c2.indexed_fragment()
 
         self.assertTrue(converted)
-        self.assertTrue(all([c.id in old_chunk_ids for c in f.chunks_by_walking() if c.initial_fragment.id == f.id]))
-        self.assertTrue(all([c.is_reference_based for c in f.chunks_by_walking() if c.initial_fragment.id == f.id]))
+        self.assertTrue(all([c.id in old_chunk_ids for c in f.chunks_by_walking()
+                             if c.initial_fragment.id == f.id]))
+        self.assertTrue(all([c.is_reference_based for c in f.chunks_by_walking()
+                             if c.initial_fragment.id == f.id]))
         self.assertEqual(self.root_sequence, f.sequence)
 
         converted_c1 = c1.convert_chunks_to_reference_based()
