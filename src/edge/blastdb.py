@@ -5,21 +5,13 @@ import shutil
 import uuid
 import tempfile
 import subprocess
-from edge.models import Fragment, Genome
-from edge.blast import BLAST_DB, default_genome_db_name
-from edge.blast import Blast_Accession
+
 from django.conf import settings
 
-
-def make_required_dirs(path):
-    dirn = os.path.dirname(path)
-    try:
-        original_umask = os.umask(0)
-        os.makedirs(dirn, 0o777)
-    except OSError:
-        pass
-    finally:
-        os.umask(original_umask)
+from edge.blast import BLAST_DB, default_genome_db_name
+from edge.blast import Blast_Accession
+from edge.models import Fragment, Genome
+from edge.utils import make_required_dirs
 
 
 def fragment_fasta_fn(fragment):

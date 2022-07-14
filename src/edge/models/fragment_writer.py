@@ -12,18 +12,42 @@ class Fragment_Writer(object):
     Mixin that includes helpers for updating a fragment.
     """
 
-    def _annotate_chunk(self, chunk, feature, feature_base_first, feature_base_last):
-        Chunk_Feature(
+    def _create_chunk_annotation(self, chunk, feature, feature_base_first, feature_base_last):
+        return Chunk_Feature(
             chunk=chunk,
             feature=feature,
             feature_base_first=feature_base_first,
             feature_base_last=feature_base_last,
+        )
+
+    def _annotate_chunk(self, chunk, feature, feature_base_first, feature_base_last):
+        self._create_chunk_annotation(
+            chunk, feature, feature_base_first, feature_base_last
         ).save()
+
+    def _add_reference_chunk(self, start, end, fragment):
+        c = Chunk(
+            initial_fragment=fragment,
+            ref_start_index=start,
+            ref_end_index=end
+        )
+        c.save()
+        return c
 
     def _add_chunk(self, sequence, fragment):
         c = Chunk(sequence=sequence, initial_fragment=fragment)
         c.save()
         return c
+
+    def __reset_chunk_reference(self, chunk, start, end):
+        chunk.ref_start_index = start
+        chunk.ref_end_index = end
+        chunk.save()
+        Chunk_Feature.objects.filter(chunk=chunk).delete()
+        # if chunk is the start chunk, update the object reference
+        if self.start_chunk.id == chunk.id:
+            self.start_chunk = chunk
+            self.save()
 
     def __reset_chunk_sequence(self, chunk, sequence):
         chunk.sequence = sequence
@@ -50,6 +74,7 @@ class Fragment_Writer(object):
             edge.save()
 
     def _split_annotations(self, annotations, bps_to_split, split1, split2):
+        cfs = []
         for a in annotations:
             if a.feature.strand > 0:
                 a1 = (
@@ -73,29 +98,14 @@ class Fragment_Writer(object):
                     a.feature_base_first,
                     a.feature_base_last - bps_to_split
                 )
-            self._annotate_chunk(split1, *a1)
-            self._annotate_chunk(split2, *a2)
-
-    def __invalidate_index_for(self, fragment_ids):
-        from edge.models.fragment import Fragment_Index
-
-        for f in fragment_ids:
-            index = Fragment_Index.objects.filter(fragment_id=f)
-            if index.count():
-                index = index[0]
-                index.fresh = False
-                index.save()
+            cfs.append(self._create_chunk_annotation(split1, *a1))
+            cfs.append(self._create_chunk_annotation(split2, *a2))
+        Chunk_Feature.bulk_create(cfs)
 
     # make sure you call this atomically! otherwise we may have corrupted chunk
     # and index
     def __split_chunk(self, chunk, bps_to_split):
-        s1 = chunk.sequence[0:bps_to_split]
-        s2 = chunk.sequence[bps_to_split:]
-
-        # invalidate chunk location index for all fragments using this chunk,
-        # except parent fragment and current fragment
-        index_to_invalidate = []
-        index_to_update = []
+        # retrieve relevant fragments
         candidates = (
             chunk.fragment_chunk_location_set.filter(
                 fragment__fragment_index__fresh=True
@@ -103,18 +113,23 @@ class Fragment_Writer(object):
             .values_list("fragment_id")
             .distinct()
         )
-        for row in candidates:
-            fragment_id = row[0]
-            if fragment_id not in [self.id, self.parent_id]:
-                index_to_invalidate.append(fragment_id)
-            else:
-                index_to_update.append(fragment_id)
-        self.__invalidate_index_for(index_to_invalidate)
+        index_to_update = [row[0] for row in candidates]
 
         # splitted chunk should be "created" by the fragment that created the
         # original chunk
-        split2 = self._add_chunk(s2, chunk.initial_fragment)
-        self.__reset_chunk_sequence(chunk, s1)
+        if chunk.is_sequence_based:
+            chunk_sequence = chunk.get_sequence()
+            s1 = chunk_sequence[0:bps_to_split]
+            s2 = chunk_sequence[bps_to_split:]
+            split2 = self._add_chunk(s2, chunk.initial_fragment)
+            self.__reset_chunk_sequence(chunk, s1)
+        elif chunk.is_reference_based:
+            # note reference based chunks have 1-based indexing
+            split_start = chunk.ref_start_index + bps_to_split
+            split2 = self._add_reference_chunk(
+                split_start, chunk.ref_end_index, chunk.initial_fragment
+            )
+            self.__reset_chunk_reference(chunk, chunk.ref_start_index, split_start - 1)
 
         # move all edges from original chunk to second chunk
         Edge.objects.filter(from_chunk=chunk).update(from_chunk=split2)
@@ -139,7 +154,7 @@ class Fragment_Writer(object):
                 Fragment_Chunk_Location(
                     fragment_id=fcl.fragment_id,
                     chunk_id=split2.id,
-                    base_first=fcl.base_first + len(s1),
+                    base_first=fcl.base_first + bps_to_split,
                     base_last=fcl.base_last,
                 )
             )
@@ -148,7 +163,7 @@ class Fragment_Writer(object):
         # adjust chunk location index for existing chunk
         chunk.fragment_chunk_location_set.filter(
             fragment_id__in=index_to_update
-        ).update(base_last=F("base_first") + len(s1) - 1)
+        ).update(base_last=F("base_first") + bps_to_split - 1)
         return split2
 
     def _find_chunk_prev_next(self, before_base1):
@@ -200,7 +215,7 @@ class Fragment_Writer(object):
 
         # found the bp we are looking for
         if before_base1 is not None and bases_visited >= before_base1:
-            chunk_len = len(chunk.sequence)
+            chunk_len = chunk.length
 
             # can avoid splitting if first bp in this chunk is before_base1
             if bases_visited - chunk_len + 1 == before_base1:

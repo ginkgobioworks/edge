@@ -4,7 +4,18 @@ from BCBio import GFF
 from django.db import connection
 
 from edge.models import Fragment, Fragment_Chunk_Location
+from edge.models.chunk import Chunk
 
+
+GFF_NAME_FIELDS = (
+    "name",
+    "Name",
+    "gene",
+    "locus",
+    "locus_tag",
+    "product",
+    "protein_id",
+)
 
 def circular_mod(number, seq_length):
     return ((number - 1) % seq_length) + 1
@@ -15,7 +26,7 @@ class GFFImporter(object):
         self.__genome = genome
         self.__gff_fasta_fn = gff_fasta_fn
 
-    def do_import(self):
+    def do_import(self, dirn='.'):
         in_file = self.__gff_fasta_fn
         in_handle = open(in_file)
 
@@ -24,50 +35,91 @@ class GFFImporter(object):
         # logging.
         connection.use_debug_cursor = False
 
-        for rec in GFF.parse(in_handle):
-            if self.__genome.fragments.filter(name=rec.id).count() > 0:
-                print("skipping %s, already imported" % rec.id)
-            else:
-                f = GFFFragmentImporter(rec).do_import()
-                self.__genome.genome_fragment_set.create(fragment=f, inherited=False)
+        # First, retrieve rec names
+        rec_ids = [i[0] for i in GFF.GFFExaminer().available_limits(in_handle).get('gff_id')]
+        in_handle.close()
+
+        # Then parse GFF by rec
+        t0 = time.time()
+        for rec_id in rec_ids:
+            in_handle = open(in_file)
+            limit_info = dict(gff_id=[rec_id])
+            recs = [rec for rec in GFF.parse(in_handle, limit_info=limit_info)
+                    if rec.id == rec_id]
+
+            for rec in recs:
+                if self.__genome.fragments.filter(name=rec.id).count() > 0:
+                    print("skipping %s, already imported" % rec.id)
+                    break
+                else:
+                    try:
+                        GFFFragmentImporter(rec, dirn=dirn).parse_gff()
+                    except Exception as e:
+                        print(f"{rec} failed import validation: {str(e)}")
+                        raise e
+            in_handle.close()
+        print("%s seconds to parse and validate all contigs from GFF" % (time.time() - t0))
+
+        # Then, build and annotate fragments
+        for rec_id in rec_ids:
+            in_handle = open(in_file)
+            limit_info = dict(gff_id=[rec_id])
+            recs = [rec for rec in GFF.parse(in_handle, limit_info=limit_info)
+                    if rec.id == rec_id]
+
+            for rec in recs:
+                importer = GFFFragmentImporter(rec, dirn=dirn)
+                fragment = importer.do_import()
+                if fragment is None:
+                    break
+                self.__genome.genome_fragment_set.create(fragment=fragment, inherited=False)
+            in_handle.close()
 
         # Be nice and turn debug cursor back on
         connection.use_debug_cursor = True
-        in_handle.close()
 
 
 class GFFFragmentImporter(object):
-    def __init__(self, gff_rec):
+    def __init__(self, gff_rec, dirn='.'):
         self.__rec = gff_rec
-        self.__sequence = None
+        self.__seqlen = len(gff_rec.seq)
         self.__features = None
         self.__fclocs = None
         self.__subfeatures_dict = {}
+        self.dirn = dirn
 
-    def do_import(self):
-        self.parse_gff()
+    def finish_import(self):
         t0 = time.time()
-        f = self.build_fragment()
+        try:
+            f = self.build_fragment(dirn=self.dirn)
+        except Exception as e:
+            print(f"{self.__rec} failed fragment building: {str(e)}")
+            return
         print("build fragment: %.4f" % (time.time() - t0,))
+
         t0 = time.time()
-        self.annotate(f)
+        try:
+            self.annotate(f)
+        except Exception as e:
+            print(f"{self.__rec} failed fragment annotation: {str(e)}")
+            return
         print("annotate: %.4f" % (time.time() - t0,))
+
         return f
 
-    def parse_gff(self):
-        name_fields = (
-            "name",
-            "Name",
-            "gene",
-            "locus",
-            "locus_tag",
-            "product",
-            "protein_id",
-        )
+    def do_import(self):
+        t0 = time.time()
+        try:
+            self.parse_gff()
+        except Exception as e:
+            print(f"{self.__rec} failed import validation and parsing: {str(e)}")
+            return
+        print("parse gff: %.4f" % (time.time() - t0,))
 
-        self.__sequence = str(self.__rec.seq)
-        seqlen = len(self.__sequence)
-        print("%s: %s" % (self.__rec.id, seqlen))
+        return self.finish_import()
+
+    def parse_gff(self):
+        print("%s: %s" % (self.__rec.id, self.__seqlen))
 
         features = []
         for feature in self.__rec.features:
@@ -75,146 +127,118 @@ class GFFFragmentImporter(object):
             if feature.type.upper() in ['REGION', 'CHR', 'CHROM', 'CHROMOSOME']:
                 continue
 
-            # get name
-            name = feature.id
-            if name == "":
-                name = feature.type
-            for field in name_fields:
-                if field in feature.qualifiers:
-                    v = feature.qualifiers[field]
-                    if len(v) > 0:
-                        name = v[0]
-                        break
-            name = name[0:100]
-
-            # get qualifiers
-            qualifiers = {}
-            for field in feature.qualifiers:
-                v = feature.qualifiers[field]
-                if len(v) > 0:
-                    qualifiers[field] = v
+            # get name and qualifiers
+            names = list(
+                filter(lambda x: len(x) > 0,
+                    [feature.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
+                )
+            )
+            feature_name = ((names[0][0] if names else None) or feature.id or feature.type or "")[0:100]
+            qualifiers = {field: v for field, v in feature.qualifiers.items() if len(v) > 0}
 
             # start in Genbank format is start after, so +1 here
             features.append(
                 (
-                    circular_mod(int(feature.location.start) + 1, seqlen),
-                    circular_mod(int(feature.location.end), seqlen),
-                    name,
+                    circular_mod(int(feature.location.start) + 1, self.__seqlen),
+                    circular_mod(int(feature.location.end), self.__seqlen),
+                    feature_name,
                     feature.type,
                     feature.strand,
                     qualifiers,
                 )
             )
 
-            feature_name = name
             # add sub features for chunking for CDS only
             self.__subfeatures_dict[feature_name] = []
 
-            # order based on relative position in the feature
+            # order sub features based on relative position in the feature
             first, second = [], []
             for sub in sorted(feature.sub_features, key=lambda f: int(f.location.start)):
-                if circular_mod(int(sub.location.start) + 1, seqlen) < features[-1][0]:
+                if circular_mod(int(sub.location.start) + 1, self.__seqlen) < features[-1][0]:
                     second.append(sub)
                 else:
                     first.append(sub)
             sub_feats_to_iter = first + second
 
             for sub in sub_feats_to_iter:
-                # change name for sub feature
-                subfeature_name = ''
-                for field in name_fields:
-                    if field in sub.qualifiers:
-                        v = sub.qualifiers[field]
-                        if len(v) > 0:
-                            subfeature_name = v[0]
-                            break
-                subfeature_name = subfeature_name[0:100]
+                # check that the type is right for a sub feature
+                if not (sub.type.upper() in ['CDS', 'EXON', 'INTRON'] or sub.type.upper()[-3:] == 'RNA'):
+                    continue
 
-                if subfeature_name == '':
-                    if sub.id != '':
-                        subfeature_name = sub.id
+                # get name and qualifiers
+                sub_names = list(
+                    filter(lambda x: len(x) > 0,
+                        [sub.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
+                    )
+                )
+                subfeature_name = ((sub_names[0][0] if sub_names else None)
+                                   or sub.id or feature_name)[0:100]
+                qualifiers = {field: v for field, v in sub.qualifiers.items() if len(v) > 0}
+
+                # start in Genbank format is start after, so +1 here
+                sub_tup = (
+                        circular_mod(int(sub.location.start) + 1, self.__seqlen),
+                        circular_mod(int(sub.location.end), self.__seqlen),
+                        subfeature_name,
+                        sub.type,
+                        sub.strand,
+                        qualifiers,
+                    )
+
+                # if it has no id, it belongs to the feature
+                # otherwise, mark it as its own feature
+                if subfeature_name == feature_name:
+                    self.__subfeatures_dict[feature_name].append(sub_tup)
+                else:
+                    if subfeature_name in self.__subfeatures_dict:
+                        self.__subfeatures_dict[subfeature_name].append(sub_tup)
                     else:
-                        subfeature_name = feature_name
+                        features.append(sub_tup)
+                        self.__subfeatures_dict[subfeature_name] = [sub_tup]
 
-                # check that the type is right
-                if sub.type.upper() in ['CDS', 'EXON', 'INTRON'] or sub.type.upper()[-3:] == 'RNA':
-                    qualifiers = {}
-                    for field in sub.qualifiers:
-                        v = sub.qualifiers[field]
-                        if len(v) > 0:
-                            qualifiers[field] = v
-                    sub_tup = (
-                            circular_mod(int(sub.location.start) + 1, seqlen),
-                            circular_mod(int(sub.location.end), seqlen),
-                            subfeature_name,
-                            sub.type,
-                            sub.strand,
+                # order sub sub features based on relative position in the sub feature
+                first, second = [], []
+                for sub_sub in sorted(sub.sub_features, key=lambda f: int(f.location.start)):
+                    if circular_mod(int(sub.location.start) + 1, self.__seqlen) < features[-1][0]:
+                        second.append(sub_sub)
+                    else:
+                        first.append(sub_sub)
+                sub_sub_feats_to_iter = first + second
+
+                for sub_sub in sub_sub_feats_to_iter:
+                    # get name and qualifiers
+                    sub_sub_names = list(
+                        filter(lambda x: len(x) > 0,
+                            [sub_sub.qualifiers.get(field, []) for field in GFF_NAME_FIELDS]
+                        )
+                    )
+                    subsubfeature_name = ((sub_sub_names[0][0] if sub_sub_names else None)
+                                          or sub_sub.id or subfeature_name)[0:100]
+                    qualifiers = {field: v for field, v in feature.qualifiers.items() if len(v) > 0}
+
+                    # start in Genbank format is start after, so +1 here
+                    sub_sub_tup = (
+                            circular_mod(int(sub_sub.location.start) + 1, self.__seqlen),
+                            circular_mod(int(sub_sub.location.end), self.__seqlen),
+                            subsubfeature_name,
+                            sub_sub.type,
+                            sub_sub.strand,
                             qualifiers,
                         )
 
-                    # if it has no id, it belongs to the feature
+                    # if it has no id and the sub feature has no id, it belongs to the feature
+                    # if it has no id and the sub feature has id, it belongs to the sub feature
                     # otherwise, mark it as its own feature
-                    if subfeature_name == feature_name:
-                        self.__subfeatures_dict[feature_name].append(sub_tup)
+                    if subsubfeature_name == feature_name:
+                        self.__subfeatures_dict[feature_name].append(sub_sub_tup)
+                    elif subsubfeature_name == subfeature_name:
+                        self.__subfeatures_dict[subfeature_name].append(sub_sub_tup)
                     else:
-                        if subfeature_name in self.__subfeatures_dict:
-                            self.__subfeatures_dict[subfeature_name].append(sub_tup)
+                        if subsubfeature_name in self.__subfeatures_dict:
+                            self.__subfeatures_dict[subsubfeature_name].append(sub_sub_tup)
                         else:
-                            features.append(sub_tup)
-                            self.__subfeatures_dict[subfeature_name] = [sub_tup]
-
-                    first, second = [], []
-                    for sub_sub in sorted(sub.sub_features, key=lambda f: int(f.location.start)):
-                        if circular_mod(int(sub.location.start) + 1, seqlen) < features[-1][0]:
-                            second.append(sub_sub)
-                        else:
-                            first.append(sub_sub)
-                    sub_sub_feats_to_iter = first + second
-
-                    for sub_sub in sub_sub_feats_to_iter:
-                        # change name for sub sub feature
-                        subsubfeature_name = ''
-                        for field in name_fields:
-                            if field in sub_sub.qualifiers:
-                                v = sub_sub.qualifiers[field]
-                                if len(v) > 0:
-                                    subsubfeature_name = v[0]
-                                    break
-                        subsubfeature_name = subsubfeature_name[0:100]
-
-                        if subsubfeature_name == '':
-                            if sub_sub.id != '':
-                                subsubfeature_name = sub_sub.id
-                            else:
-                                subsubfeature_name = subfeature_name
-
-                        qualifiers = {}
-                        for field in feature.qualifiers:
-                            v = feature.qualifiers[field]
-                            if len(v) > 0:
-                                qualifiers[field] = v
-                        sub_sub_tup = (
-                                circular_mod(int(sub_sub.location.start) + 1, seqlen),
-                                circular_mod(int(sub_sub.location.end), seqlen),
-                                subsubfeature_name,
-                                sub_sub.type,
-                                sub_sub.strand,
-                                qualifiers,
-                            )
-
-                        # if it has no id and the sub feature has no id, it belongs to the feature
-                        # if it has no id and the sub feature has id, it belongs to the sub feature
-                        # otherwise, mark it as its own feature
-                        if subsubfeature_name == feature_name:
-                            self.__subfeatures_dict[feature_name].append(sub_sub_tup)
-                        elif subsubfeature_name == subfeature_name:
-                            self.__subfeatures_dict[subfeature_name].append(sub_sub_tup)
-                        else:
-                            if subsubfeature_name in self.__subfeatures_dict:
-                                self.__subfeatures_dict[subsubfeature_name].append(sub_sub_tup)
-                            else:
-                                features.append(sub_sub_tup)
-                                self.__subfeatures_dict[subsubfeature_name] = [sub_sub_tup]
+                            features.append(sub_sub_tup)
+                            self.__subfeatures_dict[subsubfeature_name] = [sub_sub_tup]
 
         self.__features = features
 
@@ -227,7 +251,7 @@ class GFFFragmentImporter(object):
                 new_feature = (new_start, new_end, feature[2], feature[3], feature[4], feature[5])
                 features.append(new_feature)
 
-    def build_fragment(self):
+    def build_fragment(self, reference_based=True, dirn='.'):
         # pre-chunk the fragment sequence at feature start and end locations.
         # there should be no need to further divide any chunk during import.
         starts_and_ends = []
@@ -242,7 +266,6 @@ class GFFFragmentImporter(object):
 
         cur_len = 0
         chunk_sizes = []
-        seq_len = len(self.__sequence)
         for i, bp in enumerate(break_points):
             if i == 0:
                 if bp > 1:
@@ -252,8 +275,8 @@ class GFFFragmentImporter(object):
                 chunk_sizes.append(break_points[i] - break_points[i - 1])
                 cur_len += chunk_sizes[-1]
 
-        if cur_len < seq_len:
-            chunk_sizes.append(seq_len - cur_len)
+        if cur_len < self.__seqlen:
+            chunk_sizes.append(self.__seqlen - cur_len)
 
         fragment_circular = False
         for feature in self.__rec.features:
@@ -267,7 +290,19 @@ class GFFFragmentImporter(object):
             name=self.__rec.id, circular=fragment_circular, parent=None, start_chunk=None
         )
         new_fragment.save()
+        print("Fragment %s" % (new_fragment.id))
         new_fragment = new_fragment.indexed_fragment()
+
+        if reference_based:
+            print("%d chunks" % (len(chunk_sizes),))
+            t0 = time.time()
+            Chunk.CHUNK_REFERENCE_CLASS.generate_from_fragment(
+                new_fragment, str(self.__rec.seq), dirn=dirn
+            )
+            print("Reference file generation took %s seconds" % (time.time() - t0))
+
+            new_fragment._bulk_create_fragment_chunks(chunk_sizes)
+            return new_fragment
 
         # divide chunks bigger than a certain threshold to smaller chunks, to
         # allow insertion of sequence into database. e.g. MySQL has a packet
@@ -293,7 +328,7 @@ class GFFFragmentImporter(object):
             prev = new_fragment._append_to_fragment(
                 prev,
                 fragment_len,
-                self.__sequence[fragment_len : fragment_len + chunk_size],
+                str(self.__rec.seq[fragment_len : fragment_len + chunk_size]),
             )
             fragment_len += chunk_size
             print("add chunk to fragment: %.4f\r" % (time.time() - t0,), end="")
@@ -334,7 +369,6 @@ class GFFFragmentImporter(object):
                 )
                 feature_base_first += sf_end - sf_start + 1
             print("annotate feature: %.4f\r" % (time.time() - t0,), end="")
-        print("\nfinished annotating feature")
 
     def _annotate_feature(
         self, fragment, first_base1, last_base1, name, type, strand, qualifiers,
@@ -343,15 +377,15 @@ class GFFFragmentImporter(object):
         wrap_around = fragment.circular and last_base1 < first_base1
         if wrap_around:
             # has to figure out the total length from last chunk
-            length = len(self.__sequence) - first_base1 + 1 + last_base1
+            length = self.__seqlen - first_base1 + 1 + last_base1
         else:
             length = last_base1 - first_base1 + 1
             if length <= 0:
                 raise Exception("Annotation must have length one or more")
 
         if first_base1 not in self.__fclocs or (
-            (last_base1 < len(self.__sequence) and last_base1 + 1 not in self.__fclocs)) or (
-            last_base1 > len(self.__sequence)
+            (last_base1 < self.__seqlen and last_base1 + 1 not in self.__fclocs)) or (
+            last_base1 > self.__seqlen
         ):
             """
             raise Exception(

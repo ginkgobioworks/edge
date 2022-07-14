@@ -1,6 +1,6 @@
 from django.db.backends.signals import connection_created
 
-__version__ = "3.25.0"
+__version__ = "3.25.0refchunk"
 
 
 import random
@@ -10,19 +10,20 @@ def get_random_sequence(n):
     return "".join(["agct"[random.randint(0, 3)] for i in range(n)])
 
 
-def import_gff(name, fn):
+def import_gff(name, fn, output_dir='.'):
     """
     Creates a new genome using the specified GFF file.
 
     name: Name of genome
     fn: path to GFF file
+    output_dir: string path to output directory for reference file
     """
 
     from edge.models import Genome
 
     if Genome.objects.filter(name=name).count() > 0:
         raise Exception('There is already a genome named "%s"' % (name,))
-    g = Genome.import_gff(name, fn)
+    g = Genome.import_gff(name, fn, dirn=output_dir)
     return g
 
 
