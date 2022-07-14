@@ -48,7 +48,7 @@ class IOTest(TestCase):
 ##sequence-region Bar 1 13
 Bar\tfeature\tgene\t2\t9\t.\t+\t.\tname=A1
 ##FASTA
->Bar <unknown description>
+>Bar
 %s
 """ % (
             fragment.sequence,
@@ -72,7 +72,7 @@ Bar\tfeature\tgene\t2\t9\t.\t+\t.\tname=A1
 ##sequence-region Bar 1 13
 Bar\tfeature\tgene\t2\t9\t.\t-\t.\tname=A1
 ##FASTA
->Bar <unknown description>
+>Bar
 %s
 """ % (
             fragment.sequence,
@@ -98,7 +98,7 @@ Bar\tfeature\tgene\t2\t9\t.\t-\t.\tname=A1
 Bar\tfeature\tgene\t2\t2\t.\t+\t.\tname=A1%%5B1:1%%5D
 Bar\tfeature\tgene\t9\t15\t.\t+\t.\tname=A1%%5B2:8%%5D
 ##FASTA
->Bar <unknown description>
+>Bar
 %s
 """ % (
             fragment.sequence,
@@ -126,7 +126,7 @@ Bar\tfeature\tgene\t2\t9\t.\t+\t.\tname=A1
 Bar\tfeature\tmRNA\t2\t9\t.\t+\t.\tname=A1
 Bar\tfeature\tCDS\t2\t9\t.\t+\t0\tname=A1
 ##FASTA
->Bar <unknown description>
+>Bar
 %s
 """ % (
             fragment.sequence,
@@ -150,7 +150,7 @@ Bar\tfeature\tCDS\t2\t9\t.\t+\t0\tname=A1
 ##sequence-region Bar 1 13
 Bar\tfeature\tCDS\t2\t9\t.\t+\t0\tname=A1
 ##FASTA
->Bar <unknown description>
+>Bar
 %s
 """ % (
             fragment.sequence,
@@ -174,7 +174,7 @@ Bar\tfeature\tCDS\t2\t9\t.\t+\t0\tname=A1
 ##sequence-region Bar 1 13
 Bar\tfeature\tCDS\t2\t9\t.\t+\t2\tname=A1
 ##FASTA
->Bar <unknown description>
+>Bar
 %s
 """ % (
             fragment.sequence,
@@ -198,7 +198,7 @@ Bar\tfeature\tCDS\t2\t9\t.\t+\t2\tname=A1
 ##sequence-region Bar 1 13
 Bar\tfeature\tCDS\t2\t9\t.\t+\t2\tname=A1
 ##FASTA
->Bar <unknown description>
+>Bar
 %s
 """ % (
             fragment.sequence,
@@ -229,7 +229,7 @@ Bar\tfeature\tCDS\t2\t9\t.\t+\t2\tname=A1
 ##sequence-region Bar 1 13
 Bar\tfeature\tCDS\t2\t9\t.\t+\t0\taliases=foo,bar;foo=blah;locus_tag=b0002;name=A1
 ##FASTA
->Bar <unknown description>
+>Bar
 %s
 """ % (
             fragment.sequence,
@@ -293,7 +293,7 @@ Bar\tfeature\tCDS\t2\t4\t.\t+\t0\tName=A1_exon;Parent=A1
 Bar\tfeature\tCDS\t5\t6\t.\t+\t0\tName=A1_intron;Parent=A1
 Bar\tfeature\tCDS\t7\t9\t.\t+\t0\tName=A1_exon;Parent=A1
 ##FASTA
->Bar <unknown description>
+>Bar
 %s
 """ % (
             fragment.sequence,
@@ -357,7 +357,7 @@ Bar\tfeature\tCDS\t2\t4\t.\t-\t0\tName=A1_exon;Parent=A1
 Bar\tfeature\tCDS\t5\t6\t.\t-\t0\tName=A1_intron;Parent=A1
 Bar\tfeature\tCDS\t7\t9\t.\t-\t0\tName=A1_exon;Parent=A1
 ##FASTA
->Bar <unknown description>
+>Bar
 %s
 """ % (
             fragment.sequence,
@@ -420,7 +420,7 @@ Bar\tfeature\tCDS\t2\t9\t.\t+\t0\taliases=foo,bar;foo=blah;locus_tag=b0002;name=
 Bar\tfeature\tCDS\t2\t6\t.\t+\t0\tName=A1_exon;Parent=A1
 Bar\tfeature\tCDS\t5\t9\t.\t+\t0\tName=A1_exon;Parent=A1
 ##FASTA
->Bar <unknown description>
+>Bar
 %s
 """ % (
             fragment.sequence,
