@@ -1,5 +1,13 @@
+import time
+
+from django.db import transaction
 from django.db.models import F
-from edge.models.chunk import Edge
+
+from edge.models.chunk import (
+    Chunk,
+    Edge,
+    Fragment_Chunk_Location
+)
 
 
 class Fragment_Updater(object):
@@ -31,9 +39,59 @@ class Fragment_Updater(object):
         self.fragment_chunk_location_set.create(
             chunk=new_chunk,
             base_first=cur_fragment_length + 1,
-            base_last=cur_fragment_length + 1 + len(sequence) - 1,
+            base_last=cur_fragment_length + new_chunk.length,
         )
         return new_chunk
+
+    @transaction.atomic()
+    def _bulk_create_fragment_chunks(self, chunk_sizes):
+        start = 0
+        chunks = []
+        t0 = time.time()
+        for chunk_size in chunk_sizes:
+            chunks.append(
+                Chunk(
+                    initial_fragment=self,
+                    ref_start_index=start + 1,
+                    ref_end_index=start + chunk_size
+                )
+            )
+            start += chunk_size
+        Chunk.bulk_create(chunks)
+
+        self.start_chunk = chunks[0]
+        self.save()
+        print("Chunk generation took %s seconds" % (time.time() - t0))
+
+        start = 0
+        fcls = []
+        t0 = time.time()
+        for chunk in chunks:
+            fcls.append(
+                Fragment_Chunk_Location(
+                    fragment=self,
+                    chunk=chunk,
+                    base_first=start + 1,
+                    base_last=start + chunk.length,
+                )
+            )
+            start += chunk.length
+        print("Index generation took %s seconds" % (time.time() - t0))
+
+        t0 = time.time()
+        Edge.objects.filter(from_chunk__in=chunks, fragment_id=self.id).delete()
+        edges = [
+            Edge(
+                from_chunk=chunks[i],
+                fragment=self,
+                to_chunk=(chunks[i + 1] if ((i + 1) < len(chunks)) else None)
+            )
+            for i in range(len(chunks))
+        ]
+        Edge.bulk_create(edges)
+        print("Edge generation took %s seconds" % (time.time() - t0))
+
+        Fragment_Chunk_Location.bulk_create(fcls)
 
     def insert_bases(self, before_base1, sequence):
         if len(sequence) == 0:
@@ -150,7 +208,7 @@ class Fragment_Updater(object):
         fragment_length = 0
         for chunk in fragment.chunks():
             # also compute how long fragment is
-            fragment_length += len(chunk.sequence)
+            fragment_length += chunk.length
             if last_chunk is None:  # add new chunks at start of fragment
                 self.start_chunk = chunk
                 self.save()
@@ -188,15 +246,15 @@ class Fragment_Updater(object):
                 self.fragment_chunk_location_set.create(
                     chunk=chunk,
                     base_first=before_base1 + c,
-                    base_last=before_base1 + c + len(chunk.sequence) - 1,
+                    base_last=before_base1 + c + chunk.length - 1,
                 )
             else:
                 self.fragment_chunk_location_set.create(
                     chunk=chunk,
                     base_first=original_length + 1 + c,
-                    base_last=original_length + 1 + c + len(chunk.sequence) - 1,
+                    base_last=original_length + 1 + c + chunk.length - 1,
                 )
-            c += len(chunk.sequence)
+            c += chunk.length
 
     def replace_with_fragment(self, before_base1, length_to_remove, fragment):
 
@@ -207,3 +265,17 @@ class Fragment_Updater(object):
 
         self.remove_bases(before_base1, length_to_remove)
         self.insert_fragment(before_base1, fragment)
+
+    def build_fragment_reference_chunk(self, sequence_length):
+        new_chunk = self._add_reference_chunk(1, sequence_length, self)
+        self.start_chunk = new_chunk
+        self.save()
+
+        self._add_edges(
+            new_chunk, Edge(from_chunk=new_chunk, fragment=self, to_chunk=None)
+        )
+        self.fragment_chunk_location_set.create(
+            chunk=new_chunk,
+            base_first=1,
+            base_last=sequence_length
+        )

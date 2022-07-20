@@ -11,6 +11,7 @@ services:
     volumes:
       - .:${EDGE_HOME:-/usr/src/edge}
       - ncbi:${EDGE_HOME:-/usr/src/edge}/ncbi
+      - sequence_gz:${EDGE_HOME:-/usr/src/edge}/sequence_gz
     ports:
       - 9000:8000
     environment:
@@ -37,3 +38,4 @@ services:
 volumes:
   mysql:
   ncbi:
+  sequence_gz:

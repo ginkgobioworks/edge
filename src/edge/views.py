@@ -30,6 +30,7 @@ def genome_fasta_export(request, genome_id):
     io.to_fasta_file_cached(response)
     return response
 
+
 def genome_gff_export(request, genome_id):
     get_genome_or_404(genome_id)
     io = IO(Genome.objects.get(pk=genome_id))

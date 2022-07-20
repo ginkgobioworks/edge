@@ -1,16 +1,28 @@
-from django.db import transaction
-from django.utils import timezone
-from django.db import models
+import gzip
+import os
+import re
+import shutil
+import tempfile
+
+from django.db import (
+    models,
+    transaction
+)
+from django.conf import settings
 from django.db.models import Q
+from django.utils import timezone
 
 from edge.models.chunk import (
     Annotation,
+    BULK_CREATE_BATCH_SIZE,
+    Chunk,
     Chunk_Feature,
     Fragment_Chunk_Location,
 )
 from edge.models.fragment_writer import Fragment_Writer
 from edge.models.fragment_annotator import Fragment_Annotator
 from edge.models.fragment_updater import Fragment_Updater
+from edge.utils import make_required_dirs
 
 
 class Fragment(models.Model):
@@ -43,17 +55,30 @@ class Fragment(models.Model):
     # chunk size significantly improves import time: when dividing up smaller
     # chunks, you copy/slice less sequence data.
     @staticmethod
-    def create_with_sequence(name, sequence, circular=False, initial_chunk_size=20000):
+    def create_with_sequence(
+            name, sequence, circular=False,
+            initial_chunk_size=20000, reference_based=True,
+            dirn='.'
+    ):
         new_fragment = Fragment(
             name=name, circular=circular, parent=None, start_chunk=None
         )
         new_fragment.save()
         new_fragment = new_fragment.indexed_fragment()
-        if initial_chunk_size is None or initial_chunk_size == 0:
-            new_fragment.insert_bases(None, sequence)
+
+        if reference_based:
+            # don't split into chunk sized bits for reference based import
+            Chunk.CHUNK_REFERENCE_CLASS.generate_from_fragment(
+                new_fragment, sequence, dirn=dirn
+            )
+            new_fragment.build_fragment_reference_chunk(len(sequence))
         else:
-            for i in range(0, len(sequence), initial_chunk_size):
-                new_fragment.insert_bases(None, sequence[i : i + initial_chunk_size])
+            if initial_chunk_size is None or initial_chunk_size == 0:
+                new_fragment.insert_bases(None, sequence)
+            else:
+                for i in range(0, len(sequence), initial_chunk_size):
+                    new_fragment.insert_bases(None, sequence[i : i + initial_chunk_size])
+
         return new_fragment
 
     def predecessors(self):
@@ -110,17 +135,17 @@ class Fragment(models.Model):
         i = 1
         entries = []
         for chunk in self.chunks_by_walking():
-            if len(chunk.sequence) > 0:
+            if chunk.length > 0:
                 entries.append(
                     Fragment_Chunk_Location(
                         fragment_id=self.id,
                         chunk_id=chunk.id,
                         base_first=i,
-                        base_last=i + len(chunk.sequence) - 1,
+                        base_last=i + chunk.length - 1,
                     )
                 )
 
-                i += len(chunk.sequence)
+                i += chunk.length
         Fragment_Chunk_Location.bulk_create(entries)
 
         indexed = Indexed_Fragment.objects.get(pk=self.id)
@@ -160,6 +185,29 @@ class Fragment(models.Model):
             return self.index_fragment_chunk_locations()
         # casting to Indexed_Fragment
         return Indexed_Fragment.objects.get(pk=self.id)
+
+    def fragment_reference_fasta_gz_fn(self):
+        return f"{settings.SEQUENCE_FILE_DIR}/edge-fragment-{self.id}.fa.gz"
+
+    def build_fragment_fasta_from_sequence(self, sequence=None, refresh=True):
+        # NOTE: logic taken mostly from edge.blastdb.build_fragment_fasta
+        fn = self.fragment_reference_fasta_gz_fn()
+        make_required_dirs(fn)
+
+        if sequence is None:
+            sequence = self.sequence
+
+        if not os.path.isfile(fn) or refresh:
+            sequence = re.sub(r"[^agctnAGCTN]", "n", sequence)
+            if self.circular is True:
+                sequence = sequence + sequence
+
+            with tempfile.NamedTemporaryFile(mode="wb", delete=False) as tmpf:
+                with gzip.open(tmpf, 'wb') as f:
+                    f.write(sequence.encode('utf-8'))
+            shutil.move(tmpf.name, fn)
+
+        return fn
 
 
 class Fragment_Index(models.Model):
@@ -219,22 +267,41 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         sequence = []
         last_chunk_base_last = None
 
-        for fcl in q:
-            s = fcl.chunk.sequence
-            if (
-                last_chunk_base_last is not None
-                and fcl.base_first != last_chunk_base_last + 1
-            ):
-                raise Exception(
-                    "Fragment chunk location table missing chunks before %s"
-                    % (fcl.base_first,)
-                )
-            if bp_lo is not None and fcl.base_first < bp_lo:
-                s = s[bp_lo - fcl.base_first :]
-            if bp_hi is not None and fcl.base_last > bp_hi:
-                s = s[: bp_hi - fcl.base_last]
-            sequence.append(s)
-            last_chunk_base_last = fcl.base_last
+        reference_fcls = q.filter(
+            chunk__ref_start_index__isnull=False,
+            chunk__ref_end_index__isnull=False
+        )
+        ref_fn = None if reference_fcls.count() == 0 \
+            else reference_fcls.all().first().chunk.ref_fn
+
+        f = gzip.open(ref_fn, "rb") if ref_fn is not None else None
+        open_files = {ref_fn: f}
+        try:
+            for fcl in q:
+                if fcl.chunk.is_reference_based and fcl.chunk.ref_fn != ref_fn:
+                    ref_fn = fcl.chunk.ref_fn
+                    if ref_fn in open_files:
+                        f = open_files[ref_fn]
+                    else:
+                        f = gzip.open(ref_fn, "rb")
+                        open_files[ref_fn] = f
+                s = fcl.chunk.get_sequence(f=f)
+                if (
+                    last_chunk_base_last is not None
+                    and fcl.base_first != last_chunk_base_last + 1
+                ):
+                    raise Exception(
+                        "Fragment chunk location table missing chunks before %s"
+                        % (fcl.base_first,)
+                    )
+                if bp_lo is not None and fcl.base_first < bp_lo:
+                    s = s[bp_lo - fcl.base_first :]
+                if bp_hi is not None and fcl.base_last > bp_hi:
+                    s = s[: bp_hi - fcl.base_last]
+                sequence.append(s)
+                last_chunk_base_last = fcl.base_last
+        finally:
+            [open_files[k].close() for k in open_files if k is not None]
 
         return "".join(sequence)
 
@@ -333,3 +400,48 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
             fragment=new_fragment, fresh=True, updated_on=self.fragment_index.updated_on
         ).save()
         return new_fragment.indexed_fragment()
+
+    @transaction.atomic()
+    def convert_chunks_to_reference_based(self, force=False, dirn='.'):
+        self.lock()
+        q = self.fragment_chunk_location_set.select_related("chunk").order_by("base_first")
+
+        last_chunk_base_last = None
+
+        chunks_to_update = []
+        for fcl in q:
+            chunk = fcl.chunk
+            if not force and chunk.is_reference_based:
+                print(f"Fragment {self.id} is already reference-based")
+                return False
+            if chunk.initial_fragment.id == self.id:
+                chunk.sequence = None
+                chunk.ref_start_index = fcl.base_first
+                chunk.ref_end_index = fcl.base_last
+                chunks_to_update.append(chunk)
+
+            if (
+                last_chunk_base_last is not None
+                and fcl.base_first != last_chunk_base_last + 1
+            ):
+                raise Exception(
+                    "Fragment chunk location table missing chunks before %s"
+                    % (fcl.base_first,)
+                )
+
+            if last_chunk_base_last is None:
+                self.start_chunk = chunk
+            last_chunk_base_last = fcl.base_last
+
+        Chunk.CHUNK_REFERENCE_CLASS.generate_from_fragment(
+            self, self.sequence, dirn=dirn
+        )
+
+        Chunk.objects.bulk_update(
+            objs=chunks_to_update,
+            fields=['sequence', 'ref_start_index', 'ref_end_index'],
+            batch_size=BULK_CREATE_BATCH_SIZE
+        )
+
+        self.save()
+        return True
