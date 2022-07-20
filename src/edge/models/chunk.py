@@ -207,18 +207,20 @@ class Chunk(BigIntPrimaryModel):
             return self.ref_end_index - self.ref_start_index + 1
         raise Exception("invalid chunk data")
 
-    def get_sequence(self, f=None):
+    def get_sequence(self, f=None, start=None, end=None):
         if self.is_sequence_based:
             return self.sequence
         elif self.is_reference_based:
             if f is None:
                 cr = self.CHUNK_REFERENCE_CLASS(self.ref_fn)
                 return cr.read_reference_sequence_at_position(
-                    self.ref_start_index, self.ref_end_index
+                    self.ref_start_index if start is None else start,
+                    self.ref_end_index if end is None else end
                 )
             else:
                 return self.CHUNK_REFERENCE_CLASS.read_reference_sequence_at_position_opened_file(
-                    f, self.ref_start_index, self.ref_end_index
+                    f, self.ref_start_index if start is None else start,
+                    self.ref_end_index if end is None else end
                 )
         raise Exception("invalid chunk data")
 
