@@ -1,12 +1,8 @@
-import os
-
 from BCBio import GFF
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import SeqFeature, FeatureLocation
-
-from edge.blastdb import build_fragment_fasta
 
 
 class IO(object):
@@ -30,19 +26,6 @@ class IO(object):
             records.append(rec)
 
         SeqIO.write(records, f, "fasta")
-
-    def to_fasta_file_cached(self, f):
-        """
-        Cached export to FASTA format, saving to provided file like object.
-        """
-        for fragment in self.__genome.fragments.all():
-            with open(build_fragment_fasta(fragment), "r") as fasta:
-                header_line = fasta.readline()
-                f.write(">%s\n" % (fragment.name,))
-                if not header_line.startswith(">"):
-                    f.write(header_line)
-                f.write(fasta.read())
-                f.write("\n")
 
     def to_fasta(self, filename):
         """
