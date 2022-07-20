@@ -82,8 +82,6 @@ class IO(object):
             records.append(rec)
 
         GFF.write(records, f, include_fasta=True)
-        #f.write("##FASTA\n")
-        #self.to_fasta_file_cached(f)
 
     def to_gff(self, filename):
         """
