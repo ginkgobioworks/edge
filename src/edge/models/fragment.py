@@ -266,20 +266,20 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
             q = q.filter(base_first__lte=bp_hi)
         q = q.order_by("base_first")
 
-        sequence = []
-        last_chunk_base_last = None
-
         reference_fcls = q.filter(
             chunk__ref_start_index__isnull=False,
             chunk__ref_end_index__isnull=False
         )
 
-        open_files = {}
+        ref_fn = None if reference_fcls.count() == 0 \
+            else reference_fcls.all().first().chunk.ref_fn
+        f = gzip.open(ref_fn, "rb") if ref_fn is not None else None
+        open_files = {ref_fn: f}
+
+        sequence = []
+        last_chunk_base_last = None
+
         try:
-            ref_fn = None if reference_fcls.count() == 0 \
-                else reference_fcls.all().first().chunk.ref_fn
-            f = gzip.open(ref_fn, "rb") if ref_fn is not None else None
-            open_files[ref_fn] = f
             for fcl in q:
                 if fcl.chunk.is_reference_based and fcl.chunk.ref_fn != ref_fn:
                     ref_fn = fcl.chunk.ref_fn
@@ -306,7 +306,7 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         except Exception as e:
             raise Exception(f"Fragment {self.id} failed linear sequence retrieval: {str(e)}")
         finally:
-            [f.close() for fn, f in open_files if fn is not None]
+            [f.close() for fn, f in open_files.items() if fn is not None]
 
         return "".join(sequence)
 
