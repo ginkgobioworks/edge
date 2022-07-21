@@ -1,8 +1,10 @@
 import gzip
 import json
+
 from django.db import models
 from django.db import transaction
 
+from edge.utils import get_fragment_reference_fasta_gz_fn
 
 BULK_CREATE_BATCH_SIZE = 10000
 
@@ -189,7 +191,7 @@ class Chunk(BigIntPrimaryModel):
 
     @property
     def ref_fn(self):
-        return self.initial_fragment.fragment_reference_fasta_gz_fn()
+        return get_fragment_reference_fasta_gz_fn(self.initial_fragment_id)
 
     @property
     def is_sequence_based(self):
