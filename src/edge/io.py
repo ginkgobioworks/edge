@@ -32,7 +32,7 @@ class IO(object):
         Export to FASTA format, saving to the specified filename.
         """
         with open(filename, "w") as out_handle:
-            self.to_fasta_file_cached(out_handle)
+            self.to_fasta_file(out_handle)
 
     def to_gff_file(self, f):
         """
