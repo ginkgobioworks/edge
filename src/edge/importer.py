@@ -56,7 +56,8 @@ class GFFImporter(object):
                     try:
                         GFFFragmentImporter(rec, dirn=dirn).parse_gff()
                     except Exception as e:
-                        raise Exception(f"{rec} failed import validation: {str(e)}")
+                        print(str(e))
+                        raise Exception(f"{rec} failed import validation")
             in_handle.close()
         print("%s seconds to parse and validate all contigs from GFF" % (time.time() - t0))
 
@@ -93,14 +94,16 @@ class GFFFragmentImporter(object):
         try:
             f = self.build_fragment(dirn=self.dirn)
         except Exception as e:
-            raise Exception(f"{self.__rec} failed fragment building: {str(e)}")
+            print(str(e))
+            raise Exception(f"{self.__rec} failed fragment building")
         print("build fragment: %.4f" % (time.time() - t0,))
 
         t0 = time.time()
         try:
             self.annotate(f)
         except Exception as e:
-            raise Exception(f"{self.__rec} failed fragment annotation: {str(e)}")
+            print(str(e))
+            raise Exception(f"{self.__rec} failed fragment annotation")
         print("annotate: %.4f" % (time.time() - t0,))
 
         return f
@@ -110,7 +113,8 @@ class GFFFragmentImporter(object):
         try:
             self.parse_gff()
         except Exception as e:
-            raise Exception(f"{self.__rec} failed import validation: {str(e)}")
+            print(str(e))
+            raise Exception(f"{self.__rec} failed import validation")
         print("parse gff: %.4f" % (time.time() - t0,))
 
         return self.finish_import()

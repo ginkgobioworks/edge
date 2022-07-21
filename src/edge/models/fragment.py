@@ -304,7 +304,8 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
                 sequence.append(s)
                 last_chunk_base_last = fcl.base_last
         except Exception as e:
-            raise Exception(f"Fragment {self.id} failed linear sequence retrieval: {str(e)}")
+            print(str(e))
+            raise Exception(f"Fragment {self.id} failed linear sequence retrieval")
         finally:
             [f.close() for fn, f in open_files.items() if fn is not None]
 
