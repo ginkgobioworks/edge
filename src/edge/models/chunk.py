@@ -1,5 +1,7 @@
 import gzip
 import json
+
+from django.conf import settings
 from django.db import models
 from django.db import transaction
 
@@ -189,7 +191,7 @@ class Chunk(BigIntPrimaryModel):
 
     @property
     def ref_fn(self):
-        return self.initial_fragment.fragment_reference_fasta_gz_fn()
+        return f"{settings.SEQUENCE_FILE_DIR}/edge-fragment-{self.initial_fragment_id}.fa.gz"
 
     @property
     def is_sequence_based(self):
