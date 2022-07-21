@@ -277,59 +277,20 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
         # Load in first reference file
         ref_fn = None if reference_fcls.count() == 0 \
             else reference_fcls.all().first().chunk.ref_fn
-        f = gzip.open(ref_fn, "rb") if ref_fn is not None else None
 
         # Create dictionary for open files
+        f = gzip.open(ref_fn, "rb") if ref_fn is not None else None
         open_files = {ref_fn: f}
         try:
-            # Intialize stored values
-            stored_chunk, stored_first, stored_last = None, None, None
             for fcl in q:
-                # Clear s
-                s = None
-
-                # If sequence based
-                if fcl.chunk.is_reference_based:
-                    # If filename doesn't match stored value
-                    if fcl.chunk.ref_fn != ref_fn:
-                        # If there is a stored chunk, get the sequence and reset stored values
-                        if stored_chunk is not None:
-                            sequence.append(stored_chunk.get_sequence(f=f, start=stored_first, end=stored_last))
-                            stored_chunk, stored_first, stored_last = None, None, None
-
-                        # Get the correct file open
-                        ref_fn = fcl.chunk.ref_fn
-                        if ref_fn in open_files:
-                            f = open_files[ref_fn]
-                        else:
-                            f = gzip.open(ref_fn, "rb")
-                            open_files[ref_fn] = f
-
-                    # Save stored values if applicable
-                    if stored_chunk is None:
-                        stored_first = fcl.chunk.ref_start_index
-                        stored_last = fcl.chunk.ref_end_index
-                        stored_chunk = fcl.chunk
+                if fcl.chunk.is_reference_based and fcl.chunk.ref_fn != ref_fn:
+                    ref_fn = fcl.chunk.ref_fn
+                    if ref_fn in open_files:
+                        f = open_files[ref_fn]
                     else:
-                        # If continuous, add to stored end
-                        if stored_last == fcl.chunk.ref_start_index - 1:
-                            stored_last = fcl.chunk.ref_end_index
-                        # If not continuous, write sequence to list and store values for this chunk
-                        else:
-                            sequence.append(stored_chunk.chunk.get_sequence(f=f, start=stored_first, end=stored_last))
-                            stored_first = fcl.chunk.ref_start_index
-                            stored_last = fcl.chunk.ref_end_index
-                            stored_chunk = fcl.chunk
-
-                else:
-                    # If there is a stored chunk, get the sequence and reset stored values
-                    if stored_chunk is not None:
-                        sequence.append(stored_chunk.get_sequence(f=f, start=stored_first, end=stored_last))
-                    stored_chunk, stored_first, stored_last = None, None, None
-
-                    # Get sequence-based chunk's sequence
-                    s = fcl.chunk.get_sequence()
-
+                        f = gzip.open(ref_fn, "rb")
+                        open_files[ref_fn] = f
+                s = fcl.chunk.get_sequence(f=f)
                 if (
                     last_chunk_base_last is not None
                     and fcl.base_first != last_chunk_base_last + 1
@@ -338,21 +299,10 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
                         "Fragment chunk location table missing chunks before %s"
                         % (fcl.base_first,)
                     )
-
-                # If bp_lo, clip sequence based s, or adjust stored_first to match bp_lo
                 if bp_lo is not None and fcl.base_first < bp_lo:
-                    if s is None:
-                        stored_first = bp_lo
-                    else:
-                        s = s[bp_lo - fcl.base_first :]
-
-                # If bp_hi, clip sequence based s, or write sequence to list and reset stored values
+                    s = s[bp_lo - fcl.base_first :]
                 if bp_hi is not None and fcl.base_last > bp_hi:
-                    if s is None:
-                        s = fcl.chunk.get_sequence(f=f, start=stored_first, end=bp_hi)
-                        stored_chunk, stored_first, stored_last = None, None, None
-                    else:
-                        s = s[: bp_hi - fcl.base_last]
+                    s = s[: bp_hi - fcl.base_last]
                 sequence.append(s)
                 last_chunk_base_last = fcl.base_last
         finally:
