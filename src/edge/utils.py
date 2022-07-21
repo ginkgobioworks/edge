@@ -13,5 +13,5 @@ def make_required_dirs(path):
     finally:
         os.umask(original_umask)
 
-def fragment_reference_fasta_gz_fn(fragment_id):
+def get_fragment_reference_fasta_gz_fn(fragment_id):
     return f"{settings.SEQUENCE_FILE_DIR}/edge-fragment-{fragment_id}.fa.gz"

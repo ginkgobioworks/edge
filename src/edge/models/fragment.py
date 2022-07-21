@@ -8,7 +8,6 @@ from django.db import (
     models,
     transaction
 )
-from django.conf import settings
 from django.db.models import Q
 from django.utils import timezone
 
@@ -23,7 +22,7 @@ from edge.models.fragment_writer import Fragment_Writer
 from edge.models.fragment_annotator import Fragment_Annotator
 from edge.models.fragment_updater import Fragment_Updater
 from edge.utils import (
-    fragment_reference_fasta_gz_fn,
+    get_fragment_reference_fasta_gz_fn,
     make_required_dirs
 )
 
@@ -190,7 +189,7 @@ class Fragment(models.Model):
         return Indexed_Fragment.objects.get(pk=self.id)
 
     def fragment_reference_fasta_gz_fn(self):
-        return fragment_reference_fasta_gz_fn(self.id)
+        return get_fragment_reference_fasta_gz_fn(self.id)
 
     def build_fragment_fasta_from_sequence(self, sequence=None, refresh=True):
         # NOTE: logic taken mostly from edge.blastdb.build_fragment_fasta
@@ -274,12 +273,13 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
             chunk__ref_start_index__isnull=False,
             chunk__ref_end_index__isnull=False
         )
-        ref_fn = None if reference_fcls.count() == 0 \
-            else reference_fcls.all().first().chunk.ref_fn
 
-        f = gzip.open(ref_fn, "rb") if ref_fn is not None else None
-        open_files = {ref_fn: f}
+        open_files = {}
         try:
+            ref_fn = None if reference_fcls.count() == 0 \
+                else reference_fcls.all().first().chunk.ref_fn
+            f = gzip.open(ref_fn, "rb") if ref_fn is not None else None
+            open_files[ref_fn] = f
             for fcl in q:
                 if fcl.chunk.is_reference_based and fcl.chunk.ref_fn != ref_fn:
                     ref_fn = fcl.chunk.ref_fn
@@ -303,8 +303,10 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
                     s = s[: bp_hi - fcl.base_last]
                 sequence.append(s)
                 last_chunk_base_last = fcl.base_last
+        except Exception as e:
+            raise Exception(f"Fragment {self.id} failed linear sequence retrieval: {str(e)}")
         finally:
-            [open_files[k].close() for k in open_files if k is not None]
+            [f.close() for fn, f in open_files if fn is not None]
 
         return "".join(sequence)
 
