@@ -22,7 +22,10 @@ from edge.models.chunk import (
 from edge.models.fragment_writer import Fragment_Writer
 from edge.models.fragment_annotator import Fragment_Annotator
 from edge.models.fragment_updater import Fragment_Updater
-from edge.utils import make_required_dirs
+from edge.utils import (
+    fragment_reference_fasta_gz_fn,
+    make_required_dirs
+)
 
 
 class Fragment(models.Model):
@@ -187,7 +190,7 @@ class Fragment(models.Model):
         return Indexed_Fragment.objects.get(pk=self.id)
 
     def fragment_reference_fasta_gz_fn(self):
-        return f"{settings.SEQUENCE_FILE_DIR}/edge-fragment-{self.id}.fa.gz"
+        return fragment_reference_fasta_gz_fn(self.id)
 
     def build_fragment_fasta_from_sequence(self, sequence=None, refresh=True):
         # NOTE: logic taken mostly from edge.blastdb.build_fragment_fasta

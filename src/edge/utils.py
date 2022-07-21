@@ -1,5 +1,7 @@
 import os
 
+from django.conf import settings
+
 
 def make_required_dirs(path):
     dirn = os.path.dirname(path)
@@ -10,3 +12,6 @@ def make_required_dirs(path):
         pass
     finally:
         os.umask(original_umask)
+
+def fragment_reference_fasta_gz_fn(fragment_id):
+    return f"{settings.SEQUENCE_FILE_DIR}/edge-fragment-{fragment_id}.fa.gz"
