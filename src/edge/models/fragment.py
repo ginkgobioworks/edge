@@ -3,8 +3,6 @@ import os
 import re
 import shutil
 import tempfile
-import time
-import statistics
 
 from django.db import (
     models,
@@ -273,12 +271,9 @@ class Indexed_Fragment(Fragment_Annotator, Fragment_Updater, Fragment_Writer, Fr
             chunk__ref_start_index__isnull=False,
             chunk__ref_end_index__isnull=False
         )
-
-        # Load in first reference file
         ref_fn = None if reference_fcls.count() == 0 \
             else reference_fcls.all().first().chunk.ref_fn
 
-        # Create dictionary for open files
         f = gzip.open(ref_fn, "rb") if ref_fn is not None else None
         open_files = {ref_fn: f}
         try:
