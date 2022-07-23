@@ -213,6 +213,35 @@ class RMCEEvent(Event):
         pass
 
 
+def add_reverse_sites(sites):
+    new_sites = []
+    for s in sites:
+        new_sites.append(s)
+        new_sites.append(rc(s))
+    return set(new_sites)
+
+
+def find_site_locations_on_sequence(sequence, is_circular, sites, fragment_obj=None):
+    sites = add_reverse_sites(sites)
+    template = sequence
+    if is_circular:
+        template = sequence*2
+    template = template.lower()
+
+    locations = []
+    for site in sites:
+        locations.extend(
+            find_query_locations_on_duplicated_template(
+                template, len(sequence), site, fragment_obj=fragment_obj
+            )
+        )
+    return locations
+
+
+def find_query_locations_on_duplicated_template(template, sequence_len, site, fragment_obj=fragment_obj):
+    XXX
+
+
 class Reaction(object):
 
     @staticmethod
@@ -241,28 +270,34 @@ class Reaction(object):
             sites.extend(recombination.required_insert_sites())
         return set(sites)
 
-    @staticmethod
-    def __add_reverse_sites(sites):
-        new_sites = []
-        for s in sites:
-            new_sites.append(s)
-            new_sites.append(rc(s))
-        return set(new_sites)
-
     def determine_site_locations(self):
 	# FIXME this is a very slow implementation, we can make this faster by
-	# using blast (i think)
+	# using cached results
+
+        locations = []
 
         if self.insert:
-            sites = self.__add_reverse_sites(self.__sites_on_insert())
-            template = self.insert
-            if self.is_insert_circular:
-                template = self.insert*2
-            template = template.lower()
-            XXX
+            locations.extend(
+                find_site_locations_on_sequence(
+                    self.insert,
+                    self.is_insert_circular,
+                    self.__sites_on_insert()
+                )
+            )
 
-        XXX
+        sites_on_genome = self.__sites_on_genome()
+        for fragment in self.parent_genome.fragments.all():
+            fragment = fragment.indexed_fragment()
+            locations.extend(
+                find_site_locations_on_sequence(
+                    fragment.sequence,
+                    fragment.circular,
+                    sites_on_genome,
+                    fragment_obj=fragment
+                )
+            )
 
+        return locations
 
     def group_into_events(self):
 	# TODO if we attempt an integration with loxP on loxP, how do we return
