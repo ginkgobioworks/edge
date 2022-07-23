@@ -3,6 +3,23 @@ def _c(s):
   return s.replace(" ", "").lower()
 
 
+def find_indices(big, small):
+    """
+    Returns 0 based indices of all occurances of small in big.
+    """
+
+    res = []
+    offset = 0
+    while len(big) >= len(small):
+        if small in big:
+            res.append(offset + big.index(small))
+            offset += big.index(small) + len(small)
+            big = big[big.index(small) + len(small):]
+        else:
+            return res
+    return res
+
+
 class Sites(object):
     """
     Cre/Lox sites
@@ -49,13 +66,11 @@ class Sites(object):
 
 class SiteLocation(object):
 
-    def __init__(self, site, fragment, insert, start, end, direction):
+    def __init__(self, site, fragment, insert, start):
         self.site = site
         self.fragment = fragment
         self.insert = insert
         self.start = start
-        self.end = end
-        self.direction = direction
 
         # after conversion from bp coordinates to chunks
         self.prev_chunk = None
@@ -82,6 +97,7 @@ class Recombination(object):
 
     def possible_locations(self, all_locations):
         XXX also disambiguity
+        XXX handle reverse matches
 
     def generate_events(self, locations, event_cls):
         location_sets = self.possible_locations(locations)
@@ -239,7 +255,17 @@ def find_site_locations_on_sequence(sequence, is_circular, sites, fragment_obj=N
 
 
 def find_query_locations_on_duplicated_template(template, sequence_len, site, fragment_obj=fragment_obj):
-    XXX
+    indices = find_indices(template, site)
+    indices = [i for i in indices if i < sequence_len]
+    return [
+      SiteLocation(
+          site,
+          fragment_obj,
+          template[0:sequence_len] if fragment_obj is None else None,
+          i
+      )
+      for i in indices
+    ]
 
 
 class Reaction(object):
