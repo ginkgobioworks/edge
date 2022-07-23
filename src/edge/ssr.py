@@ -87,7 +87,8 @@ class SiteLocation(object):
         return self.insert is not None
 
     def chunkify(self):
-        XXX
+        # XXX
+        pass
 
 
 class Recombination(object):
@@ -95,9 +96,53 @@ class Recombination(object):
     Generic class to model a recombination event.
     """
 
+    def __init__(self):
+        self.errors = []
+
+    def find_matching_locations(self, all_locations, required_sites, on_insert):
+        # XXX disambiguity
+        # XXX handle circularity for sites on insert
+
+        candidate_single_site_locations = \
+          [loc for loc in all_locations if on_insert == loc.on_insert and loc.site in required_sites]
+        candidate_single_site_locations = sorted(
+            candidate_single_site_locations,
+            key=lambda loc: (loc.fragment_id, loc.start)
+        )
+
+        matching_locations = []
+        for i, single_site_loc in enumerate(candidate_single_site_locations):
+            if single_site_loc.site == required_sites[0]:
+                if [loc.site for loc in candidate_single_site_locations[i:i+len(required_sites)]] == list(required_sites):
+                    matching_locations.append(candidate_single_site_locations[i:i+len(required_sites)])
+        return matching_locations 
+
     def possible_locations(self, all_locations):
-        XXX also disambiguity
-        XXX handle reverse matches
+        required_insert_sites = self.required_insert_sites()
+        insert_locations = None
+
+        if len(required_insert_sites):
+            locations_on_insert = []
+            locations_on_insert.extend(self.find_matching_locations(all_locations, required_insert_sites, True))
+            locations_on_insert.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_insert_sites], True))
+
+            if len(locations_on_insert) == 0:
+                self.errors.append("Requires site(s) %s on insert, but did not find any" % (required_insert_sites,))
+                return []
+            elif len(locations_on_insert) > 1:
+                self.errors.append("Requires one site or one set of sites %s on insert, found multiple" % (required_insert_sites,))
+                return []
+          
+            insert_locations = locations_on_insert[0] 
+
+        possible_locations = []
+        locations_on_genome = []
+        locations_on_genome.extend(self.find_matching_locations(all_locations, required_insert_sites, False))
+        locations_on_genome.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_insert_sites], False))
+        for locs in locations_on_genome:
+            possible_locations.append(locs+insert_locations)
+
+        return possible_locations
 
     def generate_events(self, locations, event_cls):
         location_sets = self.possible_locations(locations)
@@ -110,6 +155,7 @@ class Recombination(object):
 class Integration(Recombination):
 
     def __init__(self, site_insert, site_genome, recombined_site_genome_left, recombined_site_genome_right):
+        super(Integration, self).__init__()
         self.site_insert = site_insert
         self.site_genome = site_genome
         self.recombined_site_genome_left = recombined_site_genome_left
@@ -127,6 +173,7 @@ class Integration(Recombination):
 
 class Excision(Recombination):
     def __init__(self, site_left, site_right, recombined_site):
+        super(Excision, self).__init__()
         self.site_left = site_left
         self.site_right = site_right
         self.recombined_site = recombined_site
@@ -143,6 +190,7 @@ class Excision(Recombination):
 
 class Inversion(Recombination):
     def __init__(self, site_left, site_right, recombined_site_left, recombined_site_right):
+        super(Inversion, self).__init__()
         self.site_left = site_left
         self.site_right = site_right
         self.recombined_site_left = recombined_site_left
@@ -161,6 +209,7 @@ class Inversion(Recombination):
 class RMCE(Recombination):
     def __init__(self, site_left_insert, site_right_insert, site_left_genome, site_right_genome,
                  recombined_site_left_genome, recombined_site_right_genome):
+        super(RMCE, self).__init__()
         self.site_left_insert = site_left_insert
         self.site_right_insert = site_right_insert
         self.site_left_genome = site_left_genome
@@ -202,10 +251,10 @@ class IntegrationEvent(Event):
         insert = self.rotate_insert()
         assert insert.index(recombination.site_insert) == 0
 
-        XXX
-        remove old site?
-        create new chunk with insert
-        flank with two sites
+        # XXX
+        # remove old site?
+        # create new chunk with insert
+        # flank with two sites
 
 
 class ExcisionEvent(Event):
@@ -278,7 +327,7 @@ class Reaction(object):
         self.parent_genome = parent_genome
         self.insert = insert
         self.is_insert_circular = is_insert_circular
-        self.locations = {}
+        self.locations = None
         self.events = None
         self.errors = []
 
@@ -323,7 +372,7 @@ class Reaction(object):
                 )
             )
 
-        return locations
+        self.locations = locations
 
     def group_into_events(self):
 	# TODO if we attempt an integration with loxP on loxP, how do we return
@@ -334,6 +383,7 @@ class Reaction(object):
 
         for recombination in self.allowed():
             self.events.extend(recombination.events(self.locations))
+            self.errors.extend(recombination.errors)
 
     def run_reaction(self):
         self.group_into_events()
