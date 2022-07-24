@@ -1,6 +1,12 @@
+from Bio.Seq import Seq
+
+
+def rc(s):
+    return str(Seq(s).reverse_complement())
+
 
 def _c(s):
-  return s.replace(" ", "").lower()
+    return s.replace(" ", "").lower()
 
 
 def find_indices(big, small):
@@ -124,7 +130,7 @@ class Recombination(object):
         if len(required_insert_sites):
             locations_on_insert = []
             locations_on_insert.extend(self.find_matching_locations(all_locations, required_insert_sites, True))
-            locations_on_insert.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_insert_sites], True))
+            locations_on_insert.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_insert_sites][::-1], True))
 
             if len(locations_on_insert) == 0:
                 self.errors.append("Requires site(s) %s on insert, but did not find any" % (required_insert_sites,))
@@ -138,7 +144,7 @@ class Recombination(object):
         possible_locations = []
         locations_on_genome = []
         locations_on_genome.extend(self.find_matching_locations(all_locations, required_insert_sites, False))
-        locations_on_genome.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_insert_sites], False))
+        locations_on_genome.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_insert_sites][::-1], False))
         for locs in locations_on_genome:
             possible_locations.append(locs+insert_locations)
 
@@ -303,7 +309,7 @@ def find_site_locations_on_sequence(sequence, is_circular, sites, fragment_obj=N
     return locations
 
 
-def find_query_locations_on_duplicated_template(template, sequence_len, site, fragment_obj=fragment_obj):
+def find_query_locations_on_duplicated_template(template, sequence_len, site, fragment_obj=None):
     indices = find_indices(template, site)
     indices = [i for i in indices if i < sequence_len]
     return [
