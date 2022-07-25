@@ -26,50 +26,6 @@ def find_indices(big, small):
     return res
 
 
-class Sites(object):
-    """
-    Cre/Lox sites
-    """
-
-    loxP     = _c("ATAACTTCGTATA GCATACAT TATACGAAGTTAT")
-    lox66    = _c("ATAACTTCGTATA GCATACAT TATACGAACGGTA")
-    lox71    = _c("TACCGTTCGTATA GCATACAT TATACGAAGTTAT")
-    lox72    = _c("TACCGTTCGTATA GCATACAT TATACGAACGGTA")
-
-    lox5171  = _c("ATAACTTCGTATA GtAcACAT TATACGAAGTTAT")
-    lox2272  = _c("ATAACTTCGTATA GgATACtT TATACGAAGTTAT")
-
-    loxm2    = _c("ATAACTTCGTATA TGGTTTCT TATACGAAGTTAT")
-    loxm2_66 = _c("ATAACTTCGTATA TGGTTTCT TATACGAACGGTA")
-    loxm2_71 = _c("TACCGTTCGTATA TGGTTTCT TATACGAAGTTAT")
-    loxm2_72 = _c("TACCGTTCGTATA TGGTTTCT TATACGAACGGTA")
-
-    """
-    Flp/FRT sites
-    """
-
-    Frt  = _c("GAAGTTCCTATTC tctagaaa GTATAGGAACTTC")
-    Frt1 = _c("GAAGTTCCTATTC tctagata GTATAGGAACTTC")
-    Frt2 = _c("GAAGTTCCTATTC tctactta GTATAGGAACTTC")
-    Frt3 = _c("GAAGTTCCTATTC ttcaaata GTATAGGAACTTC")
-    Frt4 = _c("GAAGTTCCTATTC tctagaag GTATAGGAACTTC")
-    Frt5 = _c("GAAGTTCCTATTC ttcaaaag GTATAGGAACTTC")
-
-    """
-    PhiC31 sites
-    """
-
-    PhiC31_attB_tt = _c("TGCGGGTGCCAGGGCGTGCCC tt GGGCTCCCCGGGCGCGTACTCC")
-    PhiC31_attP_tt = _c("GTGCCCCAACTGGGGTAACCT tt GAGTTCTCTCAGTTGGGGG")
-
-    """
-    Bxb1 sites
-    """
-
-    Bxb1_attB =     _c("TCGGCCGGCTTGTCGACGACG gcggtctc CGTCGTCAGGATCATCCGGGC")
-    Bxb1_attP = _c("GTCGTGGTTTGTCTGGTCAACCACC gcggtctc AGTGGTGTACGGTACAAACCCCGAC")
-
-
 class SiteLocation(object):
 
     def __init__(self, site, fragment, insert, start):
@@ -102,6 +58,12 @@ class Recombination(object):
     Generic class to model a recombination event.
     """
 
+    def required_genome_sites(self):
+        return []
+
+    def required_insert_sites(self):
+        return []
+
     def __init__(self):
         self.errors = []
 
@@ -109,6 +71,7 @@ class Recombination(object):
         # XXX disambiguity
         # XXX handle circularity for sites on insert
 
+        candidate_single_site_locations = all_locations
         candidate_single_site_locations = \
           [loc for loc in all_locations if on_insert == loc.on_insert and loc.site in required_sites]
         candidate_single_site_locations = sorted(
@@ -125,7 +88,7 @@ class Recombination(object):
 
     def possible_locations(self, all_locations):
         required_insert_sites = self.required_insert_sites()
-        insert_locations = None
+        insert_locations = []
 
         if len(required_insert_sites):
             locations_on_insert = []
@@ -142,9 +105,11 @@ class Recombination(object):
             insert_locations = locations_on_insert[0] 
 
         possible_locations = []
+
+        required_genome_sites = self.required_genome_sites()
         locations_on_genome = []
-        locations_on_genome.extend(self.find_matching_locations(all_locations, required_insert_sites, False))
-        locations_on_genome.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_insert_sites][::-1], False))
+        locations_on_genome.extend(self.find_matching_locations(all_locations, required_genome_sites, False))
+        locations_on_genome.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_genome_sites][::-1], False))
         for locs in locations_on_genome:
             possible_locations.append(locs+insert_locations)
 
@@ -329,8 +294,13 @@ class Reaction(object):
     def allowed():
         return []
 
-    def __init__(self, parent_genome, insert, is_insert_circular):
+    def __init__(self, parent_genome, insert, is_insert_circular, parent_fragments=None):
         self.parent_genome = parent_genome
+        if parent_fragments is not None:
+            self.parent_fragments = parent_fragments
+        else:
+            self.parent_fragments = [f.indexed_fragment() for f in self.parent_genome.fragments.all()]
+
         self.insert = insert
         self.is_insert_circular = is_insert_circular
         self.locations = None
@@ -367,8 +337,7 @@ class Reaction(object):
             )
 
         sites_on_genome = self.__sites_on_genome()
-        for fragment in self.parent_genome.fragments.all():
-            fragment = fragment.indexed_fragment()
+        for fragment in self.parent_fragments:
             locations.extend(
                 find_site_locations_on_sequence(
                     fragment.sequence,
@@ -423,6 +392,50 @@ class Reaction(object):
             event.run(new_fragment)
         
         return new_genome
+
+
+class Sites(object):
+    """
+    Cre/Lox sites
+    """
+
+    loxP     = _c("ATAACTTCGTATA GCATACAT TATACGAAGTTAT")
+    lox66    = _c("ATAACTTCGTATA GCATACAT TATACGAACGGTA")
+    lox71    = _c("TACCGTTCGTATA GCATACAT TATACGAAGTTAT")
+    lox72    = _c("TACCGTTCGTATA GCATACAT TATACGAACGGTA")
+
+    lox5171  = _c("ATAACTTCGTATA GtAcACAT TATACGAAGTTAT")
+    lox2272  = _c("ATAACTTCGTATA GgATACtT TATACGAAGTTAT")
+
+    loxm2    = _c("ATAACTTCGTATA TGGTTTCT TATACGAAGTTAT")
+    loxm2_66 = _c("ATAACTTCGTATA TGGTTTCT TATACGAACGGTA")
+    loxm2_71 = _c("TACCGTTCGTATA TGGTTTCT TATACGAAGTTAT")
+    loxm2_72 = _c("TACCGTTCGTATA TGGTTTCT TATACGAACGGTA")
+
+    """
+    Flp/FRT sites
+    """
+
+    Frt  = _c("GAAGTTCCTATTC tctagaaa GTATAGGAACTTC")
+    Frt1 = _c("GAAGTTCCTATTC tctagata GTATAGGAACTTC")
+    Frt2 = _c("GAAGTTCCTATTC tctactta GTATAGGAACTTC")
+    Frt3 = _c("GAAGTTCCTATTC ttcaaata GTATAGGAACTTC")
+    Frt4 = _c("GAAGTTCCTATTC tctagaag GTATAGGAACTTC")
+    Frt5 = _c("GAAGTTCCTATTC ttcaaaag GTATAGGAACTTC")
+
+    """
+    PhiC31 sites
+    """
+
+    PhiC31_attB_tt = _c("TGCGGGTGCCAGGGCGTGCCC tt GGGCTCCCCGGGCGCGTACTCC")
+    PhiC31_attP_tt = _c("GTGCCCCAACTGGGGTAACCT tt GAGTTCTCTCAGTTGGGGG")
+
+    """
+    Bxb1 sites
+    """
+
+    Bxb1_attB =     _c("TCGGCCGGCTTGTCGACGACG gcggtctc CGTCGTCAGGATCATCCGGGC")
+    Bxb1_attP = _c("GTCGTGGTTTGTCTGGTCAACCACC gcggtctc AGTGGTGTACGGTACAAACCCCGAC")
 
 
 class CreLoxReaction(Reaction):
