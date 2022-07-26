@@ -28,17 +28,12 @@ def find_indices(big, small):
 
 class SiteLocation(object):
 
-    def __init__(self, site, fragment, insert, start):
+    def __init__(self, site, fragment, insert, start_0based):
         self.site = site
         self.fragment = fragment
         self.insert = insert
-        self.start = start
-
-        # after conversion from bp coordinates to chunks
-        self.prev_chunk = None
-        self.first_chunk = None
-        self.last_chunk = None
-        self.next_chunk = None
+        self.start_0based = start_0based  # 0-indexed
+        self.adjusted_start_0based = self.start_0based
 
     @property
     def fragment_id(self):
@@ -47,10 +42,6 @@ class SiteLocation(object):
     @property
     def on_insert(self):
         return self.insert is not None
-
-    def chunkify(self):
-        # XXX
-        pass
 
 
 class Recombination(object):
@@ -76,7 +67,7 @@ class Recombination(object):
           [loc for loc in all_locations if on_insert == loc.on_insert and loc.site in required_sites]
         candidate_single_site_locations = sorted(
             candidate_single_site_locations,
-            key=lambda loc: (loc.fragment_id, loc.start)
+            key=lambda loc: (loc.fragment_id, loc.start_0based)
         )
 
         matching_locations = []
@@ -211,9 +202,17 @@ class Event(object):
                 return loc.fragment_id
         assert False
 
-    def prepare(self):
+    @property
+    def start_0based(self):
+        return sorted(self.locations, key=lambda l: l.start_0based)[0].start_0based
+
+    @property
+    def adjusted_start_0based(self):
+        return sorted(self.locations, key=lambda l: l.adjusted_start_0based)[0].adjusted_start_0based
+
+    def adjust_start_0based(self, shift):
         for loc in self.locations:
-            loc.chunkify()
+            loc.adjusted_start_0based += shift
 
 
 class IntegrationEvent(Event):
@@ -226,27 +225,28 @@ class IntegrationEvent(Event):
         # remove old site?
         # create new chunk with insert
         # flank with two sites
+        return 0
 
 
 class ExcisionEvent(Event):
 
     def run(self, new_fragment, insert, is_insert_circular):
         # TODO
-        pass
+        return 0
 
 
 class InversionEvent(Event):
 
     def run(self, new_fragment, insert, is_insert_circular):
         # TODO
-        pass
+        return 0
 
 
 class RMCEEvent(Event):
 
     def run(self, new_fragment, insert, is_insert_circular):
         # TODO
-        pass
+        return 0
 
 
 def add_reverse_sites(sites):
@@ -360,7 +360,7 @@ class Reaction(object):
             self.events.extend(recombination.events(self.locations))
             self.errors.extend(recombination.errors)
 
-    def run_reaction(self):
+    def run_reaction(self, new_genome_name):
         self.group_into_events()
         if self.errors:
             return
@@ -368,29 +368,33 @@ class Reaction(object):
             return
 
         new_genome = self.parent_genome.update()
-        new_genome.name = genome_name
-        new_genome.notes = notes
+        new_genome.name = new_genome_name
         new_genome.save()
 
         old_to_new_fragment_dict = {}
 
-	# first prepare all events for execution, then execute; this allows
-	# events to convert bp coordinates to chunk objects, so we are not
-	# depending on bp coordinates from before making any changes
+	# needs to run through events by fragment and start bp, and after each
+	# event shift the coordinates of the remaining events
 
-        for event in self.events:
+        events = sorted(self.events, key=lambda e: (e.fragment_id, e.adjusted_start_0based))
+        while len(events) > 0:
+            event = events[0]
+
             if event.fragment_id not in old_to_new_fragment_dict:
                 with new_genome.update_fragment_by_fragment_id(
                     event.fragment_id, new_fragment=True
                 ) as f:
                     old_to_new_fragment_dict[event.fragment_id] = f
-            new_fragment = old_to_new_fragment_dict[event.fragment_id]
-            event.prepare(new_fragment)
 
-        for event in self.events:
             new_fragment = old_to_new_fragment_dict[event.fragment_id]
-            event.run(new_fragment)
-        
+            bp_shift = event.run(new_fragment, self.insert, self.is_insert_circular)
+
+            for future_event in events[1:]:
+                if future_event.fragment_id == event.fragment_id:
+                    future_event.adjust_start_0based(bp_shift)
+            events = events[1:]
+
+
         return new_genome
 
 
