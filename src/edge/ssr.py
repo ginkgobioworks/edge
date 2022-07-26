@@ -202,16 +202,29 @@ class Event(object):
                 return loc.fragment_id
         assert False
 
-    @property
-    def start_0based(self):
-        return sorted(self.locations, key=lambda l: l.start_0based)[0].start_0based
+    def is_reversed(self):
+        first_loc = self.genomic_locations[0]
+
+        if first_loc.site == self.recombination.required_genome_sites()[0]:
+            return False
+        if rc(first_loc.site) == self.recombination.required_genome_sites()[-1]:
+            return True
+        assert False
 
     @property
-    def adjusted_start_0based(self):
-        return sorted(self.locations, key=lambda l: l.adjusted_start_0based)[0].adjusted_start_0based
+    def genomic_locations(self):
+        return sorted([l for l in self.locations if l.fragment_id is not None], key=lambda l: l.start_0based)
 
-    def adjust_start_0based(self, shift):
-        for loc in self.locations:
+    @property
+    def genomic_start_0based(self):
+        return self.genomic_locations[0].start_0based
+
+    @property
+    def genomic_adjusted_start_0based(self):
+        return self.genomic_locations[0].adjusted_start_0based
+
+    def adjust_genomic_start_0based(self, shift):
+        for loc in self.genomic_locations:
             loc.adjusted_start_0based += shift
 
 
@@ -220,26 +233,80 @@ class IntegrationEvent(Event):
     def run(self, new_fragment, insert, is_insert_circular):
         insert = self.rotate_insert()
         assert insert.index(recombination.site_insert) == 0
-
-        # XXX
-        # remove old site?
-        # create new chunk with insert
-        # flank with two sites
+        # TODO
         return 0
 
 
 class ExcisionEvent(Event):
 
     def run(self, new_fragment, insert, is_insert_circular):
-        # TODO
-        return 0
+        genomic_locations = self.genomic_locations
+        assert len(genomic_locations) == 2
+
+        if not self.is_reversed():
+            assert genomic_locations[0].site == self.recombination.site_left
+            assert genomic_locations[1].site == self.recombination.site_right
+            new_site = self.recombination.recombined_site
+            bps_to_remove = genomic_locations[1].adjusted_start_0based -\
+                            genomic_locations[0].adjusted_start_0based +\
+                            len(self.recombination.site_right)
+        else:
+            assert genomic_locations[0].site == rc(self.recombination.site_right)
+            assert genomic_locations[1].site == rc(self.recombination.site_left)
+            new_site = rc(self.recombination.recombined_site)
+            bps_to_remove = genomic_locations[1].adjusted_start_0based -\
+                            genomic_locations[0].adjusted_start_0based +\
+                            len(self.recombination.site_left)
+
+        new_fragment.replace_bases(
+            genomic_locations[0].adjusted_start_0based+1,
+            bps_to_remove,
+            new_site
+        )
+
+        return len(new_site)-bps_to_remove
 
 
 class InversionEvent(Event):
 
     def run(self, new_fragment, insert, is_insert_circular):
-        # TODO
-        return 0
+        genomic_locations = self.genomic_locations
+        assert len(genomic_locations) == 2
+
+        if not self.is_reversed():
+            assert genomic_locations[0].site == self.recombination.site_left
+            assert genomic_locations[1].site == self.recombination.site_right
+            old_site_left = self.recombination.site_left
+            old_site_right = self.recombination.site_right
+            new_site_left = self.recombination.recombined_site_left
+            new_site_right = self.recombination.recombined_site_right
+
+            bps_to_replace = genomic_locations[1].adjusted_start_0based -\
+                             genomic_locations[0].adjusted_start_0based +\
+                             len(self.recombination.site_right)
+        else:
+            assert genomic_locations[0].site == rc(self.recombination.site_right)
+            assert genomic_locations[1].site == rc(self.recombination.site_left)
+            old_site_left = rc(self.recombination.site_right)
+            old_site_right = rc(self.recombination.site_left)
+            new_site_left = rc(self.recombination.recombined_site_right)
+            new_site_right = rc(self.recombination.recombined_site_left)
+
+            bps_to_replace = genomic_locations[1].adjusted_start_0based -\
+                             genomic_locations[0].adjusted_start_0based +\
+                             len(self.recombination.site_left)
+
+        sequence_to_replace = new_fragment.get_sequence(bp_lo=genomic_locations[0].adjusted_start_0based+len(old_site_left)+1,
+                                                        bp_hi=genomic_locations[1].adjusted_start_0based+1-1)
+        new_sequence = new_site_left+rc(sequence_to_replace)+new_site_right
+
+        new_fragment.replace_bases(
+            genomic_locations[0].adjusted_start_0based+1,
+            len(old_site_left)+len(sequence_to_replace)+len(old_site_right),
+            new_sequence
+        )
+
+        return len(new_sequence)-(len(old_site_left)+len(sequence_to_replace)+len(old_site_right))
 
 
 class RMCEEvent(Event):
@@ -376,7 +443,7 @@ class Reaction(object):
 	# needs to run through events by fragment and start bp, and after each
 	# event shift the coordinates of the remaining events
 
-        events = sorted(self.events, key=lambda e: (e.fragment_id, e.adjusted_start_0based))
+        events = sorted(self.events, key=lambda e: (e.fragment_id, e.genomic_adjusted_start_0based))
         while len(events) > 0:
             event = events[0]
 
@@ -391,7 +458,7 @@ class Reaction(object):
 
             for future_event in events[1:]:
                 if future_event.fragment_id == event.fragment_id:
-                    future_event.adjust_start_0based(bp_shift)
+                    future_event.adjust_genomic_start_0based(bp_shift)
             events = events[1:]
 
 
