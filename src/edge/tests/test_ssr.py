@@ -8,6 +8,7 @@ from edge.ssr import (
   rc,
   find_query_locations_on_duplicated_template,
   find_site_locations_on_sequence,
+  Event,
   SiteLocation,
   Recombination,
   Reaction,
@@ -225,9 +226,60 @@ class ReactionTest(TestCase):
         self.assertEquals(r.locations[1].site, "aggc")
         self.assertEquals(r.locations[1].start, 100)
 
-    def group_locations_into_events(self):
-        # XXX
-        pass
+    def test_group_locations_into_multiple_events(self):
+        class FakeFragment(object):
+            def __init__(self, n, s, c):
+                self.id = n
+                self.sequence = s
+                self.circular = c
+
+        class FakeEvent(Event):
+            pass
+
+        class FakeRecombination(Recombination):
+            def required_genome_sites(self):
+                return ["aggc"]
+
+            def required_insert_sites(self):
+                return ["ttag"]
+
+            def events(self, locations):
+                return self.generate_events(locations, FakeEvent)
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [FakeRecombination()]
+
+        f = FakeFragment(14, "c"*100+"aggc"+"t"*100+"aggc"+"g"*100, False)
+        r = FakeReaction(None, "g"*33+"ttag"+"c"*100, True, [f])
+        r.group_into_events()
+
+        self.assertEquals(len(r.events), 2)
+
+        self.assertEquals(type(r.events[0]), FakeEvent)
+        locations = sorted(r.events[0].locations, key=lambda l: l.on_insert)
+        self.assertEquals(len(locations), 2)
+        self.assertEquals(locations[0].on_insert, False)
+        self.assertEquals(locations[0].fragment_id, 14)
+        self.assertEquals(locations[0].site, "aggc")
+        self.assertEquals(locations[0].start, 100)
+        self.assertEquals(locations[1].on_insert, True)
+        self.assertEquals(locations[1].fragment_id, None)
+        self.assertEquals(locations[1].site, "ttag")
+        self.assertEquals(locations[1].start, 33)
+
+        self.assertEquals(type(r.events[1]), FakeEvent)
+        locations = sorted(r.events[1].locations, key=lambda l: l.on_insert)
+        self.assertEquals(len(locations), 2)
+        self.assertEquals(locations[0].on_insert, False)
+        self.assertEquals(locations[0].fragment_id, 14)
+        self.assertEquals(locations[0].site, "aggc")
+        self.assertEquals(locations[0].start, 204)
+        self.assertEquals(locations[1].on_insert, True)
+        self.assertEquals(locations[1].fragment_id, None)
+        self.assertEquals(locations[1].site, "ttag")
+        self.assertEquals(locations[1].start, 33)
 
 
 class RecombinationTest(TestCase):
