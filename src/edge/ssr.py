@@ -353,7 +353,7 @@ class Reaction(object):
 	# TODO if we attempt an integration with loxP on loxP, how do we return
 	# that as an error not just silently ignore?
 
-        self.determine_site_locations(self)
+        self.determine_site_locations()
         self.events = []
 
         for recombination in self.allowed():
