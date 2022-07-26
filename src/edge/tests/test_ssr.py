@@ -10,6 +10,8 @@ from edge.ssr import (
   find_query_locations_on_duplicated_template,
   find_site_locations_on_sequence,
   Event,
+  Excision,
+  Inversion,
   SiteLocation,
   Recombination,
   Reaction,
@@ -527,18 +529,18 @@ class ReactionEventsTest(TestCase):
         self.assertEquals(len(event_run_on_fragments), 3)
 
         self.assertEquals(r.events[0].fragment_id, parent_fragment.id)
-        self.assertEquals(r.events[0].start_0based, 100)
-        self.assertEquals(r.events[0].adjusted_start_0based, 100)
+        self.assertEquals(r.events[0].genomic_start_0based, 100)
+        self.assertEquals(r.events[0].genomic_adjusted_start_0based, 100)
         self.assertEquals(event_run_on_fragments[0].id, child_genome.fragments.all()[0].id)
 
         self.assertEquals(r.events[1].fragment_id, parent_fragment.id)
-        self.assertEquals(r.events[1].start_0based, 204)
-        self.assertEquals(r.events[1].adjusted_start_0based, 204+bp_shift_per_event)
+        self.assertEquals(r.events[1].genomic_start_0based, 204)
+        self.assertEquals(r.events[1].genomic_adjusted_start_0based, 204+bp_shift_per_event)
         self.assertEquals(event_run_on_fragments[1].id, child_genome.fragments.all()[0].id)
 
         self.assertEquals(r.events[2].fragment_id, parent_fragment.id)
-        self.assertEquals(r.events[2].start_0based, 308)
-        self.assertEquals(r.events[2].adjusted_start_0based, 308+2*bp_shift_per_event)
+        self.assertEquals(r.events[2].genomic_start_0based, 308)
+        self.assertEquals(r.events[2].genomic_adjusted_start_0based, 308+2*bp_shift_per_event)
         self.assertEquals(event_run_on_fragments[2].id, child_genome.fragments.all()[0].id)
 
 
@@ -547,11 +549,143 @@ class IntegrationRecombinationTest(TestCase):
 
 
 class ExcisionRecombinationTest(TestCase):
-    pass
+    def test_can_excise_multiple_places_on_fragment(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "attg"+"t"*100+"cttg" +\
+            "c"*1000 +\
+            "attg"+"g"*100+"cttg" +\
+            "g"*1000 +\
+            "attg"+"a"*100+"cttg"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Excision("attg", "cttg", "attc")]
+
+        r = FakeReaction(parent_genome, None, None)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "attc"+"c"*1000+"attc"+"g"*1000+"attc")
+
+    def test_can_excise_reverse_sites(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "cttg"+"t"+"attg" +\
+            "c"*1000 +\
+            "caag"+"g"*100+"caat"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Excision("attg", "cttg", "attc")]
+
+        r = FakeReaction(parent_genome, None, None)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "cttg"+"t"+"attg"+"c"*1000+"gaat")
+
+    def test_works_with_left_and_right_sites_of_different_length(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "cttga"+"t"+"att" +\
+            "c"*1000 +\
+            "acaag"+"g"*100+"caat"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Excision("attg", "cttgt", "att"),
+                        Excision("cttga", "att", "ggg")]
+
+        r = FakeReaction(parent_genome, None, None)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "ggg"+"c"*1000+"aat")
 
 
 class InversionRecombinationTest(TestCase):
-    pass
+    def test_can_invert_multiple_places_on_fragment(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "attg"+"t"*100+"cttg" +\
+            "c"*1000 +\
+            "attg"+"g"*100+"cttg" +\
+            "g"*1000 +\
+            "attg"+"a"*100+"cttg"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Inversion("attg", "cttg", "aatt", "ccgg")]
+
+        r = FakeReaction(parent_genome, None, None)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "aatt"+"a"*100+"ccgg" +\
+                                      "c"*1000 +\
+                                      "aatt"+"c"*100+"ccgg" +\
+                                      "g"*1000 +\
+                                      "aatt"+"t"*100+"ccgg")
+
+    def test_can_invert_reverse_sites(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "cttg"+"t"+"attg" +\
+            "c"*1000 +\
+            "caag"+"g"*100+"caat"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Inversion("attg", "cttg", "atta", "cggc")]
+
+        r = FakeReaction(parent_genome, None, None)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "cttg"+"t"+"attg"+"c"*1000+"gccg"+"c"*100+"taat")
+
+    def test_works_with_left_and_right_sites_of_different_length(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "cttga"+"t"+"att" +\
+            "c"*1000 +\
+            "acaag"+"g"*100+"caat"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Inversion("attg", "cttgt", "att", "gcccgg"),
+                        Inversion("cttga", "att", "gg", "cccccc")]
+
+        r = FakeReaction(parent_genome, None, None)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "gg"+"a"+"cccccc"+"c"*1000+"ccgggc"+"c"*100+"aat")
 
 
 class RMCERecombinationTest(TestCase):
@@ -560,23 +694,3 @@ class RMCERecombinationTest(TestCase):
 
 class CreLoxTest(TestCase):
     pass
-
-
-"""
-        g = Genome(name="foo")
-        g.save()
-        f = Fragment.create_with_sequence("bar", "a"*100+"atgg"+"t"*100)
-        Genome_Fragment(genome=g, fragment=f, inherited=False).save()
-
-        l = SiteLocation("atgg", f, None, 100)
-        self.assertEquals(l.prev_chunk, None)
-        self.assertEquals(l.first_chunk, None)
-        self.assertEquals(l.last_chunk, None)
-        self.assertEquals(l.next_chunk, None)
-
-        l.chunkify()
-        self.assertEquals(l.prev_chunk.sequence, "a"*100)
-        self.assertEquals(l.first_chunk.sequence, "atgg")
-        self.assertEquals(l.last_chunk.sequence, "atgg")
-        self.assertEquals(l.next_chunk.sequence, "t"*100)
-"""
