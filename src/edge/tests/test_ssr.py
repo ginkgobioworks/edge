@@ -12,6 +12,8 @@ from edge.ssr import (
   Event,
   Excision,
   Inversion,
+  Integration,
+  RMCE,
   SiteLocation,
   Recombination,
   Reaction,
@@ -544,10 +546,6 @@ class ReactionEventsTest(TestCase):
         self.assertEquals(event_run_on_fragments[2].id, child_genome.fragments.all()[0].id)
 
 
-class IntegrationRecombinationTest(TestCase):
-    pass
-
-
 class ExcisionRecombinationTest(TestCase):
     def test_can_excise_multiple_places_on_fragment(self):
         parent_genome = Genome(name="foo")
@@ -688,9 +686,258 @@ class InversionRecombinationTest(TestCase):
         self.assertEquals(f.sequence, "gg"+"a"+"cccccc"+"c"*1000+"ccgggc"+"c"*100+"aat")
 
 
+class IntegrationRecombinationTest(TestCase):
+
+    def test_can_integrate_multiple_places_on_fragment(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "attg"+"t"*1000+"attg"+"c"*100
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("attg", "attg", "attc", "atcc")]
+
+        r = FakeReaction(parent_genome, "ggg"+"attg"+"a"*100, True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "attc"+"a"*100+"ggg"+"atcc" +\
+                                      "t"*1000 +\
+                                      "attc"+"a"*100+"ggg"+"atcc" +\
+                                      "c"*100)
+
+    def test_can_integrate_reverse_sites_on_genome(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "attg"+"t"*1000+"caat"+"c"*100
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("attg", "caat", "attc", "atcc")]
+
+        r = FakeReaction(parent_genome, "ggg"+"attg"+"a"*100, True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "ggat"+"ccc"+"t"*100+"gaat" +\
+                                      "t"*1000 +\
+                                      "attc"+"a"*100+"ggg"+"atcc" +\
+                                      "c"*100)
+
+    def test_can_integrate_reverse_sites_on_insert(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "attg"+"t"*1000+"attg"+"c"*100
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("attg", "attg", "attc", "atcc")]
+
+        r = FakeReaction(parent_genome, "ggg"+"caat"+"a"*100, True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "attc"+"ccc"+"t"*100+"atcc" +\
+                                      "t"*1000 +\
+                                      "attc"+"ccc"+"t"*100+"atcc" +\
+                                      "c"*100)
+
+    def test_can_integrate_reverse_sites_on_genome_and_insert(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "t"*1000+"attg"+"c"*1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("caat", "caat", "attc", "atcc")]
+
+        r = FakeReaction(parent_genome, "ggg"+"attg"+"a"*100, True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "t"*1000 +\
+                                      "ggat"+"a"*100+"ggg"+"gaat" +\
+                                      "c"*1000)
+
+    def test_works_with_left_and_right_sites_of_different_length(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "t"*1000+"attg"+"c"*1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("cttg", "attg", "aattc", "atcccc")]
+
+        r = FakeReaction(parent_genome, "ggg"+"cttg"+"a"*100, True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "t"*1000 +\
+                                      "aattc"+"a"*100+"ggg"+"atcccc" +\
+                                      "c"*1000)
+
+    def test_can_integrate_insert_with_different_site(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "t"*1000+"attg"+"c"*1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("cttg", "attg", "attc", "atcc")]
+
+        r = FakeReaction(parent_genome, "ggg"+"cttg"+"a"*100, True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "t"*1000 +\
+                                      "attc"+"a"*100+"ggg"+"atcc" +\
+                                      "c"*1000)
+
+    def test_can_integrate_insert_with_site_across_junction(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "t"*1000+"attg"+"c"*1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("cttg", "attg", "attc", "atcc")]
+
+        r = FakeReaction(parent_genome, "ttg"+"a"*100+"c", True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "t"*1000 +\
+                                      "attc"+"a"*100+"atcc" +\
+                                      "c"*1000)
+
+
 class RMCERecombinationTest(TestCase):
-    pass
 
+    def test_can_integrate_multiple_places_on_fragment(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "ggaa"+"c"*100+"gcaa"+"t"*1000+"ggaa"+"c"*100+"gcaa"
+        )
 
-class CreLoxTest(TestCase):
-    pass
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attc", "ggaa", "gcaa", "cctt", "ccta")]
+
+        r = FakeReaction(parent_genome, "ggg"+"attg"+"a"*100+"attc", True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "cctt"+"a"*100+"ccta" +\
+                                      "t"*1000 +\
+                                      "cctt"+"a"*100+"ccta")
+
+    def test_can_integrate_reverse_sites_on_genome(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "ttgc"+"c"*100+"ttcc"+"t"*1000+"ggaa"+"c"*100+"gcaa"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attc", "ggaa", "gcaa", "ccta", "cctt")]
+
+        r = FakeReaction(parent_genome, "ggg"+"attg"+"a"*100+"attc", True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "aagg"+"t"*100+"tagg" +\
+                                      "t"*1000 +\
+                                      "ccta"+"a"*100+"cctt")
+
+    def test_can_integrate_reverse_sites_on_insert(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "ggaa"+"c"*100+"gcaa"+"t"*1000+"ggaa"+"c"*100+"gcaa"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attc", "ggaa", "gcaa", "ccta", "cctt")]
+
+        r = FakeReaction(parent_genome, "ggg"+"gaat"+"a"*100+"caat", True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "ccta"+"t"*100+"cctt" +\
+                                      "t"*1000 +\
+                                      "ccta"+"t"*100+"cctt")
+
+    def test_can_integrate_reverse_sites_on_genome_and_insert(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "a"+"ttgc"+"c"*100+"ttcc"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attc", "ggaa", "gcaa", "cctt", "ccta")]
+
+        r = FakeReaction(parent_genome, "ggg"+"gaat"+"a"*100+"caat", True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "a"+"tagg"+"a"*100+"aagg")
+
+    def test_works_with_left_and_right_sites_of_different_length(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "gaa"+"c"*100+"gcaa"+"t"*1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attcc", "gaa", "gcaa", "cctta", "cctaaa")]
+
+        r = FakeReaction(parent_genome, "ggg"+"attg"+"a"*100+"attcc", True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "cctta"+"a"*100+"cctaaa"+"t"*1000)

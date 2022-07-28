@@ -154,6 +154,8 @@ class Excision(Recombination):
 class Inversion(Recombination):
     def __init__(self, site_left, site_right, recombined_site_left, recombined_site_right):
         super(Inversion, self).__init__()
+        assert site_left not in site_right
+        assert site_right not in site_left
         self.site_left = site_left
         self.site_right = site_right
         self.recombined_site_left = recombined_site_left
@@ -173,6 +175,11 @@ class RMCE(Recombination):
     def __init__(self, site_left_insert, site_right_insert, site_left_genome, site_right_genome,
                  recombined_site_left_genome, recombined_site_right_genome):
         super(RMCE, self).__init__()
+        assert site_left_insert not in site_right_insert
+        assert site_right_insert not in site_left_insert
+        assert site_left_genome not in site_right_genome
+        assert site_right_genome not in site_left_genome
+
         self.site_left_insert = site_left_insert
         self.site_right_insert = site_right_insert
         self.site_left_genome = site_left_genome
@@ -231,21 +238,23 @@ class Event(object):
 
 class IntegrationEvent(Event):
 
-    def get_integrated_aligned_with_site_direction(self, insert):
+    def get_integrated_aligned_with_site_direction(self, insert, is_insert_circular):
+        insert = insert*3
         site_insert = self.recombination.site_insert
         if site_insert not in insert:
-           insert = rc(insert)
+            insert = rc(insert)
         assert insert.index(site_insert) >= 0
-        insert = insert*2
         bps = find_indices(insert, site_insert)
-        assert len(bps) == 2
+        assert len(bps) >= 2
         return insert[bps[0]+len(site_insert):bps[1]]
 
     def run(self, new_fragment, insert, is_insert_circular):
-        integrated = self.get_integrated_aligned_with_site_direction(insert)
-        bps_to_replace = len(self.site_genome)
+        genomic_locations = self.genomic_locations
+        integrated = self.get_integrated_aligned_with_site_direction(insert, is_insert_circular)
+        bps_to_replace = len(self.recombination.site_genome)
 
         if self.is_reversed():
+            print("is reversed")
             integrated = rc(integrated)
             new_site_left = rc(self.recombination.recombined_site_right_genome)
             new_site_right = rc(self.recombination.recombined_site_left_genome)
@@ -254,6 +263,7 @@ class IntegrationEvent(Event):
             new_site_right = self.recombination.recombined_site_right_genome
 
         integrated = new_site_left+integrated+new_site_right
+
         new_fragment.replace_bases(
             genomic_locations[0].adjusted_start_0based+1,
             bps_to_replace,
@@ -343,12 +353,10 @@ class RMCEEvent(Event):
         site_right_insert = self.recombination.site_right_insert
         if site_left_insert not in insert:
            insert = rc(insert)
-
-        assert insert.index(site_left_insert) == 1
-        assert insert.index(site_right_insert) == 1
         return insert[insert.index(site_left_insert)+len(site_left_insert):insert.index(site_right_insert)]
 
     def run(self, new_fragment, insert, is_insert_circular):
+        genomic_locations = self.genomic_locations
         integrated = self.get_integrated_aligned_with_site_direction(insert)
 
         if not self.is_reversed():
