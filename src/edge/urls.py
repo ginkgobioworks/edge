@@ -15,6 +15,7 @@ from edge.views import (
     GenomeBlastView,
     GenomePcrView,
     GenomeRecombinationView,
+    GenomeSSRView,
     GenomeCrisprDSBView,
     genome_fasta_export,
     genome_gff_export,
@@ -73,6 +74,11 @@ urlpatterns = [
         r"^genomes/(?P<genome_id>\d+)/recombination/$",
         GenomeRecombinationView.as_view(),
         name="genome_recombination",
+    ),
+    url(
+        r"^genomes/(?P<genome_id>\d+)/ssr/$",
+        GenomeSSRView.as_view(),
+        name="genome_ssr",
     ),
     url(
         r"^genomes/(?P<genome_id>\d+)/crispr/dsb/$",

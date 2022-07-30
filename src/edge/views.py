@@ -689,39 +689,39 @@ class GenomeCrisprDSBView(GenomeOperationViewBase):
         )
 
 
+def validate_annotations(cassette, annotations):
+    """
+    If user supplied annotations for the donor sequence, to make sure we
+    can precisely use the annotation and not leave any ambiguity, we
+    require the donor dna to not contain overhangs and backbone
+    modifications. This method returns True if that's the case, and
+    required fields for annotations exist.
+    """
+
+    if (
+        re.match(r"^[A-Za-z]+$", cassette)
+        and len(
+            [
+                a
+                for a in annotations
+                if "base_first" not in a
+                or "base_last" not in a
+                or "name" not in a
+                or "type" not in a
+                or "strand" not in a
+            ]
+        )
+        == 0
+    ):
+        return True
+
+    # if there are no supplied annotations, we don't care what format the
+    # donor sequence is
+    return len(annotations) == 0
+
+
 class GenomeRecombinationView(GenomeOperationViewBase):
     DEFAULT_HA_LENGTH = 30
-
-    @staticmethod
-    def validate_annotations(cassette, annotations):
-        """
-        If user supplied annotations for the donor sequence, to make sure we
-        can precisely use the annotation and not leave any ambiguity, we
-        require the donor dna to not contain overhangs and backbone
-        modifications. This method returns True if that's the case, and
-        required fields for annotations exist.
-        """
-
-        if (
-            re.match(r"^[A-Za-z]+$", cassette)
-            and len(
-                [
-                    a
-                    for a in annotations
-                    if "base_first" not in a
-                    or "base_last" not in a
-                    or "name" not in a
-                    or "type" not in a
-                    or "strand" not in a
-                ]
-            )
-            == 0
-        ):
-            return True
-
-        # if there are no supplied annotations, we don't care what format the
-        # donor sequence is
-        return len(annotations) == 0
 
     def parse_arguments(self, request, errors):
         from edge.recombine import RecombineOp
@@ -781,7 +781,7 @@ class GenomeRecombinationView(GenomeOperationViewBase):
         if annotations is None:
             annotations = []
         elif (
-            GenomeRecombinationView.validate_annotations(cassette, annotations) is False
+            validate_annotations(cassette, annotations) is False
         ):
             errors.append(
                 "Annotations failed validation: \
@@ -805,4 +805,56 @@ and annotation array elements have all the required fields."
                 annotations=annotations,
             ),
             RecombineOp,
+        )
+
+
+class GenomeSSRView(GenomeOperationViewBase):
+
+    def parse_arguments(self, request, errors):
+        from edge.ssr.op import SSROp
+
+        parser = RequestParser()
+        parser.add_argument("donor", field_type=str, required=False, default="", location="json")
+        parser.add_argument("is_donor_circular", field_type=bool, required=False, default=None, location="json")
+        parser.add_argument("reaction", field_type=str, required=True, location="json")
+        parser.add_argument("genome_name", field_type=str, required=False, default=None, location="json")
+        parser.add_argument("notes", field_type=str, required=False, default=None, location="json")
+        parser.add_argument(
+            "annotations",
+            field_type=list,
+            required=False,
+            default=None,
+            location="json",
+        )
+
+        args = parser.parse_args(request)
+        donor = args["donor"].strip()
+        is_donor_circular = args["is_donor_circular"]
+        reaction = args["reaction"]
+        genome_name = args["genome_name"]
+        notes = args["notes"]
+        annotations = args["annotations"]
+
+        if annotations is None:
+            annotations = []
+        elif (
+            validate_annotations(cassette, annotations) is False
+        ):
+            errors.append(
+                "Annotations failed validation: \
+please make sure donor sequence does not have overhangs \
+and annotation array elements have all the required fields."
+            )
+            return None
+
+        return (
+            dict(
+                donor=donor,
+                is_donor_circular=is_donor_circular,
+                reaction=reaction,
+                genome_name=genome_name,
+                notes=notes,
+                annotations=annotations,
+            ),
+            SSROp,
         )
