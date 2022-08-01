@@ -517,13 +517,16 @@ class Reaction(object):
 
     def run_reaction(self, new_genome_name, notes=None):
         self.group_into_events()
-        if self.errors:
-            return
+
         if len(self.events) == 0:
+            print("errors", self.errors)
             return
 
         new_genome = self.parent_genome.update()
-        new_genome.name = new_genome_name
+        if new_genome_name:
+            new_genome.name = new_genome_name
+        else:
+            new_genome.name = self.parent_genome.name + " SSR modified"
         new_genome.notes = notes
         new_genome.save()
 
@@ -550,4 +553,5 @@ class Reaction(object):
                     future_event.adjust_genomic_start_0based(bp_shift)
             events = events[1:]
 
+        print("new genome in run_reaction", new_genome)
         return new_genome

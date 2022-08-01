@@ -1,3 +1,4 @@
+import json
 from edge.models import Operation
 from edge.ssr.crelox import CreLoxReaction
 
@@ -17,7 +18,7 @@ class SSROp(object):
         reaction_name
     ):
         if reaction_name.lower() not in SSROp.SUPPORTED:
-            raise Exception("Unknown SSR reaction, expecting one of %s" % (SUPPORTED,))
+            raise Exception("Unknown SSR reaction, expecting one of %s" % (SSROp.SUPPORTED,))
 
         if reaction_name.lower() == SSROp.JSON_ARGUMENT_REACTION_CRELOX:
             reaction = CreLoxReaction(genome, donor, is_donor_circular)
@@ -42,7 +43,8 @@ class SSROp(object):
     def get_operation(
         donor,
         is_donor_circular,
-        reaction_name
+        reaction_name,
+        **kwargs
     ):
         params = dict(donor=donor, is_donor_circular=is_donor_circular, reaction_name=reaction_name)
         op = Operation(type=Operation.SSR[0], params=json.dumps(params))
