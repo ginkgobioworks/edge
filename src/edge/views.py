@@ -124,10 +124,12 @@ class RequestParser(object):
                         v = int(v)
                     elif float in field_type:
                         v = float(v)
+                    elif v is None and not required:
+                        pass
                     else:
                         raise Exception(
-                            'Field should be of type "%s", got "%s"'
-                            % (field_type, type(v))
+                            'Field "%s" should be of type "%s", got "%s"'
+                            % (name, field_type, type(v))
                         )
                 args[name] = v
         return args
@@ -805,7 +807,7 @@ class GenomeSSRView(GenomeOperationViewBase):
         from edge.ssr.op import SSROp
 
         parser = RequestParser()
-        parser.add_argument("donor", field_type=str, required=False, default="", location="json")
+        parser.add_argument("donor", field_type=str, required=False, default=None, location="json")
         parser.add_argument("is_donor_circular", field_type=bool, required=False, default=None, location="json")
         parser.add_argument("reaction", field_type=str, required=True, location="json")
         parser.add_argument("genome_name", field_type=str, required=False, default=None, location="json")
@@ -819,7 +821,7 @@ class GenomeSSRView(GenomeOperationViewBase):
         )
 
         args = parser.parse_args(request)
-        donor = args["donor"].strip()
+        donor = args["donor"].strip() if args["donor"] else None
         is_donor_circular = args["is_donor_circular"]
         reaction = args["reaction"]
         genome_name = args["genome_name"]
@@ -842,7 +844,7 @@ and annotation array elements have all the required fields."
             dict(
                 donor=donor,
                 is_donor_circular=is_donor_circular,
-                reaction=reaction,
+                reaction_name=reaction,
                 genome_name=genome_name,
                 notes=notes,
                 annotations=annotations,
