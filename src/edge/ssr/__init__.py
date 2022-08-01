@@ -55,9 +55,6 @@ class Recombination(object):
     def required_insert_sites(self):
         return []
 
-    def __init__(self):
-        self.errors = []
-
     def find_matching_locations(self, all_locations, required_sites, on_insert):
         # XXX disambiguity
         # XXX does not allow multiple combination of sites on insert for integration
@@ -78,7 +75,7 @@ class Recombination(object):
                     matching_locations.append(candidate_single_site_locations[i:i+len(required_sites)])
         return matching_locations 
 
-    def possible_locations(self, all_locations):
+    def possible_locations(self, all_locations, errors):
         required_insert_sites = self.required_insert_sites()
         insert_locations = []
 
@@ -88,10 +85,10 @@ class Recombination(object):
             locations_on_insert.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_insert_sites][::-1], True))
 
             if len(locations_on_insert) == 0:
-                self.errors.append("Requires site(s) %s on insert, but did not find any" % (required_insert_sites,))
+                errors.append("Requires site(s) %s on insert, but did not find any" % (required_insert_sites,))
                 return []
             elif len(locations_on_insert) > 1:
-                self.errors.append("Requires one site or one set of sites %s on insert, found multiple" % (required_insert_sites,))
+                errors.append("Requires one site or one set of sites %s on insert, found multiple" % (required_insert_sites,))
                 return []
           
             insert_locations = locations_on_insert[0] 
@@ -107,8 +104,8 @@ class Recombination(object):
 
         return possible_locations
 
-    def generate_events(self, locations, event_cls):
-        location_sets = self.possible_locations(locations)
+    def generate_events(self, locations, event_cls, errors):
+        location_sets = self.possible_locations(locations, errors)
         events = []
         for locs in location_sets:
             events.append(event_cls(self, locs))
@@ -130,8 +127,8 @@ class Integration(Recombination):
     def required_insert_sites(self):
         return [self.site_insert]
 
-    def events(self, locations):
-        return self.generate_events(locations, IntegrationEvent)
+    def events(self, locations, errors):
+        return self.generate_events(locations, IntegrationEvent, errors)
 
 
 class Excision(Recombination):
@@ -147,8 +144,8 @@ class Excision(Recombination):
     def required_insert_sites(self):
         return []
 
-    def events(self, locations):
-        return self.generate_events(locations, ExcisionEvent)
+    def events(self, locations, errors):
+        return self.generate_events(locations, ExcisionEvent, errors)
 
 
 class Inversion(Recombination):
@@ -167,8 +164,8 @@ class Inversion(Recombination):
     def required_insert_sites(self):
         return []
 
-    def events(self, locations):
-        return self.generate_events(locations, InversionEvent)
+    def events(self, locations, errors):
+        return self.generate_events(locations, InversionEvent, errors)
 
 
 class RMCE(Recombination):
@@ -193,8 +190,8 @@ class RMCE(Recombination):
     def required_insert_sites(self):
         return [self.site_left_insert, self.site_right_insert]
 
-    def events(self, locations):
-        return self.generate_events(locations, RMCEEvent)
+    def events(self, locations, errors):
+        return self.generate_events(locations, RMCEEvent, errors)
 
 
 class Event(object):
@@ -234,6 +231,18 @@ class Event(object):
     def adjust_genomic_start_0based(self, shift):
         for loc in self.genomic_locations:
             loc.adjusted_start_0based += shift
+
+    def to_dict(self):
+        return dict(
+            recombination=dict(type=self.recombination.__class__.__name__, sites=self.recombination.__dict__),
+            genomic_locations=[
+                dict(
+                    site=loc.site,
+                    fragment_id=loc.fragment_id,
+                    start=loc.start_0based+1
+                ) for loc in self.genomic_locations
+            ]
+        )
 
 
 class IntegrationEvent(Event):
@@ -498,14 +507,15 @@ class Reaction(object):
 	# TODO if we attempt an integration with loxP on loxP, how do we return
 	# that as an error not just silently ignore?
 
-        self.determine_site_locations()
-        self.events = []
+        if self.events is None:
+            self.determine_site_locations()
+            self.events = []
+            self.errors = []
 
-        for recombination in self.allowed():
-            self.events.extend(recombination.events(self.locations))
-            self.errors.extend(recombination.errors)
+            for recombination in self.allowed():
+                self.events.extend(recombination.events(self.locations, self.errors))
 
-    def run_reaction(self, new_genome_name):
+    def run_reaction(self, new_genome_name, notes=None):
         self.group_into_events()
         if self.errors:
             return
@@ -514,6 +524,7 @@ class Reaction(object):
 
         new_genome = self.parent_genome.update()
         new_genome.name = new_genome_name
+        new_genome.notes = notes
         new_genome.save()
 
         old_to_new_fragment_dict = {}
@@ -538,6 +549,5 @@ class Reaction(object):
                 if future_event.fragment_id == event.fragment_id:
                     future_event.adjust_genomic_start_0based(bp_shift)
             events = events[1:]
-
 
         return new_genome

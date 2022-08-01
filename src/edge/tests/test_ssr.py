@@ -246,8 +246,8 @@ class ReactionTest(TestCase):
             def required_insert_sites(self):
                 return ["ttag"]
 
-            def events(self, locations):
-                return self.generate_events(locations, FakeEvent)
+            def events(self, locations, errors):
+                return self.generate_events(locations, FakeEvent, errors)
 
         class FakeReaction(Reaction):
             @staticmethod
@@ -302,7 +302,7 @@ class RecombinationTest(TestCase):
             SiteLocation("aggc", FakeFragment(11), None, 12),
         ]
 
-        matched = FakeRecombination().possible_locations(locations)
+        matched = FakeRecombination().possible_locations(locations, [])
         self.assertEquals(len(matched), 1)
         self.assertEquals(len(matched[0]), 1)
         self.assertEquals(matched[0][0].site, "aggc")
@@ -322,7 +322,7 @@ class RecombinationTest(TestCase):
             SiteLocation("aggc", FakeFragment(11), None, 12),
         ]
 
-        matched = FakeRecombination().possible_locations(locations)
+        matched = FakeRecombination().possible_locations(locations, [])
         self.assertEquals(len(matched), 1)
         self.assertEquals(len(matched[0]), 1)
         self.assertEquals(matched[0][0].site, "aggc")
@@ -343,7 +343,7 @@ class RecombinationTest(TestCase):
             SiteLocation("gcct", FakeFragment(11), None, 16),
         ]
 
-        matched = FakeRecombination().possible_locations(locations)
+        matched = FakeRecombination().possible_locations(locations, [])
         self.assertEquals(len(matched), 2)
         self.assertEquals(len(matched[0]), 1)
         self.assertEquals(matched[0][0].site, "aggc")
@@ -367,7 +367,7 @@ class RecombinationTest(TestCase):
             SiteLocation("gggc", FakeFragment(11), None, 88),
         ]
 
-        matched = FakeRecombination().possible_locations(locations)
+        matched = FakeRecombination().possible_locations(locations, [])
         self.assertEquals(len(matched), 1)
         self.assertEquals(len(matched[0]), 3)
         self.assertEquals(matched[0][0].site, "aggc")
@@ -394,7 +394,7 @@ class RecombinationTest(TestCase):
             SiteLocation("gcct", FakeFragment(11), None, 88),
         ]
 
-        matched = FakeRecombination().possible_locations(locations)
+        matched = FakeRecombination().possible_locations(locations, [])
         self.assertEquals(len(matched), 1)
         self.assertEquals(len(matched[0]), 3)
         self.assertEquals(matched[0][0].site, "gccc")
@@ -421,7 +421,7 @@ class RecombinationTest(TestCase):
             SiteLocation("gccc", FakeFragment(11), None, 88),
         ]
 
-        matched = FakeRecombination().possible_locations(locations)
+        matched = FakeRecombination().possible_locations(locations, [])
         self.assertEquals(len(matched), 0)
 
     def test_recognizes_required_site_on_insert(self):
@@ -444,7 +444,7 @@ class RecombinationTest(TestCase):
             SiteLocation("gcct", FakeFragment(11), None, 88),
         ]
 
-        matched = FakeRecombination().possible_locations(locations)
+        matched = FakeRecombination().possible_locations(locations, [])
         self.assertEquals(len(matched), 1)
         self.assertEquals(len(matched[0]), 3)
         self.assertEquals(matched[0][0].site, "attc")
@@ -477,7 +477,7 @@ class RecombinationTest(TestCase):
             SiteLocation("gcct", FakeFragment(11), None, 88),
         ]
 
-        matched = FakeRecombination().possible_locations(locations)
+        matched = FakeRecombination().possible_locations(locations, [])
         self.assertEquals(len(matched), 1)
         self.assertEquals(len(matched[0]), 3)
         self.assertEquals(matched[0][0].site, "attc")
@@ -499,8 +499,8 @@ class ReactionEventsTest(TestCase):
             def required_genome_sites(self):
                 return ["aggc"]
 
-            def events(self, locations):
-                return self.generate_events(locations, FakeEvent)
+            def events(self, locations, errors):
+                return self.generate_events(locations, FakeEvent, errors)
 
         event_run_on_fragments = []
         bp_shift_per_event = 17

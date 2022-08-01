@@ -3,23 +3,48 @@ from edge.ssr.crelox import CreLoxReaction
 
 
 class SSROp(object):
+    JSON_ARGUMENT_REACTION_CRELOX = "crelox"
+
+    SUPPORTED = [
+        JSON_ARGUMENT_REACTION_CRELOX
+    ]
+
+    @staticmethod
+    def get_reaction(
+        genome,
+        donor,
+        is_donor_circular,
+        reaction_name
+    ):
+        if reaction_name.lower() not in SSROp.SUPPORTED:
+            raise Exception("Unknown SSR reaction, expecting one of %s" % (SUPPORTED,))
+
+        if reaction_name.lower() == SSROp.JSON_ARGUMENT_REACTION_CRELOX:
+            reaction = CreLoxReaction(genome, donor, is_donor_circular)
+        else:
+            assert False
+
+        return reaction
+
     @staticmethod
     def check(
         genome,
         donor,
         is_donor_circular,
-        reaction,
+        reaction_name,
         **kwargs
     ):
-        # XXX
+        reaction = SSROp.get_reaction(genome, donor, is_donor_circular, reaction_name)
+        reaction.group_into_events()
+        return reaction.events
 
     @staticmethod
     def get_operation(
         donor,
         is_donor_circular,
-        reaction
+        reaction_name
     ):
-        params = dict(donor=donor, is_donor_circular=is_donor_circular, reaction=reaction)
+        params = dict(donor=donor, is_donor_circular=is_donor_circular, reaction_name=reaction_name)
         op = Operation(type=Operation.SSR[0], params=json.dumps(params))
         return op
 
@@ -28,10 +53,11 @@ class SSROp(object):
         genome,
         donor,
         is_donor_circular,
-        reaction,
+        reaction_name,
         genome_name,
         notes,
         annotations=None,
     ):
-        # XXX
+        reaction = SSROp.get_reaction(genome, donor, is_donor_circular, reaction_name)
+        new_genome = reaction.run_reaction(genome_name, notes=notes)
         return new_genome
