@@ -281,6 +281,43 @@ class ReactionTest(TestCase):
         self.assertEquals(locations[1].site, "ttag")
         self.assertEquals(locations[1].start_0based, 33)
 
+    def test_prioritize_based_on_allowed_array_order(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "attg"+"t"*1000+"attc"+"c"*100
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        recomb_rmce = RMCE("attg", "attc", "attg", "attc", "gggg", "gggg")
+        recomb_inte = Integration("attg", "attg", "cccc", "cccc")
+
+        class FakeReaction1(Reaction):
+            @staticmethod
+            def allowed():
+                return [recomb_inte]
+
+        class FakeReaction2(Reaction):
+            @staticmethod
+            def allowed():
+                return [recomb_rmce, recomb_inte]
+
+        donor = "ggg"+"attg"+"a"*100+"attc"
+
+        # integration only
+        r = FakeReaction1(parent_genome, donor, True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "cccc" +"a"*100+"attc"+"ggg"+ "cccc" +\
+                                      "t"*1000+"attc"+"c"*100)
+
+        # RMCE takes precedence because it's defined earlier
+        r = FakeReaction2(parent_genome, donor, True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "gggg"+"a"*100+"gggg"+"c"*100)
+
 
 class RecombinationTest(TestCase):
 

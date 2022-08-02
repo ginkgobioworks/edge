@@ -93,3 +93,34 @@ class CreLoxTest(SSRTester):
             .when_trigger_crelox() \
             .modified_sequence_is("t"*100 + lox71 + "cat" + rc(loxP) + "c"*100)
 
+    def test_RMCE_with_lox2272_loxP(self):
+        self.with_genome("t"*100 + lox2272 + "atg" + loxP + "c"*100) \
+            .when_trigger_crelox_with_donor("a"*10 + lox2272 + "g"*10 + loxP, False) \
+            .modified_sequence_is("t"*100 + lox2272 + "g"*10 + loxP + "c"*100)
+
+    def test_RMCE_with_loxP_lox2272(self):
+        self.with_genome("t"*100 + loxP + "atg" + lox2272 + "c"*100) \
+            .when_trigger_crelox_with_donor("a"*10 + loxP + "g"*10 + lox2272, False) \
+            .modified_sequence_is("t"*100 + loxP + "g"*10 + lox2272 + "c"*100)
+
+    def test_RMCE_with_lox2272_loxP_and_reversed_on_donor(self):
+        self.with_genome("t"*100 + lox2272 + "atg" + loxP + "c"*100) \
+            .when_trigger_crelox_with_donor("a"*10 + rc(loxP) + "g"*10 + rc(lox2272), False) \
+            .modified_sequence_is("t"*100 + lox2272 + "c"*10 + loxP + "c"*100)
+
+    def test_RMCE_with_lox2272_loxP_and_loxP_lox2272_is_not_allowed(self):
+        self.with_genome("t"*100 + lox2272 + "atg" + loxP + "c"*100) \
+            .when_trigger_crelox_with_donor("a"*10 + loxP + "g"*10 + lox2272, False) \
+            .is_not_allowed()
+
+    def test_RMCE_with_lox71_lox2272_and_lox66_lox2272(self):
+        # this also tests that RMCE takes precedence over integration
+        self.with_genome("t"*100 + lox71 + "atg" + lox2272 + "c"*100) \
+            .when_trigger_crelox_with_donor("a"*10 + lox66 + "g"*10 + lox2272, False) \
+            .modified_sequence_is("t"*100 + lox72 + "g"*10 + lox2272 + "c"*100)
+
+    def test_RMCE_with_lox2272_lox71_and_lox2272_lox66(self):
+        # this also tests that RMCE takes precedence over integration
+        self.with_genome("t"*100 + lox2272 + "atg" + lox71 + "c"*100) \
+            .when_trigger_crelox_with_donor("a"*10 + lox2272 + "g"*10 + lox66, False) \
+            .modified_sequence_is("t"*100 + lox2272 + "g"*10 + lox72 + "c"*100)

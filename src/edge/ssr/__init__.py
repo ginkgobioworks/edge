@@ -34,6 +34,10 @@ class SiteLocation(object):
         self.insert = insert
         self.start_0based = start_0based  # 0-indexed
         self.adjusted_start_0based = self.start_0based
+        self.used = False
+
+    def use(self):
+        self.used = True
 
     @property
     def fragment_id(self):
@@ -60,9 +64,8 @@ class Recombination(object):
         # XXX does not allow multiple combination of sites on insert for integration
         # XXX handle circularity for sites on insert
 
-        candidate_single_site_locations = all_locations
         candidate_single_site_locations = \
-          [loc for loc in all_locations if on_insert == loc.on_insert and loc.site in required_sites]
+          [loc for loc in all_locations if on_insert == loc.on_insert and loc.site in required_sites and loc.used is False]
         candidate_single_site_locations = sorted(
             candidate_single_site_locations,
             key=lambda loc: (loc.fragment_id, loc.start_0based)
@@ -73,6 +76,11 @@ class Recombination(object):
             if single_site_loc.site == required_sites[0]:
                 if [loc.site for loc in candidate_single_site_locations[i:i+len(required_sites)]] == list(required_sites):
                     matching_locations.append(candidate_single_site_locations[i:i+len(required_sites)])
+
+        for locs in matching_locations:
+            for loc in locs:
+                loc.use()
+
         return matching_locations 
 
     def possible_locations(self, all_locations, errors):
@@ -84,7 +92,7 @@ class Recombination(object):
             reverse_of_required_insert_sites = [rc(s) for s in required_insert_sites][::-1]
             locations_on_insert.extend(self.find_matching_locations(all_locations, required_insert_sites, True))
             if required_insert_sites != reverse_of_required_insert_sites:
-                locations_on_insert.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_insert_sites][::-1], True))
+                locations_on_insert.extend(self.find_matching_locations(all_locations, reverse_of_required_insert_sites, True))
 
             if len(locations_on_insert) == 0:
                 errors.append("Requires site(s) %s on insert, but did not find any" % (required_insert_sites,))
@@ -267,7 +275,6 @@ class IntegrationEvent(Event):
         bps_to_replace = len(self.recombination.site_genome)
 
         if self.is_reversed():
-            print("is reversed")
             integrated = rc(integrated)
             new_site_left = rc(self.recombination.recombined_site_right_genome)
             new_site_right = rc(self.recombination.recombined_site_left_genome)
@@ -429,6 +436,9 @@ def find_site_locations_on_sequence(sequence, is_circular, sites, fragment_obj=N
                 template, len(sequence), site, fragment_obj=fragment_obj
             )
         )
+
+    uniqdict = {(l.fragment_id, l.start_0based):l for l in locations}
+    locations = list(uniqdict.values())
     return locations
 
 
@@ -516,6 +526,9 @@ class Reaction(object):
             self.events = []
             self.errors = []
 
+            # XXX detect duplicately defined events
+	    # note that we iterate through allowed() in order - earlier
+	    # recombination definitions take precedence
             for recombination in self.allowed():
                 self.events.extend(recombination.events(self.locations, self.errors))
 
