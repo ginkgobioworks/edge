@@ -1,0 +1,95 @@
+from edge.ssr import _c, rc
+from edge.tests.test_ssr_view import SSRTester
+
+
+loxP     = _c("ATAACTTCGTATA GCATACAT TATACGAAGTTAT")
+lox66    = _c("ATAACTTCGTATA GCATACAT TATACGAACGGTA")
+lox71    = _c("TACCGTTCGTATA GCATACAT TATACGAAGTTAT")
+lox72    = _c("TACCGTTCGTATA GCATACAT TATACGAACGGTA")
+
+lox5171  = _c("ATAACTTCGTATA GtAcACAT TATACGAAGTTAT")
+lox2272  = _c("ATAACTTCGTATA GgATACtT TATACGAAGTTAT")
+
+loxm2    = _c("ATAACTTCGTATA TGGTTTCT TATACGAAGTTAT")
+loxm2_66 = _c("ATAACTTCGTATA TGGTTTCT TATACGAACGGTA")
+loxm2_71 = _c("TACCGTTCGTATA TGGTTTCT TATACGAAGTTAT")
+loxm2_72 = _c("TACCGTTCGTATA TGGTTTCT TATACGAACGGTA")
+
+
+class CreLoxTest(SSRTester):
+
+    def test_integration_with_lox66_onto_lox71(self):
+        self.with_genome("t"*100 + lox71 + "c"*100) \
+            .when_trigger_crelox_with_donor("a"*10 + lox66 + "g"*10) \
+            .modified_sequence_is("t"*100 + lox72 + "g"*10 + "a"*10 + loxP + "c"*100)
+
+    def test_integration_with_lox66_onto_rc_lox71(self):
+        self.with_genome("t"*100 + rc(lox71) + "c"*100) \
+            .when_trigger_crelox_with_donor("a"*10 + lox66 + "g"*10) \
+            .modified_sequence_is("t"*100 + rc(loxP) + "t"*10 + "c"*10 + rc(lox72) + "c"*100)
+
+    def test_integration_with_lox71_onto_lox66(self):
+        self.with_genome("t"*100 + lox66 + "c"*100) \
+            .when_trigger_crelox_with_donor("a"*10 + lox71 + "g"*10) \
+            .modified_sequence_is("t"*100 + loxP + "g"*10 + "a"*10 + lox72 + "c"*100)
+
+    def test_integration_with_lox71_onto_rc_lox66(self):
+        self.with_genome("t"*100 + rc(lox66) + "c"*100) \
+            .when_trigger_crelox_with_donor("a"*10 + lox71 + "g"*10) \
+            .modified_sequence_is("t"*100 + rc(lox72) + "t"*10 + "c"*10 + rc(loxP) + "c"*100)
+
+    def test_integration_with_lox66_onto_loxP_is_not_allowed_because_immediate_loopout(self):
+        self.with_genome("t"*100 + loxP + "c"*100) \
+            .when_trigger_crelox_with_donor("a"*10 + lox66 + "g"*10) \
+            .is_not_allowed()
+
+    def test_excision_with_loxP(self):
+        self.with_genome("t"*100 + loxP + "aaa" + loxP + "c"*100) \
+            .when_trigger_crelox() \
+            .modified_sequence_is("t"*100 + loxP + "c"*100)
+
+    def test_excision_with_lox66_loxP(self):
+        self.with_genome("t"*100 + lox66 + "aaa" + loxP + "c"*100) \
+            .when_trigger_crelox() \
+            .modified_sequence_is("t"*100 + loxP + "c"*100)
+
+    def test_excision_with_loxP_lox66(self):
+        self.with_genome("t"*100 + loxP + "aaa" + lox66 + "c"*100) \
+            .when_trigger_crelox() \
+            .modified_sequence_is("t"*100 + lox66 + "c"*100)
+
+    def test_excision_with_lox71_loxP(self):
+        self.with_genome("t"*100 + lox71 + "aaa" + loxP + "c"*100) \
+            .when_trigger_crelox() \
+            .modified_sequence_is("t"*100 + lox71 + "c"*100)
+
+    def test_excision_with_loxP_lox71(self):
+        self.with_genome("t"*100 + loxP + "aaa" + lox71 + "c"*100) \
+            .when_trigger_crelox() \
+            .modified_sequence_is("t"*100 + loxP + "c"*100)
+
+    def test_inversion_with_loxP(self):
+        self.with_genome("t"*100 + loxP + "atg" + rc(loxP) + "c"*100) \
+            .when_trigger_crelox() \
+            .modified_sequence_is("t"*100 + loxP + "cat" + rc(loxP) + "c"*100)
+
+    def test_inversion_with_loxP_lox66(self):
+        self.with_genome("t"*100 + loxP + "atg" + rc(lox66) + "c"*100) \
+            .when_trigger_crelox() \
+            .modified_sequence_is("t"*100 + lox66 + "cat" + rc(loxP) + "c"*100)
+
+    def test_inversion_with_loxP_lox71(self):
+        self.with_genome("t"*100 + loxP + "atg" + rc(lox71) + "c"*100) \
+            .when_trigger_crelox() \
+            .modified_sequence_is("t"*100 + loxP + "cat" + rc(lox71) + "c"*100)
+
+    def test_inversion_with_lox66_loxP(self):
+        self.with_genome("t"*100 + lox66 + "atg" + rc(loxP) + "c"*100) \
+            .when_trigger_crelox() \
+            .modified_sequence_is("t"*100 + loxP + "cat" + rc(lox66) + "c"*100)
+
+    def test_inversion_with_lox71_loxP(self):
+        self.with_genome("t"*100 + lox71 + "atg" + rc(loxP) + "c"*100) \
+            .when_trigger_crelox() \
+            .modified_sequence_is("t"*100 + lox71 + "cat" + rc(loxP) + "c"*100)
+
