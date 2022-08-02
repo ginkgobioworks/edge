@@ -21,6 +21,11 @@ class CreLoxReaction(Reaction):
     @staticmethod
     def allowed():
         return [
+            RMCE(Sites.loxP, Sites.lox2272, Sites.loxP, Sites.lox2272, Sites.loxP, Sites.lox2272),
+            RMCE(Sites.lox2272, Sites.loxP, Sites.lox2272, Sites.loxP, Sites.lox2272, Sites.loxP),
+            RMCE(Sites.lox66, Sites.lox2272, Sites.lox71, Sites.lox2272, Sites.lox72, Sites.lox2272),
+            RMCE(Sites.lox2272, Sites.lox66, Sites.lox2272, Sites.lox71, Sites.lox2272, Sites.lox72),
+
             Integration(Sites.lox66, Sites.lox71, Sites.lox72, Sites.loxP),
             Integration(Sites.lox71, Sites.lox66, Sites.loxP, Sites.lox72),
 
@@ -33,7 +38,4 @@ class CreLoxReaction(Reaction):
             Inversion(Sites.loxP, rc(Sites.loxP), Sites.loxP, rc(Sites.loxP)),
             Inversion(Sites.lox66, rc(Sites.loxP), Sites.loxP, rc(Sites.lox66)),
             Inversion(Sites.lox71, rc(Sites.loxP), Sites.lox71, rc(Sites.loxP)),
-
-            RMCE(Sites.loxP, Sites.lox2272, Sites.loxP, Sites.lox2272, Sites.loxP, Sites.lox2272),
-            RMCE(Sites.lox66, Sites.lox2272, Sites.lox71, Sites.lox2272, Sites.lox72, Sites.lox2272),
         ]
