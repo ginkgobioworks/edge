@@ -1,6 +1,3 @@
-import os
-import json
-
 from Bio.Seq import Seq
 from django.test import TestCase
 
@@ -615,6 +612,26 @@ class ExcisionRecombinationTest(TestCase):
 
 
 class InversionRecombinationTest(TestCase):
+
+    def test_can_invert_using_same_site(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "attg"+"atg"+"caat" + "c"*1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Inversion("attg", "caat", "attg", "caat")]
+
+        r = FakeReaction(parent_genome, None, None)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "attg"+"cat"+"caat" + "c"*1000)
+
     def test_can_invert_multiple_places_on_fragment(self):
         parent_genome = Genome(name="foo")
         parent_genome.save()

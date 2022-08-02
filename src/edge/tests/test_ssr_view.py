@@ -1,4 +1,4 @@
-import os
+import uuid
 import json
 
 from django.test import TestCase
@@ -109,3 +109,52 @@ class SSRViewTest(TestCase):
         self.assertEquals(child.name, "foo foo bar bar")
         modified_sequence = child.fragments.all()[0].indexed_fragment().sequence
         self.assertEquals("g"*100 in modified_sequence, True)
+
+
+class SSRTester(TestCase):
+
+    def setUp(self):
+        self.genome = None
+        self.result = None
+
+    def with_genome(self, sequence):
+        genome = Genome(name=str(uuid.uuid4()))
+        genome.save()
+        f = Fragment.create_with_sequence(str(uuid.uuid4()), sequence)
+        Genome_Fragment(genome=genome, fragment=f, inherited=False).save()
+        self.genome = genome
+        return self
+
+    def when_trigger(self, reaction_name, donor=None, is_donor_circular=True):
+        res = self.client.post(
+            "/edge/genomes/%s/ssr/" % self.genome.id,
+            data=json.dumps(
+                dict(donor=donor, is_donor_circular=is_donor_circular, reaction="crelox", create=True)
+            ),
+            content_type="application/json",
+        )
+        self.result = res
+        return self
+
+    def when_trigger_crelox(self, donor=None, is_donor_circular=None):
+        return self.when_trigger("crelox", donor=donor, is_donor_circular=is_donor_circular)
+
+    def when_trigger_crelox_with_donor(self, donor, is_donor_circular=True):
+        return self.when_trigger_crelox(donor=donor, is_donor_circular=is_donor_circular)
+
+    def modified_sequence_is(self, s):
+        self.assertEquals(self.result.status_code, 201)
+
+        result = json.loads(self.result.content)
+        child = Genome.objects.get(pk=result["id"])
+        modified_sequence = child.fragments.all()[0].indexed_fragment().sequence.lower()
+        s = s.lower()
+
+        if modified_sequence != s:
+            print(modified_sequence)
+            print(s)
+        self.assertEquals(modified_sequence, s)
+        return self
+
+    def is_not_allowed(self):
+        self.assertEquals(self.result.status_code, 400)

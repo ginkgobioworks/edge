@@ -81,8 +81,10 @@ class Recombination(object):
 
         if len(required_insert_sites):
             locations_on_insert = []
+            reverse_of_required_insert_sites = [rc(s) for s in required_insert_sites][::-1]
             locations_on_insert.extend(self.find_matching_locations(all_locations, required_insert_sites, True))
-            locations_on_insert.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_insert_sites][::-1], True))
+            if required_insert_sites != reverse_of_required_insert_sites:
+                locations_on_insert.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_insert_sites][::-1], True))
 
             if len(locations_on_insert) == 0:
                 errors.append("Requires site(s) %s on insert, but did not find any" % (required_insert_sites,))
@@ -96,9 +98,11 @@ class Recombination(object):
         possible_locations = []
 
         required_genome_sites = self.required_genome_sites()
+        reverse_of_required_genome_sites = [rc(s) for s in required_genome_sites][::-1]
         locations_on_genome = []
         locations_on_genome.extend(self.find_matching_locations(all_locations, required_genome_sites, False))
-        locations_on_genome.extend(self.find_matching_locations(all_locations, [rc(s) for s in required_genome_sites][::-1], False))
+        if required_genome_sites != reverse_of_required_genome_sites:
+            locations_on_genome.extend(self.find_matching_locations(all_locations, reverse_of_required_genome_sites, False))
         for locs in locations_on_genome:
             possible_locations.append(locs+insert_locations)
 
