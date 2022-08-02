@@ -233,9 +233,11 @@ class Indexed_Genome(Genome):
             parent_f = child_to_parent_fs[child_f]
             for start_id, end_id in starts_and_ends.items():
                 regions.append({
+                    "parent_fragment_name": parent_f.name,
                     "parent_fragment_id": parent_f.id,
                     "parent_start": parent_f.fragment_chunk(start_id).base_last + 1,
                     "parent_end": parent_f.fragment_chunk(end_id).base_first - 1,
+                    "child_fragment_name": child_f.name,
                     "child_fragment_id": child_f.id,
                     "child_start": child_f.fragment_chunk(start_id).base_last + 1,
                     "child_end": child_f.fragment_chunk(end_id).base_first - 1,
