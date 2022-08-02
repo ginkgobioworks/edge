@@ -168,7 +168,7 @@ class Indexed_Genome(Genome):
     def changed_locations_by_fragment(self):
         changes = {}
 
-        for c in self.changes():
+        for c in sorted(self.changes(), key=lambda x: x.base_first):
             if c.fragment.id not in changes:
                 changes[c.fragment.id] = []
             v = changes[c.fragment.id]
@@ -179,6 +179,69 @@ class Indexed_Genome(Genome):
 
         changes = {Fragment.objects.get(pk=f): v for f, v in changes.items()}
         return changes
+
+    def get_coordinate_diff_from_parent_genome(self, p_genome_id):
+        # Get fragments contained by child and not by parent
+        p_fragment_ids = Fragment.objects.filter(genome=p_genome_id).values_list('id', flat=True)
+        child_only_fragments = self.fragments.filter().exclude(genome=p_genome_id)
+
+        # Relate child fragments to parent fragments
+        child_to_parent_f_ids = {}
+        for f in child_only_fragments:
+            curr_f = f
+            while curr_f is not None and curr_f.id not in p_fragment_ids:
+                curr_f = curr_f.parent
+            if curr_f is not None:
+                child_to_parent_f_ids[f.id] = curr_f.id
+        if len(child_to_parent_f_ids) == 0:
+            raise Exception("Genome input is not a parent by lineage!")
+
+        # Get indexed child and parent fragments
+        child_to_parent_fs = {
+            Fragment.objects.get(pk=child_f_id).indexed_fragment():
+                Fragment.objects.get(pk=parent_f_id).indexed_fragment()
+            for child_f_id, parent_f_id in child_to_parent_f_ids.items()
+        }
+
+        # Get start to end chunks by fragment of diff regions between parent and child
+        fragment_to_starts_and_ends = {}
+        for child_f, parent_f in child_to_parent_fs.items():
+            print(child_f, parent_f)
+            parent_chunks, child_chunks = list(parent_f.chunks()), list(child_f.chunks())
+            starts_and_ends, current_start = {}, None
+            for child_i, c in enumerate(child_chunks):
+                if c in parent_chunks:
+                    parent_i = parent_chunks.index(c)
+                    prev_parent_chunk = parent_chunks[parent_i - 1] \
+                        if parent_i > 0 else None
+                    next_parent_chunk = parent_chunks[parent_i + 1] \
+                        if parent_i < (len(parent_chunks) - 1) else None
+                    prev_child_chunk = child_chunks[child_i - 1] \
+                        if child_i > 0 else None
+                    next_child_chunk = child_chunks[child_i + 1] \
+                        if child_i < (len(child_chunks) - 1) else None
+                    if prev_parent_chunk != prev_child_chunk and current_start:
+                        starts_and_ends[current_start] = c.id
+                        current_start = None
+                    if next_parent_chunk != next_child_chunk:
+                        current_start = c.id
+            fragment_to_starts_and_ends[child_f] = starts_and_ends
+
+        # Store dictionaries of changes with ID, start, and end for parent and child fragments
+        regions = []
+        for child_f, starts_and_ends in fragment_to_starts_and_ends.items():
+            parent_f = child_to_parent_fs[child_f]
+            for start_id, end_id in starts_and_ends.items():
+                regions.append({
+                    "parent_fragment_id": parent_f.id,
+                    "parent_start": parent_f.fragment_chunk(start_id).base_last + 1,
+                    "parent_end": parent_f.fragment_chunk(end_id).base_first - 1,
+                    "child_fragment_id": child_f.id,
+                    "child_start": child_f.fragment_chunk(start_id).base_last + 1,
+                    "child_end": child_f.fragment_chunk(end_id).base_first - 1,
+                })
+
+        return regions
 
 
 class Genome_Fragment(models.Model):
