@@ -194,7 +194,7 @@ class Indexed_Genome(Genome):
             if curr_f is not None:
                 child_to_parent_f_ids[f.id] = curr_f.id
         if len(child_to_parent_f_ids) == 0:
-            raise Exception("Genome input is not a parent by lineage!")
+            raise Exception("Genome input is not a parent by lineage")
 
         # Get indexed child and parent fragments
         child_to_parent_fs = {
