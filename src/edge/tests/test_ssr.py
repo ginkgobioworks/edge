@@ -22,17 +22,29 @@ class FindQueryOnSequenceTest(TestCase):
         site = "aggc"
         template = "a"*100+site+"g"*100
 
-        locs = find_query_locations_on_duplicated_template(template, len(template), site)
+        locs = find_query_locations_on_duplicated_template(template, len(template), False, site)
         self.assertEquals(len(locs), 1)
         self.assertEquals(locs[0].on_insert, True)
         self.assertEquals(locs[0].site, site)
         self.assertEquals(locs[0].start_0based, 100)
+        self.assertEquals(locs[0].is_fragment_or_insert_circular, False)
+
+    def test_finds_locations_on_circular_sequence_and_remember_circularity_on_location_object(self):
+        site = "aggc"
+        template = "a"*100+site+"g"*100
+
+        locs = find_query_locations_on_duplicated_template(template, len(template), True, site)
+        self.assertEquals(len(locs), 1)
+        self.assertEquals(locs[0].on_insert, True)
+        self.assertEquals(locs[0].site, site)
+        self.assertEquals(locs[0].start_0based, 100)
+        self.assertEquals(locs[0].is_fragment_or_insert_circular, True)
 
     def test_mark_location_as_on_fragment(self):
         site = "aggc"
         template = "a"*100+site+"g"*100
 
-        locs = find_query_locations_on_duplicated_template(template, len(template), site, fragment_obj=object())
+        locs = find_query_locations_on_duplicated_template(template, len(template), False, site, fragment_obj=object())
         self.assertEquals(len(locs), 1)
         self.assertEquals(locs[0].on_insert, False)
 
@@ -40,7 +52,7 @@ class FindQueryOnSequenceTest(TestCase):
         site = "aggc"
         template = "a"*100+site+"g"*100+site+"c"*100
 
-        locs = find_query_locations_on_duplicated_template(template, len(template), site)
+        locs = find_query_locations_on_duplicated_template(template, len(template), False, site)
         self.assertEquals(len(locs), 2)
         self.assertEquals(locs[0].on_insert, True)
         self.assertEquals(locs[0].site, site)
@@ -53,10 +65,10 @@ class FindQueryOnSequenceTest(TestCase):
         site = "aggc"
         template = "a"*100+site+"g"*100+site+"c"*100
 
-        locs = find_query_locations_on_duplicated_template(template, len(template), site)
+        locs = find_query_locations_on_duplicated_template(template, len(template), False, site)
         self.assertEquals(len(locs), 2)
 
-        locs = find_query_locations_on_duplicated_template(template, 102, site)
+        locs = find_query_locations_on_duplicated_template(template, 102, False, site)
         self.assertEquals(len(locs), 1)
         self.assertEquals(locs[0].on_insert, True)
         self.assertEquals(locs[0].site, site)
@@ -332,8 +344,8 @@ class RecombinationTest(TestCase):
                 self.id = n
 
         locations = [
-            SiteLocation("atgc", FakeFragment(11), None, 8),
-            SiteLocation("aggc", FakeFragment(11), None, 12),
+            SiteLocation("atgc", FakeFragment(11), None, False, 8),
+            SiteLocation("aggc", FakeFragment(11), None, False, 12),
         ]
 
         matched = FakeRecombination().possible_locations(locations, [])
@@ -352,8 +364,8 @@ class RecombinationTest(TestCase):
                 self.id = n
 
         locations = [
-            SiteLocation("atgc", FakeFragment(11), None, 8),
-            SiteLocation("aggc", FakeFragment(11), None, 12),
+            SiteLocation("atgc", FakeFragment(11), None, False, 8),
+            SiteLocation("aggc", FakeFragment(11), None, False, 12),
         ]
 
         matched = FakeRecombination().possible_locations(locations, [])
@@ -372,9 +384,9 @@ class RecombinationTest(TestCase):
                 self.id = n
 
         locations = [
-            SiteLocation("atgc", FakeFragment(11), None, 8),
-            SiteLocation("aggc", FakeFragment(11), None, 12),
-            SiteLocation("gcct", FakeFragment(11), None, 16),
+            SiteLocation("atgc", FakeFragment(11), None, False, 8),
+            SiteLocation("aggc", FakeFragment(11), None, False, 12),
+            SiteLocation("gcct", FakeFragment(11), None, False, 16),
         ]
 
         matched = FakeRecombination().possible_locations(locations, [])
@@ -395,10 +407,10 @@ class RecombinationTest(TestCase):
                 self.id = n
 
         locations = [
-            SiteLocation("atgc", FakeFragment(11), None, 8),
-            SiteLocation("aggc", FakeFragment(11), None, 12),
-            SiteLocation("gaat", FakeFragment(11), None, 26),
-            SiteLocation("gggc", FakeFragment(11), None, 88),
+            SiteLocation("atgc", FakeFragment(11), None, False, 8),
+            SiteLocation("aggc", FakeFragment(11), None, False, 12),
+            SiteLocation("gaat", FakeFragment(11), None, False, 26),
+            SiteLocation("gggc", FakeFragment(11), None, False, 88),
         ]
 
         matched = FakeRecombination().possible_locations(locations, [])
@@ -422,10 +434,10 @@ class RecombinationTest(TestCase):
                 self.id = n
 
         locations = [
-            SiteLocation("atgc", FakeFragment(11), None, 8),
-            SiteLocation("gccc", FakeFragment(11), None, 12),
-            SiteLocation("attc", FakeFragment(11), None, 26),
-            SiteLocation("gcct", FakeFragment(11), None, 88),
+            SiteLocation("atgc", FakeFragment(11), None, False, 8),
+            SiteLocation("gccc", FakeFragment(11), None, False, 12),
+            SiteLocation("attc", FakeFragment(11), None, False, 26),
+            SiteLocation("gcct", FakeFragment(11), None, False, 88),
         ]
 
         matched = FakeRecombination().possible_locations(locations, [])
@@ -449,10 +461,10 @@ class RecombinationTest(TestCase):
                 self.id = n
 
         locations = [
-            SiteLocation("atgc", FakeFragment(11), None, 8),
-            SiteLocation("gcct", FakeFragment(11), None, 12),
-            SiteLocation("attc", FakeFragment(11), None, 26),
-            SiteLocation("gccc", FakeFragment(11), None, 88),
+            SiteLocation("atgc", FakeFragment(11), None, False, 8),
+            SiteLocation("gcct", FakeFragment(11), None, False, 12),
+            SiteLocation("attc", FakeFragment(11), None, False, 26),
+            SiteLocation("gccc", FakeFragment(11), None, False, 88),
         ]
 
         matched = FakeRecombination().possible_locations(locations, [])
@@ -472,10 +484,10 @@ class RecombinationTest(TestCase):
                 self.id = n
 
         locations = [
-            SiteLocation("gggc", None, object(), 12),
-            SiteLocation("atgc", FakeFragment(11), None, 8),
-            SiteLocation("attc", FakeFragment(11), None, 26),
-            SiteLocation("gcct", FakeFragment(11), None, 88),
+            SiteLocation("gggc", None, object(), False, 12),
+            SiteLocation("atgc", FakeFragment(11), None, False, 8),
+            SiteLocation("attc", FakeFragment(11), None, False, 26),
+            SiteLocation("gcct", FakeFragment(11), None, False, 88),
         ]
 
         matched = FakeRecombination().possible_locations(locations, [])
@@ -505,10 +517,10 @@ class RecombinationTest(TestCase):
                 self.id = n
 
         locations = [
-            SiteLocation("gccc", None, object(), 12),
-            SiteLocation("atgc", FakeFragment(11), None, 8),
-            SiteLocation("attc", FakeFragment(11), None, 26),
-            SiteLocation("gcct", FakeFragment(11), None, 88),
+            SiteLocation("gccc", None, object(), False, 12),
+            SiteLocation("atgc", FakeFragment(11), None, False, 8),
+            SiteLocation("attc", FakeFragment(11), None, False, 26),
+            SiteLocation("gcct", FakeFragment(11), None, False, 88),
         ]
 
         matched = FakeRecombination().possible_locations(locations, [])
@@ -522,6 +534,38 @@ class RecombinationTest(TestCase):
         self.assertEquals(matched[0][1].on_insert, False)
         self.assertEquals(matched[0][2].site, "gccc")
         self.assertEquals(matched[0][2].start_0based, 12)
+        self.assertEquals(matched[0][2].on_insert, True)
+
+    def test_recognizes_required_site_on_insert_across_circular_boundary(self):
+
+        class FakeRecombination(Recombination):
+            def required_genome_sites(self):
+                return ["aggc"]
+
+            def required_insert_sites(self):
+                return ["gggc", "ggga"]
+
+        class FakeFragment(object):
+            def __init__(self, n):
+                self.id = n
+
+        locations = [
+            SiteLocation("gggc", None, object(), True, 12),
+            SiteLocation("ggga", None, object(), True, 2),
+            SiteLocation("aggc", FakeFragment(11), None, False, 33),
+        ]
+
+        matched = FakeRecombination().possible_locations(locations, [])
+        self.assertEquals(len(matched), 1)
+        self.assertEquals(len(matched[0]), 3)
+        self.assertEquals(matched[0][0].site, "aggc")
+        self.assertEquals(matched[0][0].start_0based, 33)
+        self.assertEquals(matched[0][0].on_insert, False)
+        self.assertEquals(matched[0][1].site, "gggc")
+        self.assertEquals(matched[0][1].start_0based, 12)
+        self.assertEquals(matched[0][1].on_insert, True)
+        self.assertEquals(matched[0][2].site, "ggga")
+        self.assertEquals(matched[0][2].start_0based, 2)
         self.assertEquals(matched[0][2].on_insert, True)
 
 
@@ -871,7 +915,7 @@ class IntegrationRecombinationTest(TestCase):
                                       "attc"+"a"*100+"ggg"+"atcc" +\
                                       "c"*1000)
 
-    def test_can_integrate_insert_with_site_across_junction(self):
+    def test_can_integrate_insert_with_site_across_circular_boundary(self):
         parent_genome = Genome(name="foo")
         parent_genome.save()
         f = Fragment.create_with_sequence("bar",
@@ -995,3 +1039,22 @@ class RMCERecombinationTest(TestCase):
         child_genome = r.run_reaction("far")
         f = child_genome.fragments.all()[0].indexed_fragment()
         self.assertEquals(f.sequence, "cctta"+"a"*100+"cctaaa"+"t"*1000)
+
+    def test_can_integrate_with_sites_across_circular_boundary_on_insert(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar",
+            "ggaa"+"c"*100+"gcaa"+"t"*1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attc", "ggaa", "gcaa", "cctt", "ccta")]
+
+        r = FakeReaction(parent_genome, "g"+"a"*10+"attc"+"ggg"+"att", True)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "cctt"+"a"*10+"ccta" + "t"*1000)

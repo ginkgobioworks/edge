@@ -28,13 +28,14 @@ def find_indices(big, small):
 
 class SiteLocation(object):
 
-    def __init__(self, site, fragment, insert, start_0based):
+    def __init__(self, site, fragment, insert, is_fragment_or_insert_circular, start_0based):
         self.site = site
         self.fragment = fragment
         self.insert = insert
         self.start_0based = start_0based  # 0-indexed
         self.adjusted_start_0based = self.start_0based
         self.used = False
+        self.is_fragment_or_insert_circular = is_fragment_or_insert_circular
 
     def use(self):
         self.used = True
@@ -61,8 +62,6 @@ class Recombination(object):
 
     def find_matching_locations(self, all_locations, required_sites, on_insert):
         # XXX disambiguity
-        # XXX does not allow multiple combination of sites on insert for integration
-        # XXX handle circularity for sites on insert
 
         candidate_single_site_locations = \
           [loc for loc in all_locations if on_insert == loc.on_insert and loc.site in required_sites and loc.used is False]
@@ -71,8 +70,14 @@ class Recombination(object):
             key=lambda loc: (loc.fragment_id, loc.start_0based)
         )
 
+        original_candidate_single_site_locations_length = len(candidate_single_site_locations)
+        if len(candidate_single_site_locations) > 0 and candidate_single_site_locations[0].is_fragment_or_insert_circular is True:
+            candidate_single_site_locations = candidate_single_site_locations + candidate_single_site_locations
+
         matching_locations = []
         for i, single_site_loc in enumerate(candidate_single_site_locations):
+            if i >= original_candidate_single_site_locations_length:
+                break
             if single_site_loc.site == required_sites[0]:
                 if [loc.site for loc in candidate_single_site_locations[i:i+len(required_sites)]] == list(required_sites):
                     matching_locations.append(candidate_single_site_locations[i:i+len(required_sites)])
@@ -93,6 +98,7 @@ class Recombination(object):
             locations_on_insert.extend(self.find_matching_locations(all_locations, required_insert_sites, True))
             if required_insert_sites != reverse_of_required_insert_sites:
                 locations_on_insert.extend(self.find_matching_locations(all_locations, reverse_of_required_insert_sites, True))
+            print("found on insert", len(locations_on_insert))
 
             if len(locations_on_insert) == 0:
                 errors.append("Requires site(s) %s on insert, but did not find any" % (required_insert_sites,))
@@ -369,11 +375,14 @@ class InversionEvent(Event):
 class RMCEEvent(Event):
 
     def get_integrated_aligned_with_site_direction(self, insert):
+        insert = insert*2
         site_left_insert = self.recombination.site_left_insert
         site_right_insert = self.recombination.site_right_insert
         if site_left_insert not in insert:
            insert = rc(insert)
-        return insert[insert.index(site_left_insert)+len(site_left_insert):insert.index(site_right_insert)]
+        # below, to handle when sites are across circular boundary
+        left_trimmed_insert = insert[insert.index(site_left_insert)+len(site_left_insert):]
+        return left_trimmed_insert[:left_trimmed_insert.index(site_right_insert)]
 
     def run(self, new_fragment, insert, is_insert_circular):
         genomic_locations = self.genomic_locations
@@ -433,7 +442,7 @@ def find_site_locations_on_sequence(sequence, is_circular, sites, fragment_obj=N
     for site in sites:
         locations.extend(
             find_query_locations_on_duplicated_template(
-                template, len(sequence), site, fragment_obj=fragment_obj
+                template, len(sequence), is_circular, site, fragment_obj=fragment_obj
             )
         )
 
@@ -442,7 +451,7 @@ def find_site_locations_on_sequence(sequence, is_circular, sites, fragment_obj=N
     return locations
 
 
-def find_query_locations_on_duplicated_template(template, sequence_len, site, fragment_obj=None):
+def find_query_locations_on_duplicated_template(template, sequence_len, is_fragment_or_insert_circular, site, fragment_obj=None):
     indices = find_indices(template, site)
     indices = [i for i in indices if i < sequence_len]
     return [
@@ -450,7 +459,8 @@ def find_query_locations_on_duplicated_template(template, sequence_len, site, fr
           site,
           fragment_obj,
           template[0:sequence_len] if fragment_obj is None else None,
-          i
+          is_fragment_or_insert_circular,
+          i,
       )
       for i in indices
     ]
@@ -526,7 +536,6 @@ class Reaction(object):
             self.events = []
             self.errors = []
 
-            # XXX detect duplicately defined events
 	    # note that we iterate through allowed() in order - earlier
 	    # recombination definitions take precedence
             for recombination in self.allowed():
