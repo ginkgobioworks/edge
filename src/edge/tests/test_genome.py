@@ -414,70 +414,70 @@ class GenomeTest(TestCase):
 
         diff1 = g2.get_coordinate_diff_from_parent_genome(g1)
         truediff1 = [
-            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 28,
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 276,
              'parent_start': 3, 'parent_end': 2,
-             'child_fragment_name': 'chrI', 'child_fragment_id': 29,
+             'child_fragment_name': 'chrI', 'child_fragment_id': 277,
              'child_start': 3, 'child_end': 8},
-            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 28,
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 276,
              'parent_start': 4, 'parent_end': 7,
-             'child_fragment_name': 'chrI', 'child_fragment_id': 29,
+             'child_fragment_name': 'chrI', 'child_fragment_id': 277,
              'child_start': 10, 'child_end': 9}
         ]
         self.assertEqual(diff1, truediff1)
 
         diff2 = g3.get_coordinate_diff_from_parent_genome(g2)
         truediff2 = [
-            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 29,
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 277,
              'parent_start': 9, 'parent_end': 8,
-             'child_fragment_name': 'chrI', 'child_fragment_id': 30,
+             'child_fragment_name': 'chrI', 'child_fragment_id': 278,
              'child_start': 9, 'child_end': 14}
         ]
         self.assertEqual(diff2, truediff2)
 
         diff3 = g4.get_coordinate_diff_from_parent_genome(g3)
         truediff3 = [
-            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 30,
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 278,
              'parent_start': 5, 'parent_end': 4,
-             'child_fragment_name': 'chrI', 'child_fragment_id': 31,
+             'child_fragment_name': 'chrI', 'child_fragment_id': 279,
              'child_start': 5, 'child_end': 10}
         ]
         self.assertEqual(diff3, truediff3)
 
         diff4 = g4.get_coordinate_diff_from_parent_genome(g2)
         truediff4 = [
-            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 29,
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 277,
              'parent_start': 5, 'parent_end': 4,
-             'child_fragment_name': 'chrI', 'child_fragment_id': 31,
+             'child_fragment_name': 'chrI', 'child_fragment_id': 279,
              'child_start': 5, 'child_end': 10},
-            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 29,
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 277,
              'parent_start': 9, 'parent_end': 8,
-             'child_fragment_name': 'chrI', 'child_fragment_id': 31,
+             'child_fragment_name': 'chrI', 'child_fragment_id': 279,
              'child_start': 15, 'child_end': 20}
         ]
         self.assertEqual(diff4, truediff4)
 
         diff5 = g3.get_coordinate_diff_from_parent_genome(g1)
         truediff5 = [
-            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 28,
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 276,
              'parent_start': 3, 'parent_end': 2,
-             'child_fragment_name': 'chrI', 'child_fragment_id': 30,
+             'child_fragment_name': 'chrI', 'child_fragment_id': 278,
              'child_start': 3, 'child_end': 14},
-            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 28,
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 276,
              'parent_start': 4, 'parent_end': 7,
-             'child_fragment_name': 'chrI', 'child_fragment_id': 30,
+             'child_fragment_name': 'chrI', 'child_fragment_id': 278,
              'child_start': 16, 'child_end': 15}
         ]
         self.assertEqual(diff5, truediff5)
 
         diff6 = g4.get_coordinate_diff_from_parent_genome(g1)
         truediff6 = [
-            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 28,
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 276,
              'parent_start': 3, 'parent_end': 2,
-             'child_fragment_name': 'chrI', 'child_fragment_id': 31,
+             'child_fragment_name': 'chrI', 'child_fragment_id': 279,
              'child_start': 3, 'child_end': 20},
-            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 28,
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': 276,
              'parent_start': 4, 'parent_end': 7,
-             'child_fragment_name': 'chrI', 'child_fragment_id': 31,
+             'child_fragment_name': 'chrI', 'child_fragment_id': 279,
              'child_start': 22, 'child_end': 21},
         ]
         self.assertEqual(diff6, truediff6)

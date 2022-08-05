@@ -186,22 +186,15 @@ class Indexed_Genome(Genome):
         child_only_fragments = self.fragments.filter().exclude(genome=p_genome_id)
 
         # Relate child fragments to parent fragments
-        child_to_parent_f_ids = {}
+        child_to_parent_fs = {}
         for f in child_only_fragments:
             curr_f = f
             while curr_f is not None and curr_f.id not in p_fragment_ids:
                 curr_f = curr_f.parent
             if curr_f is not None:
-                child_to_parent_f_ids[f.id] = curr_f.id
-        if len(child_to_parent_f_ids) == 0:
+                child_to_parent_fs[f.indexed_fragment()] = curr_f.indexed_fragment()
+        if len(child_to_parent_fs) == 0:
             raise Exception("Genome input is not a parent by lineage")
-
-        # Get indexed child and parent fragments
-        child_to_parent_fs = {
-            Fragment.objects.get(pk=child_f_id).indexed_fragment():
-                Fragment.objects.get(pk=parent_f_id).indexed_fragment()
-            for child_f_id, parent_f_id in child_to_parent_f_ids.items()
-        }
 
         # Get start to end chunks by fragment of diff regions between parent and child
         fragment_to_starts_and_ends = {}
