@@ -199,7 +199,6 @@ class Indexed_Genome(Genome):
         # Get start to end chunks by fragment of diff regions between parent and child
         fragment_to_starts_and_ends = {}
         for child_f, parent_f in child_to_parent_fs.items():
-            print(child_f, parent_f)
             parent_chunks, child_chunks = list(parent_f.chunks()), list(child_f.chunks())
             starts_and_ends, current_start = {}, None
             for child_i, c in enumerate(child_chunks):
@@ -213,11 +212,19 @@ class Indexed_Genome(Genome):
                         if child_i > 0 else None
                     next_child_chunk = child_chunks[child_i + 1] \
                         if child_i < (len(child_chunks) - 1) else None
-                    if prev_parent_chunk != prev_child_chunk and current_start:
-                        starts_and_ends[current_start] = c.id
-                        current_start = None
+
+                    if prev_parent_chunk != prev_child_chunk:
+                        if current_start is not None:
+                            starts_and_ends[current_start] = c.id
+                            current_start = None
+                        if len(starts_and_ends) == 0:
+                            starts_and_ends[None] = c.id
+
                     if next_parent_chunk != next_child_chunk:
                         current_start = c.id
+
+            if current_start is not None:
+                starts_and_ends[current_start] = None
             fragment_to_starts_and_ends[child_f] = starts_and_ends
 
         # Store dictionaries of changes with ID, start, and end for parent and child fragments
@@ -228,12 +235,16 @@ class Indexed_Genome(Genome):
                 regions.append({
                     "parent_fragment_name": parent_f.name,
                     "parent_fragment_id": parent_f.id,
-                    "parent_start": parent_f.fragment_chunk(start_id).base_last + 1,
-                    "parent_end": parent_f.fragment_chunk(end_id).base_first - 1,
+                    "parent_starts_at": 1 if start_id is None
+                        else parent_f.fragment_chunk(start_id).base_last + 1,
+                    "parent_ends_before": parent_f.length + 1 if end_id is None
+                        else parent_f.fragment_chunk(end_id).base_first,
                     "child_fragment_name": child_f.name,
                     "child_fragment_id": child_f.id,
-                    "child_start": child_f.fragment_chunk(start_id).base_last + 1,
-                    "child_end": child_f.fragment_chunk(end_id).base_first - 1,
+                    "child_starts_at": 1 if start_id is None
+                        else child_f.fragment_chunk(start_id).base_last + 1,
+                    "child_ends_before": child_f.length + 1 if end_id is None
+                        else child_f.fragment_chunk(end_id).base_first,
                 })
 
         return regions
