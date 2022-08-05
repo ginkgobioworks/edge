@@ -1,6 +1,11 @@
 from Bio.Seq import Seq
 
 
+# sites separated by more than these number of bps will not be considered as
+# part of the same combination
+SITE_SEPARATION_MAX = 50000
+
+
 def rc(s):
     return str(Seq(s).reverse_complement())
 
@@ -60,31 +65,46 @@ class Recombination(object):
     def required_insert_sites(self):
         return []
 
-    def find_matching_locations(self, all_locations, required_sites, on_insert):
-        # XXX disambiguity
-
-        candidate_single_site_locations = \
+    def find_matching_locations(self, all_locations, required_sites, on_insert, errors):
+        all_candidate_single_site_locations = \
           [loc for loc in all_locations if on_insert == loc.on_insert and loc.site in required_sites and loc.used is False]
-        candidate_single_site_locations = sorted(
-            candidate_single_site_locations,
-            key=lambda loc: (loc.fragment_id, loc.start_0based)
-        )
 
-        original_candidate_single_site_locations_length = len(candidate_single_site_locations)
-        if len(candidate_single_site_locations) > 0 and candidate_single_site_locations[0].is_fragment_or_insert_circular is True:
-            candidate_single_site_locations = candidate_single_site_locations + candidate_single_site_locations
+        candidate_single_site_locations_by_fragment = {}
+        for loc in all_candidate_single_site_locations:
+            if loc.fragment_id not in candidate_single_site_locations_by_fragment:
+                candidate_single_site_locations_by_fragment[loc.fragment_id] = []
+            candidate_single_site_locations_by_fragment[loc.fragment_id].append(loc)
 
         matching_locations = []
-        for i, single_site_loc in enumerate(candidate_single_site_locations):
-            if i >= original_candidate_single_site_locations_length:
-                break
-            if single_site_loc.site == required_sites[0]:
-                if [loc.site for loc in candidate_single_site_locations[i:i+len(required_sites)]] == list(required_sites):
-                    matching_locations.append(candidate_single_site_locations[i:i+len(required_sites)])
 
-        for locs in matching_locations:
-            for loc in locs:
-                loc.use()
+        for fragment_id, candidate_single_site_locations in candidate_single_site_locations_by_fragment.items():
+            candidate_single_site_locations = sorted(
+                candidate_single_site_locations,
+                key=lambda loc: loc.start_0based
+            )
+
+            original_candidate_single_site_locations_length = len(candidate_single_site_locations)
+            if len(candidate_single_site_locations) > 0 and candidate_single_site_locations[0].is_fragment_or_insert_circular is True:
+                candidate_single_site_locations = candidate_single_site_locations + candidate_single_site_locations
+
+            for i, single_site_loc in enumerate(candidate_single_site_locations):
+                if i >= original_candidate_single_site_locations_length:
+                    break
+                if single_site_loc.site == required_sites[0]:
+                    next_locs = candidate_single_site_locations[i:i+len(required_sites)]
+                    next_sites = [loc.site for loc in next_locs]
+                    site_separation = next_locs[-1].start_0based - next_locs[0].start_0based
+                    if next_sites == list(required_sites) and site_separation < SITE_SEPARATION_MAX:
+
+                        has_conflict = False
+                        for loc in next_locs:
+                            if loc.used:
+                                errors.append("Found %s that can trigger multiple events" % loc.site)
+                                has_conflict = True
+                            loc.use()
+
+                        if not has_conflict:
+                            matching_locations.append(next_locs)
 
         return matching_locations 
 
@@ -95,9 +115,9 @@ class Recombination(object):
         if len(required_insert_sites):
             locations_on_insert = []
             reverse_of_required_insert_sites = [rc(s) for s in required_insert_sites][::-1]
-            locations_on_insert.extend(self.find_matching_locations(all_locations, required_insert_sites, True))
+            locations_on_insert.extend(self.find_matching_locations(all_locations, required_insert_sites, True, errors))
             if required_insert_sites != reverse_of_required_insert_sites:
-                locations_on_insert.extend(self.find_matching_locations(all_locations, reverse_of_required_insert_sites, True))
+                locations_on_insert.extend(self.find_matching_locations(all_locations, reverse_of_required_insert_sites, True, errors))
             print("found on insert", len(locations_on_insert))
 
             if len(locations_on_insert) == 0:
@@ -114,9 +134,9 @@ class Recombination(object):
         required_genome_sites = self.required_genome_sites()
         reverse_of_required_genome_sites = [rc(s) for s in required_genome_sites][::-1]
         locations_on_genome = []
-        locations_on_genome.extend(self.find_matching_locations(all_locations, required_genome_sites, False))
+        locations_on_genome.extend(self.find_matching_locations(all_locations, required_genome_sites, False, errors))
         if required_genome_sites != reverse_of_required_genome_sites:
-            locations_on_genome.extend(self.find_matching_locations(all_locations, reverse_of_required_genome_sites, False))
+            locations_on_genome.extend(self.find_matching_locations(all_locations, reverse_of_required_genome_sites, False, errors))
         for locs in locations_on_genome:
             possible_locations.append(locs+insert_locations)
 

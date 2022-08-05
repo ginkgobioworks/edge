@@ -14,6 +14,7 @@ from edge.ssr import (
   SiteLocation,
   Recombination,
   Reaction,
+  SITE_SEPARATION_MAX
 )
 
 
@@ -567,6 +568,130 @@ class RecombinationTest(TestCase):
         self.assertEquals(matched[0][2].site, "ggga")
         self.assertEquals(matched[0][2].start_0based, 2)
         self.assertEquals(matched[0][2].on_insert, True)
+
+    def test_does_not_recognize_sites_across_chromosomes_as_one_set(self):
+
+        class FakeRecombination(Recombination):
+            def required_genome_sites(self):
+                return ["aggc", "gaat", "gggc"]
+
+        class FakeFragment(object):
+            def __init__(self, n):
+                self.id = n
+
+        locations = [
+            SiteLocation("atgc", FakeFragment(11), None, False, 8),
+            SiteLocation("aggc", FakeFragment(11), None, False, 12),
+            SiteLocation("gaat", FakeFragment(11), None, False, 26),
+            SiteLocation("gggc", FakeFragment(12), None, False, 88),
+        ]
+
+        matched = FakeRecombination().possible_locations(locations, [])
+        self.assertEquals(len(matched), 0)
+
+    def test_does_recognize_different_combinations_of_sites_on_different_chromosomes(self):
+
+        class FakeRecombination(Recombination):
+            def required_genome_sites(self):
+                return ["aggc", "gaat", "gggc"]
+
+        class FakeFragment(object):
+            def __init__(self, n):
+                self.id = n
+
+        locations = [
+            SiteLocation("atgc", FakeFragment(11), None, False, 8),
+            SiteLocation("aggc", FakeFragment(11), None, False, 12),
+            SiteLocation("gaat", FakeFragment(11), None, False, 26),
+            SiteLocation("gggc", FakeFragment(11), None, False, 88),
+            SiteLocation("aggc", FakeFragment(12), None, False, 42),
+            SiteLocation("gaat", FakeFragment(12), None, False, 56),
+            SiteLocation("gggc", FakeFragment(12), None, False, 78),
+        ]
+
+        matched = FakeRecombination().possible_locations(locations, [])
+        self.assertEquals(len(matched), 2)
+        self.assertEquals(len(matched[0]), 3)
+        self.assertEquals(matched[0][0].site, "aggc")
+        self.assertEquals(matched[0][0].start_0based, 12)
+        self.assertEquals(matched[0][0].fragment_id, 11)
+        self.assertEquals(len(matched[1]), 3)
+        self.assertEquals(matched[1][0].site, "aggc")
+        self.assertEquals(matched[1][0].start_0based, 42)
+        self.assertEquals(matched[1][0].fragment_id, 12)
+
+    def test_ignores_sites_too_far_part_and_considers_those_that_are_closer_together(self):
+
+        class FakeRecombination(Recombination):
+            def required_genome_sites(self):
+                return ["aggc", "aggc"]
+
+        class FakeFragment(object):
+            def __init__(self, n):
+                self.id = n
+
+        locations = [
+            SiteLocation("aggc", FakeFragment(11), None, False, 12),
+            SiteLocation("aggc", FakeFragment(11), None, False, 12+SITE_SEPARATION_MAX+1),
+            SiteLocation("aggc", FakeFragment(11), None, False, 12+SITE_SEPARATION_MAX+50),
+            SiteLocation("aggc", FakeFragment(11), None, False, 12+SITE_SEPARATION_MAX+50+SITE_SEPARATION_MAX+1),
+            SiteLocation("aggc", FakeFragment(11), None, False, 12+SITE_SEPARATION_MAX+50+SITE_SEPARATION_MAX+1+SITE_SEPARATION_MAX+1),
+            SiteLocation("aggc", FakeFragment(12), None, False, 42),
+            SiteLocation("aggc", FakeFragment(12), None, False, 78),
+        ]
+
+        matched = FakeRecombination().possible_locations(locations, [])
+        self.assertEquals(len(matched), 2)
+        self.assertEquals(len(matched[0]), 2)
+        self.assertEquals(matched[0][0].site, "aggc")
+        self.assertEquals(matched[0][0].start_0based, 12+SITE_SEPARATION_MAX+1)
+        self.assertEquals(matched[0][0].fragment_id, 11)
+        self.assertEquals(matched[0][1].site, "aggc")
+        self.assertEquals(matched[0][1].start_0based, 12+SITE_SEPARATION_MAX+50)
+        self.assertEquals(matched[0][1].fragment_id, 11)
+        self.assertEquals(len(matched[1]), 2)
+        self.assertEquals(matched[1][0].site, "aggc")
+        self.assertEquals(matched[1][0].start_0based, 42)
+        self.assertEquals(matched[1][0].fragment_id, 12)
+        self.assertEquals(matched[1][1].site, "aggc")
+        self.assertEquals(matched[1][1].start_0based, 78)
+        self.assertEquals(matched[1][1].fragment_id, 12)
+
+    def test_ignores_site_combinations_with_multiple_events(self):
+
+        class FakeRecombination(Recombination):
+            def required_genome_sites(self):
+                return ["aggc", "aggc"]
+
+        class FakeFragment(object):
+            def __init__(self, n):
+                self.id = n
+
+        locations = [
+            SiteLocation("aggc", FakeFragment(11), None, False, 12),
+            SiteLocation("aggc", FakeFragment(11), None, False, 22),
+            SiteLocation("aggc", FakeFragment(11), None, False, 33),
+            SiteLocation("aggc", FakeFragment(12), None, False, 42),
+            SiteLocation("aggc", FakeFragment(12), None, False, 78),
+        ]
+
+        matched = FakeRecombination().possible_locations(locations, [])
+        # 22 and 33 combo is ignored
+        self.assertEquals(len(matched), 2)
+        self.assertEquals(len(matched[0]), 2)
+        self.assertEquals(matched[0][0].site, "aggc")
+        self.assertEquals(matched[0][0].start_0based, 12)
+        self.assertEquals(matched[0][0].fragment_id, 11)
+        self.assertEquals(matched[0][1].site, "aggc")
+        self.assertEquals(matched[0][1].start_0based, 22)
+        self.assertEquals(matched[0][1].fragment_id, 11)
+        self.assertEquals(len(matched[1]), 2)
+        self.assertEquals(matched[1][0].site, "aggc")
+        self.assertEquals(matched[1][0].start_0based, 42)
+        self.assertEquals(matched[1][0].fragment_id, 12)
+        self.assertEquals(matched[1][1].site, "aggc")
+        self.assertEquals(matched[1][1].start_0based, 78)
+        self.assertEquals(matched[1][1].fragment_id, 12)
 
 
 class ReactionEventsTest(TestCase):
