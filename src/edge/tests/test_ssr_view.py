@@ -129,7 +129,7 @@ class SSRTester(TestCase):
         res = self.client.post(
             "/edge/genomes/%s/ssr/" % self.genome.id,
             data=json.dumps(
-                dict(donor=donor, is_donor_circular=is_donor_circular, reaction="crelox", create=True)
+                dict(donor=donor, is_donor_circular=is_donor_circular, reaction=reaction_name, create=True)
             ),
             content_type="application/json",
         )
@@ -141,6 +141,12 @@ class SSRTester(TestCase):
 
     def when_trigger_crelox_with_donor(self, donor, is_donor_circular=True):
         return self.when_trigger_crelox(donor=donor, is_donor_circular=is_donor_circular)
+
+    def when_trigger_flp(self, donor=None, is_donor_circular=None):
+        return self.when_trigger("flp", donor=donor, is_donor_circular=is_donor_circular)
+
+    def when_trigger_flp_with_donor(self, donor, is_donor_circular=True):
+        return self.when_trigger_flp(donor=donor, is_donor_circular=is_donor_circular)
 
     def modified_sequence_is(self, s):
         self.assertEquals(self.result.status_code, 201)

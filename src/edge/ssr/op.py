@@ -1,13 +1,16 @@
 import json
 from edge.models import Operation
 from edge.ssr.crelox import CreLoxReaction
+from edge.ssr.flp import FlpReaction
 
 
 class SSROp(object):
     JSON_ARGUMENT_REACTION_CRELOX = "crelox"
+    JSON_ARGUMENT_REACTION_FLP = "flp"
 
     SUPPORTED = [
-        JSON_ARGUMENT_REACTION_CRELOX
+        JSON_ARGUMENT_REACTION_CRELOX,
+        JSON_ARGUMENT_REACTION_FLP
     ]
 
     @staticmethod
@@ -22,6 +25,8 @@ class SSROp(object):
 
         if reaction_name.lower() == SSROp.JSON_ARGUMENT_REACTION_CRELOX:
             reaction = CreLoxReaction(genome, donor, is_donor_circular)
+        elif reaction_name.lower() == SSROp.JSON_ARGUMENT_REACTION_FLP:
+            reaction = FlpReaction(genome, donor, is_donor_circular)
         else:
             assert False
 

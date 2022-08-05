@@ -1,4 +1,5 @@
-from edge.ssr import rc, _c, Reaction, Integration, Excision, Inversion, RMCE
+import itertools
+from edge.ssr import rc, _c, Reaction, Excision, Inversion, RMCE
 
 
 class Sites(object):
@@ -14,5 +15,15 @@ class FlpReaction(Reaction):
 
     @staticmethod
     def allowed():
-        return [
-        ]
+        frt_sites = [Sites.Frt, Sites.Frt1, Sites.Frt2, Sites.Frt3, Sites.Frt4, Sites.Frt5]
+
+        allowed = []
+        for frt in frt_sites:
+            allowed.append(Excision(frt, frt, frt))
+            allowed.append(Inversion(frt, rc(frt), frt, rc(frt)))
+
+        for combo in list(itertools.combinations(frt_sites, 2)):
+            allowed.append(RMCE(combo[0], combo[1], combo[0], combo[1], combo[0], combo[1]))
+            allowed.append(RMCE(combo[1], combo[0], combo[1], combo[0], combo[1], combo[0]))
+
+        return allowed

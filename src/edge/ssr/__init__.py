@@ -118,7 +118,6 @@ class Recombination(object):
             locations_on_insert.extend(self.find_matching_locations(all_locations, required_insert_sites, True, errors))
             if required_insert_sites != reverse_of_required_insert_sites:
                 locations_on_insert.extend(self.find_matching_locations(all_locations, reverse_of_required_insert_sites, True, errors))
-            print("found on insert", len(locations_on_insert))
 
             if len(locations_on_insert) == 0:
                 errors.append("Requires site(s) %s on insert, but did not find any" % (required_insert_sites,))
