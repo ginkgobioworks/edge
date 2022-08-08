@@ -168,7 +168,7 @@ class Indexed_Genome(Genome):
     def changed_locations_by_fragment(self):
         changes = {}
 
-        for c in sorted(self.changes(), key=lambda x: x.base_first):
+        for c in self.changes():
             if c.fragment.id not in changes:
                 changes[c.fragment.id] = []
             v = changes[c.fragment.id]
