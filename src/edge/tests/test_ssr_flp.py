@@ -1,9 +1,9 @@
-from edge.ssr import _c, rc
+from edge.ssr import lower_no_whitespace, rc
 from edge.tests.test_ssr_view import SSRTester
 
 
-Frt = _c("GAAGTTCCTATTC tctagaaa GTATAGGAACTTC")
-Frt3 = _c("GAAGTTCCTATTC ttcaaata GTATAGGAACTTC")
+Frt = lower_no_whitespace("GAAGTTCCTATTC tctagaaa GTATAGGAACTTC")
+Frt3 = lower_no_whitespace("GAAGTTCCTATTC ttcaaata GTATAGGAACTTC")
 
 
 class FlpTest(SSRTester):

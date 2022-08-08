@@ -699,64 +699,6 @@ class RecombinationTest(TestCase):
         self.assertEquals(matched[1][1].fragment_id, 12)
 
 
-class ReactionEventsTest(TestCase):
-
-    def test_runs_multiple_events_on_same_fragment_with_adjusted_bps(self):
-
-        class FakeRecombination(Recombination):
-            def required_genome_sites(self):
-                return ["aggc"]
-
-            def events(self, locations, errors):
-                return self.generate_events(locations, FakeEvent, errors)
-
-        event_run_on_fragments = []
-        bp_shift_per_event = 17
-
-        class FakeEvent(Event):
-            def run(self, fragment, insert, insert_circular):
-                event_run_on_fragments.append(fragment)
-                return bp_shift_per_event
-
-        class FakeReaction(Reaction):
-            @staticmethod
-            def allowed():
-                return [FakeRecombination()]
-
-        parent_genome = Genome(name="foo")
-        parent_genome.save()
-        parent_fragment = Fragment.create_with_sequence(
-            "bar",
-            "a" * 100 + "aggc" + "t" * 100 + "aggc" + "c" * 100 + "aggc" + "g" * 100
-        )
-        Genome_Fragment(genome=parent_genome, fragment=parent_fragment, inherited=False).save()
-
-        r = FakeReaction(parent_genome, None, None)
-        child_genome = r.run_reaction("far")
-
-        self.assertNotEqual(child_genome.id, parent_genome.id)
-        self.assertNotEqual(child_genome.fragments.all()[0].id, parent_fragment.id)
-        self.assertEqual(child_genome.name, "far")
-
-        self.assertEquals(len(r.events), 3)
-        self.assertEquals(len(event_run_on_fragments), 3)
-
-        self.assertEquals(r.events[0].fragment_id, parent_fragment.id)
-        self.assertEquals(r.events[0].genomic_start_0based, 100)
-        self.assertEquals(r.events[0].genomic_adjusted_start_0based, 100)
-        self.assertEquals(event_run_on_fragments[0].id, child_genome.fragments.all()[0].id)
-
-        self.assertEquals(r.events[1].fragment_id, parent_fragment.id)
-        self.assertEquals(r.events[1].genomic_start_0based, 204)
-        self.assertEquals(r.events[1].genomic_adjusted_start_0based, 204 + bp_shift_per_event)
-        self.assertEquals(event_run_on_fragments[1].id, child_genome.fragments.all()[0].id)
-
-        self.assertEquals(r.events[2].fragment_id, parent_fragment.id)
-        self.assertEquals(r.events[2].genomic_start_0based, 308)
-        self.assertEquals(r.events[2].genomic_adjusted_start_0based, 308 + 2 * bp_shift_per_event)
-        self.assertEquals(event_run_on_fragments[2].id, child_genome.fragments.all()[0].id)
-
-
 class ExcisionRecombinationTest(TestCase):
     def test_can_excise_multiple_places_on_fragment(self):
         parent_genome = Genome(name="foo")

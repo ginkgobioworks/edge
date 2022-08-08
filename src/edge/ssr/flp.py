@@ -1,14 +1,14 @@
 import itertools
-from edge.ssr import rc, _c, Reaction, Excision, Inversion, RMCE
+from edge.ssr import rc, lower_no_whitespace, Reaction, Excision, Inversion, RMCE
 
 
 class Sites(object):
-    Frt = _c("GAAGTTCCTATTC tctagaaa GTATAGGAACTTC")
-    Frt1 = _c("GAAGTTCCTATTC tctagata GTATAGGAACTTC")
-    Frt2 = _c("GAAGTTCCTATTC tctactta GTATAGGAACTTC")
-    Frt3 = _c("GAAGTTCCTATTC ttcaaata GTATAGGAACTTC")
-    Frt4 = _c("GAAGTTCCTATTC tctagaag GTATAGGAACTTC")
-    Frt5 = _c("GAAGTTCCTATTC ttcaaaag GTATAGGAACTTC")
+    Frt = lower_no_whitespace("GAAGTTCCTATTC tctagaaa GTATAGGAACTTC")
+    Frt1 = lower_no_whitespace("GAAGTTCCTATTC tctagata GTATAGGAACTTC")
+    Frt2 = lower_no_whitespace("GAAGTTCCTATTC tctactta GTATAGGAACTTC")
+    Frt3 = lower_no_whitespace("GAAGTTCCTATTC ttcaaata GTATAGGAACTTC")
+    Frt4 = lower_no_whitespace("GAAGTTCCTATTC tctagaag GTATAGGAACTTC")
+    Frt5 = lower_no_whitespace("GAAGTTCCTATTC ttcaaaag GTATAGGAACTTC")
 
 
 class FlpReaction(Reaction):

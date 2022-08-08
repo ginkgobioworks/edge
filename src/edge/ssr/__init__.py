@@ -10,7 +10,7 @@ def rc(s):
     return str(Seq(s).reverse_complement())
 
 
-def _c(s):
+def lower_no_whitespace(s):
     return s.replace(" ", "").lower()
 
 
@@ -38,7 +38,6 @@ class SiteLocation(object):
         self.fragment = fragment
         self.insert = insert
         self.start_0based = start_0based  # 0-indexed
-        self.adjusted_start_0based = self.start_0based
         self.used = False
         self.is_fragment_or_insert_circular = is_fragment_or_insert_circular
 
@@ -284,14 +283,6 @@ class Event(object):
     def genomic_start_0based(self):
         return self.genomic_locations[0].start_0based
 
-    @property
-    def genomic_adjusted_start_0based(self):
-        return self.genomic_locations[0].adjusted_start_0based
-
-    def adjust_genomic_start_0based(self, shift):
-        for loc in self.genomic_locations:
-            loc.adjusted_start_0based += shift
-
     def to_dict(self):
         return dict(
             recombination=dict(
@@ -336,7 +327,7 @@ class IntegrationEvent(Event):
         integrated = new_site_left + integrated + new_site_right
 
         new_fragment.replace_bases(
-            genomic_locations[0].adjusted_start_0based + 1,
+            genomic_locations[0].start_0based + 1,
             bps_to_replace,
             integrated
         )
@@ -355,20 +346,20 @@ class ExcisionEvent(Event):
             assert genomic_locations[1].site == self.recombination.site_right
             new_site = self.recombination.recombined_site
             bps_to_remove = \
-                genomic_locations[1].adjusted_start_0based - \
-                genomic_locations[0].adjusted_start_0based + \
+                genomic_locations[1].start_0based - \
+                genomic_locations[0].start_0based + \
                 len(self.recombination.site_right)
         else:
             assert genomic_locations[0].site == rc(self.recombination.site_right)
             assert genomic_locations[1].site == rc(self.recombination.site_left)
             new_site = rc(self.recombination.recombined_site)
             bps_to_remove = \
-                genomic_locations[1].adjusted_start_0based - \
-                genomic_locations[0].adjusted_start_0based + \
+                genomic_locations[1].start_0based - \
+                genomic_locations[0].start_0based + \
                 len(self.recombination.site_left)
 
         new_fragment.replace_bases(
-            genomic_locations[0].adjusted_start_0based + 1,
+            genomic_locations[0].start_0based + 1,
             bps_to_remove,
             new_site
         )
@@ -391,8 +382,8 @@ class InversionEvent(Event):
             new_site_right = self.recombination.recombined_site_right
 
             bps_to_replace = \
-                genomic_locations[1].adjusted_start_0based - \
-                genomic_locations[0].adjusted_start_0based + \
+                genomic_locations[1].start_0based - \
+                genomic_locations[0].start_0based + \
                 len(self.recombination.site_right)
         else:
             assert genomic_locations[0].site == rc(self.recombination.site_right)
@@ -403,20 +394,20 @@ class InversionEvent(Event):
             new_site_right = rc(self.recombination.recombined_site_left)
 
             bps_to_replace = \
-                genomic_locations[1].adjusted_start_0based - \
-                genomic_locations[0].adjusted_start_0based + \
+                genomic_locations[1].start_0based - \
+                genomic_locations[0].start_0based + \
                 len(self.recombination.site_left)
 
         sequence_to_replace = new_fragment.get_sequence(
-            bp_lo=genomic_locations[0].adjusted_start_0based + len(old_site_left) + 1,
-            bp_hi=genomic_locations[1].adjusted_start_0based + 1 - 1
+            bp_lo=genomic_locations[0].start_0based + len(old_site_left) + 1,
+            bp_hi=genomic_locations[1].start_0based + 1 - 1
         )
         new_sequence = new_site_left + rc(sequence_to_replace) + new_site_right
         assert \
             len(old_site_left) + len(sequence_to_replace) + len(old_site_right) == bps_to_replace
 
         new_fragment.replace_bases(
-            genomic_locations[0].adjusted_start_0based + 1,
+            genomic_locations[0].start_0based + 1,
             bps_to_replace,
             new_sequence
         )
@@ -447,8 +438,8 @@ class RMCEEvent(Event):
             new_site_left = self.recombination.recombined_site_left_genome
             new_site_right = self.recombination.recombined_site_right_genome
 
-            bps_to_replace = genomic_locations[1].adjusted_start_0based - \
-                genomic_locations[0].adjusted_start_0based + \
+            bps_to_replace = genomic_locations[1].start_0based - \
+                genomic_locations[0].start_0based + \
                 len(self.recombination.site_right_genome)
         else:
             integrated = rc(integrated)
@@ -458,13 +449,13 @@ class RMCEEvent(Event):
             new_site_left = rc(self.recombination.recombined_site_right_genome)
             new_site_right = rc(self.recombination.recombined_site_left_genome)
 
-            bps_to_replace = genomic_locations[1].adjusted_start_0based - \
-                genomic_locations[0].adjusted_start_0based + \
+            bps_to_replace = genomic_locations[1].start_0based - \
+                genomic_locations[0].start_0based + \
                 len(self.recombination.site_left_genome)
 
         integrated = new_site_left + integrated + new_site_right
         new_fragment.replace_bases(
-            genomic_locations[0].adjusted_start_0based + 1,
+            genomic_locations[0].start_0based + 1,
             bps_to_replace,
             integrated
         )
@@ -622,11 +613,12 @@ class Reaction(object):
 
         old_to_new_fragment_dict = {}
 
-        # needs to run through events by fragment and start bp, and after each
-        # event shift the coordinates of the remaining events
+	# needs to run through events by fragment and start bp in reverse order
+	# on the fragment, so we don't have to adjust coordinates of events
+	# that have not been run yet.
 
         events = sorted(self.events,
-                        key=lambda e: (e.fragment_id, e.genomic_adjusted_start_0based))
+                        key=lambda e: (e.fragment_id, -e.genomic_start_0based))
         while len(events) > 0:
             event = events[0]
 
@@ -639,9 +631,6 @@ class Reaction(object):
             new_fragment = old_to_new_fragment_dict[event.fragment_id]
             bp_shift = event.run(new_fragment, self.insert, self.is_insert_circular)
 
-            for future_event in events[1:]:
-                if future_event.fragment_id == event.fragment_id:
-                    future_event.adjust_genomic_start_0based(bp_shift)
             events = events[1:]
 
         print("new genome in run_reaction", new_genome)

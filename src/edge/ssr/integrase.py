@@ -1,4 +1,4 @@
-from edge.ssr import _c, Reaction
+from edge.ssr import lower_no_whitespace, Reaction
 
 
 # TODO:
@@ -18,15 +18,15 @@ class Sites(object):
     PhiC31 sites
     """
 
-    PhiC31_attB_tt = _c("TGCGGGTGCCAGGGCGTGCCC tt GGGCTCCCCGGGCGCGTACTCC")
-    PhiC31_attP_tt = _c("GTGCCCCAACTGGGGTAACCT tt GAGTTCTCTCAGTTGGGGG")
+    PhiC31_attB_tt = lower_no_whitespace("TGCGGGTGCCAGGGCGTGCCC tt GGGCTCCCCGGGCGCGTACTCC")
+    PhiC31_attP_tt = lower_no_whitespace("GTGCCCCAACTGGGGTAACCT tt GAGTTCTCTCAGTTGGGGG")
 
     """
     Bxb1 sites
     """
 
-    Bxb1_attB = _c("TCGGCCGGCTTGTCGACGACG gcggtctc CGTCGTCAGGATCATCCGGGC")
-    Bxb1_attP = _c("GTCGTGGTTTGTCTGGTCAACCACC gcggtctc AGTGGTGTACGGTACAAACCCCGAC")
+    Bxb1_attB = lower_no_whitespace("TCGGCCGGCTTGTCGACGACG gcggtctc CGTCGTCAGGATCATCCGGGC")
+    Bxb1_attP = lower_no_whitespace("GTCGTGGTTTGTCTGGTCAACCACC gcggtctc AGTGGTGTACGGTACAAACCCCGAC")
 
 
 class Bxb1Reaction(Reaction):

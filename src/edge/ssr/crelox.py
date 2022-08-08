@@ -1,19 +1,19 @@
-from edge.ssr import rc, _c, Reaction, Integration, Excision, Inversion, RMCE
+from edge.ssr import rc, lower_no_whitespace, Reaction, Integration, Excision, Inversion, RMCE
 
 
 class Sites(object):
-    loxP = _c("ATAACTTCGTATA GCATACAT TATACGAAGTTAT")
-    lox66 = _c("ATAACTTCGTATA GCATACAT TATACGAACGGTA")
-    lox71 = _c("TACCGTTCGTATA GCATACAT TATACGAAGTTAT")
-    lox72 = _c("TACCGTTCGTATA GCATACAT TATACGAACGGTA")
+    loxP = lower_no_whitespace("ATAACTTCGTATA GCATACAT TATACGAAGTTAT")
+    lox66 = lower_no_whitespace("ATAACTTCGTATA GCATACAT TATACGAACGGTA")
+    lox71 = lower_no_whitespace("TACCGTTCGTATA GCATACAT TATACGAAGTTAT")
+    lox72 = lower_no_whitespace("TACCGTTCGTATA GCATACAT TATACGAACGGTA")
 
-    lox5171 = _c("ATAACTTCGTATA GtAcACAT TATACGAAGTTAT")
-    lox2272 = _c("ATAACTTCGTATA GgATACtT TATACGAAGTTAT")
+    lox5171 = lower_no_whitespace("ATAACTTCGTATA GtAcACAT TATACGAAGTTAT")
+    lox2272 = lower_no_whitespace("ATAACTTCGTATA GgATACtT TATACGAAGTTAT")
 
-    loxm2 = _c("ATAACTTCGTATA TGGTTTCT TATACGAAGTTAT")
-    loxm2_66 = _c("ATAACTTCGTATA TGGTTTCT TATACGAACGGTA")
-    loxm2_71 = _c("TACCGTTCGTATA TGGTTTCT TATACGAAGTTAT")
-    loxm2_72 = _c("TACCGTTCGTATA TGGTTTCT TATACGAACGGTA")
+    loxm2 = lower_no_whitespace("ATAACTTCGTATA TGGTTTCT TATACGAAGTTAT")
+    loxm2_66 = lower_no_whitespace("ATAACTTCGTATA TGGTTTCT TATACGAACGGTA")
+    loxm2_71 = lower_no_whitespace("TACCGTTCGTATA TGGTTTCT TATACGAAGTTAT")
+    loxm2_72 = lower_no_whitespace("TACCGTTCGTATA TGGTTTCT TATACGAACGGTA")
 
 
 class CreLoxReaction(Reaction):
