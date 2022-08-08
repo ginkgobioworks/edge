@@ -239,9 +239,8 @@ class Event(object):
 
     @property
     def fragment_id(self):
-        for loc in self.locations:
-            if loc.fragment_id:
-                return loc.fragment_id
+        for loc in self.genomic_locations:
+            return loc.fragment_id
         assert False
 
     def is_reversed(self):
@@ -285,7 +284,7 @@ class Event(object):
 class IntegrationEvent(Event):
 
     def get_integrated_aligned_with_site_direction(self, insert, is_insert_circular):
-        insert = insert*3
+        insert = insert * 3
         site_insert = self.recombination.site_insert
         if site_insert not in insert:
             insert = rc(insert)
