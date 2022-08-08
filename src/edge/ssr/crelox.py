@@ -2,15 +2,15 @@ from edge.ssr import rc, _c, Reaction, Integration, Excision, Inversion, RMCE
 
 
 class Sites(object):
-    loxP     = _c("ATAACTTCGTATA GCATACAT TATACGAAGTTAT")
-    lox66    = _c("ATAACTTCGTATA GCATACAT TATACGAACGGTA")
-    lox71    = _c("TACCGTTCGTATA GCATACAT TATACGAAGTTAT")
-    lox72    = _c("TACCGTTCGTATA GCATACAT TATACGAACGGTA")
+    loxP = _c("ATAACTTCGTATA GCATACAT TATACGAAGTTAT")
+    lox66 = _c("ATAACTTCGTATA GCATACAT TATACGAACGGTA")
+    lox71 = _c("TACCGTTCGTATA GCATACAT TATACGAAGTTAT")
+    lox72 = _c("TACCGTTCGTATA GCATACAT TATACGAACGGTA")
 
-    lox5171  = _c("ATAACTTCGTATA GtAcACAT TATACGAAGTTAT")
-    lox2272  = _c("ATAACTTCGTATA GgATACtT TATACGAAGTTAT")
+    lox5171 = _c("ATAACTTCGTATA GtAcACAT TATACGAAGTTAT")
+    lox2272 = _c("ATAACTTCGTATA GgATACtT TATACGAAGTTAT")
 
-    loxm2    = _c("ATAACTTCGTATA TGGTTTCT TATACGAAGTTAT")
+    loxm2 = _c("ATAACTTCGTATA TGGTTTCT TATACGAAGTTAT")
     loxm2_66 = _c("ATAACTTCGTATA TGGTTTCT TATACGAACGGTA")
     loxm2_71 = _c("TACCGTTCGTATA TGGTTTCT TATACGAAGTTAT")
     loxm2_72 = _c("TACCGTTCGTATA TGGTTTCT TATACGAACGGTA")
@@ -23,8 +23,18 @@ class CreLoxReaction(Reaction):
         return [
             RMCE(Sites.loxP, Sites.lox2272, Sites.loxP, Sites.lox2272, Sites.loxP, Sites.lox2272),
             RMCE(Sites.lox2272, Sites.loxP, Sites.lox2272, Sites.loxP, Sites.lox2272, Sites.loxP),
-            RMCE(Sites.lox66, Sites.lox2272, Sites.lox71, Sites.lox2272, Sites.lox72, Sites.lox2272),
-            RMCE(Sites.lox2272, Sites.lox66, Sites.lox2272, Sites.lox71, Sites.lox2272, Sites.lox72),
+            RMCE(Sites.lox66, Sites.lox2272,
+                 Sites.lox71, Sites.lox2272,
+                 Sites.lox72, Sites.lox2272),
+            RMCE(Sites.lox2272, Sites.lox66,
+                 Sites.lox2272, Sites.lox71,
+                 Sites.lox2272, Sites.lox72),
+            RMCE(Sites.loxm2_71, Sites.lox66,
+                 Sites.loxm2_66, Sites.lox71,
+                 Sites.loxP, Sites.lox72),
+            RMCE(Sites.loxm2_66, Sites.lox66,
+                 Sites.loxm2_71, Sites.lox71,
+                 Sites.loxm2_72, Sites.lox72),
 
             Integration(Sites.lox66, Sites.lox71, Sites.lox72, Sites.loxP),
             Integration(Sites.lox71, Sites.lox66, Sites.loxP, Sites.lox72),

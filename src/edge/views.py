@@ -817,9 +817,11 @@ class GenomeSSRView(GenomeOperationViewBase):
 
         parser = RequestParser()
         parser.add_argument("donor", field_type=str, required=False, default=None, location="json")
-        parser.add_argument("is_donor_circular", field_type=bool, required=False, default=None, location="json")
+        parser.add_argument("is_donor_circular", field_type=bool, required=False, default=None,
+                            location="json")
         parser.add_argument("reaction", field_type=str, required=True, location="json")
-        parser.add_argument("genome_name", field_type=str, required=False, default=None, location="json")
+        parser.add_argument("genome_name", field_type=str, required=False, default=None,
+                            location="json")
         parser.add_argument("notes", field_type=str, required=False, default=None, location="json")
         parser.add_argument(
             "annotations",
@@ -840,7 +842,7 @@ class GenomeSSRView(GenomeOperationViewBase):
         if annotations is None:
             annotations = []
         elif (
-            validate_annotations(cassette, annotations) is False
+            validate_annotations(donor, annotations) is False
         ):
             errors.append(
                 "Annotations failed validation: \

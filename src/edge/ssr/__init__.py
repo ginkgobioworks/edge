@@ -67,7 +67,8 @@ class Recombination(object):
 
     def find_matching_locations(self, all_locations, required_sites, on_insert, errors):
         all_candidate_single_site_locations = \
-          [loc for loc in all_locations if on_insert == loc.on_insert and loc.site in required_sites and loc.used is False]
+          [loc for loc in all_locations
+           if on_insert == loc.on_insert and loc.site in required_sites and loc.used is False]
 
         candidate_single_site_locations_by_fragment = {}
         for loc in all_candidate_single_site_locations:
@@ -77,21 +78,25 @@ class Recombination(object):
 
         matching_locations = []
 
-        for fragment_id, candidate_single_site_locations in candidate_single_site_locations_by_fragment.items():
+        for fragment_id, candidate_single_site_locations in \
+                candidate_single_site_locations_by_fragment.items():
+
             candidate_single_site_locations = sorted(
                 candidate_single_site_locations,
                 key=lambda loc: loc.start_0based
             )
 
             original_candidate_single_site_locations_length = len(candidate_single_site_locations)
-            if len(candidate_single_site_locations) > 0 and candidate_single_site_locations[0].is_fragment_or_insert_circular is True:
-                candidate_single_site_locations = candidate_single_site_locations + candidate_single_site_locations
+            if len(candidate_single_site_locations) > 0 and \
+               candidate_single_site_locations[0].is_fragment_or_insert_circular is True:
+                candidate_single_site_locations = \
+                    candidate_single_site_locations + candidate_single_site_locations
 
             for i, single_site_loc in enumerate(candidate_single_site_locations):
                 if i >= original_candidate_single_site_locations_length:
                     break
                 if single_site_loc.site == required_sites[0]:
-                    next_locs = candidate_single_site_locations[i:i+len(required_sites)]
+                    next_locs = candidate_single_site_locations[i:i + len(required_sites)]
                     next_sites = [loc.site for loc in next_locs]
                     site_separation = next_locs[-1].start_0based - next_locs[0].start_0based
                     if next_sites == list(required_sites) and site_separation < SITE_SEPARATION_MAX:
@@ -99,14 +104,14 @@ class Recombination(object):
                         has_conflict = False
                         for loc in next_locs:
                             if loc.used:
-                                errors.append("Found %s that can trigger multiple events" % loc.site)
+                                errors.append("Found %s, can trigger multiple events" % loc.site)
                                 has_conflict = True
                             loc.use()
 
                         if not has_conflict:
                             matching_locations.append(next_locs)
 
-        return matching_locations 
+        return matching_locations
 
     def possible_locations(self, all_locations, errors):
         required_insert_sites = self.required_insert_sites()
@@ -115,29 +120,46 @@ class Recombination(object):
         if len(required_insert_sites):
             locations_on_insert = []
             reverse_of_required_insert_sites = [rc(s) for s in required_insert_sites][::-1]
-            locations_on_insert.extend(self.find_matching_locations(all_locations, required_insert_sites, True, errors))
+            locations_on_insert.extend(
+                self.find_matching_locations(all_locations, required_insert_sites, True, errors)
+            )
             if required_insert_sites != reverse_of_required_insert_sites:
-                locations_on_insert.extend(self.find_matching_locations(all_locations, reverse_of_required_insert_sites, True, errors))
+                locations_on_insert.extend(
+                    self.find_matching_locations(
+                        all_locations, reverse_of_required_insert_sites, True, errors
+                    )
+                )
 
             if len(locations_on_insert) == 0:
-                errors.append("Requires site(s) %s on insert, but did not find any" % (required_insert_sites,))
+                errors.append(
+                    "Required site(s) %s on insert missing" % (required_insert_sites,)
+                )
                 return []
             elif len(locations_on_insert) > 1:
-                errors.append("Requires one site or one set of sites %s on insert, found multiple" % (required_insert_sites,))
+                errors.append(
+                    "Requires one site or one set of sites %s on insert, found multiple"
+                    % (required_insert_sites,)
+                )
                 return []
-          
-            insert_locations = locations_on_insert[0] 
+
+            insert_locations = locations_on_insert[0]
 
         possible_locations = []
 
         required_genome_sites = self.required_genome_sites()
         reverse_of_required_genome_sites = [rc(s) for s in required_genome_sites][::-1]
         locations_on_genome = []
-        locations_on_genome.extend(self.find_matching_locations(all_locations, required_genome_sites, False, errors))
+        locations_on_genome.extend(
+            self.find_matching_locations(all_locations, required_genome_sites, False, errors)
+        )
         if required_genome_sites != reverse_of_required_genome_sites:
-            locations_on_genome.extend(self.find_matching_locations(all_locations, reverse_of_required_genome_sites, False, errors))
+            locations_on_genome.extend(
+                self.find_matching_locations(
+                    all_locations, reverse_of_required_genome_sites, False, errors
+                )
+            )
         for locs in locations_on_genome:
-            possible_locations.append(locs+insert_locations)
+            possible_locations.append(locs + insert_locations)
 
         return possible_locations
 
@@ -151,7 +173,8 @@ class Recombination(object):
 
 class Integration(Recombination):
 
-    def __init__(self, site_insert, site_genome, recombined_site_left_genome, recombined_site_right_genome):
+    def __init__(self, site_insert, site_genome,
+                 recombined_site_left_genome, recombined_site_right_genome):
         super(Integration, self).__init__()
         self.site_insert = site_insert
         self.site_genome = site_genome
@@ -254,7 +277,8 @@ class Event(object):
 
     @property
     def genomic_locations(self):
-        return sorted([l for l in self.locations if l.fragment_id is not None], key=lambda l: l.start_0based)
+        return sorted([l for l in self.locations
+                       if l.fragment_id is not None], key=lambda l: l.start_0based)
 
     @property
     def genomic_start_0based(self):
@@ -270,12 +294,15 @@ class Event(object):
 
     def to_dict(self):
         return dict(
-            recombination=dict(type=self.recombination.__class__.__name__, sites=self.recombination.__dict__),
+            recombination=dict(
+                type=self.recombination.__class__.__name__,
+                sites=self.recombination.__dict__
+            ),
             genomic_locations=[
                 dict(
                     site=loc.site,
                     fragment_id=loc.fragment_id,
-                    start=loc.start_0based+1
+                    start=loc.start_0based + 1
                 ) for loc in self.genomic_locations
             ]
         )
@@ -291,7 +318,7 @@ class IntegrationEvent(Event):
         assert insert.index(site_insert) >= 0
         bps = find_indices(insert, site_insert)
         assert len(bps) >= 2
-        return insert[bps[0]+len(site_insert):bps[1]]
+        return insert[bps[0] + len(site_insert):bps[1]]
 
     def run(self, new_fragment, insert, is_insert_circular):
         genomic_locations = self.genomic_locations
@@ -306,15 +333,15 @@ class IntegrationEvent(Event):
             new_site_left = self.recombination.recombined_site_left_genome
             new_site_right = self.recombination.recombined_site_right_genome
 
-        integrated = new_site_left+integrated+new_site_right
+        integrated = new_site_left + integrated + new_site_right
 
         new_fragment.replace_bases(
-            genomic_locations[0].adjusted_start_0based+1,
+            genomic_locations[0].adjusted_start_0based + 1,
             bps_to_replace,
             integrated
         )
 
-        return len(integrated)-bps_to_replace
+        return len(integrated) - bps_to_replace
 
 
 class ExcisionEvent(Event):
@@ -327,24 +354,26 @@ class ExcisionEvent(Event):
             assert genomic_locations[0].site == self.recombination.site_left
             assert genomic_locations[1].site == self.recombination.site_right
             new_site = self.recombination.recombined_site
-            bps_to_remove = genomic_locations[1].adjusted_start_0based -\
-                            genomic_locations[0].adjusted_start_0based +\
-                            len(self.recombination.site_right)
+            bps_to_remove = \
+                genomic_locations[1].adjusted_start_0based - \
+                genomic_locations[0].adjusted_start_0based + \
+                len(self.recombination.site_right)
         else:
             assert genomic_locations[0].site == rc(self.recombination.site_right)
             assert genomic_locations[1].site == rc(self.recombination.site_left)
             new_site = rc(self.recombination.recombined_site)
-            bps_to_remove = genomic_locations[1].adjusted_start_0based -\
-                            genomic_locations[0].adjusted_start_0based +\
-                            len(self.recombination.site_left)
+            bps_to_remove = \
+                genomic_locations[1].adjusted_start_0based - \
+                genomic_locations[0].adjusted_start_0based + \
+                len(self.recombination.site_left)
 
         new_fragment.replace_bases(
-            genomic_locations[0].adjusted_start_0based+1,
+            genomic_locations[0].adjusted_start_0based + 1,
             bps_to_remove,
             new_site
         )
 
-        return len(new_site)-bps_to_remove
+        return len(new_site) - bps_to_remove
 
 
 class InversionEvent(Event):
@@ -361,9 +390,10 @@ class InversionEvent(Event):
             new_site_left = self.recombination.recombined_site_left
             new_site_right = self.recombination.recombined_site_right
 
-            bps_to_replace = genomic_locations[1].adjusted_start_0based -\
-                             genomic_locations[0].adjusted_start_0based +\
-                             len(self.recombination.site_right)
+            bps_to_replace = \
+                genomic_locations[1].adjusted_start_0based - \
+                genomic_locations[0].adjusted_start_0based + \
+                len(self.recombination.site_right)
         else:
             assert genomic_locations[0].site == rc(self.recombination.site_right)
             assert genomic_locations[1].site == rc(self.recombination.site_left)
@@ -372,34 +402,39 @@ class InversionEvent(Event):
             new_site_left = rc(self.recombination.recombined_site_right)
             new_site_right = rc(self.recombination.recombined_site_left)
 
-            bps_to_replace = genomic_locations[1].adjusted_start_0based -\
-                             genomic_locations[0].adjusted_start_0based +\
-                             len(self.recombination.site_left)
+            bps_to_replace = \
+                genomic_locations[1].adjusted_start_0based - \
+                genomic_locations[0].adjusted_start_0based + \
+                len(self.recombination.site_left)
 
-        sequence_to_replace = new_fragment.get_sequence(bp_lo=genomic_locations[0].adjusted_start_0based+len(old_site_left)+1,
-                                                        bp_hi=genomic_locations[1].adjusted_start_0based+1-1)
-        new_sequence = new_site_left+rc(sequence_to_replace)+new_site_right
-        assert len(old_site_left)+len(sequence_to_replace)+len(old_site_right) == bps_to_replace
+        sequence_to_replace = new_fragment.get_sequence(
+            bp_lo=genomic_locations[0].adjusted_start_0based + len(old_site_left) + 1,
+            bp_hi=genomic_locations[1].adjusted_start_0based + 1 - 1
+        )
+        new_sequence = new_site_left + rc(sequence_to_replace) + new_site_right
+        assert \
+            len(old_site_left) + len(sequence_to_replace) + len(old_site_right) == bps_to_replace
 
         new_fragment.replace_bases(
-            genomic_locations[0].adjusted_start_0based+1,
+            genomic_locations[0].adjusted_start_0based + 1,
             bps_to_replace,
             new_sequence
         )
 
-        return len(new_sequence)-(len(old_site_left)+len(sequence_to_replace)+len(old_site_right))
+        return len(new_sequence) - \
+            (len(old_site_left) + len(sequence_to_replace) + len(old_site_right))
 
 
 class RMCEEvent(Event):
 
     def get_integrated_aligned_with_site_direction(self, insert):
-        insert = insert*2
+        insert = insert * 2
         site_left_insert = self.recombination.site_left_insert
         site_right_insert = self.recombination.site_right_insert
         if site_left_insert not in insert:
-           insert = rc(insert)
+            insert = rc(insert)
         # below, to handle when sites are across circular boundary
-        left_trimmed_insert = insert[insert.index(site_left_insert)+len(site_left_insert):]
+        left_trimmed_insert = insert[insert.index(site_left_insert) + len(site_left_insert):]
         return left_trimmed_insert[:left_trimmed_insert.index(site_right_insert)]
 
     def run(self, new_fragment, insert, is_insert_circular):
@@ -409,36 +444,32 @@ class RMCEEvent(Event):
         if not self.is_reversed():
             assert genomic_locations[0].site == self.recombination.site_left_genome
             assert genomic_locations[1].site == self.recombination.site_right_genome
-            old_site_left = self.recombination.site_left_genome
-            old_site_right = self.recombination.site_right_genome
             new_site_left = self.recombination.recombined_site_left_genome
             new_site_right = self.recombination.recombined_site_right_genome
 
-            bps_to_replace = genomic_locations[1].adjusted_start_0based -\
-                             genomic_locations[0].adjusted_start_0based +\
-                             len(self.recombination.site_right_genome)
+            bps_to_replace = genomic_locations[1].adjusted_start_0based - \
+                genomic_locations[0].adjusted_start_0based + \
+                len(self.recombination.site_right_genome)
         else:
             integrated = rc(integrated)
 
             assert genomic_locations[0].site == rc(self.recombination.site_right_genome)
             assert genomic_locations[1].site == rc(self.recombination.site_left_genome)
-            old_site_left = rc(self.recombination.site_right_genome)
-            old_site_right = rc(self.recombination.site_left_genome)
             new_site_left = rc(self.recombination.recombined_site_right_genome)
             new_site_right = rc(self.recombination.recombined_site_left_genome)
 
-            bps_to_replace = genomic_locations[1].adjusted_start_0based -\
-                             genomic_locations[0].adjusted_start_0based +\
-                             len(self.recombination.site_left_genome)
+            bps_to_replace = genomic_locations[1].adjusted_start_0based - \
+                genomic_locations[0].adjusted_start_0based + \
+                len(self.recombination.site_left_genome)
 
-        integrated = new_site_left+integrated+new_site_right
+        integrated = new_site_left + integrated + new_site_right
         new_fragment.replace_bases(
-            genomic_locations[0].adjusted_start_0based+1,
+            genomic_locations[0].adjusted_start_0based + 1,
             bps_to_replace,
             integrated
         )
 
-        return len(integrated)-bps_to_replace
+        return len(integrated) - bps_to_replace
 
 
 def add_reverse_sites(sites):
@@ -453,7 +484,7 @@ def find_site_locations_on_sequence(sequence, is_circular, sites, fragment_obj=N
     sites = add_reverse_sites(sites)
     template = sequence
     if is_circular:
-        template = sequence*2
+        template = sequence * 2
     template = template.lower()
 
     locations = []
@@ -469,7 +500,10 @@ def find_site_locations_on_sequence(sequence, is_circular, sites, fragment_obj=N
     return locations
 
 
-def find_query_locations_on_duplicated_template(template, sequence_len, is_fragment_or_insert_circular, site, fragment_obj=None):
+def find_query_locations_on_duplicated_template(
+        template, sequence_len, is_fragment_or_insert_circular, site,
+        fragment_obj=None):
+
     indices = find_indices(template, site)
     indices = [i for i in indices if i < sequence_len]
     return [
@@ -495,7 +529,9 @@ class Reaction(object):
         if parent_fragments is not None:
             self.parent_fragments = parent_fragments
         else:
-            self.parent_fragments = [f.indexed_fragment() for f in self.parent_genome.fragments.all()]
+            self.parent_fragments = [
+                f.indexed_fragment() for f in self.parent_genome.fragments.all()
+            ]
 
         self.insert = insert
         self.is_insert_circular = is_insert_circular
@@ -518,8 +554,8 @@ class Reaction(object):
         return set(sites)
 
     def determine_site_locations(self):
-	# FIXME this is a very slow implementation, we can make this faster by
-	# using cached results
+        # FIXME this is a very slow implementation, we can make this faster by
+        # using cached results
 
         locations = []
 
@@ -546,16 +582,16 @@ class Reaction(object):
         self.locations = locations
 
     def group_into_events(self):
-	# TODO if we attempt an integration with loxP on loxP, how do we return
-	# that as an error not just silently ignore?
+        # TODO if we attempt an integration with loxP on loxP, how do we return
+        # that as an error not just silently ignore?
 
         if self.events is None:
             self.determine_site_locations()
             self.events = []
             self.errors = []
 
-	    # note that we iterate through allowed() in order - earlier
-	    # recombination definitions take precedence
+            # note that we iterate through allowed() in order - earlier
+            # recombination definitions take precedence
             for recombination in self.allowed():
                 self.events.extend(recombination.events(self.locations, self.errors))
 
@@ -564,6 +600,16 @@ class Reaction(object):
 
         if len(self.events) == 0:
             print("errors", self.errors)
+            return
+
+        event_insert_sites = [
+            site
+            for event in self.events
+            for site in event.recombination.required_insert_sites()
+        ]
+        if len(event_insert_sites) == 0 and self.insert:
+            print("errors", self.errors)
+            print("has insert, but no events use insert")
             return
 
         new_genome = self.parent_genome.update()
@@ -576,10 +622,11 @@ class Reaction(object):
 
         old_to_new_fragment_dict = {}
 
-	# needs to run through events by fragment and start bp, and after each
-	# event shift the coordinates of the remaining events
+        # needs to run through events by fragment and start bp, and after each
+        # event shift the coordinates of the remaining events
 
-        events = sorted(self.events, key=lambda e: (e.fragment_id, e.genomic_adjusted_start_0based))
+        events = sorted(self.events,
+                        key=lambda e: (e.fragment_id, e.genomic_adjusted_start_0based))
         while len(events) > 0:
             event = events[0]
 

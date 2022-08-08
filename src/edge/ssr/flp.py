@@ -3,7 +3,7 @@ from edge.ssr import rc, _c, Reaction, Excision, Inversion, RMCE
 
 
 class Sites(object):
-    Frt  = _c("GAAGTTCCTATTC tctagaaa GTATAGGAACTTC")
+    Frt = _c("GAAGTTCCTATTC tctagaaa GTATAGGAACTTC")
     Frt1 = _c("GAAGTTCCTATTC tctagata GTATAGGAACTTC")
     Frt2 = _c("GAAGTTCCTATTC tctactta GTATAGGAACTTC")
     Frt3 = _c("GAAGTTCCTATTC ttcaaata GTATAGGAACTTC")

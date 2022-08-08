@@ -1,4 +1,4 @@
-from edge.ssr import rc, _c, Reaction, Integration, Excision, Inversion, RMCE
+from edge.ssr import _c, Reaction
 
 
 # TODO:
@@ -25,7 +25,7 @@ class Sites(object):
     Bxb1 sites
     """
 
-    Bxb1_attB =     _c("TCGGCCGGCTTGTCGACGACG gcggtctc CGTCGTCAGGATCATCCGGGC")
+    Bxb1_attB = _c("TCGGCCGGCTTGTCGACGACG gcggtctc CGTCGTCAGGATCATCCGGGC")
     Bxb1_attP = _c("GTCGTGGTTTGTCTGGTCAACCACC gcggtctc AGTGGTGTACGGTACAAACCCCGAC")
 
 
