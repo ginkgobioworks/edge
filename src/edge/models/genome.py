@@ -234,17 +234,24 @@ class Indexed_Genome(Genome):
             for start_id, end_id in starts_and_ends.items():
                 regions.append({
                     "parent_fragment_name": parent_f.name,
+
                     "parent_fragment_id": parent_f.id,
+
                     "parent_starts_at": 1 if start_id is None
-                        else parent_f.fragment_chunk(start_id).base_last + 1,
+                    else parent_f.fragment_chunk(start_id).base_last + 1,
+
                     "parent_ends_before": parent_f.length + 1 if end_id is None
-                        else parent_f.fragment_chunk(end_id).base_first,
+                    else parent_f.fragment_chunk(end_id).base_first,
+
                     "child_fragment_name": child_f.name,
+
                     "child_fragment_id": child_f.id,
+
                     "child_starts_at": 1 if start_id is None
-                        else child_f.fragment_chunk(start_id).base_last + 1,
+                    else child_f.fragment_chunk(start_id).base_last + 1,
+
                     "child_ends_before": child_f.length + 1 if end_id is None
-                        else child_f.fragment_chunk(end_id).base_first,
+                    else child_f.fragment_chunk(end_id).base_first,
                 })
 
         return regions
