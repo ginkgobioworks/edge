@@ -1043,3 +1043,74 @@ class GenomeImportTest(TestCase):
             url = reverse("import")
             res = self.client.post(url, {"name": "ecoli", "attachment": fp})
             self.assertEquals(len(json.loads(res.content)["imported_genomes"]), 1)
+
+
+class GenomeDiffView(TestCase):
+    def setUp(self):
+        genome = Genome.create("Foo")
+        s = "atggcatattcgcagct"
+        f1 = genome.add_fragment("chrI", s)
+        g1 = genome.indexed_genome()
+        g_u = g1.update()
+        with g_u.update_fragment_by_name("chrI") as f:
+            f.insert_bases(3, "gataca")
+            f.remove_bases(10, 4)
+        g2 = g_u.indexed_genome()
+        f2 = g2.fragments.all()[0]
+
+        self.parent_genome_id = g1.id
+        self.child_genome_id = g2.id
+        self.parent_fragment_id = f1.id
+        self.child_fragment_id = f2.id
+
+    def test_gets_location_diff(self):
+        # gets 200 with error
+        url = reverse(
+            "genome-coordinate-diff",
+            kwargs=dict(
+                child_genome_id=self.child_genome_id,
+                parent_genome_id=self.parent_genome_id
+            )
+        )
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(
+            json.loads(res.content),
+            [
+                {'parent_fragment_name': 'chrI', 'parent_fragment_id': self.parent_fragment_id,
+                 'parent_starts_at': 3, 'parent_ends_before': 3,
+                 'child_fragment_name': 'chrI', 'child_fragment_id': self.child_fragment_id,
+                 'child_starts_at': 3, 'child_ends_before': 9},
+                {'parent_fragment_name': 'chrI', 'parent_fragment_id': self.parent_fragment_id,
+                 'parent_starts_at': 4, 'parent_ends_before': 8,
+                 'child_fragment_name': 'chrI', 'child_fragment_id': self.child_fragment_id,
+                 'child_starts_at': 10, 'child_ends_before': 10}
+            ]
+        )
+
+    def test_fails_location_diff(self):
+        # gets 404 because no child genome
+        url = reverse(
+            "genome-coordinate-diff",
+            kwargs=dict(
+                child_genome_id=self.child_genome_id + 100,
+                parent_genome_id=self.parent_genome_id
+            )
+        )
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 404)
+
+        # gets 200 with error
+        url = reverse(
+            "genome-coordinate-diff",
+            kwargs=dict(
+                child_genome_id=self.child_genome_id,
+                parent_genome_id=self.parent_genome_id + 100
+            )
+        )
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(
+            "Genome input is not a parent by lineage",
+            json.loads(res.content)["error"]
+        )

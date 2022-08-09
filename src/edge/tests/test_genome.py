@@ -383,3 +383,171 @@ class GenomeTest(TestCase):
                 )
             else:
                 raise Exception("Unexpected fragment")
+
+    def test_get_coordinate_diff_from_parent_genome(self):
+        genome = Genome.create("Foo")
+        self.assertEquals(len(genome.fragments.all()), 0)
+
+        # add initial sequence
+        s = "atggcatattcgcagct"
+        genome.add_fragment("chrI", s)
+        g1 = genome.indexed_genome()
+        f1_id = g1.fragments.first().id
+
+        # insert
+        g_u = g1.update()
+        with g_u.update_fragment_by_name("chrI") as f:
+            f.insert_bases(3, "gataca")
+            f.remove_bases(10, 4)
+        g2 = g_u.indexed_genome()
+        f2_id = g2.fragments.first().id
+
+        # insert again
+        g_u = g2.update()
+        with g_u.update_fragment_by_name("chrI") as f:
+            f.insert_bases(9, "gataca")
+        g3 = g_u.indexed_genome()
+        f3_id = g3.fragments.first().id
+
+        # insert again inside of previous integration
+        g_u = g3.update()
+        with g_u.update_fragment_by_name("chrI") as f:
+            f.insert_bases(5, "gataca")
+        g4 = g_u.indexed_genome()
+        f4_id = g4.fragments.first().id
+
+        diff1 = g2.get_coordinate_diff_from_parent_genome(g1)
+        truediff1 = [
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f1_id,
+             'parent_starts_at': 3, 'parent_ends_before': 3,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f2_id,
+             'child_starts_at': 3, 'child_ends_before': 9},
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f1_id,
+             'parent_starts_at': 4, 'parent_ends_before': 8,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f2_id,
+             'child_starts_at': 10, 'child_ends_before': 10}
+        ]
+        self.assertEqual(diff1, truediff1)
+
+        diff2 = g3.get_coordinate_diff_from_parent_genome(g2)
+        truediff2 = [
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f2_id,
+             'parent_starts_at': 9, 'parent_ends_before': 9,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f3_id,
+             'child_starts_at': 9, 'child_ends_before': 15}
+        ]
+        self.assertEqual(diff2, truediff2)
+
+        diff3 = g4.get_coordinate_diff_from_parent_genome(g3)
+        truediff3 = [
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f3_id,
+             'parent_starts_at': 5, 'parent_ends_before': 5,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f4_id,
+             'child_starts_at': 5, 'child_ends_before': 11}
+        ]
+        self.assertEqual(diff3, truediff3)
+
+        diff4 = g4.get_coordinate_diff_from_parent_genome(g2)
+        truediff4 = [
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f2_id,
+             'parent_starts_at': 5, 'parent_ends_before': 5,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f4_id,
+             'child_starts_at': 5, 'child_ends_before': 11},
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f2_id,
+             'parent_starts_at': 9, 'parent_ends_before': 9,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f4_id,
+             'child_starts_at': 15, 'child_ends_before': 21}
+        ]
+        self.assertEqual(diff4, truediff4)
+
+        diff5 = g3.get_coordinate_diff_from_parent_genome(g1)
+        truediff5 = [
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f1_id,
+             'parent_starts_at': 3, 'parent_ends_before': 3,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f3_id,
+             'child_starts_at': 3, 'child_ends_before': 15},
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f1_id,
+             'parent_starts_at': 4, 'parent_ends_before': 8,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f3_id,
+             'child_starts_at': 16, 'child_ends_before': 16}
+        ]
+        self.assertEqual(diff5, truediff5)
+
+        diff6 = g4.get_coordinate_diff_from_parent_genome(g1)
+        truediff6 = [
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f1_id,
+             'parent_starts_at': 3, 'parent_ends_before': 3,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f4_id,
+             'child_starts_at': 3, 'child_ends_before': 21},
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f1_id,
+             'parent_starts_at': 4, 'parent_ends_before': 8,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f4_id,
+             'child_starts_at': 22, 'child_ends_before': 22},
+        ]
+        self.assertEqual(diff6, truediff6)
+
+    def test_get_coordinate_diff_from_parent_genome_at_beginning_and_end(self):
+        genome = Genome.create("Foo")
+        self.assertEquals(len(genome.fragments.all()), 0)
+
+        # add initial sequence
+        s = "atggcatattcgcagct"
+        genome.add_fragment("chrI", s)
+        g1 = genome.indexed_genome()
+        f1_id = g1.fragments.first().id
+
+        # insert
+        g_u = g1.update()
+        with g_u.update_fragment_by_name("chrI") as f:
+            f.insert_bases(17, "atatat")
+            f.insert_bases(10, "atcg")
+            f.insert_bases(1, "gcgcgc")
+        g2 = g_u.indexed_genome()
+        f2_id = g2.fragments.first().id
+
+        # insert
+        g_u = g2.update()
+        with g_u.update_fragment_by_name("chrI") as f:
+            f.remove_bases(27, 6)
+            f.remove_bases(1, 6)
+        g3 = g_u.indexed_genome()
+        f3_id = g3.fragments.first().id
+
+        diff1 = g2.get_coordinate_diff_from_parent_genome(g1)
+        truediff1 = [
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f1_id,
+             'parent_starts_at': 1, 'parent_ends_before': 1,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f2_id,
+             'child_starts_at': 1, 'child_ends_before': 7},
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f1_id,
+             'parent_starts_at': 10, 'parent_ends_before': 10,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f2_id,
+             'child_starts_at': 16, 'child_ends_before': 20},
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f1_id,
+             'parent_starts_at': 17, 'parent_ends_before': 17,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f2_id,
+             'child_starts_at': 27, 'child_ends_before': 33},
+        ]
+        self.assertEqual(diff1, truediff1)
+
+        diff2 = g3.get_coordinate_diff_from_parent_genome(g2)
+        truediff2 = [
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f2_id,
+             'parent_starts_at': 1, 'parent_ends_before': 7,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f3_id,
+             'child_starts_at': 1, 'child_ends_before': 1},
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f2_id,
+             'parent_starts_at': 27, 'parent_ends_before': 33,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f3_id,
+             'child_starts_at': 21, 'child_ends_before': 21},
+        ]
+        self.assertEqual(diff2, truediff2)
+
+        diff3 = g3.get_coordinate_diff_from_parent_genome(g1)
+        truediff3 = [
+            {'parent_fragment_name': 'chrI', 'parent_fragment_id': f1_id,
+             'parent_starts_at': 10, 'parent_ends_before': 10,
+             'child_fragment_name': 'chrI', 'child_fragment_id': f3_id,
+             'child_starts_at': 10, 'child_ends_before': 14},
+        ]
+        self.assertEqual(diff3, truediff3)
