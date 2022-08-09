@@ -11,6 +11,7 @@ from django.conf import settings
 from edge.models import Fragment
 
 BLAST_DB = "%s/edge-nucl" % settings.NCBI_DATA_DIR
+BLAST_N_THREADS = os.getenv("BLAST_N_THREADS", 2)
 
 
 def default_genome_db_name(genome):
@@ -88,11 +89,13 @@ def blast(dbname, blast_program, query):
     outfile = "%s.out.json" % infile
     if blast_program == "tblastn":
         blast_cl = NcbitblastnCommandline(
-            query=infile, db=dbname, word_size=6, outfmt=15, out=outfile, num_threads=4
+            query=infile, db=dbname, word_size=6,
+            outfmt=15, out=outfile, num_threads=BLAST_N_THREADS
         )
     else:
         blast_cl = NcbiblastnCommandline(
-            query=infile, db=dbname, word_size=6, outfmt=15, out=outfile, num_threads=4
+            query=infile, db=dbname, word_size=6,
+            outfmt=15, out=outfile, num_threads=BLAST_N_THREADS
         )
 
     cl = str(blast_cl)
