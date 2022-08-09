@@ -806,3 +806,15 @@ and annotation array elements have all the required fields."
             ),
             RecombineOp,
         )
+
+
+class GenomeDiffView(ViewBase):
+    def on_get(self, request, child_genome_id, parent_genome_id):
+        child_genome = get_genome_or_404(child_genome_id)
+        child_genome = child_genome.indexed_genome()
+
+        try:
+            regions = child_genome.get_coordinate_diff_from_parent_genome(parent_genome_id)
+            return regions
+        except Exception as e:
+            return {'error': str(e)}
