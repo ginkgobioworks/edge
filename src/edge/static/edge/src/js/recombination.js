@@ -30,7 +30,7 @@ function GenomeRecombinationController($scope, $routeParams, $http, $location) {
       cassette: $scope.cassette,
       homology_arm_length: $scope.homology_arm_length,
       create: false,
-      design_primers: true,
+      design_primers: false,
       primer3_opts: $scope.primer3_opts
     });
     $http

@@ -613,9 +613,9 @@ class Reaction(object):
 
         old_to_new_fragment_dict = {}
 
-	# needs to run through events by fragment and start bp in reverse order
-	# on the fragment, so we don't have to adjust coordinates of events
-	# that have not been run yet.
+    # needs to run through events by fragment and start bp in reverse order
+    # on the fragment, so we don't have to adjust coordinates of events
+    # that have not been run yet.
 
         events = sorted(self.events,
                         key=lambda e: (e.fragment_id, -e.genomic_start_0based))
@@ -629,7 +629,7 @@ class Reaction(object):
                     old_to_new_fragment_dict[event.fragment_id] = f
 
             new_fragment = old_to_new_fragment_dict[event.fragment_id]
-            bp_shift = event.run(new_fragment, self.insert, self.is_insert_circular)
+            event.run(new_fragment, self.insert, self.is_insert_circular)
 
             events = events[1:]
 

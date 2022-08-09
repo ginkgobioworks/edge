@@ -1,15 +1,17 @@
+import json
 import os
-import tempfile
 import subprocess
-from functools import lru_cache
-from django.conf import settings
-from edge.models import Fragment
+import tempfile
 from Bio.Blast.Applications import NcbiblastnCommandline
 from Bio.Blast.Applications import NcbitblastnCommandline
-from Bio.Blast import NCBIXML
+from functools import lru_cache
 
+from django.conf import settings
+
+from edge.models import Fragment
 
 BLAST_DB = "%s/edge-nucl" % settings.NCBI_DATA_DIR
+BLAST_N_THREADS = os.getenv("BLAST_N_THREADS", 2)
 
 
 def default_genome_db_name(genome):
@@ -84,14 +86,16 @@ def blast(dbname, blast_program, query):
         infile = f.name
         f.write(">Query\n%s\n" % query)
 
-    outfile = "%s.out.xml" % infile
+    outfile = "%s.out.json" % infile
     if blast_program == "tblastn":
         blast_cl = NcbitblastnCommandline(
-            query=infile, db=dbname, word_size=6, outfmt=5, out=outfile
+            query=infile, db=dbname, word_size=6,
+            outfmt=15, out=outfile, num_threads=BLAST_N_THREADS
         )
     else:
         blast_cl = NcbiblastnCommandline(
-            query=infile, db=dbname, word_size=6, outfmt=5, out=outfile
+            query=infile, db=dbname, word_size=6,
+            outfmt=15, out=outfile, num_threads=BLAST_N_THREADS
         )
 
     cl = str(blast_cl)
@@ -105,41 +109,43 @@ def blast(dbname, blast_program, query):
 
     results = []
     with open(outfile, "r") as f:
-        blast_record = NCBIXML.read(f)
-        for alignment in blast_record.alignments:
-            accession = Blast_Accession(alignment.accession)
-            for hsp in alignment.hsps:
-                if accession.fragment_length is not None:
-                    if (
-                        hsp.sbjct_start > accession.fragment_length
-                        and hsp.sbjct_end > accession.fragment_length
-                    ):
-                        continue
-                    # don't apply '% accession.fragment_length' to
-                    # sbjct_start/end. Blast_Result#strand compares sbjct_start
-                    # and sbjct_end to determine which strand the hit is on.
-                    # Caller should just handle when sbjct_start/end is greater
-                    # than fragment length. alternatively, we can store strand
-                    # explicit, but that also creates complexity when using
-                    # sbjct_start/end coordinates.
+        data = json.load(f)
+        for output in data['BlastOutput2']:
+            for hit in output['report']['results']['search']['hits']:
+                desc = hit['description'][0]
+                accession = Blast_Accession(desc['accession'])
+                for hsp in hit['hsps']:
+                    if accession.fragment_length is not None:
+                        if (
+                            hsp['hit_from'] > accession.fragment_length
+                            and hsp['hit_to'] > accession.fragment_length
+                        ):
+                            continue
+                        # don't apply '% accession.fragment_length' to
+                        # sbjct_start/end. Blast_Result#strand compares sbjct_start
+                        # and sbjct_end to determine which strand the hit is on.
+                        # Caller should just handle when sbjct_start/end is greater
+                        # than fragment length. alternatively, we can store strand
+                        # explicit, but that also creates complexity when using
+                        # sbjct_start/end coordinates.
 
-                f = Blast_Result(
-                    fragment_id=accession.fragment_id,
-                    fragment_length=accession.fragment_length,
-                    hit_def=alignment.hit_def,
-                    query_start=hsp.query_start,
-                    query_end=hsp.query_end,
-                    subject_start=hsp.sbjct_start,
-                    subject_end=hsp.sbjct_end,
-                    evalue=hsp.expect,
-                    alignment=dict(
-                        query=hsp.query,
-                        match=hsp.match,
-                        matchi=inverse_match(hsp.match),
-                        subject=hsp.sbjct,
-                    ),
-                )
-                results.append(f)
+                    f = Blast_Result(
+                        fragment_id=accession.fragment_id,
+                        fragment_length=accession.fragment_length,
+                        hit_def=desc['title'],
+                        query_start=hsp['query_from'],
+                        query_end=hsp['query_to'],
+                        subject_start=hsp['hit_from'],
+                        subject_end=hsp['hit_to'],
+                        evalue=hsp['evalue'],
+                        alignment=dict(
+                            query=hsp['qseq'],
+                            match=hsp['midline'],
+                            matchi=inverse_match(hsp['midline']),
+                            subject=hsp['hseq'],
+                        ),
+                    )
+                    results.append(f)
 
     os.unlink(outfile)
     return results
