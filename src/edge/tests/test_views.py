@@ -1078,13 +1078,13 @@ class GenomeDiffView(TestCase):
             json.loads(res.content),
             [
                 {'parent_fragment_name': 'chrI', 'parent_fragment_id': self.parent_fragment_id,
-                 'parent_start': 3, 'parent_end': 2,
+                 'parent_starts_at': 3, 'parent_ends_before': 3,
                  'child_fragment_name': 'chrI', 'child_fragment_id': self.child_fragment_id,
-                 'child_start': 3, 'child_end': 8},
+                 'child_starts_at': 3, 'child_ends_before': 9},
                 {'parent_fragment_name': 'chrI', 'parent_fragment_id': self.parent_fragment_id,
-                 'parent_start': 4, 'parent_end': 7,
+                 'parent_starts_at': 4, 'parent_ends_before': 8,
                  'child_fragment_name': 'chrI', 'child_fragment_id': self.child_fragment_id,
-                 'child_start': 10, 'child_end': 9}
+                 'child_starts_at': 10, 'child_ends_before': 10}
             ]
         )
 
