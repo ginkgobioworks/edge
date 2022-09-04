@@ -164,10 +164,9 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
                     uniq_products[k] = product
 
     if len(pcr_products) == 1:
-        product = pcr_products[0][0]
-        region = pcr_products[0][1]
-        region = region["region"]
-        fragment = region["fragment"]  # already an indexed fragment
+        product, template_info = pcr_products[0]
+        region = template_info["region"]
+        fragment = template_info["fragment"]  # already an indexed fragment
         return (
             product,
             primer_a_results,
