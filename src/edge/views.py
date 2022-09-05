@@ -591,10 +591,10 @@ class GenomePcrView(ViewBase):
             product, primer_a_results, primer_b_results, template_info
         ) = pcr_from_genome(genome, primers[0], primers[1])
         # Convert annotations in template_info to dictionary.
-        if template_info and "template_annotations" in template_info:
-            template_info["template_annotations"] = [
+        if template_info and "annotations" in template_info:
+            template_info["annotations"] = [
                 FragmentAnnotationsView.to_dict(annotation)
-                for annotation in template_info["template_annotations"]
+                for annotation in template_info["annotations"]
             ]
         r = (
             product,

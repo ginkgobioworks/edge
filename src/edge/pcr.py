@@ -176,8 +176,8 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
                 region=region,
                 fragment_name=fragment.name,
                 fragment_id=fragment.id,
-                template_sequence=fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi),
-                template_annotations=fragment.annotations(bp_lo=bp_lo, bp_hi=bp_hi),
+                sequence=fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi),
+                annotations=fragment.annotations(bp_lo=bp_lo, bp_hi=bp_hi),
             ),
         )
     else:
