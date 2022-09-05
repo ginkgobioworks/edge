@@ -167,6 +167,7 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
         product, template_info = pcr_products[0]
         region = template_info["region"]
         fragment = template_info["fragment"]  # already an indexed fragment
+        bp_lo, bp_hi = region
         return (
             product,
             primer_a_results,
@@ -175,7 +176,8 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
                 region=region,
                 fragment_name=fragment.name,
                 fragment_id=fragment.id,
-                annotations=fragment.annotations(bp_lo=region[0], bp_hi=region[1])
+                template_sequence=fragment.get_sequence(bp_lo=bp_lo, bp_hi=bp_hi),
+                template_annotations=fragment.annotations(bp_lo=bp_lo, bp_hi=bp_hi),
             ),
         )
     else:
