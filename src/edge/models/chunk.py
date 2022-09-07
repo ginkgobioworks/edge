@@ -301,6 +301,14 @@ class Feature(models.Model):
         self._qualifiers = json.dumps(qualifiers)
 
     @property
+    def sequence(self):
+        seq = ''
+        cfs = self.chunk_feature_set.all()
+        for cf in sorted(cfs, key=lambda cf: cf.feature_base_first):
+            seq += cf.chunk.get_sequence()
+        return seq
+
+    @property
     def qualifiers(self):
         if self._qualifiers is not None:
             return json.loads(self._qualifiers)
