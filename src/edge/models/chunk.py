@@ -1,6 +1,7 @@
 import gzip
 import json
 
+from Bio.Seq import Seq
 from django.db import models
 from django.db import transaction
 
@@ -58,7 +59,6 @@ class Annotation(object):
                            (t[0].feature.strand if t[0].feature.strand is not None else 1)
                            * t[0].feature_base_first)
         )
-
         annotations = []
         for cf, fcl in chunk_feature_locs:
             if (
@@ -306,7 +306,10 @@ class Feature(models.Model):
         cfs = self.chunk_feature_set.all()
         for cf in sorted(cfs, key=lambda cf: cf.feature_base_first):
             seq += cf.chunk.get_sequence()
-        return seq
+        # Reverse complement if on negative strand
+        return str(
+            Seq(seq).reverse_complement()
+        ) if self.strand is not None and self.strand < 0 else seq
 
     @property
     def qualifiers(self):
