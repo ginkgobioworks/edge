@@ -62,5 +62,4 @@ function GenomeSSRController($scope, $routeParams, $http, $location) {
                 $scope.errors = data;
             });
     };
-  }
-  
+}
