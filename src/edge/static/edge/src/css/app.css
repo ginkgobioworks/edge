@@ -176,3 +176,10 @@ div.alignment div {
 #recombine-primer3-opts table input {
   width: 40px;
 }
+#ssr-inputs {
+  float: left;
+  margin-right: 20px;
+}
+#ssr-inputs input[type="checkbox"] {
+  margin: 0px 0px 2px 2px;
+}

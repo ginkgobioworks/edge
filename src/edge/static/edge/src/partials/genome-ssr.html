@@ -1,0 +1,86 @@
+<header>
+    <div class="container">
+      <ol class="breadcrumb">
+        <li>Edge</li>
+        <li><a href="#/genomes">Genomes</a></li>
+        <li>
+          <a href="#/genomes/{{ genome.id }}"
+            ><span class="fs-block" ng-bind-html="genome.name"></span
+          ></a>
+        </li>
+        <li>SSR</li>
+      </ol>
+    </div>
+  </header>
+  
+  <div class="container">
+    <h3>
+      Site-Specific Recombination on Genome {{ genome.id }}:
+      <span class="fs-block" ng-bind-html="genome.name"></span>
+    </h3>
+  
+    <form role="form" class="space-top" id="ssr-inputs">
+      <div class="form-inline">
+        SSR operation type
+        <div class="form-group">
+          <select class="form-control" ng-model="reaction" required>
+            <option value="crelox">Cre Lox</option>
+            <option value="flp">FLP</option>
+          </select>
+        </div>
+        New genome name
+        <div class="form-group">
+          <input
+            required
+            class="form-control fs-block"
+            type="text"
+            ng-model="new_genome_name"
+            size="20"
+          />
+        </div>
+      </div>
+      <br />
+      <div class="form-inline">
+        Donor sequence
+        <div style="float: right">
+          Circular
+          <div class="form-group">
+            <input
+              class="form-control fs-block"
+              type="checkbox"
+              ng-model="is_donor_circular"
+              size="5"
+            />
+          </div>
+        </div>
+      </div>
+      <textarea
+        class="form-control sequence fs-block"
+        ng-model="donor"
+      ></textarea>
+      <button class="btn btn-primary" ng-click="CheckSSR()">Check</button>
+    </form>
+  
+    <div class="clearfix"></div>
+  
+    <div ng-if="waiting === true">
+      <p>
+        <br />
+        <em>Waiting for server to respond ...</em>
+        <br />
+      </p>
+    </div>
+  
+    <div ng-if="(checked === true) && (waiting !== true)" class="results">
+      <p>
+        <button class="btn btn-primary" ng-click="SSR()">
+          Create post-SSR genome
+        </button>
+      </p>
+    </div>
+  
+    <div ng-if="(errors !== undefined) && (waiting !== true)" class="results">
+      <p><em>{{ errors }}</em></p>
+    </div>
+  </div>
+  
