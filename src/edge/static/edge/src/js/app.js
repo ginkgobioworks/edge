@@ -38,6 +38,10 @@ var app = angular.module("edge", ["ngRoute", "ngSanitize"]).config([
         template: JST["fragment-detail"],
         controller: FragmentController
       })
+      .when("/genomes/:genomeId/ssr", {
+        template: JST["genome-ssr"],
+        controller: GenomeSSRController
+      })
       .otherwise({ redirectTo: "/genomes" });
   }
 ]);

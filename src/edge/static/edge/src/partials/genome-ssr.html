@@ -1,0 +1,103 @@
+<header>
+  <div class="container">
+    <ol class="breadcrumb">
+      <li>Edge</li>
+      <li><a href="#/genomes">Genomes</a></li>
+      <li>
+        <a href="#/genomes/{{ genome.id }}"
+          ><span class="fs-block" ng-bind-html="genome.name"></span
+        ></a>
+      </li>
+      <li>SSR</li>
+    </ol>
+  </div>
+</header>
+  
+<div class="container">
+  <h3>
+    Site-Specific Recombination on Genome {{ genome.id }}:
+    <span class="fs-block" ng-bind-html="genome.name"></span>
+  </h3>
+
+  <form role="form" class="space-top" id="ssr-inputs">
+    <div class="form-inline">
+      Reaction
+      <div class="form-group">
+        <select class="form-control" ng-model="reaction" required>
+          <option value="crelox">CreLox</option>
+          <option value="flp">FLP</option>
+        </select>
+      </div>
+      New genome name
+      <div class="form-group">
+        <input
+          required
+          class="form-control fs-block"
+          type="text"
+          spellcheck="false"
+          ng-model="new_genome_name"
+          size="20"
+        />
+      </div>
+    </div>
+    <br />
+    <div class="form-inline">
+      Donor sequence
+      <div style="float: right">
+        Circular
+        <div class="form-group">
+          <input
+            class="form-control fs-block"
+            type="checkbox"
+            ng-model="is_donor_circular"
+            size="5"
+          />
+        </div>
+      </div>
+    </div>
+    <textarea
+      class="form-control sequence fs-block"
+      spellcheck="false"
+      ng-model="donor"
+    ></textarea>
+    <button class="btn btn-primary" ng-click="PreviewSSR()">Preview</button>
+  </form>
+
+  <div class="clearfix"></div>
+
+  <div ng-if="waiting === true">
+    <p>
+      <br />
+      <em>Waiting for server to respond ...</em>
+      <br />
+    </p>
+  </div>
+
+  <div ng-if="(previewed === true) && (waiting !== true) && (events !== undefined)" class="results">
+    <p ng-if="events.length === 0"><em>No matching events</em></p>
+    <div ng-if="events.length > 0">
+      <div ng-repeat="event in events" class="ssr-candidate">
+        <div ng-repeat="location in event.genomic_locations" class="ssr-locations">
+          <h5>
+            <em>{{ event.recombination.type }}</em> on fragment
+            <a
+            class="fs-block"
+            href="#/genomes/{{ genome.id }}/fragments/{{ location.fragment_id }}?bp={{ location.start }},{{ location.start + location.site.length }}"
+            >{{ location.fragment_name }}: {{ location.start }}-{{ location.start + location.site.length }}</a>
+            <br />
+            (site: {{ location.site.toUpperCase() }})
+          </h5>
+        </div>
+      </div>
+    </div>
+    <p ng-if="events.length === 1">
+      <button class="btn btn-primary" ng-click="SSR()">
+        Create post-SSR genome
+      </button>
+    </p>
+  </div>
+
+  <div ng-if="(errors !== undefined) && (waiting !== true)" class="results">
+    <p><em>{{ errors }}</em></p>
+  </div>
+</div>

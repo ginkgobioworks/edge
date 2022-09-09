@@ -293,6 +293,7 @@ class Event(object):
                 dict(
                     site=loc.site,
                     fragment_id=loc.fragment_id,
+                    fragment_name=loc.fragment.name,
                     start=loc.start_0based + 1
                 ) for loc in self.genomic_locations
             ]
