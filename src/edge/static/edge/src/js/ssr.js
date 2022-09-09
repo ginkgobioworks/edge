@@ -25,7 +25,7 @@ function GenomeSSRController($scope, $routeParams, $http, $location) {
                 donor: $scope.donor,
                 is_donor_circular: $scope.is_donor_circular,
                 reaction: $scope.reaction,
-                genome_name: $scope.genome_name,
+                genome_name: $scope.new_genome_name,
                 create: false
             });
             $http
@@ -52,7 +52,7 @@ function GenomeSSRController($scope, $routeParams, $http, $location) {
             donor: $scope.donor,
             is_donor_circular: $scope.is_donor_circular,
             reaction: $scope.reaction,
-            genome_name: $scope.genome_name,
+            genome_name: $scope.new_genome_name,
             create: true
         });
         $http
