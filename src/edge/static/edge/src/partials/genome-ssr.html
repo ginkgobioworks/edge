@@ -21,10 +21,10 @@
 
   <form role="form" class="space-top" id="ssr-inputs">
     <div class="form-inline">
-      SSR operation type
+      Reaction
       <div class="form-group">
         <select class="form-control" ng-model="reaction" required>
-          <option value="crelox">Cre Lox</option>
+          <option value="crelox">CreLox</option>
           <option value="flp">FLP</option>
         </select>
       </div>
@@ -56,9 +56,10 @@
     </div>
     <textarea
       class="form-control sequence fs-block"
+      spellcheck="false"
       ng-model="donor"
     ></textarea>
-    <button class="btn btn-primary" ng-click="CheckSSR()">Check</button>
+    <button class="btn btn-primary" ng-click="PreviewSSR()">Preview</button>
   </form>
 
   <div class="clearfix"></div>
@@ -71,8 +72,24 @@
     </p>
   </div>
 
-  <div ng-if="(checked === true) && (waiting !== true)" class="results">
-    <p>
+  <div ng-if="(previewed === true) && (waiting !== true) && (events !== undefined)" class="results">
+    <p ng-if="events.length === 0"><em>No matching events</em></p>
+    <div ng-if="events.length > 0">
+      <div ng-repeat="event in events" class="ssr-candidate">
+        <div ng-repeat="location in event.genomic_locations" class="ssr-locations">
+          <h5>
+            <em>{{ event.recombination.type }}</em> on fragment
+            <a
+            class="fs-block"
+            href="#/genomes/{{ genome.id }}/fragments/{{ location.fragment_id }}?bp={{ location.start }},{{ location.start + location.site.length }}"
+            >{{ location.fragment_name }}: {{ location.start }}-{{ location.start + location.site.length }}</a>
+            <br />
+            (site: {{ location.site.toUpperCase() }})
+          </h5>
+        </div>
+      </div>
+    </div>
+    <p ng-if="events.length === 1">
       <button class="btn btn-primary" ng-click="SSR()">
         Create post-SSR genome
       </button>
