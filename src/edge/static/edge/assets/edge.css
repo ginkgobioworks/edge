@@ -1,0 +1,178 @@
+.container-wide {
+  max-width: 1920px !important;
+}
+.space-top {
+  margin-top: 25px;
+}
+.space-left-small {
+  margin-left: 10px;
+}
+.space-top-small {
+  margin-top: 10px;
+}
+.select-mini {
+  font-size: 0.9em;
+}
+.primers {
+  margin: 15px 0px;
+}
+
+.annotation-summary {
+  display: inline-block;
+  margin-right: 10px;
+  margin-top: 10px;
+}
+.annotation-zoom {
+  display: inline-block;
+  position: absolute;
+}
+.zoom-container {
+  position: absolute;
+  width: 95%;
+}
+
+.bp-control,
+.annotation-control {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.annotation-strand-fwd {
+  border-top-right-radius: 20% 50%;
+  border-bottom-right-radius: 20% 50%;
+}
+.annotation-strand-rev {
+  border-top-left-radius: 20% 50%;
+  border-bottom-left-radius: 20% 50%;
+}
+
+.annotation-layer-0 {
+  top: 0px;
+}
+.annotation-layer-1 {
+  top: 2em;
+}
+.annotation-layer-2 {
+  top: 4em;
+}
+.annotation-layer-3 {
+  top: 6em;
+}
+.annotation-layer-4 {
+  top: 8em;
+}
+.annotation-layer-5 {
+  top: 10em;
+}
+.annotation-layer-6 {
+  top: 12em;
+}
+.annotation-layer-7 {
+  top: 14em;
+}
+.annotation-layer-8 {
+  top: 16em;
+}
+.annotation-layer-9 {
+  top: 18em;
+}
+.annotation-layer-10 {
+  top: 20em;
+}
+.annotation-layer-11 {
+  top: 22em;
+}
+.annotation-layer-12 {
+  top: 24em;
+}
+.annotation-layer-13 {
+  top: 26em;
+}
+.annotation-layer-14 {
+  top: 28em;
+}
+.annotation-layer-15 {
+  top: 30em;
+}
+.annotation-layer-16 {
+  top: 32em;
+}
+.annotation-layer-17 {
+  top: 34em;
+}
+.annotation-layer-18 {
+  top: 36em;
+}
+.annotation-layer-19 {
+  top: 38em;
+}
+.annotation-layer-20 {
+  top: 40em;
+}
+
+.sequence-container {
+  margin-top: 400px;
+}
+.sequence {
+  width: 90%;
+  font-family: courier;
+  font-size: 0.8em;
+  margin: 10px 0px;
+}
+.sequence-break {
+  word-wrap: break-word;
+}
+textarea.sequence {
+  height: 300px;
+}
+form .sequence {
+  width: 400px;
+  height: 200px;
+}
+
+.tab-content {
+  margin-top: 20px;
+}
+
+.results {
+  margin-top: 20px;
+}
+
+div.alignment {
+  font-family: courier;
+  font-size: 0.8em;
+}
+div.alignment div {
+  white-space: pre !important;
+}
+
+#sequence-viewer {
+  margin-top: 20px;
+}
+.op-params {
+  word-break: break-all;
+  font-family: courier;
+}
+
+#blast-inputs .sequence {
+  height: 150px;
+}
+
+.recombine-candidate {
+  margin: 15px 0px;
+}
+#recombine-inputs {
+  float: left;
+  margin-right: 20px;
+}
+#recombine-primer3-opts {
+  float: left;
+  width: inherit;
+}
+#recombine-primer3-opts table {
+  font-size: 0.9em;
+  width: inherit;
+}
+#recombine-primer3-opts table input {
+  width: 40px;
+}

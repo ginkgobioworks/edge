@@ -1,0 +1,22 @@
+table.svjs { font-family: courier; font-size: 0.8em; border-collapse: collapse; border-spacing: 0px; }
+table.svjs td { padding: 0px; }
+
+table.svjs .sequence-pos { color: #999; white-space: nowrap; }
+table.svjs .sequence-pos-left { text-align: right; padding-right: 5px; }
+table.svjs .sequence-pos-right { text-align: left; padding-left: 5px; }
+
+table.svjs tr.sequence-annotation {}
+table.svjs tr.sequence-annotation td { height: 15px; }
+table.svjs tr.sequence-annotation td div {
+  cursor: pointer;
+  position: absolute;
+  z-index: 100;
+  background-color: #d95f47;
+  color: white;
+}
+table.svjs tr.sequence-annotation-start td div { text-align: left; margin-top: -6px; }
+table.svjs tr.sequence-annotation-end td div { text-align: right; margin-top: -8px; }
+.sequence-single-bp { letter-spacing: -1px; }
+
+table.svjs tr.sequence-annotation-start-first { border-top:1px solid #ddd; }
+table.svjs tr.sequence-annotation-end-last { border-bottom:1px solid #ddd; }

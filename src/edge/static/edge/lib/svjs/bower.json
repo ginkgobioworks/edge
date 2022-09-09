@@ -1,0 +1,10 @@
+{
+  "name": "svjs",
+  "version": "0.1.0",
+  "main": ["svjs.css", "svjs.js"],
+  "ignore": [ ".gitignore", ".git" ],
+  "dependencies": {
+    "jquery": ">=1.9.0",
+    "underscore": "1.6.0"
+  }
+}
