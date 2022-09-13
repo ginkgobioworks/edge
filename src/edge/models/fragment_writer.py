@@ -13,6 +13,14 @@ class Fragment_Writer(object):
     """
 
     def _create_chunk_annotation(self, chunk, feature, feature_base_first, feature_base_last):
+        if Chunk_Feature.objects.filter(
+            chunk=chunk,
+            feature=feature,
+            feature_base_first=feature_base_first,
+            feature_base_last=feature_base_last
+        ).exists():
+            return None
+
         return Chunk_Feature(
             chunk=chunk,
             feature=feature,
@@ -21,9 +29,14 @@ class Fragment_Writer(object):
         )
 
     def _annotate_chunk(self, chunk, feature, feature_base_first, feature_base_last):
-        self._create_chunk_annotation(
-            chunk, feature, feature_base_first, feature_base_last
-        ).save()
+        cf, _ = Chunk_Feature.objects.get_or_create(
+            chunk=chunk,
+            feature=feature,
+            feature_base_first=feature_base_first,
+            feature_base_last=feature_base_last
+        )
+
+        return cf
 
     def _add_reference_chunk(self, start, end, fragment):
         c = Chunk(
