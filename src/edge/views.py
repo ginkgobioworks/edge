@@ -221,7 +221,9 @@ class FragmentAnnotationsView(ViewBase):
         q_parser.add_argument("f", field_type=int, location="get")
         q_parser.add_argument("l", field_type=int, location="get")
         q_parser.add_argument("m", field_type=int, location="get")
-        q_parser.add_argument("include_feature_sequence", field_type=str, default='false', location="get")
+        q_parser.add_argument(
+            "include_feature_sequence", field_type=str, default='false', location="get"
+        )
         args = q_parser.parse_args(request)
         f = args["f"]
         ll = args["l"]
@@ -588,7 +590,8 @@ class GenomePcrView(ViewBase):
         parser = RequestParser()
         parser.add_argument("primers", field_type=list, required=True, location="json")
         parser.add_argument(
-            "include_feature_sequence", field_type=bool, required=False, default=False, location="json"
+            "include_feature_sequence", field_type=bool,
+            required=False, default=False, location="json"
         )
 
         args = parser.parse_args(request)
@@ -604,7 +607,9 @@ class GenomePcrView(ViewBase):
         # Convert annotations in template_info to dictionary.
         if template_info and "annotations" in template_info:
             template_info["annotations"] = [
-                FragmentAnnotationsView.to_dict(annotation, include_feature_sequence=include_feature_sequence)
+                FragmentAnnotationsView.to_dict(
+                    annotation, include_feature_sequence=include_feature_sequence
+                )
                 for annotation in template_info["annotations"]
             ]
         r = (
