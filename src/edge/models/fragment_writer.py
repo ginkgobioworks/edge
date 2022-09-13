@@ -13,12 +13,13 @@ class Fragment_Writer(object):
     """
 
     def _create_chunk_annotation(self, chunk, feature, feature_base_first, feature_base_last):
-        if Chunk_Feature.objects.filter(
+        check = Chunk_Feature.objects.filter(
             chunk=chunk,
             feature=feature,
             feature_base_first=feature_base_first,
             feature_base_last=feature_base_last
-        ).exists():
+        )
+        if check.exists():
             return None
 
         return Chunk_Feature(
@@ -111,8 +112,15 @@ class Fragment_Writer(object):
                     a.feature_base_first,
                     a.feature_base_last - bps_to_split
                 )
-            cfs.append(self._create_chunk_annotation(split1, *a1))
-            cfs.append(self._create_chunk_annotation(split2, *a2))
+
+            a1_cf = self._create_chunk_annotation(split1, *a1)
+            if a1_cf is not None:
+                cfs.append(a1_cf)
+
+            a2_cf = self._create_chunk_annotation(split2, *a2)
+            if a2_cf is not None:
+                cfs.append(a2_cf)
+
         Chunk_Feature.bulk_create(cfs)
 
     # make sure you call this atomically! otherwise we may have corrupted chunk
