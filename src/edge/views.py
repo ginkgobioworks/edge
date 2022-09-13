@@ -193,8 +193,8 @@ class FragmentSequenceView(ViewBase):
 
 class FragmentAnnotationsView(ViewBase):
     @staticmethod
-    def to_dict(annotation):
-        return dict(
+    def to_dict(annotation, include_feature_sequence=False):
+        result = dict(
             base_first=annotation.base_first,
             base_last=annotation.base_last,
             strand=annotation.feature.strand,
@@ -212,16 +212,21 @@ class FragmentAnnotationsView(ViewBase):
             qualifiers=annotation.feature.qualifiers,
             feature_full_length=annotation.feature.length
         )
+        if include_feature_sequence:
+            result['feature']['sequence'] = annotation.feature.sequence
+        return result
 
     def on_get(self, request, fragment_id):
         q_parser = RequestParser()
         q_parser.add_argument("f", field_type=int, location="get")
         q_parser.add_argument("l", field_type=int, location="get")
         q_parser.add_argument("m", field_type=int, location="get")
+        q_parser.add_argument("include_feature_sequence", field_type=str, default='false', location="get")
         args = q_parser.parse_args(request)
         f = args["f"]
         ll = args["l"]
         m = args["m"]
+        include_feature_sequence = args["include_feature_sequence"].lower() == "true"
 
         fragment = get_fragment_or_404(fragment_id)
         annotations = fragment.indexed_fragment().annotations(bp_lo=f, bp_hi=ll)
@@ -234,7 +239,9 @@ class FragmentAnnotationsView(ViewBase):
                 annotations = new_a
             annotations = to_return
         return [
-            FragmentAnnotationsView.to_dict(annotation) for annotation in annotations
+            FragmentAnnotationsView.to_dict(
+                annotation, include_feature_sequence=include_feature_sequence
+            ) for annotation in annotations
         ]
 
     @transaction.atomic()
@@ -580,9 +587,13 @@ class GenomePcrView(ViewBase):
 
         parser = RequestParser()
         parser.add_argument("primers", field_type=list, required=True, location="json")
+        parser.add_argument(
+            "include_feature_sequence", field_type=bool, required=False, default=False, location="json"
+        )
 
         args = parser.parse_args(request)
         primers = args["primers"]
+        include_feature_sequence = args["include_feature_sequence"]
 
         if len(primers) != 2:
             raise Exception("Expecting two primers, got %s" % (primers,))
@@ -593,7 +604,7 @@ class GenomePcrView(ViewBase):
         # Convert annotations in template_info to dictionary.
         if template_info and "annotations" in template_info:
             template_info["annotations"] = [
-                FragmentAnnotationsView.to_dict(annotation)
+                FragmentAnnotationsView.to_dict(annotation, include_feature_sequence=include_feature_sequence)
                 for annotation in template_info["annotations"]
             ]
         r = (
