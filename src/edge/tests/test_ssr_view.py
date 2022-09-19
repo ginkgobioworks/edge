@@ -114,6 +114,79 @@ class SSRViewTest(TestCase):
         modified_sequence = child.fragments.all()[0].indexed_fragment().sequence
         self.assertEquals("g" * 100 in modified_sequence, True)
 
+    def test_annotation_validation_with_empty_list(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "t" * 100 + Sites.lox71 + "c" * 1000
+        )
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        donor = "(ggcc/)" + "a" * 10 + Sites.lox66 + "g" * 100 + "(/ccgg)"
+
+        res = self.client.post(
+            "/edge/genomes/%s/ssr/" % parent_genome.id,
+            data=json.dumps(
+                dict(
+                    donor=donor,
+                    is_donor_circular=True,
+                    reaction="crelox",
+                    create=True,
+                    annotations=[],
+                )
+            ),
+            content_type="application/json",
+        )
+        self.assertEquals(res.status_code, 201)
+        r = json.loads(res.content)
+
+        child = Genome.objects.get(pk=r["id"])
+        self.assertEquals(child.name, "foo SSR modified")
+
+    def test_annotation_validation_with_overhang(self):
+        """
+        We should rejecet donors with overhangs and annotations
+        """
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "t" * 100 + Sites.lox71 + "c" * 1000
+        )
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        donor = "(ggcc/)" + "a" * 10 + Sites.lox66 + "g" * 100 + "(/ccgg)"
+
+        res = self.client.post(
+            "/edge/genomes/%s/ssr/" % parent_genome.id,
+            data=json.dumps(
+                dict(
+                    donor=donor,
+                    is_donor_circular=True,
+                    reaction="crelox",
+                    create=True,
+                    annotations=[
+                        {
+                            "base_first": "a",
+                            "base_last": "b",
+                            "name": "name",
+                            "type": "type",
+                            "strand": "strand",
+                        }
+                    ],
+                )
+            ),
+            content_type="application/json",
+        )
+        self.assertEquals(res.status_code, 400)
+        r = json.loads(res.content)
+        self.assertEquals(r["errors"], (
+            "Annotations failed validation: please "
+            "make sure donor sequence does not have overhangs and annotation "
+            "array elements have all the required fields."
+        ))
+
 
 class SSRTester(TestCase):
 
