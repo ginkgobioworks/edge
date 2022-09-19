@@ -623,6 +623,86 @@ class GenomeRecombinationAnnotationsTest(TestCase):
         self.assertEquals("errors" in r, True)
         self.assertEquals("does not have overhangs" in r["errors"], True)
 
+    def test_recombination_annotation_validation_with_empty_list(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        template = "".join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = "".join([front_bs, replaced, back_bs])
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+
+        res = self.client.post(
+            "/edge/genomes/%s/recombination/" % g.id,
+            data=json.dumps(
+                dict(
+                    cassette=cassette,
+                    homology_arm_length=arm_len,
+                    create=True,
+                    genome_name="FooBar",
+                    annotations=[],
+                )
+            ),
+            content_type="application/json",
+        )
+        self.assertEquals(res.status_code, 201)
+        r = json.loads(res.content)
+        self.assertEquals(r["name"], "FooBar")
+
+        c = Genome.objects.get(pk=r["id"])
+        self.assertEquals(
+            c.fragments.all()[0].indexed_fragment().sequence,
+            "".join([upstream, cassette, downstream]),
+        )
+
+    def test_recombination_annotation_validation_with_overhang(self):
+        upstream = "gagattgtccgcgtttt"
+        front_bs = "(ggcc/)catagcgcacaggacgcggag"
+        middle = "cggcacctgtgagccg"
+        back_bs = "taatgaccccgaagcagg(/ccgg)"
+        downstream = "gttaaggcgcgaacat"
+        replaced = "aaaaaaaaaaaaaaaaaaa"
+
+        template = "".join([upstream, front_bs, middle, back_bs, downstream])
+        cassette = "".join([front_bs, replaced, back_bs])
+
+        arm_len = min(len(front_bs), len(back_bs))
+        g = self.build_genome(False, template)
+
+        res = self.client.post(
+            "/edge/genomes/%s/recombination/" % g.id,
+            data=json.dumps(
+                dict(
+                    cassette=cassette,
+                    homology_arm_length=arm_len,
+                    create=True,
+                    genome_name="FooBar",
+                    annotations=[
+                        {
+                            "base_first": "a",
+                            "base_last": "b",
+                            "name": "name",
+                            "type": "type",
+                            "strand": "strand",
+                        }
+                    ],
+                )
+            ),
+            content_type="application/json",
+        )
+        self.assertEquals(res.status_code, 400)
+        r = json.loads(res.content)
+        self.assertEquals(r["errors"], (
+            "Annotations failed validation: please "
+            "make sure donor sequence does not have overhangs and annotation "
+            "array elements have all the required fields."
+        ))
+
     def test_does_not_annotate_if_annotation_is_missing_field(self):
         donor = "a" * 500
         cassette = "".join([self.front_bs, donor, self.back_bs])

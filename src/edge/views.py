@@ -221,7 +221,12 @@ class FragmentAnnotationsView(ViewBase):
         q_parser.add_argument("f", field_type=int, location="get")
         q_parser.add_argument("l", field_type=int, location="get")
         q_parser.add_argument("m", field_type=int, location="get")
-        q_parser.add_argument("include_feature_sequence", field_type=str, default='false', location="get")
+        q_parser.add_argument(
+            "include_feature_sequence",
+            field_type=str,
+            default='false',
+            location="get"
+        )
         args = q_parser.parse_args(request)
         f = args["f"]
         ll = args["l"]
@@ -588,7 +593,11 @@ class GenomePcrView(ViewBase):
         parser = RequestParser()
         parser.add_argument("primers", field_type=list, required=True, location="json")
         parser.add_argument(
-            "include_feature_sequence", field_type=bool, required=False, default=False, location="json"
+            "include_feature_sequence",
+            field_type=bool,
+            required=False,
+            default=False,
+            location="json"
         )
 
         args = parser.parse_args(request)
@@ -604,7 +613,10 @@ class GenomePcrView(ViewBase):
         # Convert annotations in template_info to dictionary.
         if template_info and "annotations" in template_info:
             template_info["annotations"] = [
-                FragmentAnnotationsView.to_dict(annotation, include_feature_sequence=include_feature_sequence)
+                FragmentAnnotationsView.to_dict(
+                    annotation,
+                    include_feature_sequence=include_feature_sequence
+                )
                 for annotation in template_info["annotations"]
             ]
         r = (
@@ -805,11 +817,7 @@ class GenomeRecombinationView(GenomeOperationViewBase):
 
         if primer3_opts is None:
             primer3_opts = {}
-        if annotations is None:
-            annotations = []
-        elif (
-            validate_annotations(cassette, annotations) is False
-        ):
+        if annotations and (validate_annotations(cassette, annotations) is False):
             errors.append(
                 "Annotations failed validation: \
 please make sure donor sequence does not have overhangs \
@@ -864,11 +872,7 @@ class GenomeSSRView(GenomeOperationViewBase):
         notes = args["notes"]
         annotations = args["annotations"]
 
-        if annotations is None:
-            annotations = []
-        elif (
-            validate_annotations(donor, annotations) is False
-        ):
+        if annotations and (validate_annotations(donor, annotations) is False):
             errors.append(
                 "Annotations failed validation: \
 please make sure donor sequence does not have overhangs \
