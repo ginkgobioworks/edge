@@ -12,7 +12,7 @@ from edge.models import Fragment
 
 BLAST_DB = "%s/edge-nucl" % settings.NCBI_DATA_DIR
 BLAST_N_THREADS = os.getenv("BLAST_N_THREADS", 2)
-EDGE_BLAST_DEFAULT_WORD_SIZE = 10
+EDGE_BLAST_DEFAULT_WORD_SIZE = 11
 
 
 def default_genome_db_name(genome):
