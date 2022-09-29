@@ -1,4 +1,4 @@
-from edge.blast import blast_genome
+from edge.blast import blast_genome, EDGE_BLAST_DEFAULT_WORD_SIZE
 from Bio.Seq import Seq
 
 MIN_BINDING_LENGTH = 15
@@ -107,7 +107,10 @@ def compute_pcr_product(
     return (product, dict(fragment=fragment, region=(bs_start, bs_end)))
 
 
-def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
+def pcr_from_genome(
+    genome, primer_a_sequence, primer_b_sequence,
+    blast_word_size=EDGE_BLAST_DEFAULT_WORD_SIZE
+):
     """
     PCR on genome, using two primer sequences. Returns tuple of PCR product
     sequence, primer a blast results, and primer b blast results. Produuct
@@ -124,12 +127,12 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     primer_b_results = []
     primer_b_binding_check_len = []
 
-    res = blast_genome(genome, "blastn", primer_a_sequence)
+    res = blast_genome(genome, "blastn", primer_a_sequence, word_size=blast_word_size)
     for r in res:
         primer_a_results.append(r)
         primer_a_binding_check_len.append(len(primer_a_sequence))
 
-    res = blast_genome(genome, "blastn", primer_b_sequence)
+    res = blast_genome(genome, "blastn", primer_b_sequence, word_size=blast_word_size)
     for r in res:
         primer_b_results.append(r)
         primer_b_binding_check_len.append(len(primer_b_sequence))
@@ -137,7 +140,7 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     # checking various binding length
     for i in range(MIN_BINDING_LENGTH, BINDING_LENGTH_HI):
         p = primer_a_sequence[-i:]
-        res = blast_genome(genome, "blastn", p)
+        res = blast_genome(genome, "blastn", p, word_size=blast_word_size)
         for r in res:
             primer_a_results.append(r)
             primer_a_binding_check_len.append(len(p))
@@ -145,7 +148,7 @@ def pcr_from_genome(genome, primer_a_sequence, primer_b_sequence):
     # checking various binding length
     for i in range(MIN_BINDING_LENGTH, BINDING_LENGTH_HI):
         p = primer_b_sequence[-i:]
-        res = blast_genome(genome, "blastn", p)
+        res = blast_genome(genome, "blastn", p, word_size=blast_word_size)
         for r in res:
             primer_b_results.append(r)
             primer_b_binding_check_len.append(len(p))
