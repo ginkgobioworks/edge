@@ -575,8 +575,13 @@ class GenomeBlastView(ViewBase):
         parser = RequestParser()
         parser.add_argument("query", field_type=str, required=True, location="json")
         parser.add_argument("program", field_type=str, required=True, location="json")
-        parser.add_argument("word_size", field_type=int, required=False,
-            default=EDGE_BLAST_DEFAULT_WORD_SIZE, location="json")
+        parser.add_argument(
+            "word_size",
+            field_type=int,
+            required=False,
+            default=EDGE_BLAST_DEFAULT_WORD_SIZE,
+            location="json"
+        )
 
         args = parser.parse_args(request)
 

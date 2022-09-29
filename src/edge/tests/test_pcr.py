@@ -168,7 +168,7 @@ class GenomePcrTest(TestCase):
         upstream = get_random_sequence(2000)
         p1_bs = "catagcgcacaggacgcggag"
         middle = "cggcacctgtgagccg"
-        p2_bs = "gctagcatca"
+        p2_bs = "gctagcatcaa"
         downstream = get_random_sequence(2000)
         template = "".join([upstream, p1_bs, middle, p2_bs, downstream])
         p1 = "aaaaaaaaaa" + p1_bs
