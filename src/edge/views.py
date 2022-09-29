@@ -566,7 +566,7 @@ class GenomeListView(ViewBase):
 
 class GenomeBlastView(ViewBase):
     def on_post(self, request, genome_id):
-        from edge.blast import blast_genome
+        from edge.blast import blast_genome, EDGE_BLAST_DEFAULT_WORD_SIZE
         from edge.blastdb import check_and_build_genome_db
 
         genome = get_genome_or_404(genome_id)
@@ -575,16 +575,26 @@ class GenomeBlastView(ViewBase):
         parser = RequestParser()
         parser.add_argument("query", field_type=str, required=True, location="json")
         parser.add_argument("program", field_type=str, required=True, location="json")
+        parser.add_argument(
+            "word_size",
+            field_type=int,
+            required=False,
+            default=EDGE_BLAST_DEFAULT_WORD_SIZE,
+            location="json"
+        )
 
         args = parser.parse_args(request)
-        results = blast_genome(genome, args["program"], args["query"])
+
+        results = blast_genome(genome, args["program"], args["query"], word_size=args['word_size'])
         results = [r.to_dict() for r in results]
+        print(results)
         return results, 200
 
 
 class GenomePcrView(ViewBase):
     def on_post(self, request, genome_id):
         from edge.pcr import pcr_from_genome
+        from edge.blast import EDGE_BLAST_DEFAULT_WORD_SIZE
         from edge.blastdb import check_and_build_genome_db
 
         genome = get_genome_or_404(genome_id)
@@ -599,6 +609,13 @@ class GenomePcrView(ViewBase):
             default=False,
             location="json"
         )
+        parser.add_argument(
+            "blast_word_size",
+            field_type=int,
+            required=False,
+            default=EDGE_BLAST_DEFAULT_WORD_SIZE,
+            location="json"
+        )
 
         args = parser.parse_args(request)
         primers = args["primers"]
@@ -607,9 +624,9 @@ class GenomePcrView(ViewBase):
         if len(primers) != 2:
             raise Exception("Expecting two primers, got %s" % (primers,))
 
-        (
-            product, primer_a_results, primer_b_results, template_info
-        ) = pcr_from_genome(genome, primers[0], primers[1])
+        (product, primer_a_results, primer_b_results, template_info) = pcr_from_genome(
+            genome, primers[0], primers[1], blast_word_size=args["blast_word_size"]
+        )
         # Convert annotations in template_info to dictionary.
         if template_info and "annotations" in template_info:
             template_info["annotations"] = [

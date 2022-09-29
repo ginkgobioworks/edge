@@ -12,6 +12,7 @@ from edge.models import Fragment
 
 BLAST_DB = "%s/edge-nucl" % settings.NCBI_DATA_DIR
 BLAST_N_THREADS = os.getenv("BLAST_N_THREADS", 2)
+EDGE_BLAST_DEFAULT_WORD_SIZE = 11
 
 
 def default_genome_db_name(genome):
@@ -79,7 +80,7 @@ def inverse_match(m):
 
 
 @lru_cache(maxsize=200)
-def blast(dbname, blast_program, query):
+def blast(dbname, blast_program, query, word_size=EDGE_BLAST_DEFAULT_WORD_SIZE):
 
     infile = None
     with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
@@ -89,12 +90,12 @@ def blast(dbname, blast_program, query):
     outfile = "%s.out.json" % infile
     if blast_program == "tblastn":
         blast_cl = NcbitblastnCommandline(
-            query=infile, db=dbname, word_size=6,
+            query=infile, db=dbname, word_size=word_size,
             outfmt=15, out=outfile, num_threads=BLAST_N_THREADS
         )
     else:
         blast_cl = NcbiblastnCommandline(
-            query=infile, db=dbname, word_size=6,
+            query=infile, db=dbname, word_size=word_size,
             outfmt=15, out=outfile, num_threads=BLAST_N_THREADS
         )
 
@@ -151,11 +152,11 @@ def blast(dbname, blast_program, query):
     return results
 
 
-def blast_genome(genome, blast_program, query):
+def blast_genome(genome, blast_program, query, word_size=EDGE_BLAST_DEFAULT_WORD_SIZE):
     dbname = genome.blastdb
     if not dbname:
         return []
-    results = blast(dbname, blast_program, query)
+    results = blast(dbname, blast_program, query, word_size=word_size)
 
     genome_fragment_ids = [f.id for f in genome.fragments.all()]
     return [r for r in results if r.fragment_id in genome_fragment_ids]

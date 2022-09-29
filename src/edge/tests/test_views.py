@@ -5,6 +5,7 @@ from django import forms
 from django.test import TestCase
 from django.urls import reverse
 import unittest.mock as mock
+
 from edge.models import Genome, Fragment, Genome_Fragment
 
 
@@ -1113,4 +1114,82 @@ class GenomeDiffView(TestCase):
         self.assertEqual(
             "Genome input is not a parent by lineage",
             json.loads(res.content)["error"]
+        )
+
+
+class GenomeBlastPcrAPIView(TestCase):
+    def setUp(self):
+        genome = Genome.create("Foo")
+        upstream = "a" * 2000
+        s = "ttttatggcatattcgcagctactatctagcactacgatcatctagcgatttt"
+        downstream = "a" * 2000
+        genome.add_fragment("chrI", upstream + s + downstream)
+        g = genome.indexed_genome()
+
+        self.s = s
+        self.primers = [s[:15], s[-15:]]
+        self.genome = g
+
+    @mock.patch("edge.blast.blast_genome")
+    def test_blast_api_calls_blast_genome(self, mocked_blast_genome):
+        url = reverse(
+            "genome_blast",
+            kwargs=dict(genome_id=self.genome.id)
+        )
+        self.client.post(
+            url,
+            data=dict(program='blastn', query=self.s),
+            content_type="application/json"
+        )
+        mocked_blast_genome.assert_called_once_with(self.genome, 'blastn', self.s, word_size=11)
+
+    @mock.patch("edge.blast.blast_genome")
+    def test_blast_api_calls_blast_genome_word_size_6(self, mocked_blast_genome):
+        url = reverse(
+            "genome_blast",
+            kwargs=dict(genome_id=self.genome.id)
+        )
+        self.client.post(
+            url,
+            data=dict(program='blastn', query=self.s, word_size=6),
+            content_type="application/json"
+        )
+        print(mocked_blast_genome.call_args_list)
+        mocked_blast_genome.assert_called_once_with(self.genome, 'blastn', self.s, word_size=6)
+
+    @mock.patch("edge.pcr.blast_genome")
+    def test_pcr_api_calls_blast_genome(self, mocked_blast_genome):
+        url = reverse(
+            "genome_pcr",
+            kwargs=dict(genome_id=self.genome.id)
+        )
+        self.client.post(
+            url,
+            data=dict(primers=self.primers),
+            content_type="application/json"
+        )
+        mocked_blast_genome.assert_has_calls(
+            [
+                mock.call(self.genome, 'blastn', self.primers[0], word_size=11),
+                mock.call(self.genome, 'blastn', self.primers[1], word_size=11)
+            ], any_order=True
+        )
+
+    @mock.patch("edge.pcr.blast_genome")
+    def test_pcr_api_calls_blast_genome_word_size_6(self, mocked_blast_genome):
+        url = reverse(
+            "genome_pcr",
+            kwargs=dict(genome_id=self.genome.id)
+        )
+        self.client.post(
+            url,
+            data=dict(primers=self.primers, blast_word_size=6),
+            content_type="application/json"
+        )
+        print(mocked_blast_genome.call_args_list)
+        mocked_blast_genome.assert_has_calls(
+            [
+                mock.call(self.genome, 'blastn', self.primers[0], word_size=6),
+                mock.call(self.genome, 'blastn', self.primers[1], word_size=6)
+            ], any_order=True
         )
