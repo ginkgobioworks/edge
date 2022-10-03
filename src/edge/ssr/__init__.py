@@ -299,17 +299,26 @@ class Event(object):
             ]
         )
 
+    def annotate(self, new_fragment, annotations):
+        return
+
 
 class IntegrationEvent(Event):
 
-    def get_integrated_aligned_with_site_direction(self, insert, is_insert_circular):
-        insert = insert * 3
+    def get_integrated_aligned_with_site_direction(self, specified_insert, is_insert_circular):
+        insert = specified_insert * 3
         site_insert = self.recombination.site_insert
         if site_insert not in insert:
             insert = rc(insert)
         assert insert.index(site_insert) >= 0
         bps = find_indices(insert, site_insert)
         assert len(bps) >= 2
+
+        self.insert = insert
+        self.specified_insert = specified_insert
+        self.site_start_in_insert_0based = bps[0] + len(site_insert)
+        self.site_end_in_insert_0based = bps[1]
+
         return insert[bps[0] + len(site_insert):bps[1]]
 
     def run(self, new_fragment, insert, is_insert_circular):
@@ -327,6 +336,7 @@ class IntegrationEvent(Event):
 
         integrated = new_site_left + integrated + new_site_right
 
+        self.current_start = genomic_locations[0].start_0based + 1
         new_fragment.replace_bases(
             genomic_locations[0].start_0based + 1,
             bps_to_replace,
@@ -334,6 +344,47 @@ class IntegrationEvent(Event):
         )
 
         return len(integrated) - bps_to_replace
+
+    def annotate(self, new_fragment, annotations):
+        # Get mod values as true start and end, mark as end match if mod start is after
+        true_start = self.site_start_in_insert_0based % len(self.specified_insert)
+        true_end = self.site_end_in_insert_0based % len(self.specified_insert)
+        end_match = true_end < true_start
+        end_match_annotation_offset = len(self.specified_insert) - true_start
+
+        # If reversed, adjust the annotation start and end 
+        if self.specified_insert not in self.insert:
+            for annotation in annotations:
+                annotation_length = annotation["base_last"] - annotation["base_first"]
+                annotation["base_first"] = len(self.specified_insert) - annotation["base_last"]
+                annotation["base_last"] = annotation["base_first"] + annotation_length
+                annotation["feature_strand"] *= -1
+
+        # For each annotation, check positions of coordinates relatice to mod start/end
+        for annotation in annotations:
+            coords_after_true_start = annotation["base_start"] > true_start and annotation["base_last"] > true_start
+            coords_before_true_end = annotation["base_start"] <= true_end and annotation["base_last"] <= true_end
+
+            # Coordinates are in start and end range or end matched and come strictly before or after the junction
+            if (coords_before_true_end and coords_after_true_start) \
+                    or (end_match and (coords_before_true_end or coords_after_true_start)):
+                annotation_start = annotation["base_first"] - self.site_start_in_insert_0based
+                annotation_end = annotation["base_last"] - self.site_end_in_insert_0based
+
+                # Adjust coordinates if they come strictly after end match
+                if end_match and coords_before_true_end:
+                    annotation_start = annotation["base_first"] + end_match_annotation_offset
+                    annotation_end = annotation["base_last"] + end_match_annotation_offset
+                
+                # Annotate on fragment
+                new_fragment.annotate(
+                    self.current_start + annotation_start - 1,
+                    self.current_start + annotation_end - 1,
+                    annotation["feature_name"],
+                    annotation["feature_type"],
+                    annotation["feature_strand"],
+                    qualifiers=annotation.get("feature_qualifiers"),
+                )
 
 
 class ExcisionEvent(Event):
@@ -416,15 +467,25 @@ class InversionEvent(Event):
         return len(new_sequence) - \
             (len(old_site_left) + len(sequence_to_replace) + len(old_site_right))
 
+    def annotate(self, new_fragment, annotations):
+        # TODO: Implement for annotation preservation
+        return
+
 
 class RMCEEvent(Event):
 
-    def get_integrated_aligned_with_site_direction(self, insert):
-        insert = insert * 2
+    def get_integrated_aligned_with_site_direction(self, specified_insert):
+        insert = specified_insert * 2
         site_left_insert = self.recombination.site_left_insert
         site_right_insert = self.recombination.site_right_insert
         if site_left_insert not in insert:
             insert = rc(insert)
+
+        self.insert = insert
+        self.specified_insert = specified_insert
+        self.site_start_in_insert_0based = insert.index(site_left_insert) + len(site_left_insert)
+        self.site_end_in_insert_0based = self.site_start_in_insert_0based + left_trimmed_insert.index(site_right_insert)
+
         # below, to handle when sites are across circular boundary
         left_trimmed_insert = insert[insert.index(site_left_insert) + len(site_left_insert):]
         return left_trimmed_insert[:left_trimmed_insert.index(site_right_insert)]
@@ -455,13 +516,55 @@ class RMCEEvent(Event):
                 len(self.recombination.site_left_genome)
 
         integrated = new_site_left + integrated + new_site_right
+        self.current_start = genomic_locations[0].start_0based + 1
         new_fragment.replace_bases(
             genomic_locations[0].start_0based + 1,
             bps_to_replace,
             integrated
         )
 
-        return len(integrated) - bps_to_replace
+        return (genomic_locations[0].start_0based + 1, bps_to_replace, len(integrated))
+
+    def annotate(self, new_fragment, annotations):
+        # Get mod values as true start and end, mark as end match if mod start is after
+        true_start = self.site_start_in_insert_0based % len(self.specified_insert)
+        true_end = self.site_end_in_insert_0based % len(self.specified_insert)
+        end_match = true_end < true_start
+        end_match_annotation_offset = len(self.specified_insert) - true_start
+
+        # If reversed, adjust the annotation start and end 
+        if self.specified_insert not in self.insert:
+            for annotation in annotations:
+                annotation_length = annotation["base_last"] - annotation["base_first"]
+                annotation["base_first"] = len(self.specified_insert) - annotation["base_last"]
+                annotation["base_last"] = annotation["base_first"] + annotation_length
+                annotation["feature_strand"] *= -1
+
+        # For each annotation, check positions of coordinates relatice to mod start/end
+        for annotation in annotations:
+            coords_after_true_start = annotation["base_start"] > true_start and annotation["base_last"] > true_start
+            coords_before_true_end = annotation["base_start"] <= true_end and annotation["base_last"] <= true_end
+
+            # Coordinates are in start and end range or end matched and come strictly before or after the junction
+            if (coords_before_true_end and coords_after_true_start) \
+                    or (end_match and (coords_before_true_end or coords_after_true_start)):
+                annotation_start = annotation["base_first"] - self.site_start_in_insert_0based
+                annotation_end = annotation["base_last"] - self.site_end_in_insert_0based
+
+                # Adjust coordinates if they come strictly after end match
+                if end_match and coords_before_true_end:
+                    annotation_start = annotation["base_first"] + end_match_annotation_offset
+                    annotation_end = annotation["base_last"] + end_match_annotation_offset
+                
+                # Annotate on fragment
+                new_fragment.annotate(
+                    self.current_start + annotation_start - 1,
+                    self.current_start + annotation_end - 1,
+                    annotation["feature_name"],
+                    annotation["feature_type"],
+                    annotation["feature_strand"],
+                    qualifiers=annotation.get("feature_qualifiers"),
+                )
 
 
 def add_reverse_sites(sites):
@@ -587,7 +690,7 @@ class Reaction(object):
             for recombination in self.allowed():
                 self.events.extend(recombination.events(self.locations, self.errors))
 
-    def run_reaction(self, new_genome_name, notes=None):
+    def run_reaction(self, new_genome_name, notes=None, annotations=None):
         self.group_into_events()
 
         if len(self.events) == 0:
@@ -620,6 +723,7 @@ class Reaction(object):
 
         events = sorted(self.events,
                         key=lambda e: (e.fragment_id, -e.genomic_start_0based))
+        fragment_id_to_events_and_starts = {}
         while len(events) > 0:
             event = events[0]
 
@@ -631,6 +735,8 @@ class Reaction(object):
 
             new_fragment = old_to_new_fragment_dict[event.fragment_id]
             event.run(new_fragment, self.insert, self.is_insert_circular)
+            if annotations is not None:
+                event.annotate(new_fragment, annotations)
 
             events = events[1:]
 

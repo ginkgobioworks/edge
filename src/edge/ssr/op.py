@@ -66,5 +66,5 @@ class SSROp(object):
         annotations=None,
     ):
         reaction = SSROp.get_reaction(genome, donor, is_donor_circular, reaction_name)
-        new_genome = reaction.run_reaction(genome_name, notes=notes)
+        new_genome = reaction.run_reaction(genome_name, notes=notes, annotations=annotations)
         return new_genome
