@@ -723,7 +723,6 @@ class Reaction(object):
 
         events = sorted(self.events,
                         key=lambda e: (e.fragment_id, -e.genomic_start_0based))
-        fragment_id_to_events_and_starts = {}
         while len(events) > 0:
             event = events[0]
 
