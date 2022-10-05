@@ -347,22 +347,22 @@ class IntegrationEvent(Event):
 
     def annotate(self, new_fragment, annotations):
         # Get mod values as true start and end, mark as end match if mod start is after
-        true_start = self.site_start_in_insert_0based % len(self.specified_insert)
-        true_end = self.site_end_in_insert_0based % len(self.specified_insert)
+        true_start = self.site_start_in_insert_0based % len(self.specified_insert) + 1
+        true_end = self.site_end_in_insert_0based % len(self.specified_insert) + 1
         end_match = true_end < true_start
-        end_match_annotation_offset = len(self.specified_insert) - true_start
+        end_match_annotation_offset = len(self.specified_insert) - true_start + 1
 
         # If reversed, adjust the annotation start and end 
         if self.specified_insert not in self.insert:
             for annotation in annotations:
-                annotation_length = annotation["base_last"] - annotation["base_first"]
-                annotation["base_first"] = len(self.specified_insert) - annotation["base_last"]
-                annotation["base_last"] = annotation["base_first"] + annotation_length
+                annotation_length = annotation["base_last"] - annotation["base_first"] + 1
+                annotation["base_first"] = len(self.specified_insert) - annotation["base_last"] + 1
+                annotation["base_last"] = len(self.specified_insert) - annotation["base_last"] + annotation_length
                 annotation["feature_strand"] *= -1
 
         # For each annotation, check positions of coordinates relatice to mod start/end
         for annotation in annotations:
-            coords_after_true_start = annotation["base_start"] > true_start and annotation["base_last"] > true_start
+            coords_after_true_start = annotation["base_start"] >= true_start and annotation["base_last"] >= true_start
             coords_before_true_end = annotation["base_start"] <= true_end and annotation["base_last"] <= true_end
 
             # Coordinates are in start and end range or end matched and come strictly before or after the junction
@@ -378,8 +378,8 @@ class IntegrationEvent(Event):
                 
                 # Annotate on fragment
                 new_fragment.annotate(
-                    self.current_start + annotation_start - 1,
-                    self.current_start + annotation_end - 1,
+                    self.current_start + annotation_start,
+                    self.current_start + annotation_end,
                     annotation["feature_name"],
                     annotation["feature_type"],
                     annotation["feature_strand"],
@@ -527,22 +527,22 @@ class RMCEEvent(Event):
 
     def annotate(self, new_fragment, annotations):
         # Get mod values as true start and end, mark as end match if mod start is after
-        true_start = self.site_start_in_insert_0based % len(self.specified_insert)
-        true_end = self.site_end_in_insert_0based % len(self.specified_insert)
+        true_start = self.site_start_in_insert_0based % len(self.specified_insert) + 1
+        true_end = self.site_end_in_insert_0based % len(self.specified_insert) + 1
         end_match = true_end < true_start
-        end_match_annotation_offset = len(self.specified_insert) - true_start
+        end_match_annotation_offset = len(self.specified_insert) - true_start + 1
 
         # If reversed, adjust the annotation start and end 
         if self.specified_insert not in self.insert:
             for annotation in annotations:
-                annotation_length = annotation["base_last"] - annotation["base_first"]
-                annotation["base_first"] = len(self.specified_insert) - annotation["base_last"]
-                annotation["base_last"] = annotation["base_first"] + annotation_length
+                annotation_length = annotation["base_last"] - annotation["base_first"] + 1
+                annotation["base_first"] = len(self.specified_insert) - annotation["base_last"] + 1
+                annotation["base_last"] = len(self.specified_insert) - annotation["base_last"] + annotation_length
                 annotation["feature_strand"] *= -1
 
         # For each annotation, check positions of coordinates relatice to mod start/end
         for annotation in annotations:
-            coords_after_true_start = annotation["base_start"] > true_start and annotation["base_last"] > true_start
+            coords_after_true_start = annotation["base_start"] >= true_start and annotation["base_last"] >= true_start
             coords_before_true_end = annotation["base_start"] <= true_end and annotation["base_last"] <= true_end
 
             # Coordinates are in start and end range or end matched and come strictly before or after the junction
@@ -558,8 +558,8 @@ class RMCEEvent(Event):
                 
                 # Annotate on fragment
                 new_fragment.annotate(
-                    self.current_start + annotation_start - 1,
-                    self.current_start + annotation_end - 1,
+                    self.current_start + annotation_start,
+                    self.current_start + annotation_end,
                     annotation["feature_name"],
                     annotation["feature_type"],
                     annotation["feature_strand"],
