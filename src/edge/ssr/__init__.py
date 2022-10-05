@@ -336,7 +336,7 @@ class IntegrationEvent(Event):
 
         integrated = new_site_left + integrated + new_site_right
 
-        self.current_start = genomic_locations[0].start_0based + 1
+        self.new_sequence_start = genomic_locations[0].start_0based + 1
         new_fragment.replace_bases(
             genomic_locations[0].start_0based + 1,
             bps_to_replace,
@@ -358,7 +358,8 @@ class IntegrationEvent(Event):
                 annotation_length = annotation["base_last"] - annotation["base_first"] + 1
                 annotation["base_first"] = len(self.specified_insert) - annotation["base_last"] + 1
                 annotation["base_last"] = len(self.specified_insert) - annotation["base_last"] + annotation_length
-                annotation["feature_strand"] *= -1
+                if annotation["feature_strand"] is not None:
+                    annotation["feature_strand"] *= -1
 
         # For each annotation, check positions of coordinates relatice to mod start/end
         for annotation in annotations:
@@ -378,8 +379,8 @@ class IntegrationEvent(Event):
                 
                 # Annotate on fragment
                 new_fragment.annotate(
-                    self.current_start + annotation_start,
-                    self.current_start + annotation_end,
+                    self.new_sequence_start + annotation_start,
+                    self.new_sequence_start + annotation_end,
                     annotation["feature_name"],
                     annotation["feature_type"],
                     annotation["feature_strand"],
@@ -450,14 +451,27 @@ class InversionEvent(Event):
                 genomic_locations[0].start_0based + \
                 len(self.recombination.site_left)
 
+        inverted_sequence_start = genomic_locations[0].start_0based + len(old_site_left) + 1
+        inverted_sequence_end = genomic_locations[1].start_0based + 1 - 1
         sequence_to_replace = new_fragment.get_sequence(
-            bp_lo=genomic_locations[0].start_0based + len(old_site_left) + 1,
-            bp_hi=genomic_locations[1].start_0based + 1 - 1
+            bp_lo=inverted_sequence_start,
+            bp_hi=inverted_sequence_end
         )
         new_sequence = new_site_left + rc(sequence_to_replace) + new_site_right
         assert \
             len(old_site_left) + len(sequence_to_replace) + len(old_site_right) == bps_to_replace
 
+        annotations = new_fragment.annotations(
+            bp_lo=inverted_sequence_start,
+            bp_hi=inverted_sequence_end
+        )
+        for ann in annotations:
+            ann.base_first = max(inverted_sequence_start, ann.base_first)
+            ann.base_last = min(inverted_sequence_end, ann.base_last)
+        self.annotations = annotations
+
+        self.new_sequence_start = genomic_locations[0].start_0based + 1
+        self.replaced_sequence = sequence_to_replace
         new_fragment.replace_bases(
             genomic_locations[0].start_0based + 1,
             bps_to_replace,
@@ -468,8 +482,18 @@ class InversionEvent(Event):
             (len(old_site_left) + len(sequence_to_replace) + len(old_site_right))
 
     def annotate(self, new_fragment, annotations):
-        # TODO: Implement for annotation preservation
-        return
+        site_length = len(self.replaced_sequence) + 1
+        for ann in self.annotations:
+            flipped_base_first = self.new_sequence_start + (self.new_sequence_start + site_length - ann.base_last) - 1
+            flipped_base_last = self.new_sequence_start + (self.new_sequence_start + site_length - ann.base_first) - 1
+            new_fragment.annotate(
+                flipped_base_first,
+                flipped_base_last,
+                ann.feature.name,
+                ann.feature.type,
+                -1 * ann.feature.strand if ann.feature.strand is not None else None,
+                qualifiers=ann.feature.qualifiers
+            )
 
 
 class RMCEEvent(Event):
@@ -516,7 +540,7 @@ class RMCEEvent(Event):
                 len(self.recombination.site_left_genome)
 
         integrated = new_site_left + integrated + new_site_right
-        self.current_start = genomic_locations[0].start_0based + 1
+        self.new_sequence_start = genomic_locations[0].start_0based + 1
         new_fragment.replace_bases(
             genomic_locations[0].start_0based + 1,
             bps_to_replace,
@@ -538,7 +562,8 @@ class RMCEEvent(Event):
                 annotation_length = annotation["base_last"] - annotation["base_first"] + 1
                 annotation["base_first"] = len(self.specified_insert) - annotation["base_last"] + 1
                 annotation["base_last"] = len(self.specified_insert) - annotation["base_last"] + annotation_length
-                annotation["feature_strand"] *= -1
+                if annotation["feature_strand"] is not None:
+                    annotation["feature_strand"] *= -1
 
         # For each annotation, check positions of coordinates relatice to mod start/end
         for annotation in annotations:
@@ -558,8 +583,8 @@ class RMCEEvent(Event):
                 
                 # Annotate on fragment
                 new_fragment.annotate(
-                    self.current_start + annotation_start,
-                    self.current_start + annotation_end,
+                    self.new_sequence_start + annotation_start,
+                    self.new_sequence_start + annotation_end,
                     annotation["feature_name"],
                     annotation["feature_type"],
                     annotation["feature_strand"],
