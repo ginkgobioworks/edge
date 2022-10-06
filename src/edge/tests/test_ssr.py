@@ -1017,6 +1017,299 @@ class IntegrationRecombinationTest(TestCase):
         )
 
 
+class IntegrationRecombinationAnnotationTest(TestCase):
+
+    def test_can_integrate_multiple_places_on_fragment_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar", "attg" + "tttt" + "attg")
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("attg", "attg", "attc", "atcc")]
+
+        r = FakeReaction(parent_genome, "ggg" + "attg" + "a" * 100, True)
+        annotations = [
+            {
+                "base_first": 4, "base_last": 7, "feature_name": "replaced",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 3, "base_last": 8, "feature_name": "replaced overlap",
+                "feature_type": "cds", "feature_strand": -1
+            },
+            {
+                "base_first": 10, "base_last": 50, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 60, "base_last": 100, "feature_name": "test cds",
+                "feature_type": "cds", "feature_strand": -1
+            },
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        anns = f.annotations()
+        self.assertEqual(len(anns), 4)
+
+        self.assertEqual(anns[0].base_first, 7)
+        self.assertEqual(anns[0].base_last, 47)
+        self.assertEqual(anns[0].feature.name, 'test gene')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 57)
+        self.assertEqual(anns[1].base_last, 97)
+        self.assertEqual(anns[1].feature.name, 'test cds')
+        self.assertEqual(anns[1].feature.type, 'cds')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+        self.assertEqual(anns[2].base_first, 122)
+        self.assertEqual(anns[2].base_last, 162)
+        self.assertEqual(anns[2].feature.name, 'test gene')
+        self.assertEqual(anns[2].feature.type, 'gene')
+        self.assertEqual(anns[2].feature.strand, 1)
+
+        self.assertEqual(anns[3].base_first, 172)
+        self.assertEqual(anns[3].base_last, 212)
+        self.assertEqual(anns[3].feature.name, 'test cds')
+        self.assertEqual(anns[3].feature.type, 'cds')
+        self.assertEqual(anns[3].feature.strand, -1)
+
+    def test_can_integrate_reverse_site_on_genome_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "attg" + "t" * 1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("attg", "caat", "attc", "atcc")]
+
+        r = FakeReaction(parent_genome, "ggg" + "attg" + "a" * 100, True)
+        annotations = [
+            {
+                "base_first": 1, "base_last": 3, "feature_name": "flip check",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 8, "base_last": 57, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 67, "base_last": 107, "feature_name": "test cds",
+                "feature_type": "cds", "feature_strand": -1
+            },
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        anns = f.annotations()
+        self.assertEqual(len(anns), 3)
+
+        self.assertEqual(anns[0].base_first, 5)
+        self.assertEqual(anns[0].base_last, 7)
+        self.assertEqual(anns[0].feature.name, 'flip check')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, -1)
+
+        self.assertEqual(anns[1].base_first, 8)
+        self.assertEqual(anns[1].base_last, 48)
+        self.assertEqual(anns[1].feature.name, 'test cds')
+        self.assertEqual(anns[1].feature.type, 'cds')
+        self.assertEqual(anns[1].feature.strand, 1)
+
+        self.assertEqual(anns[2].base_first, 58)
+        self.assertEqual(anns[2].base_last, 107)
+        self.assertEqual(anns[2].feature.name, 'test gene')
+        self.assertEqual(anns[2].feature.type, 'gene')
+        self.assertEqual(anns[2].feature.strand, -1)
+
+    def test_can_integrate_reverse_sites_on_insert_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence("bar", "attg" + "t" * 1000)
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("attg", "attg", "attc", "atcc")]
+
+        r = FakeReaction(parent_genome, "ggg" + "caat" + "a" * 100, True)
+        annotations = [
+            {
+                "base_first": 8, "base_last": 57, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 67, "base_last": 107, "feature_name": "test cds",
+                "feature_type": "cds", "feature_strand": -1
+            },
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        anns = f.annotations()
+        self.assertEqual(len(anns), 2)
+
+        self.assertEqual(anns[0].base_first, 8)
+        self.assertEqual(anns[0].base_last, 48)
+        self.assertEqual(anns[0].feature.name, 'test cds')
+        self.assertEqual(anns[0].feature.type, 'cds')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 58)
+        self.assertEqual(anns[1].base_last, 107)
+        self.assertEqual(anns[1].feature.name, 'test gene')
+        self.assertEqual(anns[1].feature.type, 'gene')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+
+    def test_can_integrate_reverse_sites_on_genome_and_insert_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "t" * 1000 + "attg" + "c" * 1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("caat", "caat", "attc", "atcc")]
+
+        r = FakeReaction(parent_genome, "ggg" + "attg" + "a" * 100, True)
+        annotations = [
+            {
+                "base_first": 8, "base_last": 57, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 67, "base_last": 107, "feature_name": "test cds",
+                "feature_type": "cds", "feature_strand": -1
+            },
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        anns = f.annotations()
+        self.assertEqual(len(anns), 2)
+
+        self.assertEqual(anns[0].base_first, 1005)
+        self.assertEqual(anns[0].base_last, 1054)
+        self.assertEqual(anns[0].feature.name, 'test gene')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 1064)
+        self.assertEqual(anns[1].base_last, 1104)
+        self.assertEqual(anns[1].feature.name, 'test cds')
+        self.assertEqual(anns[1].feature.type, 'cds')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+    def test_works_with_left_and_right_sites_of_different_length_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "t" * 1000 + "attg" + "c" * 1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("cttg", "attg", "aattc", "atcccc")]
+
+        r = FakeReaction(parent_genome, "ggg" + "cttg" + "a" * 100, True)
+        annotations = [
+            {
+                "base_first": 8, "base_last": 57, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 67, "base_last": 107, "feature_name": "test cds",
+                "feature_type": "cds", "feature_strand": -1
+            },
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        anns = f.annotations()
+        self.assertEqual(len(anns), 2)
+
+        self.assertEqual(anns[0].base_first, 1006)
+        self.assertEqual(anns[0].base_last, 1055)
+        self.assertEqual(anns[0].feature.name, 'test gene')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 1065)
+        self.assertEqual(anns[1].base_last, 1105)
+        self.assertEqual(anns[1].feature.name, 'test cds')
+        self.assertEqual(anns[1].feature.type, 'cds')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+
+    def test_can_integrate_insert_with_site_across_circular_boundary_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "t" * 1000 + "attg" + "c" * 1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Integration("cttg", "attg", "attc", "atcc")]
+
+        r = FakeReaction(parent_genome, "ttg" + "a" * 100 + "c", True)
+        annotations = [
+            {
+                "base_first": 4, "base_last": 54, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 63, "base_last": 103, "feature_name": "test cds",
+                "feature_type": "cds", "feature_strand": -1
+            },
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        anns = f.annotations()
+        self.assertEqual(len(anns), 2)
+
+        self.assertEqual(anns[0].base_first, 1005)
+        self.assertEqual(anns[0].base_last, 1055)
+        self.assertEqual(anns[0].feature.name, 'test gene')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 1064)
+        self.assertEqual(anns[1].base_last, 1104)
+        self.assertEqual(anns[1].feature.name, 'test cds')
+        self.assertEqual(anns[1].feature.type, 'cds')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+
 class RMCERecombinationTest(TestCase):
 
     def test_can_integrate_multiple_places_on_fragment(self):
@@ -1147,3 +1440,330 @@ class RMCERecombinationTest(TestCase):
         child_genome = r.run_reaction("far")
         f = child_genome.fragments.all()[0].indexed_fragment()
         self.assertEquals(f.sequence, "cctt" + "a" * 10 + "ccta" + "t" * 1000)
+
+
+class RMCERecombinationAnnotationTest(TestCase):
+
+    def test_can_integrate_multiple_places_on_fragment_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "ggaa" + "c" * 100 + "gcaa" + "t" * 1000 + "ggaa" + "c" * 100 + "gcaa"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attc", "ggaa", "gcaa", "cctt", "ccta")]
+
+        r = FakeReaction(parent_genome, "ggg" + "attg" + "a" * 100 + "attc", True)
+        annotations = [
+            {
+                "base_first": 4, "base_last": 7, "feature_name": "replaced",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 3, "base_last": 8, "feature_name": "replaced overlap",
+                "feature_type": "cds", "feature_strand": -1
+            },
+            {
+                "base_first": 10, "base_last": 50, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 60, "base_last": 100, "feature_name": "test cds",
+                "feature_type": "cds", "feature_strand": -1
+            },
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(
+            f.sequence,
+            "cctt" + "a" * 100 + "ccta" + "t" * 1000 + "cctt" + "a" * 100 + "ccta"
+        )
+
+        anns = f.annotations()
+        self.assertEqual(len(anns), 4)
+
+        self.assertEqual(anns[0].base_first, 7)
+        self.assertEqual(anns[0].base_last, 47)
+        self.assertEqual(anns[0].feature.name, 'test gene')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 57)
+        self.assertEqual(anns[1].base_last, 97)
+        self.assertEqual(anns[1].feature.name, 'test cds')
+        self.assertEqual(anns[1].feature.type, 'cds')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+        self.assertEqual(anns[2].base_first, 1115)
+        self.assertEqual(anns[2].base_last, 1155)
+        self.assertEqual(anns[2].feature.name, 'test gene')
+        self.assertEqual(anns[2].feature.type, 'gene')
+        self.assertEqual(anns[2].feature.strand, 1)
+
+        self.assertEqual(anns[3].base_first, 1165)
+        self.assertEqual(anns[3].base_last, 1205)
+        self.assertEqual(anns[3].feature.name, 'test cds')
+        self.assertEqual(anns[3].feature.type, 'cds')
+        self.assertEqual(anns[3].feature.strand, -1)
+
+    def test_can_integrate_reverse_sites_on_genome_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "ttgc" + "c" * 100 + "ttcc" + "t" * 1000 + "ggaa" + "c" * 100 + "gcaa"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attc", "ggaa", "gcaa", "ccta", "cctt")]
+
+        r = FakeReaction(parent_genome, "ggg" + "attg" + "a" * 100 + "attc", True)
+        annotations = [
+            {
+                "base_first": 1, "base_last": 3, "feature_name": "missing check",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 8, "base_last": 57, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 67, "base_last": 107, "feature_name": "test cds",
+                "feature_type": "cds", "feature_strand": -1
+            },
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(
+            f.sequence,
+            "aagg" + "t" * 100 + "tagg" + "t" * 1000 + "ccta" + "a" * 100 + "cctt"
+        )
+
+        anns = f.annotations()
+        self.assertEqual(len(anns), 4)
+
+        self.assertEqual(anns[0].base_first, 5)
+        self.assertEqual(anns[0].base_last, 45)
+        self.assertEqual(anns[0].feature.name, 'test cds')
+        self.assertEqual(anns[0].feature.type, 'cds')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 55)
+        self.assertEqual(anns[1].base_last, 104)
+        self.assertEqual(anns[1].feature.name, 'test gene')
+        self.assertEqual(anns[1].feature.type, 'gene')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+        self.assertEqual(anns[2].base_first, 1113)
+        self.assertEqual(anns[2].base_last, 1162)
+        self.assertEqual(anns[2].feature.name, 'test gene')
+        self.assertEqual(anns[2].feature.type, 'gene')
+        self.assertEqual(anns[2].feature.strand, 1)
+
+        self.assertEqual(anns[3].base_first, 1172)
+        self.assertEqual(anns[3].base_last, 1212)
+        self.assertEqual(anns[3].feature.name, 'test cds')
+        self.assertEqual(anns[3].feature.type, 'cds')
+        self.assertEqual(anns[3].feature.strand, -1)
+
+    def test_can_integrate_reverse_sites_on_insert_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "ggaa" + "c" * 100 + "gcaa" + "t" * 1000 + "ggaa" + "c" * 100 + "gcaa"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attc", "ggaa", "gcaa", "ccta", "cctt")]
+
+        r = FakeReaction(parent_genome, "ggg" + "gaat" + "a" * 100 + "caat", True)
+        annotations = [
+            {
+                "base_first": 8, "base_last": 57, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 67, "base_last": 107, "feature_name": "test cds",
+                "feature_type": "cds", "feature_strand": -1
+            },
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(
+            f.sequence,
+            "ccta" + "t" * 100 + "cctt" + "t" * 1000 + "ccta" + "t" * 100 + "cctt"
+        )
+
+        anns = f.annotations()
+        for a in anns:
+            print(a.__dict__)
+            print(a.feature.__dict__)
+        self.assertEqual(len(anns), 4)
+
+        self.assertEqual(anns[0].base_first, 5)
+        self.assertEqual(anns[0].base_last, 45)
+        self.assertEqual(anns[0].feature.name, 'test cds')
+        self.assertEqual(anns[0].feature.type, 'cds')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 54)
+        self.assertEqual(anns[1].base_last, 104)
+        self.assertEqual(anns[1].feature.name, 'test gene')
+        self.assertEqual(anns[1].feature.type, 'gene')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+        self.assertEqual(anns[2].base_first, 1113)
+        self.assertEqual(anns[2].base_last, 1153)
+        self.assertEqual(anns[2].feature.name, 'test cds')
+        self.assertEqual(anns[2].feature.type, 'cds')
+        self.assertEqual(anns[2].feature.strand, 1)
+
+        self.assertEqual(anns[3].base_first, 1172)
+        self.assertEqual(anns[3].base_last, 1212)
+        self.assertEqual(anns[3].feature.name, 'test gene')
+        self.assertEqual(anns[3].feature.type, 'gene')
+        self.assertEqual(anns[3].feature.strand, -1)
+
+    def test_can_integrate_reverse_sites_on_genome_and_insert_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "a" + "ttgc" + "c" * 100 + "ttcc"
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attc", "ggaa", "gcaa", "cctt", "ccta")]
+
+        r = FakeReaction(parent_genome, "ggg" + "gaat" + "a" * 100 + "caat", True)
+        annotations = [
+            {
+                "base_first": 8, "base_last": 57, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 67, "base_last": 107, "feature_name": "test cds",
+                "feature_type": "cds", "feature_strand": -1
+            },
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "a" + "tagg" + "a" * 100 + "aagg")
+
+        anns = f.annotations()
+        self.assertEqual(len(anns), 2)
+
+        self.assertEqual(anns[0].base_first, 6)
+        self.assertEqual(anns[0].base_last, 55)
+        self.assertEqual(anns[0].feature.name, 'test gene')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 65)
+        self.assertEqual(anns[1].base_last, 105)
+        self.assertEqual(anns[1].feature.name, 'test cds')
+        self.assertEqual(anns[1].feature.type, 'cds')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+    def test_works_with_left_and_right_sites_of_different_length_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "gaa" + "c" * 100 + "gcaa" + "t" * 1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attcc", "gaa", "gcaa", "cctta", "cctaaa")]
+
+        r = FakeReaction(parent_genome, "ggg" + "attg" + "a" * 100 + "attcc", True)
+        annotations = [
+            {
+                "base_first": 8, "base_last": 57, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            },
+            {
+                "base_first": 67, "base_last": 107, "feature_name": "test cds",
+                "feature_type": "cds", "feature_strand": -1
+            },
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "cctta" + "a" * 100 + "cctaaa" + "t" * 1000)
+
+        anns = f.annotations()
+        self.assertEqual(len(anns), 2)
+
+        self.assertEqual(anns[0].base_first, 7)
+        self.assertEqual(anns[0].base_last, 56)
+        self.assertEqual(anns[0].feature.name, 'test gene')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 66)
+        self.assertEqual(anns[1].base_last, 106)
+        self.assertEqual(anns[1].feature.name, 'test cds')
+        self.assertEqual(anns[1].feature.type, 'cds')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+    def test_can_integrate_with_sites_across_circular_boundary_on_insert_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "ggaa" + "c" * 100 + "gcaa" + "t" * 1000
+        )
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [RMCE("attg", "attc", "ggaa", "gcaa", "cctt", "ccta")]
+
+        r = FakeReaction(parent_genome, "g" + "a" * 10 + "attc" + "ggg" + "att", True)
+        annotations = [
+            {
+                "base_first": 2, "base_last": 5, "feature_name": "test gene",
+                "feature_type": "gene", "feature_strand": 1
+            }
+        ]
+        child_genome = r.run_reaction("far", annotations=annotations)
+        self.assertEquals(f.sequence, "cctt" + "a" * 10 + "ccta" + "t" * 1000)
+
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        anns = f.annotations()
+        self.assertEqual(len(anns), 1)
+
+        self.assertEqual(anns[0].base_first, 5)
+        self.assertEqual(anns[0].base_last, 8)
+        self.assertEqual(anns[0].feature.name, 'test gene')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, 1)
