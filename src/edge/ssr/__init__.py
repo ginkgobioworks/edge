@@ -357,10 +357,11 @@ class IntegrationEvent(Event):
                 continue
 
             # Flip start and end if applicable
+            annotation_feature_strand = annotation["feature_strand"]
             if self.site_flipped ^ self.is_reversed():
                 annotation_start, annotation_end = annotation_end, annotation_start
-                if annotation["feature_strand"] is not None:
-                    annotation["feature_strand"] *= -1
+                if annotation_feature_strand is not None:
+                    annotation_feature_strand *= -1
             if annotation_start > annotation_end:
                 continue
 
@@ -370,7 +371,7 @@ class IntegrationEvent(Event):
                 self.new_sequence_start + annotation_end,
                 annotation["feature_name"],
                 annotation["feature_type"],
-                annotation["feature_strand"],
+                annotation_feature_strand,
                 qualifiers=annotation.get("feature_qualifiers"),
             )
 
@@ -559,10 +560,11 @@ class RMCEEvent(Event):
             print(annotation_start, annotation_end)
 
             # Flip start and end if applicable
+            annotation_feature_strand = annotation["feature_strand"]
             if self.site_flipped ^ self.is_reversed():
                 annotation_start, annotation_end = annotation_end, annotation_start
-                if annotation["feature_strand"] is not None:
-                    annotation["feature_strand"] *= -1
+                if annotation_feature_strand is not None:
+                    annotation_feature_strand *= -1
             if annotation_start > annotation_end:
                 continue
             print(self.new_sequence_start + annotation_start, self.new_sequence_start + annotation_end)
@@ -573,7 +575,7 @@ class RMCEEvent(Event):
                 self.new_sequence_start + annotation_end,
                 annotation["feature_name"],
                 annotation["feature_type"],
-                annotation["feature_strand"],
+                annotation_feature_strand,
                 qualifiers=annotation.get("feature_qualifiers"),
             )
 
