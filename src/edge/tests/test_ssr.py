@@ -853,6 +853,171 @@ class InversionRecombinationTest(TestCase):
         )
 
 
+class InversionRecombinationAnnotationTest(TestCase):
+
+    def test_can_invert_using_same_site_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "attg" + "atg" + "caat" + "c" * 1000
+        )
+        f.annotate(6, 7, "flipped feature", "gene", 1)
+        f.annotate(3, 9, "truncated flipped feature", "gene", -1)
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Inversion("attg", "caat", "attg", "caat")]
+
+        r = FakeReaction(parent_genome, None, None)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(f.sequence, "attg" + "cat" + "caat" + "c" * 1000)
+
+        anns = f.annotations()
+        self.assertEqual(len(anns), 2)
+
+        self.assertEqual(anns[0].base_first, 5)
+        self.assertEqual(anns[0].base_last, 7)
+        self.assertEqual(anns[0].feature.name, 'truncated flipped feature')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 5)
+        self.assertEqual(anns[1].base_last, 6)
+        self.assertEqual(anns[1].feature.name, 'flipped feature')
+        self.assertEqual(anns[1].feature.type, 'gene')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+    def test_can_invert_multiple_places_on_fragment_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        seed_sequence = "attg" + "t" * 100 + "cttg" + "c" * 1000 + "attg" +\
+            "g" * 100 + "cttg" + "g" * 1000 + "attg" + "a" * 100 + "cttg"
+        f = Fragment.create_with_sequence("bar", seed_sequence)
+        f.annotate(5, 45, "flipped feature", "gene", 1)
+        f.annotate(94, 107, "truncated flipped feature", "gene", -1)
+        f.annotate(1113, 2260, "flipped feature cross feature", "gene", 1)
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Inversion("attg", "cttg", "aatt", "ccgg")]
+
+        r = FakeReaction(parent_genome, None, None)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+
+        new_sequence = "aatt" + "a" * 100 + "ccgg" + "c" * 1000 + "aatt" +\
+            "c" * 100 + "ccgg" + "g" * 1000 + "aatt" + "t" * 100 + "ccgg"
+        self.assertEquals(f.sequence, new_sequence)
+
+        anns = f.annotations()
+        self.assertEqual(len(anns), 5)
+
+        self.assertEqual(anns[0].base_first, 5)
+        self.assertEqual(anns[0].base_last, 15)
+        self.assertEqual(anns[0].feature.name, 'truncated flipped feature')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, 1)
+
+        self.assertEqual(anns[1].base_first, 64)
+        self.assertEqual(anns[1].base_last, 104)
+        self.assertEqual(anns[1].feature.name, 'flipped feature')
+        self.assertEqual(anns[1].feature.type, 'gene')
+        self.assertEqual(anns[1].feature.strand, -1)
+
+        self.assertEqual(anns[2].base_first, 1113)
+        self.assertEqual(anns[2].base_last, 1212)
+        self.assertEqual(anns[2].feature.name, 'flipped feature cross feature')
+        self.assertEqual(anns[2].feature.type, 'gene')
+        self.assertEqual(anns[2].feature.strand, -1)
+
+        self.assertEqual(anns[3].base_first, 1217)
+        self.assertEqual(anns[3].base_last, 2216)
+        self.assertEqual(anns[3].feature.name, 'flipped feature cross feature')
+        self.assertEqual(anns[3].feature.type, 'gene')
+        self.assertEqual(anns[3].feature.strand, 1)
+
+        self.assertEqual(anns[4].base_first, 2281)
+        self.assertEqual(anns[4].base_last, 2320)
+        self.assertEqual(anns[4].feature.name, 'flipped feature cross feature')
+        self.assertEqual(anns[4].feature.type, 'gene')
+        self.assertEqual(anns[4].feature.strand, -1)
+
+    def test_can_invert_reverse_sites_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "cttg" + "t" + "attg" + "c" * 1000 + "caag" + "g" * 100 + "caat"
+        )
+        f.annotate(1014, 1025, "flipped feature", "gene", 1)
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Inversion("attg", "cttg", "atta", "cggc")]
+
+        r = FakeReaction(parent_genome, None, None)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(
+            f.sequence,
+            "cttg" + "t" + "attg" + "c" * 1000 + "gccg" + "c" * 100 + "taat"
+        )
+
+        anns = f.annotations()
+        self.assertEqual(len(anns), 1)
+
+        self.assertEqual(anns[0].base_first, 1102)
+        self.assertEqual(anns[0].base_last, 1113)
+        self.assertEqual(anns[0].feature.name, 'flipped feature')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, -1)
+
+    def test_works_with_left_and_right_sites_of_different_length_with_annotations(self):
+        parent_genome = Genome(name="foo")
+        parent_genome.save()
+        f = Fragment.create_with_sequence(
+            "bar",
+            "cttga" + "t" + "att" + "c" * 1000 + "acaag" + "g" * 100 + "caat"
+        )
+        f.annotate(1015, 1025, "flipped feature", "gene", 1)
+
+        Genome_Fragment(genome=parent_genome, fragment=f, inherited=False).save()
+
+        class FakeReaction(Reaction):
+            @staticmethod
+            def allowed():
+                return [Inversion("attg", "cttgt", "att", "gcccgg"),
+                        Inversion("cttga", "att", "gg", "cccccc")]
+
+        r = FakeReaction(parent_genome, None, None)
+        child_genome = r.run_reaction("far")
+        f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEquals(
+            f.sequence,
+            "gg" + "a" + "cccccc" + "c" * 1000 + "ccgggc" + "c" * 100 + "aat"
+        )
+
+        anns = f.annotations()
+        self.assertEqual(len(anns), 1)
+
+        self.assertEqual(anns[0].base_first, 1104)
+        self.assertEqual(anns[0].base_last, 1114)
+        self.assertEqual(anns[0].feature.name, 'flipped feature')
+        self.assertEqual(anns[0].feature.type, 'gene')
+        self.assertEqual(anns[0].feature.strand, -1)
+
+
 class IntegrationRecombinationTest(TestCase):
 
     def test_can_integrate_multiple_places_on_fragment(self):

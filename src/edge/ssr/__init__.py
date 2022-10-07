@@ -453,27 +453,31 @@ class InversionEvent(Event):
             bp_lo=inverted_sequence_start,
             bp_hi=inverted_sequence_end
         )
-        for ann in annotations:
-            ann.base_first = max(inverted_sequence_start, ann.base_first)
-            ann.base_last = min(inverted_sequence_end, ann.base_last)
-        self.annotations = annotations
+        self.inverted_sequence_start = inverted_sequence_start
+        self.inverted_sequence_end = inverted_sequence_end
 
-        self.new_sequence_start = genomic_locations[0].start_0based + 1
-        self.replaced_sequence = sequence_to_replace
         new_fragment.replace_bases(
             genomic_locations[0].start_0based + 1,
             bps_to_replace,
             new_sequence
         )
+        self.reannotate(new_fragment, annotations)
 
         return len(new_sequence) - \
             (len(old_site_left) + len(sequence_to_replace) + len(old_site_right))
 
-    def annotate(self, new_fragment, annotations):
-        site_length = len(self.replaced_sequence) + 1
-        for ann in self.annotations:
-            flipped_base_first = self.new_sequence_start + (self.new_sequence_start + site_length - ann.base_last) - 1
-            flipped_base_last = self.new_sequence_start + (self.new_sequence_start + site_length - ann.base_first) - 1
+    def reannotate(self, new_fragment, annotations):
+        # Reannotate using old annotations
+        for ann in annotations:
+            # Adjust for end of annotations being cut off
+            truncated_base_first = max(self.inverted_sequence_start, ann.base_first)
+            truncated_base_last = min(self.inverted_sequence_end, ann.base_last)
+
+            # Flip coordinates with respect to the inverted sequence
+            flipped_base_last = self.inverted_sequence_start + (self.inverted_sequence_end - truncated_base_first)
+            flipped_base_first = self.inverted_sequence_start + (self.inverted_sequence_end - truncated_base_last)
+
+            # Annotate on new sequence
             new_fragment.annotate(
                 flipped_base_first,
                 flipped_base_last,
@@ -535,8 +539,6 @@ class RMCEEvent(Event):
                 genomic_locations[0].start_0based + \
                 len(self.recombination.site_left_genome)
 
-        print(integrated)
-        print(self.insert_indexing)
         integrated = new_site_left + integrated + new_site_right
         new_fragment.replace_bases(
             genomic_locations[0].start_0based + 1,
@@ -550,14 +552,12 @@ class RMCEEvent(Event):
     def annotate(self, new_fragment, annotations):
         # For each annotation, check positions of coordinates relatice to mod start/end
         for annotation in annotations:
-            print(annotation)
             # Get start and end from insert indexing
             try:
                 annotation_start = self.insert_indexing.index(annotation['base_first'])
                 annotation_end = self.insert_indexing.index(annotation['base_last'])
             except ValueError:
                 continue
-            print(annotation_start, annotation_end)
 
             # Flip start and end if applicable
             annotation_feature_strand = annotation["feature_strand"]
@@ -567,7 +567,6 @@ class RMCEEvent(Event):
                     annotation_feature_strand *= -1
             if annotation_start > annotation_end:
                 continue
-            print(self.new_sequence_start + annotation_start, self.new_sequence_start + annotation_end)
 
             # Annotate on fragment
             new_fragment.annotate(
