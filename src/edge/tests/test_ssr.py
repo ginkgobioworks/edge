@@ -875,7 +875,10 @@ class InversionRecombinationAnnotationTest(TestCase):
         r = FakeReaction(parent_genome, None, None)
         child_genome = r.run_reaction("far")
         f = child_genome.fragments.all()[0].indexed_fragment()
-        self.assertEquals(f.sequence, "attg" + "cat" + "caat" + "c" * 1000)
+        self.assertEqual(
+            f.sequence,
+            "attg" + "cat" + "caat" + "c" * 1000
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 2)
@@ -912,10 +915,11 @@ class InversionRecombinationAnnotationTest(TestCase):
         r = FakeReaction(parent_genome, None, None)
         child_genome = r.run_reaction("far")
         f = child_genome.fragments.all()[0].indexed_fragment()
-
-        new_sequence = "aatt" + "a" * 100 + "ccgg" + "c" * 1000 + "aatt" +\
+        self.assertEqual(
+            f.sequence,
+            "aatt" + "a" * 100 + "ccgg" + "c" * 1000 + "aatt" +\
             "c" * 100 + "ccgg" + "g" * 1000 + "aatt" + "t" * 100 + "ccgg"
-        self.assertEquals(f.sequence, new_sequence)
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 5)
@@ -969,7 +973,7 @@ class InversionRecombinationAnnotationTest(TestCase):
         r = FakeReaction(parent_genome, None, None)
         child_genome = r.run_reaction("far")
         f = child_genome.fragments.all()[0].indexed_fragment()
-        self.assertEquals(
+        self.assertEqual(
             f.sequence,
             "cttg" + "t" + "attg" + "c" * 1000 + "gccg" + "c" * 100 + "taat"
         )
@@ -1003,7 +1007,7 @@ class InversionRecombinationAnnotationTest(TestCase):
         r = FakeReaction(parent_genome, None, None)
         child_genome = r.run_reaction("far")
         f = child_genome.fragments.all()[0].indexed_fragment()
-        self.assertEquals(
+        self.assertEqual(
             f.sequence,
             "gg" + "a" + "cccccc" + "c" * 1000 + "ccgggc" + "c" * 100 + "aat"
         )
@@ -1217,6 +1221,11 @@ class IntegrationRecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "attc" + "a" * 100 + "ggg" + "atcc" + "tttt" + "attc" +\
+            "a" * 100 + "ggg" + "atcc"
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 4)
@@ -1277,6 +1286,11 @@ class IntegrationRecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "ggat" + "ccc" + "t" * 100 + "gaat" + "t" * 1000 +\
+            "attc" + "a" * 100 + "ggg" + "atcc" + "c" * 100
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 6)
@@ -1342,6 +1356,10 @@ class IntegrationRecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "attc" + "ccc" + "t" * 100 + "atcc" + "t" * 1000
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 2)
@@ -1387,6 +1405,10 @@ class IntegrationRecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "t" * 1000 + "ggat" + "a" * 100 + "ggg" + "gaat" + "c" * 1000
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 2)
@@ -1431,6 +1453,10 @@ class IntegrationRecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "t" * 1000 + "aattc" + "a" * 100 + "ggg" + "atcccc" + "c" * 1000
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 2)
@@ -1476,6 +1502,10 @@ class IntegrationRecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "t" * 1000 + "attc" + "a" * 100 + "atcc" + "c" * 1000
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 2)
@@ -1663,6 +1693,10 @@ class RMCERecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "cctt" + "a" * 100 + "ccta" + "t" * 1000 + "cctt" + "a" * 100 + "ccta"
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 4)
@@ -1723,6 +1757,10 @@ class RMCERecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "aagg" + "t" * 100 + "tagg" + "t" * 1000 + "ccta" + "a" * 100 + "cctt"
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 4)
@@ -1779,6 +1817,10 @@ class RMCERecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "ccta" + "t" * 100 + "cctt" + "t" * 1000 + "ccta" + "t" * 100 + "cctt"
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 4)
@@ -1835,6 +1877,10 @@ class RMCERecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "a" + "tagg" + "a" * 100 + "aagg"
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 2)
@@ -1879,6 +1925,10 @@ class RMCERecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "cctta" + "a" * 100 + "cctaaa" + "t" * 1000
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 2)
@@ -1919,6 +1969,10 @@ class RMCERecombinationAnnotationTest(TestCase):
         ]
         child_genome = r.run_reaction("far", annotations=annotations)
         f = child_genome.fragments.all()[0].indexed_fragment()
+        self.assertEqual(
+            f.sequence,
+            "cctt" + "a" * 10 + "ccta" + "t" * 1000
+        )
 
         anns = f.annotations()
         self.assertEqual(len(anns), 1)
