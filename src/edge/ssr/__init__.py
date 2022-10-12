@@ -474,8 +474,10 @@ class InversionEvent(Event):
             truncated_base_last = min(self.inverted_sequence_end, ann.base_last)
 
             # Flip coordinates with respect to the inverted sequence
-            flipped_base_last = self.inverted_sequence_start + (self.inverted_sequence_end - truncated_base_first)
-            flipped_base_first = self.inverted_sequence_start + (self.inverted_sequence_end - truncated_base_last)
+            flipped_base_last = self.inverted_sequence_start + \
+                (self.inverted_sequence_end - truncated_base_first)
+            flipped_base_first = self.inverted_sequence_start + \
+                (self.inverted_sequence_end - truncated_base_last)
 
             # Annotate on new sequence
             new_fragment.annotate(

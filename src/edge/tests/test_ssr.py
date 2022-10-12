@@ -917,8 +917,8 @@ class InversionRecombinationAnnotationTest(TestCase):
         f = child_genome.fragments.all()[0].indexed_fragment()
         self.assertEqual(
             f.sequence,
-            "aatt" + "a" * 100 + "ccgg" + "c" * 1000 + "aatt" +\
-            "c" * 100 + "ccgg" + "g" * 1000 + "aatt" + "t" * 100 + "ccgg"
+            "aatt" + "a" * 100 + "ccgg" + "c" * 1000 + "aatt"
+            + "c" * 100 + "ccgg" + "g" * 1000 + "aatt" + "t" * 100 + "ccgg"
         )
 
         anns = f.annotations()
@@ -1223,8 +1223,8 @@ class IntegrationRecombinationAnnotationTest(TestCase):
         f = child_genome.fragments.all()[0].indexed_fragment()
         self.assertEqual(
             f.sequence,
-            "attc" + "a" * 100 + "ggg" + "atcc" + "tttt" + "attc" +\
-            "a" * 100 + "ggg" + "atcc"
+            "attc" + "a" * 100 + "ggg" + "atcc" + "tttt" + "attc"
+            + "a" * 100 + "ggg" + "atcc"
         )
 
         anns = f.annotations()
@@ -1288,8 +1288,8 @@ class IntegrationRecombinationAnnotationTest(TestCase):
         f = child_genome.fragments.all()[0].indexed_fragment()
         self.assertEqual(
             f.sequence,
-            "ggat" + "ccc" + "t" * 100 + "gaat" + "t" * 1000 +\
-            "attc" + "a" * 100 + "ggg" + "atcc" + "c" * 100
+            "ggat" + "ccc" + "t" * 100 + "gaat" + "t" * 1000
+            + "attc" + "a" * 100 + "ggg" + "atcc" + "c" * 100
         )
 
         anns = f.annotations()
@@ -1375,7 +1375,6 @@ class IntegrationRecombinationAnnotationTest(TestCase):
         self.assertEqual(anns[1].feature.name, 'test gene')
         self.assertEqual(anns[1].feature.type, 'gene')
         self.assertEqual(anns[1].feature.strand, -1)
-
 
     def test_can_integrate_reverse_sites_on_genome_and_insert_with_annotations(self):
         parent_genome = Genome(name="foo")
@@ -1472,7 +1471,6 @@ class IntegrationRecombinationAnnotationTest(TestCase):
         self.assertEqual(anns[1].feature.name, 'test cds')
         self.assertEqual(anns[1].feature.type, 'cds')
         self.assertEqual(anns[1].feature.strand, -1)
-
 
     def test_can_integrate_insert_with_site_across_circular_boundary_with_annotations(self):
         parent_genome = Genome(name="foo")
