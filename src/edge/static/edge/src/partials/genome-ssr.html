@@ -73,7 +73,7 @@
     </p>
   </div>
 
-  <div ng-if="(previewed === true) && (waiting !== true) && (events !== undefined)" class="results">
+  <div ng-if="(previewed_json !== undefined) && (waiting !== true) && (events !== undefined)" class="results">
     <p ng-if="events.length === 0"><em>No matching events</em></p>
     <div ng-if="events.length > 0">
       <div ng-repeat="event in events" class="ssr-candidate">

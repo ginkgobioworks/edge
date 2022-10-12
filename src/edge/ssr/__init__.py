@@ -299,17 +299,27 @@ class Event(object):
             ]
         )
 
+    def annotate(self, new_fragment, annotations):
+        return
+
 
 class IntegrationEvent(Event):
 
-    def get_integrated_aligned_with_site_direction(self, insert, is_insert_circular):
-        insert = insert * 3
+    def get_integrated_aligned_with_site_direction(self, specified_insert, is_insert_circular):
+        insert = specified_insert * 3
+        insert_indexing = list(range(1, len(specified_insert) + 1)) * 3
         site_insert = self.recombination.site_insert
-        if site_insert not in insert:
+
+        self.site_flipped = site_insert not in insert
+        if self.site_flipped:
             insert = rc(insert)
+            insert_indexing = insert_indexing[::-1]
+
         assert insert.index(site_insert) >= 0
         bps = find_indices(insert, site_insert)
         assert len(bps) >= 2
+        self.insert_indexing = insert_indexing[bps[0] + len(site_insert):bps[1]]
+
         return insert[bps[0] + len(site_insert):bps[1]]
 
     def run(self, new_fragment, insert, is_insert_circular):
@@ -321,19 +331,49 @@ class IntegrationEvent(Event):
             integrated = rc(integrated)
             new_site_left = rc(self.recombination.recombined_site_right_genome)
             new_site_right = rc(self.recombination.recombined_site_left_genome)
+            self.insert_indexing = self.insert_indexing[::-1]
         else:
             new_site_left = self.recombination.recombined_site_left_genome
             new_site_right = self.recombination.recombined_site_right_genome
 
         integrated = new_site_left + integrated + new_site_right
-
         new_fragment.replace_bases(
             genomic_locations[0].start_0based + 1,
             bps_to_replace,
             integrated
         )
+        self.new_sequence_start = genomic_locations[0].start_0based + 1 + len(new_site_left)
 
         return len(integrated) - bps_to_replace
+
+    def annotate(self, new_fragment, annotations):
+        # For each annotation, check positions of coordinates relatice to mod start/end
+        for annotation in annotations:
+            # Get start and end from insert indexing
+            try:
+                annotation_start = self.insert_indexing.index(annotation['base_first'])
+                annotation_end = self.insert_indexing.index(annotation['base_last'])
+            except ValueError:
+                continue
+
+            # Flip start and end if applicable
+            annotation_feature_strand = annotation["feature_strand"]
+            if self.site_flipped ^ self.is_reversed():
+                annotation_start, annotation_end = annotation_end, annotation_start
+                if annotation_feature_strand is not None:
+                    annotation_feature_strand *= -1
+            if annotation_start > annotation_end:
+                continue
+
+            # Annotate on fragment
+            new_fragment.annotate(
+                self.new_sequence_start + annotation_start,
+                self.new_sequence_start + annotation_end,
+                annotation["feature_name"],
+                annotation["feature_type"],
+                annotation_feature_strand,
+                qualifiers=annotation.get("feature_qualifiers"),
+            )
 
 
 class ExcisionEvent(Event):
@@ -399,35 +439,81 @@ class InversionEvent(Event):
                 genomic_locations[0].start_0based + \
                 len(self.recombination.site_left)
 
+        inverted_sequence_start = genomic_locations[0].start_0based + len(old_site_left) + 1
+        inverted_sequence_end = genomic_locations[1].start_0based + 1 - 1
         sequence_to_replace = new_fragment.get_sequence(
-            bp_lo=genomic_locations[0].start_0based + len(old_site_left) + 1,
-            bp_hi=genomic_locations[1].start_0based + 1 - 1
+            bp_lo=inverted_sequence_start,
+            bp_hi=inverted_sequence_end
         )
         new_sequence = new_site_left + rc(sequence_to_replace) + new_site_right
         assert \
             len(old_site_left) + len(sequence_to_replace) + len(old_site_right) == bps_to_replace
+
+        annotations = new_fragment.annotations(
+            bp_lo=inverted_sequence_start,
+            bp_hi=inverted_sequence_end
+        )
+        self.inverted_sequence_start = inverted_sequence_start
+        self.inverted_sequence_end = inverted_sequence_end
 
         new_fragment.replace_bases(
             genomic_locations[0].start_0based + 1,
             bps_to_replace,
             new_sequence
         )
+        self.reannotate(new_fragment, annotations)
 
         return len(new_sequence) - \
             (len(old_site_left) + len(sequence_to_replace) + len(old_site_right))
 
+    def reannotate(self, new_fragment, annotations):
+        # Reannotate using old annotations
+        for ann in annotations:
+            # Adjust for end of annotations being cut off
+            truncated_base_first = max(self.inverted_sequence_start, ann.base_first)
+            truncated_base_last = min(self.inverted_sequence_end, ann.base_last)
+
+            # Flip coordinates with respect to the inverted sequence
+            flipped_base_last = self.inverted_sequence_start + \
+                (self.inverted_sequence_end - truncated_base_first)
+            flipped_base_first = self.inverted_sequence_start + \
+                (self.inverted_sequence_end - truncated_base_last)
+
+            # Annotate on new sequence
+            new_fragment.annotate(
+                flipped_base_first,
+                flipped_base_last,
+                ann.feature.name,
+                ann.feature.type,
+                -1 * ann.feature.strand if ann.feature.strand is not None else None,
+                qualifiers=ann.feature.qualifiers
+            )
+
 
 class RMCEEvent(Event):
 
-    def get_integrated_aligned_with_site_direction(self, insert):
-        insert = insert * 2
+    def get_integrated_aligned_with_site_direction(self, specified_insert):
+        insert = specified_insert * 2
+        insert_indexing = list(range(1, len(specified_insert) + 1)) * 2
         site_left_insert = self.recombination.site_left_insert
         site_right_insert = self.recombination.site_right_insert
-        if site_left_insert not in insert:
+
+        # handle flipped site case
+        self.site_flipped = site_left_insert not in insert
+        if self.site_flipped:
             insert = rc(insert)
+            insert_indexing = insert_indexing[::-1]
+
         # below, to handle when sites are across circular boundary
-        left_trimmed_insert = insert[insert.index(site_left_insert) + len(site_left_insert):]
-        return left_trimmed_insert[:left_trimmed_insert.index(site_right_insert)]
+        # left side trim
+        left_trim_index = insert.index(site_left_insert) + len(site_left_insert)
+        left_trimmed_insert = insert[left_trim_index:]
+        insert_indexing = insert_indexing[left_trim_index:]
+
+        # right side trim
+        right_trim_index = left_trimmed_insert.index(site_right_insert)
+        self.insert_indexing = insert_indexing[:right_trim_index]
+        return left_trimmed_insert[:right_trim_index]
 
     def run(self, new_fragment, insert, is_insert_circular):
         genomic_locations = self.genomic_locations
@@ -444,6 +530,7 @@ class RMCEEvent(Event):
                 len(self.recombination.site_right_genome)
         else:
             integrated = rc(integrated)
+            self.insert_indexing = self.insert_indexing[::-1]
 
             assert genomic_locations[0].site == rc(self.recombination.site_right_genome)
             assert genomic_locations[1].site == rc(self.recombination.site_left_genome)
@@ -460,8 +547,38 @@ class RMCEEvent(Event):
             bps_to_replace,
             integrated
         )
+        self.new_sequence_start = genomic_locations[0].start_0based + 1 + len(new_site_left)
 
-        return len(integrated) - bps_to_replace
+        return (genomic_locations[0].start_0based + 1, bps_to_replace, len(integrated))
+
+    def annotate(self, new_fragment, annotations):
+        # For each annotation, check positions of coordinates relatice to mod start/end
+        for annotation in annotations:
+            # Get start and end from insert indexing
+            try:
+                annotation_start = self.insert_indexing.index(annotation['base_first'])
+                annotation_end = self.insert_indexing.index(annotation['base_last'])
+            except ValueError:
+                continue
+
+            # Flip start and end if applicable
+            annotation_feature_strand = annotation["feature_strand"]
+            if self.site_flipped ^ self.is_reversed():
+                annotation_start, annotation_end = annotation_end, annotation_start
+                if annotation_feature_strand is not None:
+                    annotation_feature_strand *= -1
+            if annotation_start > annotation_end:
+                continue
+
+            # Annotate on fragment
+            new_fragment.annotate(
+                self.new_sequence_start + annotation_start,
+                self.new_sequence_start + annotation_end,
+                annotation["feature_name"],
+                annotation["feature_type"],
+                annotation_feature_strand,
+                qualifiers=annotation.get("feature_qualifiers"),
+            )
 
 
 def add_reverse_sites(sites):
@@ -587,7 +704,7 @@ class Reaction(object):
             for recombination in self.allowed():
                 self.events.extend(recombination.events(self.locations, self.errors))
 
-    def run_reaction(self, new_genome_name, notes=None):
+    def run_reaction(self, new_genome_name, notes=None, annotations=None):
         self.group_into_events()
 
         if len(self.events) == 0:
@@ -631,6 +748,8 @@ class Reaction(object):
 
             new_fragment = old_to_new_fragment_dict[event.fragment_id]
             event.run(new_fragment, self.insert, self.is_insert_circular)
+            if annotations is not None:
+                event.annotate(new_fragment, annotations)
 
             events = events[1:]
 
