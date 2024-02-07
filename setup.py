@@ -121,7 +121,7 @@ setup(
     zip_safe=True,
     # Django has to be specified here because django_assets tries to install Django>=1.7 and will
     # force install Django2+ in setup
-    setup_requires=["django_assets >= 0.12", "Django ~= 2.2.13",],
+    setup_requires=["django_assets >= 0.12", "Django >= 2.2.13,< 3.3.0",],
     install_requires=[
         "django ~= 2.2.13",
         "jsmin",
